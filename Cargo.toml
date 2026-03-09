@@ -1,0 +1,32 @@
+[package]
+name = "prc_rs"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[lib]
+name = "prc_rs"
+path = "src/lib.rs"
+crate-type = ["lib", "staticlib"]
+
+[dependencies]
+inflate = "0.4"
+#nom = "8.0.0"
+byteorder = "1"
+#bitreader = "0.3.11"
+modular-bitfield = "0.13.1"
+bitvec = "1.0.1"
+static_assertions = "1.1.0"
+num_enum = "0.7.5"
+bitstream-io = "4.9.0"
+
+[workspace]
+members = ["tools"]
+
+[profile.release]
+lto = "on"
+
+[profile.reldeb]
+inherits = "release"
+lto = "off"
+debug = true
