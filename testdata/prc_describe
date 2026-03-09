@@ -1,0 +1,68 @@
+#!/bin/bash
+
+#set -x # echo
+#set -e # die on error
+
+echo "describe=$describe"
+
+RUST_BACKTRACE=1
+export RUST_BACKTRACE
+
+#INPUT=list_all.txt
+#INPUT=list_tree_fail.txt
+#INPUT=list_new20260216.txt
+#INPUT=list_tess_fail.txt
+echo "INPUT=$INPUT"
+NCASES=`cat ${INPUT} | wc -l | tr -d "[:blank:]"`
+echo -e "NCASES=${NCASES}\n"
+
+mkdir -p globals_rs tree_rs tess_rs geom_rs ext_rs
+#echo -e "\n\n" >> review_summary.txt
+#date | tr " " "_" | tr ":" "_"  | tee -a review_summary.txt
+
+#find . -maxdepth 1 -type f -iname "*.prc" | sort --ignore-case | while IFS= read -r i; do
+#cat list_tess_fail.txt | while IFS= read -r i; do
+cat "${INPUT}" | while IFS= read -r i; do
+#cat list_tree_rs_fail.txt | while IFS= read -r i; do
+#for i in *.prc; do
+#for i in "$(ls -1 *.prc | sort --ignore-case)"; do
+    #echo -e "\n-- $i --"
+    VER_READING=`timeout 2s $describe --ex "$i" | grep "Version for reading" | cut -d ' ' -f 4`
+    VER_AUTHOR=$(timeout 2s $describe --ex "$i" | grep "Authoring version" | cut -d ' ' -f 3)
+    #$describe --gl "$i" > globals_rs/"${i%.*}.txt" 2>&1
+    #GLOB=$?
+    $describe --gl "$i" 2>&1 | lz4 -zfq - globals_rs/"${i%.*}.txt.lz4"
+    GLOB=${PIPESTATUS[0]} # https://stackoverflow.com/a/31805991
+    #$describe --tr "$i" > tree_rs/"${i%.*}.txt" 2>&1
+    #TREE=$?
+    $describe --tr "$i" 2>&1 | lz4 -zfq - tree_rs/"${i%.*}.txt.lz4"
+    TREE=${PIPESTATUS[0]}
+    #$describe --te "$i" > tess_rs/"${i%.*}.txt" 2>&1
+    #TESS=$?
+    $describe --te "$i" 2>&1 | lz4 -zfq - tess_rs/"${i%.*}.txt.lz4"
+    TESS=${PIPESTATUS[0]}
+    #$describe --ge "$i" > geom_rs/"${i%.*}.txt" 2>&1
+    #GEOM=$?
+    $describe --ge "$i" 2>&1 | lz4 -zfq - geom_rs/"${i%.*}.txt.lz4"
+    GEOM=${PIPESTATUS[0]}
+    #$describe --ex "$i" > ext_rs/"${i%.*}.txt" 2>&1
+    #EXT=$?
+    $describe --ex "$i" 2>&1 | lz4 -zfq - ext_rs/"${i%.*}.txt.lz4"
+    EXT=${PIPESTATUS[0]}
+    #echo -e "$i"'\t'${VER_READING}'\t'${VER_AUTHOR}'\t'${GLOB}'\t'$TREE'\t'$TESS'\t'$GEOM'\t'$EXT | tee -a review_summary.txt
+    printf '%-64s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$i" ${VER_READING} ${VER_AUTHOR} ${GLOB} $TREE $TESS $GEOM $EXT | tee -a review_summary.txt
+done
+
+printf '\n\n'
+echo "GLOB:" `tail -n $NCASES review_summary.txt | cut  -f 4 | grep -e "^0$" | wc -l | tr -d "[:blank:]"`
+echo "TREE:" `tail -n $NCASES review_summary.txt | cut  -f 5 | grep -e "^0$" | wc -l | tr -d "[:blank:]"`
+echo "TESS:" `tail -n $NCASES review_summary.txt | cut  -f 6 | grep -e "^0$" | wc -l | tr -d "[:blank:]"`
+echo "GEOM:" `tail -n $NCASES review_summary.txt | cut  -f 7 | grep -e "^0$" | wc -l | tr -d "[:blank:]"`
+echo "EXTG:" `tail -n $NCASES review_summary.txt | cut  -f 8 | grep -e "^0$" | wc -l | tr -d "[:blank:]"`
+
+# for i in *.prc; do
+#     #echo -e "\n-- $i --"
+#     VER_READING=`timeout 2s describePRC -ex "$i" | grep "Version for reading " | cut -d ' ' -f 4`
+#     VER_AUTHOR=$(timeout 2s describePRC -ex "$i" | head -2 | grep "Authoring version " | cut -d ' ' -f 3)
+#     echo -e "$i"'\t'${VER_READING}'\t'${VER_AUTHOR}
+# done

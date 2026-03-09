@@ -25,8 +25,15 @@ jobs:
         path: prc-db
     - name: Run tests
       run: |
-        pwd
-        ls -las
-        tree
+        #pwd
+        #ls -las
+        #tree
+        #free -h
+        #du -d 1 -h
+        #cat /proc/cpuinfo
         cargo test --verbose --profile=reldeb
-        
+        cd prc-db/prcs
+        describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt ../../testdata/prc_describe
+        #tree
+        du -d 1 -h
+        diff ../../testdata/expected_all.txt review_summary.txt
