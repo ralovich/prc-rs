@@ -18,5 +18,15 @@ jobs:
     - uses: actions/checkout@v4
     - name: Build
       run: cargo build --verbose --profile=reldeb
+    - name: Checkout test data
+      uses: actions/checkout@v4
+      with:
+        repository: ralovich/prc-db
+        path: prc-db
     - name: Run tests
-      run: cargo test --verbose --profile=reldeb
+      run: |
+        pwd
+        ls -las
+        tree
+        cargo test --verbose --profile=reldeb
+        
