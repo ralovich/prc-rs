@@ -17,7 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build
-      run: cargo build --verbose --profile=reldeb
+      run: cargo build --verbose --profile=reldeb --all
     - name: Checkout test data
       uses: actions/checkout@v4
       with:
