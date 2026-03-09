@@ -2,7 +2,7 @@
 
 "PRC (Product Representation Compact) is a file format that can be used to embed 3D data in a PDF file" [according to Wikipedia](https://en.wikipedia.org/wiki/PRC_(file_format)). prc-rs is a Rust language implementation of the file format. Initial focus is on a parser/reader.
 
-## PRC Read Status
+## Project Status
 
 - [x] code generator based on 2014 PRC standard
 - [x] Schema evaluator
