@@ -8,7 +8,7 @@
 - [x] Schema evaluator
 - [x] Huffman decoding
 - [x] parsing compressed arrays
-- [ ] parsing PRC_TYPE_TESS_3D_Compressed: vertex and triangle interpretation
+- [ ] parsing PRC_TYPE_TESS_3D_Compressed: vertex and triangle interpretation https://github.com/pdf-association/pdf-issues/issues/727
 - [ ] parsing PRC_TYPE_TESS_3D_Compressed: normals
 - [ ] parsing PRC_TYPE_TESS_3D_Compressed: color data
 - [ ] parsing compressed NURBS
