@@ -5,6 +5,7 @@
 ## Project Status
 
 - [x] code generator based on 2014 PRC standard
+- [x] PRC double I/O
 - [x] Schema evaluator
 - [x] Huffman decoding
 - [x] parsing compressed arrays
@@ -20,7 +21,7 @@
 
 ## PRC Test Data
 
-Test data is currently very scarce, many parts (structures) of the standard are not yet found in existing test data. If you can, please submit new data (sample 3D PDFs) to increase the coverage of the library.
+Test data (https://github.com/ralovich/prc-db) is currently very scarce, many parts (structures) of the PRC standard are not yet found in existing test data. If you can, please submit new data (sample 3D PDFs) to increase the coverage of the library.
 
 ## License
 
