@@ -3074,7 +3074,7 @@
                     {
                         "name": "is_segment_color",
                         "data_type": "Boolean",
-                        "debug": true,
+                        "debug": false,
                         "comment": "asy does not write this field"
                     }
                 ],
@@ -3082,13 +3082,13 @@
                     {
                         "name": "is_rgba",
                         "data_type": "Boolean",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "b_optimized",
                         "data_type": "Boolean",
                         "NOon_set": "assert_eq!(false, b_optimized.value)",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "color_data_rgb_first_vertex",
@@ -3099,7 +3099,7 @@
                     {
                         "name": "color_data_rgb_remaining_vertices",
                         "data_type": "ColorDataRemainderRGB",
-                        "is_vec": true,
+                        "is_vec": false,
                         "size": "_ctx.VertexColors_number_of_colors - 1",
                         "condition": "!self.b_optimized && !is_rgba",
                         "condition_rust": "!self.b_optimized && !self.is_rgba"
@@ -3113,7 +3113,7 @@
                     {
                         "name": "color_data_rgba_remaining_vertices",
                         "data_type": "ColorDataRemainderRGBA",
-                        "is_vec": true,
+                        "is_vec": false,
                         "size": "_ctx.VertexColors_number_of_colors - 1",
                         "condition": "!self.b_optimized && !!is_rgba",
                         "condition_rust": "!self.b_optimized && !!self.is_rgba"
@@ -3348,7 +3348,7 @@
                 ]
             },
             "BinaryTextureData": {
-                "debug": true,
+                "debug": false,
                 "fields": [
                     {
                         "name": "texture_binary_data_size",
@@ -3369,7 +3369,7 @@
                 ]
             },
             "CompressedTextureParameter": {
-                "debug": true,
+                "debug": false,
                 "fields": [
                     {
                         "name": "binary_texture_data",
@@ -3659,7 +3659,7 @@
                             ["PRC_TYPE_TESS_Markup", "m"],
                             ["PRC_TYPE_TESS_3D_Compressed", "d3c"]
                         ],
-                        "debug": true
+                        "debug": false
                     }
                 ]
             },
@@ -4352,7 +4352,7 @@
                 ]
             },
             "PRC_TYPE_MATH_FCT_1D": {
-                "debug": true,
+                "debug": false,
                 "fields": [
                     {
                         "name": "id",
@@ -4426,7 +4426,7 @@
                 ]
             },
             "PRC_TYPE_MATH_FCT_3D": {
-                "debug": true,
+                "debug": false,
                 "fields": [
                     {
                         "name": "id",
@@ -4971,7 +4971,7 @@
                 ]
             },
             "PRC_TYPE_CRV": {
-                "debug": true,
+                "debug": false,
                 "fields": [
                     {
                         "name": "id",
@@ -6566,7 +6566,7 @@
                 ]
             },
             "ContentCompressedAnaFace": {
-                "debug": true,
+                "debug": false,
                 "fields": [
                     {
                         "name": "is_trimmed",
@@ -6587,7 +6587,7 @@
                 ]
             },
             "ContentCompressedFace": {
-                "debug": true,
+                "debug": false,
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/705",
                 "fields": [
                     {
@@ -6609,7 +6609,7 @@
                 ]
             },
             "PRC_HCG_NewLoop": {
-                "debug": true,
+                "debug": false,
                 "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
@@ -6621,7 +6621,7 @@
                 ]
             },
             "PRC_HCG_EndLoop": {
-                "debug": true,
+                "debug": false,
                 "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
@@ -6853,7 +6853,7 @@
                 ]
             },
             "PRC_HCG_AnaNurbs": {
-                "debug": true,
+                "debug": false,
                 "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
@@ -7601,7 +7601,7 @@
                 ]
             },
             "FileStructureExactGeometry": {
-                "debug": true,
+                "debug": false,
                 "fields": [
                     {
                         "name": "topo_context_count",

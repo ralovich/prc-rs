@@ -11,6 +11,8 @@ crate-type = ["lib", "staticlib"]
 
 [dependencies]
 inflate = "0.4"
+libdeflater = "1.25.2"
+log = "0.4.29"
 #nom = "8.0.0"
 byteorder = "1"
 #bitreader = "0.3.11"
@@ -19,6 +21,8 @@ bitvec = "1.0.1"
 static_assertions = "1.1.0"
 num_enum = "0.7.5"
 bitstream-io = "4.9.0"
+rayon = "1.11.0"
+measure_time = "0.9.0"
 
 [workspace]
 members = ["tools"]

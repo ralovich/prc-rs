@@ -7,18 +7,21 @@
 
 #![allow(unreachable_code)]
 
+use measure_time::debug_time;
 use crate::prc_double;
-use byteorder::{LittleEndian, ReadBytesExt};
-use inflate::inflate_bytes_zlib;
 use bitstream_io::{BitRead, BitReader, BitWrite};
+use byteorder::{LittleEndian, ReadBytesExt};
 use num_enum::TryFromPrimitive;
 //use std::convert::TryFrom;
+use crate::function;
+use crate::prc_builtin::CompressedEntityTypeKind::{ComprCurv, ComprFace};
 use crate::prc_gen::{CompressedMultiplicitiesU, CompressedMultiplicitiesV};
+use log::{debug, info};
+use rayon::prelude::*;
 use std::fmt;
 use std::io;
 use std::io::{/*Cursor,*/ Read, Seek, SeekFrom};
-use crate::prc_builtin::CompressedEntityTypeKind::{ComprCurv, ComprFace};
-use crate::function;
+use crate::decompress::decompress;
 
 pub enum PRCSectionKind {
     Global,
@@ -367,14 +370,17 @@ pub fn all_loops_are_vertex_loops() -> bool {
 
 // reconstruct vertices
 #[allow(non_snake_case)]
-pub fn TESS_3D_Compressed__get_points(point_array: &Vec<i32>, tolerance: f64,
-                                      point_is_reference_array: &Vec<Boolean>,
-                                      point_reference_array: &Vec<i32>,
-                                      edge_status_array: &Vec<i8>,
-                                      triangle_face_array: &Vec<i32>) {
-    assert_eq!(point_array.len()%3, 0);
-    let mut raw_verts: Vec<[f64; 3]> = Vec::with_capacity(point_array.len()/3);
-    for i in 0..point_array.len()/3 {
+pub fn TESS_3D_Compressed__get_points(
+    point_array: &Vec<i32>,
+    tolerance: f64,
+    point_is_reference_array: &Vec<Boolean>,
+    point_reference_array: &Vec<i32>,
+    edge_status_array: &Vec<i8>,
+    triangle_face_array: &Vec<i32>,
+) {
+    assert_eq!(point_array.len() % 3, 0);
+    let mut raw_verts: Vec<[f64; 3]> = Vec::with_capacity(point_array.len() / 3);
+    for i in 0..point_array.len() / 3 {
         let x: f64 = point_array[i * 3 + 0] as f64 * tolerance;
         let y: f64 = point_array[i * 3 + 1] as f64 * tolerance;
         let z: f64 = point_array[i * 3 + 2] as f64 * tolerance;
@@ -382,19 +388,18 @@ pub fn TESS_3D_Compressed__get_points(point_array: &Vec<i32>, tolerance: f64,
         //dbg!(v0);
         raw_verts.push(vert);
     }
-    assert_eq!(raw_verts.len()*3, point_array.len());
+    assert_eq!(raw_verts.len() * 3, point_array.len());
 
     struct Triangle {
         vertex_ids: [u32; 3],
     }
     let mut tris: Vec<Triangle> = Vec::with_capacity(triangle_face_array.len());
 
-    let mut verts: Vec<[f64; 3]> = Vec::with_capacity(point_array.len()/3);
+    let mut verts: Vec<[f64; 3]> = Vec::with_capacity(point_array.len() / 3);
 
     if edge_status_array.len() == triangle_face_array.len() {
         println!("A");
-    }
-    else if edge_status_array.len() == 3*triangle_face_array.len() {
+    } else if edge_status_array.len() == 3 * triangle_face_array.len() {
         println!("B");
     }
 
@@ -445,7 +450,9 @@ pub fn TESS_3D_Compressed__get_points(point_array: &Vec<i32>, tolerance: f64,
 
 /// see PRC_TYPE_TESS_3D_Compressed.point_reference_array
 #[allow(non_snake_case)]
-pub fn TESS_3D_Compressed__number_of_reference_points(points_is_reference_array: &Vec<Boolean>) -> u32 {
+pub fn TESS_3D_Compressed__number_of_reference_points(
+    points_is_reference_array: &Vec<Boolean>,
+) -> u32 {
     // is the number of non-zero elements in the points_is_reference_array
     let mut num = 0;
     for i in 0..points_is_reference_array.len() {
@@ -465,19 +472,30 @@ pub fn TESS_3D_Compressed__number_of_triangles(triangle_face_array: &Vec<i32>) -
 pub fn TESS_3D_Compressed__number_of_faces(triangle_face_array: &Vec<i32>) -> u32 {
     let min_id = triangle_face_array.into_iter().min().unwrap();
     let max_id = triangle_face_array.into_iter().max().unwrap();
-    println!("TESS_3D_Compressed_number_of_faces: [{}, {}]", min_id, max_id);
+    println!(
+        "TESS_3D_Compressed_number_of_faces: [{}, {}]",
+        min_id, max_id
+    );
     return *max_id as u32 + 1;
 }
 
 #[allow(non_snake_case)]
-pub fn TESS_3D_Compressed__number_of_triangles_in_face(triangle_face_array: &Vec<i32>, face_id: u32) -> u32 {
+pub fn TESS_3D_Compressed__number_of_triangles_in_face(
+    triangle_face_array: &Vec<i32>,
+    face_id: u32,
+) -> u32 {
     let mut triangles_in_face = 0;
     for i in triangle_face_array {
         if triangle_face_array[*i as usize] == face_id as i32 {
             triangles_in_face += 1;
         }
     }
-    println!("{}: face_id: {}, #tris: {}", function!(), face_id, triangles_in_face);
+    println!(
+        "{}: face_id: {}, #tris: {}",
+        function!(),
+        face_id,
+        triangles_in_face
+    );
     triangles_in_face
 }
 
@@ -486,7 +504,9 @@ pub fn TESS_3D_Compressed__number_of_triangles_in_face(triangle_face_array: &Vec
 /// The number of normals is implicit, depending of the number of triangles and faces.
 /// Vertices have always as many normals as number of faces to which they belong.
 #[allow(non_snake_case)]
-pub fn TESS_3D_Compressed__number_of_normals(triangle_face_array: &Vec<i32>, /*is_face_planar: &Vec<bool>*/) -> u32 {
+pub fn TESS_3D_Compressed__number_of_normals(
+    triangle_face_array: &Vec<i32>, /*is_face_planar: &Vec<bool>*/
+) -> u32 {
     //panic!("number_of_normals: Not implemented yet");
 
     let mut num_normals = 0;
@@ -674,9 +694,16 @@ impl UnsignedInteger {
         max_found_count: u32,
     ) {
         let pos = rdr.position_in_bits().unwrap();
+
+        let needle_str;
+        match PRCType::try_from(needle) {
+            Ok(val) => needle_str = val.to_string(),
+            Err(_) => needle_str = needle.to_string(),
+        }
+
         println!(
             "[Starting searching for value:{}, starting bit pos:{}]",
-            needle, pos
+            needle_str, pos
         );
         let mut found_count = 0;
         for offset in 0_u64..max_offset_bits {
@@ -699,7 +726,7 @@ impl UnsignedInteger {
             if value == needle {
                 println!(
                     "[Search found value:{} at bit abs:{} offset:{}]",
-                    needle,
+                    needle_str,
                     pos + offset,
                     offset
                 );
@@ -896,7 +923,9 @@ impl fmt::Debug for Double {
     }
 }
 impl fmt::Display for Double {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "{}", self.value) }
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value)
+    }
 }
 
 #[derive(Default, Clone, PartialEq, Eq)]
@@ -1040,13 +1069,13 @@ impl fmt::Debug for NumberOfBitsThenUnsignedInteger {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq/*, TryFromPrimitive*/)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq /*, TryFromPrimitive*/)]
 #[allow(non_camel_case_types)]
 //#[repr(u32)]
 pub enum CompressedEntityTypeKind {
     Invalid(u32),
     ComprCurv(PrcCompressedCurveType),
-    ComprFace(PrcCompressedFaceType)
+    ComprFace(PrcCompressedFaceType),
 }
 impl Default for CompressedEntityTypeKind {
     fn default() -> Self {
@@ -1084,12 +1113,27 @@ impl CompressedEntityType {
         let e: CompressedEntityTypeKind;
         if is_a_curve {
             match UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 2)?.value {
-                0 => { typev = PrcCompressedCurveType::PRC_HCG_Line as u32; e = ComprCurv(PrcCompressedCurveType::PRC_HCG_Line) },
-                1 => { typev = PrcCompressedCurveType::PRC_HCG_Circle as u32; e = ComprCurv(PrcCompressedCurveType::PRC_HCG_Circle) },
-                2 => { typev = PrcCompressedCurveType::PRC_HCG_BSplineHermiteCurve as u32; e = ComprCurv(PrcCompressedCurveType::PRC_HCG_BSplineHermiteCurve) },
+                0 => {
+                    typev = PrcCompressedCurveType::PRC_HCG_Line as u32;
+                    e = ComprCurv(PrcCompressedCurveType::PRC_HCG_Line)
+                }
+                1 => {
+                    typev = PrcCompressedCurveType::PRC_HCG_Circle as u32;
+                    e = ComprCurv(PrcCompressedCurveType::PRC_HCG_Circle)
+                }
+                2 => {
+                    typev = PrcCompressedCurveType::PRC_HCG_BSplineHermiteCurve as u32;
+                    e = ComprCurv(PrcCompressedCurveType::PRC_HCG_BSplineHermiteCurve)
+                }
                 3 => match UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 2)?.value {
-                    0 => { typev = PrcCompressedCurveType::PRC_HCG_Ellipse as u32; e = ComprCurv(PrcCompressedCurveType::PRC_HCG_Ellipse) },
-                    1 => { typev = PrcCompressedCurveType::PRC_HCG_CompositeCurve as u32; e = ComprCurv(PrcCompressedCurveType::PRC_HCG_CompositeCurve) },
+                    0 => {
+                        typev = PrcCompressedCurveType::PRC_HCG_Ellipse as u32;
+                        e = ComprCurv(PrcCompressedCurveType::PRC_HCG_Ellipse)
+                    }
+                    1 => {
+                        typev = PrcCompressedCurveType::PRC_HCG_CompositeCurve as u32;
+                        e = ComprCurv(PrcCompressedCurveType::PRC_HCG_CompositeCurve)
+                    }
                     _ => {
                         return Err(std::io::Error::new(
                             std::io::ErrorKind::Other,
@@ -1247,7 +1291,11 @@ impl CharacterArray {
         )?;
         Ok(Self { a })
     }
-    pub fn to_writer<W: BitWrite + ?Sized>(&self, _w: &mut W, _num_bits_per_elem: u8) -> std::io::Result<()> {
+    pub fn to_writer<W: BitWrite + ?Sized>(
+        &self,
+        _w: &mut W,
+        _num_bits_per_elem: u8,
+    ) -> std::io::Result<()> {
         panic!("{}: Not implemented!", function!());
         Ok(())
     }
@@ -1285,7 +1333,11 @@ impl ShortArray {
 
         Ok(Self { a })
     }
-    pub fn to_writer<W: BitWrite + ?Sized>(&self, _w: &mut W, _num_bits_per_elem: u8) -> std::io::Result<()> {
+    pub fn to_writer<W: BitWrite + ?Sized>(
+        &self,
+        _w: &mut W,
+        _num_bits_per_elem: u8,
+    ) -> std::io::Result<()> {
         panic!("{}: Not implemented!", function!());
         Ok(())
     }
@@ -1400,9 +1452,7 @@ impl CompressedIndiceArray {
                 .value,
         );
         for i in 1..diff_num_bits_used_to_store_ints.len() {
-            pc_array.push(
-                diff_num_bits_used_to_store_ints[i] as i8,
-            );
+            pc_array.push(diff_num_bits_used_to_store_ints[i] as i8);
 
             c_bit_count += pc_array[i];
             let ival = IntegerWithVariableBitNumber::from_reader(r, c_bit_count as u32)
@@ -1464,7 +1514,11 @@ impl CompressedIndiceArrayWithoutBit {
         .a;
         Ok(Self { a })
     }
-    pub fn to_writer<W: BitWrite + ?Sized>(&self, _w: &mut W, _is_compressed_dv: bool) -> std::io::Result<()> {
+    pub fn to_writer<W: BitWrite + ?Sized>(
+        &self,
+        _w: &mut W,
+        _is_compressed_dv: bool,
+    ) -> std::io::Result<()> {
         panic!("{}: Not implemented!", function!());
         Ok(())
     }
@@ -1494,7 +1548,7 @@ impl fmt::Debug for CompressedIndiceArrayWithoutBit {
 pub struct DoubleWithVariableBitNumber {
     value: f64,
     #[allow(unused)]
-    num_bits: u32,  // TODO: remove, only needed for debugging
+    num_bits: u32, // TODO: remove, only needed for debugging
     #[allow(unused)]
     tolerance: f64, // TODO: remove, only needed for debugging
 }
@@ -1569,7 +1623,7 @@ pub struct Point3DWithVariableBitNumber {
     pub y: f64,
     pub z: f64,
     #[allow(unused)]
-    num_bits: u32,  // TODO: remove, only needed for debugging
+    num_bits: u32, // TODO: remove, only needed for debugging
     #[allow(unused)]
     tolerance: f64, // TODO: remove, only needed for debugging
 }
@@ -1618,10 +1672,7 @@ impl Point3DWithVariableBitNumber {
         let mut num_bits = get_number_of_bits_used_to_store_integer(xi);
         num_bits = std::cmp::max(num_bits, get_number_of_bits_used_to_store_integer(yi));
         num_bits = std::cmp::max(num_bits, get_number_of_bits_used_to_store_integer(zi));
-        let _ = UnsignedIntegerWithVariableBitNumber {
-            value: num_bits,
-        }
-        .to_writer(_w, 6)?;
+        let _ = UnsignedIntegerWithVariableBitNumber { value: num_bits }.to_writer(_w, 6)?;
         if num_bits <= 30 {
             let _ = IntegerWithVariableBitNumber { value: xi }.to_writer(_w, num_bits)?;
             let _ = IntegerWithVariableBitNumber { value: yi }.to_writer(_w, num_bits)?;
@@ -1663,6 +1714,13 @@ pub struct PRCHeader {
 
 impl PRCHeader {
     pub fn from_reader(mut rdr: impl Read + Seek, file_size_bytes: usize) -> io::Result<Self> {
+        debug_time!("{:?}", "PRCHeader::from_reader");
+        let mut magic: [u8; 3] = [0; 3];
+        rdr.read_exact(&mut magic)?;
+        if magic[0] != b'P' || magic[1] != b'R' || magic[2] != b'C' {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "invalid magic"));
+        }
+
         let verread = rdr.read_u32::<LittleEndian>()?;
         let verauth = rdr.read_u32::<LittleEndian>()?;
         let uuid0 = rdr.read_u32::<LittleEndian>()?;
@@ -1675,16 +1733,20 @@ impl PRCHeader {
         let uuida3 = rdr.read_u32::<LittleEndian>()?;
         let num_file_struts = rdr.read_u32::<LittleEndian>()?;
 
-        println!("Version for reading: {}", verread);
-        println!("Authoring version: {}", verauth);
-        println!("num fs: {}", num_file_struts);
+        info!("Version for reading: {}", verread);
+        info!("Authoring version: {}", verauth);
+        info!("Number of file sections: {}", num_file_struts);
 
         let mut fsi = Vec::new();
-        for _i in 0..num_file_struts {
+        for i in 0..num_file_struts {
             let fsii = PRCFileStructureInformation::from_reader(&mut rdr);
-            let _b = fsii.as_ref();
-            //println!("fsi {}: {}", i, b.unwrap().offsets.len());
-            fsi.push(fsii.unwrap());
+            let b = fsii.as_ref();
+            debug!("fsi {}: {}", i, b.unwrap().offsets.len());
+            assert_eq!(
+                fsii.as_ref().unwrap().offsets.len(),
+                PRCSectionKind::ExtraGeometry as usize + 2
+            );
+            fsi.push(fsii?);
         }
 
         let mf_start_offset = rdr.read_u32::<LittleEndian>()?;
@@ -1693,15 +1755,15 @@ impl PRCHeader {
 
         //let file_size = rdr.stream_len();
         let mf_size = mf_end_offset - mf_start_offset;
-        println!(
+        debug!(
             "mf compressed offset: [{},{}], size: {}",
             mf_start_offset, mf_end_offset, mf_size
         );
-        println!("num_uncompr_files: {}", num_uncompr_files);
+        debug!("num_uncompr_files: {}", num_uncompr_files);
         let mut uncompr_files: Vec<Vec<u8>> = Vec::with_capacity(num_uncompr_files as usize);
         for i in 0..num_uncompr_files {
             let num_bytes = rdr.read_u32::<LittleEndian>()?;
-            println!("uncompressed file {}: {}", i, num_bytes);
+            debug!("uncompressed file {}: {}", i, num_bytes);
             let mut bytes: Vec<u8> = vec![0; num_bytes as usize];
             rdr.read_exact(&mut bytes)?;
             uncompr_files.push(bytes);
@@ -1711,39 +1773,80 @@ impl PRCHeader {
         rdr.seek(std::io::SeekFrom::Start(mf_start_offset as u64))?;
         rdr.read_exact(&mut mf_compr)?;
         //let mf0 = inflate_bytes(&mf_compr);
-        let mf = inflate_bytes_zlib(&mf_compr).unwrap();
-        println!("mf uncompressed {} -> {}", mf_compr.len(), mf.len());
+        let mf = decompress(&mf_compr).unwrap();
+        debug!("mf uncompressed {} -> {}", mf_compr.len(), mf.len());
 
-        for i in 0..num_file_struts {
+        let mut compressed_sections: Vec<Vec<Vec<u8>>> =
+            Vec::with_capacity(num_file_struts as usize);
+        compressed_sections.resize(
+            num_file_struts as usize,
+            Vec::with_capacity(PRCSectionKind::ExtraGeometry as usize + 1),
+        );
+        for i in 0..num_file_struts as usize {
+            fsi[i]
+                .sections
+                .resize(PRCSectionKind::ExtraGeometry as usize + 1, Vec::new());
+            compressed_sections[i].resize(PRCSectionKind::ExtraGeometry as usize + 1, Vec::new());
             for j in 1..fsi[i as usize].offsets.len() {
                 let start_offset = fsi[i as usize].offsets[j];
                 let end_offset;
                 if (j + 1) < fsi[i as usize].offsets.len() {
                     end_offset = fsi[i as usize].offsets[j + 1];
-                } else if (i + 1) < num_file_struts {
+                } else if (i + 1) < num_file_struts as usize {
                     end_offset = fsi[i as usize + 1].offsets[0];
                 } else {
                     end_offset = std::cmp::min(mf_start_offset, file_size_bytes as u32);
                 }
 
-                //let size = fsi[i as usize].offsets[j] - fsi[i as usize].offsets[j-1];
-                //let size = file_size - fsi[i as usize].offsets[j]; // as original asymptote
                 let size = end_offset - start_offset;
-                //println!("{} {} [{},{}] {}", i, j, start_offset, end_offset, size);
+                //debug!("{} {} [{},{}] {}", i, j, start_offset, end_offset, size);
                 let mut section_compr: Vec<u8> = vec![0; size as usize];
                 rdr.seek(std::io::SeekFrom::Start(fsi[i as usize].offsets[j] as u64))?;
                 rdr.read_exact(&mut section_compr)?;
-                let section = inflate_bytes_zlib(&section_compr).unwrap(); // TODO: decompression could happen concurrently
-                // println!(
-                //     "section uncompressed {} -> {}",
-                //     section_compr.len(),
-                //     section.len()
-                // );
-                fsi[i as usize].sections.push(section);
+                compressed_sections[i][j - 1] = section_compr;
             }
-            assert!(fsi[i as usize].sections.len() == PRCSectionKind::ExtraGeometry as usize + 1);
             fsi[i as usize].offsets.clear();
         }
+
+        // decompression could happen concurrently
+        let parallel_decompression = false;
+        let now = std::time::Instant::now();
+        if !parallel_decompression {
+            for (i, file_sections) in compressed_sections.iter().enumerate() {
+                for (j, section_compressed) in file_sections.iter().enumerate() {
+                    let section = decompress(&section_compressed).unwrap();
+                    debug!(
+                        "{}/{}: section uncompressed {} -> {}",
+                        i,
+                        j,
+                        section_compressed.len(),
+                        section.len()
+                    );
+                    fsi[i].sections[j] = section;
+                }
+                assert_eq!(
+                    fsi[i].sections.len(),
+                    PRCSectionKind::ExtraGeometry as usize + 1
+                );
+            }
+        } else {
+            let fsi_sections = compressed_sections
+                .par_iter()
+                .map(|file_sections| {
+                    let sections = file_sections
+                        .par_iter()
+                        .map(|section_compressed| decompress(&section_compressed).unwrap())
+                        .collect::<Vec<_>>();
+                    assert_eq!(sections.len(), PRCSectionKind::ExtraGeometry as usize + 1);
+                    sections
+                })
+                .collect::<Vec<_>>();
+            for (i, file_sections) in fsi_sections.iter().enumerate() {
+                fsi[i].sections = file_sections.to_vec();
+            }
+        }
+        let elapsed = now.elapsed();
+        debug!("Decompression took {:.2?}", elapsed);
 
         Ok(PRCHeader {
             verread,
