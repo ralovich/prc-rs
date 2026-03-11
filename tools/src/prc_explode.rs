@@ -8,6 +8,9 @@ use prc_rs::*;
 use std::env;
 
 fn main() {
+    // RUST_LOG=trace cargo run
+    pretty_env_logger::init();
+
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {

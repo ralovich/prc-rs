@@ -11,10 +11,10 @@ use bitstream_io::{BitRead, BitReader, LittleEndian};
 //use num_enum::TryFromPrimitive;
 //use std::collections::HashMap;
 //use std::convert::TryFrom;
+use crate::function;
+use log::{debug, warn};
 use std::io::{Cursor, SeekFrom};
 use std::{fmt, io};
-use crate::function;
-
 
 #[allow(unused)]
 fn byte_reverse(mut b: u8) -> u8 {
@@ -121,7 +121,7 @@ pub fn read_huffman_to_element_array_i16<R: BitRead>(
         for _i in 0..arr_size {
             let lo = UnsignedCharacter::from_reader(r)?.value as u16;
             let hi = UnsignedCharacter::from_reader(r)?.value as u16;
-            v.push((hi<<8 | lo) as i16);
+            v.push((hi << 8 | lo) as i16);
         }
         assert_eq!(v.len(), arr_size as usize);
         return Ok(v);
@@ -260,7 +260,7 @@ pub fn huffman_decode_i8(
                 if nb != leaves[j].code_length {
                     continue;
                 }
-                //println!("Trialling (for elem #{}) @ {} bits: {:b} {:b} ", _i, nb, trial, leaves[j].code_value);
+                //debug!("Trialling (for elem #{}) @ {} bits: {:b} {:b} ", _i, nb, trial, leaves[j].code_value);
                 if bits_equal(trial, rev_bits(leaves[j].code_value, nb as u8), nb as u8) {
                     selected_leaf = Some(j);
                     break;
@@ -276,7 +276,7 @@ pub fn huffman_decode_i8(
             }
         }
         if selected_leaf == None {
-            println!("Could not decode value for element {}", _i);
+            warn!("Could not decode value for element {}", _i);
             return vec![];
         }
 
@@ -284,7 +284,7 @@ pub fn huffman_decode_i8(
     }
     assert_eq!(data.len(), elem_array_size as usize);
     if _tot_bits as u64 != r.position_in_bits().unwrap() {
-        println!(
+        debug!(
             "{}: {} bits consumed of {} bits",
             function!(),
             r.position_in_bits().unwrap(),
@@ -361,7 +361,7 @@ pub fn huffman_decode_i16(
                 if nb != leaves[j].code_length {
                     continue;
                 }
-                //println!("Trialling (for elem #{}) @ {} bits: {:b} {:b} ", _i, nb, trial, leaves[j].code_value);
+                //debug!("Trialling (for elem #{}) @ {} bits: {:b} {:b} ", _i, nb, trial, leaves[j].code_value);
                 if bits_equal(trial, rev_bits(leaves[j].code_value, nb as u8), nb as u8) {
                     selected_leaf = Some(j);
                     break;
@@ -377,7 +377,7 @@ pub fn huffman_decode_i16(
             }
         }
         if selected_leaf == None {
-            println!("Could not decode value for element {}", _i);
+            warn!("Could not decode value for element {}", _i);
             return vec![];
         }
 
@@ -385,7 +385,7 @@ pub fn huffman_decode_i16(
     }
     assert_eq!(data.len(), elem_array_size as usize);
     if _tot_bits as u64 != r.position_in_bits().unwrap() {
-        println!(
+        debug!(
             "{}: {} bits consumed of {} bits",
             function!(),
             r.position_in_bits().unwrap(),

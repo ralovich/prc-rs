@@ -46,6 +46,9 @@ struct Args {
 }
 
 fn main() {
+    // RUST_LOG=trace cargo run
+    pretty_env_logger::init();
+
     let args = Args::parse();
 
     let all_sections: bool = args.gl && args.tr && args.te && args.ge && args.ex

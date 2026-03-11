@@ -12,11 +12,13 @@ use crate::prc_gen::*;
 //use crate::prc_schema;
 use crate::prc_schema::SchemaEvaluator;
 use bitstream_io::BitReader;
+use log::{debug, info};
 use std::fs::File;
 use std::io;
 use std::io::{Cursor, Seek};
 use std::path::Path;
 //use std::rc::Rc;
+use measure_time::debug_time;
 
 #[macro_export]
 macro_rules! function {
@@ -137,7 +139,7 @@ fn prc_parse_globals(
     verbose: bool,
     parse_globals: bool,
 ) {
-    println!(
+    debug!(
         "--prc_parse_globals {} bits ({} bytes)--",
         bytes.len() * 8,
         bytes.len()
@@ -151,7 +153,7 @@ fn prc_parse_globals(
     let schema_data = Schema::from_reader(&mut reader, ctx).unwrap();
     if verbose {
         let _schema_str = format!("{:#?}", schema_data);
-        println!("{}", _schema_str);
+        debug!("{}", _schema_str);
     }
 
     ctx.se = SchemaEvaluator::new(&schema_data.schemas);
@@ -167,8 +169,8 @@ fn prc_parse_globals(
     let total_bits = (bytes.len() * 8) as u64;
     let consumed_bits = reader.position_in_bits().unwrap();
     let remaining_bits = total_bits - consumed_bits;
-    println!(
-        "--glob ENDOK remaining: {} bits, consumed bits: {} of {} ({} bytes) [{} ms]--",
+    debug!(
+        "--glob ENDOK remaining: {} bits, consumed bits: {} of {} ({} bytes) [took {} ms]--",
         remaining_bits,
         consumed_bits,
         total_bits,
@@ -180,7 +182,7 @@ fn prc_parse_globals(
 }
 
 fn prc_parse_tree(bytes: &Vec<u8>, ctx: &mut PrcParsingContext, verbose: bool) {
-    println!(
+    debug!(
         "--prc_parse_tree {} bits ({} bytes)--",
         bytes.len() * 8,
         bytes.len()
@@ -206,8 +208,8 @@ fn prc_parse_tree(bytes: &Vec<u8>, ctx: &mut PrcParsingContext, verbose: bool) {
     let total_bits = (bytes.len() * 8) as u64;
     let consumed_bits = reader.position_in_bits().unwrap();
     let remaining_bits = total_bits - consumed_bits;
-    println!(
-        "--tree ENDOK remaining: {} bits, consumed bits: {} of {} ({} bytes) [{} ms]--",
+    debug!(
+        "--tree ENDOK remaining: {} bits, consumed bits: {} of {} ({} bytes) [took {} ms]--",
         remaining_bits,
         consumed_bits,
         total_bits,
@@ -218,7 +220,7 @@ fn prc_parse_tree(bytes: &Vec<u8>, ctx: &mut PrcParsingContext, verbose: bool) {
 }
 
 fn prc_parse_tess(bytes: &Vec<u8>, ctx: &mut PrcParsingContext, verbose: bool) {
-    println!(
+    debug!(
         "--prc_parse_tess {} bits ({} bytes)--",
         bytes.len() * 8,
         bytes.len()
@@ -237,8 +239,8 @@ fn prc_parse_tess(bytes: &Vec<u8>, ctx: &mut PrcParsingContext, verbose: bool) {
     let total_bits = (bytes.len() * 8) as u64;
     let consumed_bits = reader.position_in_bits().unwrap();
     let remaining_bits = total_bits - consumed_bits;
-    println!(
-        "--tess ENDOK remaining: {} bits, consumed bits: {} of {} ({} bytes) [{} ms]--",
+    debug!(
+        "--tess ENDOK remaining: {} bits, consumed bits: {} of {} ({} bytes) [took {} ms]--",
         remaining_bits,
         consumed_bits,
         total_bits,
@@ -249,7 +251,7 @@ fn prc_parse_tess(bytes: &Vec<u8>, ctx: &mut PrcParsingContext, verbose: bool) {
 }
 
 fn prc_parse_geom(bytes: &Vec<u8>, ctx: &mut PrcParsingContext, verbose: bool) {
-    println!(
+    debug!(
         "--prc_parse_geom {} bits ({} bytes)--",
         bytes.len() * 8,
         bytes.len()
@@ -268,8 +270,8 @@ fn prc_parse_geom(bytes: &Vec<u8>, ctx: &mut PrcParsingContext, verbose: bool) {
     let total_bits = (bytes.len() * 8) as u64;
     let consumed_bits = reader.position_in_bits().unwrap();
     let remaining_bits = total_bits - consumed_bits;
-    println!(
-        "--geom ENDOK remaining: {} bits, consumed bits: {} of {} ({} bytes) [{} ms]--",
+    debug!(
+        "--geom ENDOK remaining: {} bits, consumed bits: {} of {} ({} bytes) [took {} ms]--",
         remaining_bits,
         consumed_bits,
         total_bits,
@@ -280,7 +282,7 @@ fn prc_parse_geom(bytes: &Vec<u8>, ctx: &mut PrcParsingContext, verbose: bool) {
 }
 
 fn prc_parse_extgeom(bytes: &Vec<u8>, ctx: &mut PrcParsingContext) {
-    println!(
+    debug!(
         "--prc_parse_extgeom {} bits ({} bytes)--",
         bytes.len() * 8,
         bytes.len()
@@ -297,8 +299,8 @@ fn prc_parse_extgeom(bytes: &Vec<u8>, ctx: &mut PrcParsingContext) {
     let total_bits = (bytes.len() * 8) as u64;
     let consumed_bits = reader.position_in_bits().unwrap();
     let remaining_bits = total_bits - consumed_bits;
-    println!(
-        "--extgeom ENDOK remaining: {} bits, consumed bits: {} of {} ({} bytes) [{} ms]--",
+    debug!(
+        "--extgeom ENDOK remaining: {} bits, consumed bits: {} of {} ({} bytes) [took {} ms]--",
         remaining_bits,
         consumed_bits,
         total_bits,
@@ -309,11 +311,12 @@ fn prc_parse_extgeom(bytes: &Vec<u8>, ctx: &mut PrcParsingContext) {
 }
 
 fn prc_parse_modfile(bytes: &Vec<u8>, ctx: &mut PrcParsingContext) {
-    println!(
+    debug!(
         "--prc_parse_modfile {} bits ({} bytes)--",
         bytes.len() * 8,
         bytes.len()
     );
+    let now = std::time::Instant::now();
 
     let slice_of_u8 = bytes.as_slice();
     let mut reader = BitReader::endian(Cursor::new(slice_of_u8), bitstream_io::BigEndian);
@@ -329,12 +332,13 @@ fn prc_parse_modfile(bytes: &Vec<u8>, ctx: &mut PrcParsingContext) {
     let total_bits = (bytes.len() * 8) as u64;
     let consumed_bits = reader.position_in_bits().unwrap();
     let remaining_bits = total_bits - consumed_bits;
-    println!(
-        "--modfile ENDOK remaining: {} bits, consumed bits: {} of {} ({} bytes)--",
+    debug!(
+        "--modfile ENDOK remaining: {} bits, consumed bits: {} of {} ({} bytes)  [took {} ms]--",
         remaining_bits,
         consumed_bits,
         total_bits,
-        bytes.len()
+        bytes.len(),
+        now.elapsed().as_millis()
     );
     ()
 }
@@ -361,43 +365,28 @@ pub fn prc_describe(
     extgeom: bool,
     _schema: bool,
 ) -> io::Result<()> {
+    debug_time!("prc_describe");
+
     // Create a path to the desired file
     let path = Path::new(fname);
     let display = path.display();
 
-    println!("--parsing \"{}\"--", display);
+    info!("--parsing \"{}\"--", display);
 
+    let mut now = std::time::Instant::now();
     // Open the path in read-only mode, returns `io::Result<File>`
     let mut _file = match File::open(&path) {
         Err(why) => panic!("couldn't open {}: {}", display, why),
         Ok(file) => file,
     };
 
-    let bytes: Vec<u8> = std::fs::read(fname).unwrap();
-    println!("read {} bytes", bytes.len());
-
-    if bytes.len() < 47 {
-        panic!("Not enough bytes to parse PRC header!");
-    }
-
-    println!("PRC len OK");
-
-    if bytes[0] != b'P' || bytes[1] != b'R' || bytes[2] != b'C' {
-        panic!("Wrong PRC signature!");
-    }
-
-    println!("PRC header OK");
-
-    //for byte in bytes.iter() {
-    //    println!("{:b}", byte);
-    //}
+    let bytes: Vec<u8> = std::fs::read(fname)?;
+    debug!("read {} bytes", bytes.len());
 
     let file_size_bytes = bytes.len();
     let mut mem_reader: Cursor<Vec<u8>> = Cursor::new(bytes);
+    debug!("Reading into memory [took {} ms]", now.elapsed().as_millis());
 
-    mem_reader.seek(std::io::SeekFrom::Start(3))?;
-
-    // Result<PRCHeader, std::io::Error>
     let config = PRCHeader::from_reader(&mut mem_reader, file_size_bytes);
     let a = &config?;
 
@@ -407,8 +396,9 @@ pub fn prc_describe(
 
     // parse uncompressed files
     // TODO: could be processed concurrently
+    // TODO: is it possible to use multiple,cloned contexts and merge them later?
     for i in 0..a.fsi.len() {
-        println!("--fsi={}--", i);
+        debug_time!("--fsi={}--", i);
         prc_parse_globals(
             &a.fsi[i].sections[PRCSectionKind::Global as usize],
             &mut ctx,
@@ -448,16 +438,7 @@ pub fn prc_describe(
         prc_parse_modfile(&a.mf, &mut ctx);
     }
 
-    // Read the file contents into a string, returns `io::Result<usize>`
-    /*
-    let mut s = String::new();
-    match file.read_to_string(&mut s) {
-        Err(why) => panic!("couldn't read {}: {}", display, why),
-        Ok(_) => print!("{} contains:\n{}", display, s),
-    }
-     */
-
-    println!("--parsed successfully \"{}\"--", display);
+    info!("--parsed successfully \"{}\"--", display);
     Ok(())
 }
 
@@ -474,28 +455,9 @@ pub fn prc_explode(fname: &std::string::String) -> io::Result<()> {
     };
 
     let bytes = std::fs::read(fname).unwrap();
-    println!("read {} bytes", bytes.len());
-
-    if bytes.len() < 47 {
-        panic!("Not enough bytes to parse PRC header!");
-    }
-
-    println!("PRC len OK");
-
-    if bytes[0] != b'P' || bytes[1] != b'R' || bytes[2] != b'C' {
-        panic!("Wrong PRC signature!");
-    }
-
-    println!("PRC header OK");
-
-    //for byte in bytes.iter() {
-    //    println!("{:b}", byte);
-    //}
 
     let file_size_bytes = bytes.len();
     let mut mem_reader: Cursor<Vec<u8>> = Cursor::new(bytes);
-
-    mem_reader.seek(std::io::SeekFrom::Start(3))?;
 
     // Result<PRCHeader, std::io::Error>
     let config = PRCHeader::from_reader(&mut mem_reader, file_size_bytes);

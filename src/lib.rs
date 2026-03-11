@@ -12,3 +12,4 @@ pub mod prc_gen;
 mod prc_gen_test;
 mod prc_huffman;
 mod prc_schema;
+mod decompress;

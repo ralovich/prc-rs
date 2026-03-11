@@ -8,6 +8,7 @@ use crate::prc_builtin;
 use crate::prc_builtin::PRCType;
 use crate::prc_gen::Entity_schema_definition;
 use bitstream_io::BitReader;
+use log::debug;
 use num_enum::TryFromPrimitive;
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -98,13 +99,13 @@ pub fn print_schema(tokens: &Vec<u32>) {
             }
         }
         if show_raw {
-            println!(
+            debug!(
                 "{}{}",
                 (0..indent).map(|_| " ").collect::<String>(),
                 tokens[j]
             );
         } else {
-            println!(
+            debug!(
                 "{}{}",
                 (0..indent).map(|_| " ").collect::<String>(),
                 SchemaTokens::try_from(tok).unwrap().to_string()
@@ -121,7 +122,7 @@ pub fn print_schema(tokens: &Vec<u32>) {
         }
         prev_raw = show_raw;
     }
-    println!("");
+    debug!("");
     ()
 }
 
@@ -230,12 +231,12 @@ impl SchemaEvaluator {
                     .unwrap()
                     .to_string(),
             };
-            println!("Schema present for {}", _type_name);
+            debug!("Schema present for {}", _type_name);
             let mut v = Vec::new();
             for token in &sch.schema_tokens {
                 v.push(token.value);
             }
-            println!("    {} tokens", v.len());
+            debug!("    {} tokens", v.len());
             print_schema(&v);
             ops_per_type.insert(sch.entity_type.value, v);
         }
@@ -271,7 +272,7 @@ impl SchemaEvaluator {
         };
         let mut s: VmState = Default::default();
         s.indent = indent;
-        println!(
+        debug!(
             "{}Evaluating schema for {} ({} tokens)",
             s.i(),
             type_name,
@@ -320,68 +321,68 @@ impl SchemaEvaluator {
         match instr {
             val if val == EPRCSchema_Data_Boolean as u32 => {
                 if skip {
-                    println!("{}SKIP READB", s.i());
+                    debug!("{}SKIP READB", s.i());
                 } else {
                     let tmp = prc_builtin::Boolean::from_reader(rdr).unwrap().value;
-                    println!("{}READB {}", s.i(), tmp);
+                    debug!("{}READB {}", s.i(), tmp);
                     s.dstack.push(VariableKind::Boolean(tmp));
                 }
             }
             val if val == EPRCSchema_Data_Double as u32 => {
                 if skip {
-                    println!("{}SKIP READD", s.i());
+                    debug!("{}SKIP READD", s.i());
                 } else {
                     let tmp = prc_builtin::Double::from_reader(rdr).unwrap().value;
-                    println!("{}READD {}", s.i(), tmp);
+                    debug!("{}READD {}", s.i(), tmp);
                     s.dstack.push(VariableKind::Double(tmp));
                 }
             }
             val if val == EPRCSchema_Data_Character as u32 => {
                 if skip {
-                    println!("{}SKIP READC", s.i());
+                    debug!("{}SKIP READC", s.i());
                 } else {
                     let tmp = prc_builtin::UnsignedCharacter::from_reader(rdr)
                         .unwrap()
                         .value;
-                    println!("{}READC {}", s.i(), tmp);
+                    debug!("{}READC {}", s.i(), tmp);
                     s.dstack.push(VariableKind::Char(tmp));
                 }
             }
             val if val == EPRCSchema_Data_Unsigned_Integer as u32 => {
                 if skip {
-                    println!("{}SKIP READU", s.i());
+                    debug!("{}SKIP READU", s.i());
                 } else {
                     let tmp = prc_builtin::UnsignedInteger::from_reader(rdr)
                         .unwrap()
                         .value;
-                    println!("{}READU {}", s.i(), tmp);
+                    debug!("{}READU {}", s.i(), tmp);
                     s.dstack.push(VariableKind::Unsigned(tmp));
                 }
             }
             val if val == EPRCSchema_Data_Integer as u32 => {
                 if skip {
-                    println!("{}SKIP READI", s.i());
+                    debug!("{}SKIP READI", s.i());
                 } else {
                     let tmp = prc_builtin::Integer::from_reader(rdr).unwrap().value;
-                    println!("{}READI {}", s.i(), tmp);
+                    debug!("{}READI {}", s.i(), tmp);
                     s.dstack.push(VariableKind::Integer(tmp));
                 }
             }
             val if val == EPRCSchema_Data_String as u32 => {
                 if skip {
-                    println!("{}SKIP READS", s.i());
+                    debug!("{}SKIP READS", s.i());
                 } else {
                     let tmp = prc_builtin::String::from_reader(rdr).unwrap().value;
-                    println!("{}READS \"{}\"", s.i(), tmp);
+                    debug!("{}READS \"{}\"", s.i(), tmp);
                     s.dstack.push(VariableKind::String(tmp));
                 }
             }
             val if val == EPRCSchema_Father_Type as u32 => {
                 let father_type_id = s.opstack.pop().unwrap();
                 if skip {
-                    println!("{}SKIP FATHER {}", s.i(), father_type_id);
+                    debug!("{}SKIP FATHER {}", s.i(), father_type_id);
                 } else {
-                    println!("{}FATHER {}", s.i(), father_type_id);
+                    debug!("{}FATHER {}", s.i(), father_type_id);
                     let mut nested = self.clone();
                     let _ = nested.eval(rdr, father_type_id, skip, s.indent);
                     self.merge_from(&mut nested);
@@ -390,33 +391,33 @@ impl SchemaEvaluator {
             }
             val if val == EPRCSchema_Vector_2D as u32 => {
                 if skip {
-                    println!("{}SKIP READV2D", s.i());
+                    debug!("{}SKIP READV2D", s.i());
                 } else {
                     let tmp: [f64; 2] = [
                         prc_builtin::Double::from_reader(rdr).unwrap().value,
                         prc_builtin::Double::from_reader(rdr).unwrap().value,
                     ];
-                    println!("{}READV2D {:?}", s.i(), tmp);
+                    debug!("{}READV2D {:?}", s.i(), tmp);
                     s.dstack.push(VariableKind::Vector2D(tmp[0], tmp[1]));
                 }
             }
             val if val == EPRCSchema_Vector_3D as u32 => {
                 if skip {
-                    println!("{}SKIP READV3D", s.i());
+                    debug!("{}SKIP READV3D", s.i());
                 } else {
                     let tmp: [f64; 3] = [
                         prc_builtin::Double::from_reader(rdr).unwrap().value,
                         prc_builtin::Double::from_reader(rdr).unwrap().value,
                         prc_builtin::Double::from_reader(rdr).unwrap().value,
                     ];
-                    println!("{}READV3D {:?}", s.i(), tmp);
+                    debug!("{}READV3D {:?}", s.i(), tmp);
                     s.dstack
                         .push(VariableKind::Vector3D(tmp[0], tmp[1], tmp[2]));
                 }
             }
             val if val == EPRCSchema_For as u32 => {
                 if skip {
-                    println!("{}SKIP FOR", s.i());
+                    debug!("{}SKIP FOR", s.i());
                     self.do_eval(rdr, s, true); // skip number of iterations
                     self.do_eval(rdr, s, true); // skip loop body
                 } else {
@@ -426,7 +427,7 @@ impl SchemaEvaluator {
                         VariableKind::Unsigned(u) => u as i32,
                         _ => panic!("EPRCSchema_For unsupported iteration limit type!"),
                     };
-                    println!("{}FOR {:?}", s.i(), n);
+                    debug!("{}FOR {:?}", s.i(), n);
                     // eval next instruction or block N times in a loop
                     for _i in 0..n - 1 {
                         //panic!("EPRCSchema_For not yet implemented!");
@@ -448,12 +449,12 @@ impl SchemaEvaluator {
             }
             val if val == EPRCSchema_SimpleFor as u32 => {
                 if skip {
-                    println!("{}SKIP SIMPLEFOR", s.i());
+                    debug!("{}SKIP SIMPLEFOR", s.i());
                     self.do_eval(rdr, s, true); // skip loop body
                 } else {
                     let n = prc_builtin::Integer::from_reader(rdr).unwrap().value; // retrieve number of iterations
-                    println!("{}READI {}", s.i(), n);
-                    println!("{}SIMPLEFOR {}", s.i(), n);
+                    debug!("{}READI {}", s.i(), n);
+                    debug!("{}SIMPLEFOR {}", s.i(), n);
                     // eval next instruction or block N times in a loop
                     for _i in 0..n - 1 {
                         //panic!("EPRCSchema_For not yet implemented!");
@@ -475,14 +476,14 @@ impl SchemaEvaluator {
             }
             val if val == EPRCSchema_If as u32 => {
                 if skip {
-                    println!("{}SKIP IF", s.i());
+                    debug!("{}SKIP IF", s.i());
                     self.do_eval(rdr, s, true); // skip conditional
                     self.do_eval(rdr, s, true); // skip THEN branch
                     if *s.opstack.last().unwrap() == EPRCSchema_Else as u32 {
                         self.do_eval(rdr, s, true); // skip ELSE branch
                     }
                 } else {
-                    println!("{}IF", s.i());
+                    debug!("{}IF", s.i());
                     // eval conditional
                     self.do_eval(rdr, s, false);
                     let conditional = s.dstack.pop().unwrap();
@@ -495,18 +496,18 @@ impl SchemaEvaluator {
                         _ => panic!("EPRCSchema_If conditional must be a scalar expression!"),
                     };
                     if cond_is_true {
-                        println!("{}THEN branch", s.i());
+                        debug!("{}THEN branch", s.i());
                         self.do_eval(rdr, s, false); // evaluate THEN branch
                         if *s.opstack.last().unwrap() == EPRCSchema_Else as u32 {
-                            println!("{}SKIP ELSE branch", s.i());
+                            debug!("{}SKIP ELSE branch", s.i());
                             self.do_eval(rdr, s, true); // skip ELSE branch
                         }
                     }
                     // if no - skip then branch and eval else branch
                     else {
-                        println!("{}SKIP THEN branch", s.i());
+                        debug!("{}SKIP THEN branch", s.i());
                         self.do_eval(rdr, s, true); // skip over the THEN branch
-                        println!("{}ELSE branch", s.i());
+                        debug!("{}ELSE branch", s.i());
                         if *s.opstack.last().unwrap() == EPRCSchema_Else as u32 {
                             self.do_eval(rdr, s, false);
                         }
@@ -516,9 +517,9 @@ impl SchemaEvaluator {
             val if val == EPRCSchema_Else as u32 => {
                 s.indent -= 1;
                 if skip {
-                    println!("{}SKIP ELSE", s.i());
+                    debug!("{}SKIP ELSE", s.i());
                 } else {
-                    println!("{}ELSE", s.i());
+                    debug!("{}ELSE", s.i());
                 }
                 s.indent += 1;
                 // continue on next token or block
@@ -527,23 +528,23 @@ impl SchemaEvaluator {
             val if val == EPRCSchema_Value_DeclareAndSet as u32 => {
                 let variable_id = s.opstack.pop().unwrap();
                 if skip {
-                    println!("{}SKIP DECLARE VAR{}", s.i(), variable_id);
+                    debug!("{}SKIP DECLARE VAR{}", s.i(), variable_id);
                     self.do_eval(rdr, s, true);
                 } else {
-                    println!("{}DECLARE VAR{}", s.i(), variable_id);
+                    debug!("{}DECLARE VAR{}", s.i(), variable_id);
                     self.do_eval(rdr, s, false);
                     let variable_value = s.dstack.pop().unwrap();
-                    println!("{}SET VAR{} TO {:?}", s.i(), variable_id, variable_value);
+                    debug!("{}SET VAR{} TO {:?}", s.i(), variable_id, variable_value);
                     s.vars.insert(variable_id, variable_value);
                 }
             }
             val if val == EPRCSchema_Value as u32 => {
                 let variable_id = s.opstack.pop().unwrap();
                 if skip {
-                    println!("{}SKIP READ VAR{}", s.i(), variable_id);
+                    debug!("{}SKIP READ VAR{}", s.i(), variable_id);
                 } else {
                     let variable_value = s.vars[&variable_id].clone();
-                    println!("{}READ VAR{}: {:?}", s.i(), variable_id, variable_value);
+                    debug!("{}READ VAR{}: {:?}", s.i(), variable_id, variable_value);
                     s.dstack.push(variable_value);
                 }
             }
@@ -557,21 +558,21 @@ impl SchemaEvaluator {
                 self.do_eval(rdr, s, skip); // eval LHS
                 self.do_eval(rdr, s, skip); // eval RHS
                 if skip {
-                    println!("{}SKIP EQ", s.i());
+                    debug!("{}SKIP EQ", s.i());
                 } else {
                     assert!(s.dstack.len() >= 2);
                     let a = s.dstack.pop().unwrap();
                     let b = s.dstack.pop().unwrap();
                     let eq: bool = a == b;
-                    println!("{}EQ {:?} {:?}? -> {}", s.i(), a, b, eq);
+                    debug!("{}EQ {:?} {:?}? -> {}", s.i(), a, b, eq);
                     s.dstack.push(VariableKind::Boolean(eq));
                 }
             }
             val if val == EPRCSchema_Block_Start as u32 => {
                 if skip {
-                    println!("{}SKIP BLOCK_START", s.i());
+                    debug!("{}SKIP BLOCK_START", s.i());
                 } else {
-                    println!("{}BLOCK_START", s.i());
+                    debug!("{}BLOCK_START", s.i());
                 }
                 while *s.opstack.last().unwrap() != EPRCSchema_Block_End as u32 {
                     self.do_eval(rdr, s, skip);
@@ -581,15 +582,15 @@ impl SchemaEvaluator {
             val if val == EPRCSchema_Block_End as u32 => {
                 s.indent -= 1;
                 if skip {
-                    println!("{}SKIP BLOCK_END", s.i());
+                    debug!("{}SKIP BLOCK_END", s.i());
                 } else {
-                    println!("{}BLOCK_END", s.i());
+                    debug!("{}BLOCK_END", s.i());
                 }
                 s.indent += 1;
             }
             val if val == EPRCSchema_Block_Version as u32 => {
                 if skip {
-                    println!("{}SKIP BLOCK_VERSION", s.i());
+                    debug!("{}SKIP BLOCK_VERSION", s.i());
                     self.do_eval(rdr, s, skip); // version token
                     while *s.opstack.last().unwrap() != EPRCSchema_Block_End as u32 {
                         self.do_eval(rdr, s, skip);
@@ -598,7 +599,7 @@ impl SchemaEvaluator {
                 } else {
                     // version is the next token
                     let version = s.opstack.pop().unwrap();
-                    println!(
+                    debug!(
                         "{}BLOCK_VERSION {} < {}?",
                         s.i(),
                         self.stored_version,

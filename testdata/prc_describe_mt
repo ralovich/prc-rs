@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+# -*- mode: python; coding: utf-8-unix -*-
+#
+# SPDX-License-Identifier: MIT
+#
+# SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026. All rights reserved.
+
+# RUST_LOG=trace RUST_BACKTRACE=1 describe=~/dev/pdf3d/prc-rs/target/reldeb/prc_describe INPUT=list_all.txt time ./prc_describe_mt
+
+import os
+import subprocess
+import multiprocessing as mp
+import time
+import datetime
+
+describe = os.getenv("describe")
+INPUT = os.getenv("INPUT")
+parallel = True
+
+def describe_one_prc(file_path):
+    file_path = file_path.strip()
+    log_path = os.path.splitext(file_path)[0]+'.txt'
+
+    cmd = f'{describe} --gl \"{file_path}\" 2>&1 | lz4 -zfq - \"globals_rs/{log_path}.lz4\"'
+    print(cmd)
+    subprocess.run(["bash", "-c", f'{cmd}'])
+
+    cmd = f'{describe} --tr \"{file_path}\" 2>&1 | lz4 -zfq - \"tree_rs/{log_path}.lz4\"'
+    print(cmd)
+    subprocess.run(["bash", "-c", f'{cmd}'])
+
+    cmd = f'{describe} --te \"{file_path}\" 2>&1 | lz4 -zfq - \"tess_rs/{log_path}.lz4\"'
+    print(cmd)
+    subprocess.run(["bash", "-c", f'{cmd}'])
+
+    cmd = f'{describe} --ge \"{file_path}\" 2>&1 | lz4 -zfq - \"geom_rs/{log_path}.lz4\"'
+    print(cmd)
+    subprocess.run(["bash", "-c", f'{cmd}'])
+
+    cmd = f'{describe} --ex \"{file_path}\" 2>&1 | lz4 -zfq - \"ext_rs/{log_path}.lz4\"'
+    print(cmd)
+    subprocess.run(["bash", "-c", f'{cmd}'])
+
+def describe_one_section(_case):
+    (file_path, sec_id, arg, folder) = _case
+    log_path = os.path.splitext(file_path)[0]+'.txt'
+
+    cmd = f'{describe} {arg} \"{file_path}\" 2>&1 | lz4 -zfq - \"{folder}/{log_path}.lz4\" ; echo ${{PIPESTATUS[0]}} ; exit ${{PIPESTATUS[0]}}'
+    #print(cmd)
+
+    start_time = time.time()
+    rv = subprocess.run(["bash", "-c", f'{cmd}'], capture_output = True, check = True)#, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+    #print(rv)
+    run_time = (time.time() - start_time)*1000
+    cmd_rv = int(rv.stdout.decode('UTF-8').strip())
+    #print(f'{file_path:70} {arg} took {run_time:8.0f} ms cmd_rv={cmd_rv}')
+
+    ver_read = '0'
+    ver_auth = '0'
+    num_fs = '0'
+
+    if sec_id == 0:
+        rv = subprocess.run(["ugrep", "-z", 'Version for reading', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
+        ver_read = rv.stdout.decode('UTF-8').strip().split()[6]
+        rv = subprocess.run(["ugrep", "-z", 'Authoring version', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
+        ver_auth = rv.stdout.decode('UTF-8').strip().split()[5]
+        rv = subprocess.run(["ugrep", "-z", 'Number of file sections', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
+        num_fs = rv.stdout.decode('UTF-8').strip().split()[7]
+
+    print('*', end = '', flush = True)
+
+    return (file_path, sec_id, run_time, cmd_rv, ver_read, ver_auth, num_fs)
+
+if __name__ == '__main__':
+    with open(INPUT, 'r') as file:
+        lines = file.readlines()
+        lines = [l.strip('\n\r') for l in lines]
+        print(f'Found {len(lines)} cases in \"{INPUT}\"')
+
+    prc_sections = {}
+    prc_sections[0] = ('--gl', 'globals_rs')
+    prc_sections[1] = ('--tr', 'tree_rs')
+    prc_sections[2] = ('--te', 'tess_rs')
+    prc_sections[3] = ('--ge', 'geom_rs')
+    prc_sections[4] = ('--ex', 'ext_rs')
+
+    for k, v in prc_sections.items():
+        os.makedirs(v[1], exist_ok = True)
+
+    if parallel:
+        ncpus = mp.cpu_count()
+        print(f'Using {ncpus} concurrent processes')
+
+        cases = []
+        for prc in lines:
+            for k, sec in prc_sections.items():
+                cases.append((prc, k, sec[0], sec[1]))
+        print(f'Generated {len(cases)} work items')
+
+        with mp.Pool(ncpus) as p:
+            #print(p.map(describe_one_prc, lines))
+            results = p.map(describe_one_section, cases)
+        print('')
+
+        with open('review_summary.txt', 'a') as rs:
+            #rs.write(f'\n\n\n\n\n{str(datetime.datetime.now())}\n')
+            stats = {}
+            for prc in lines:
+                collected_result = {}
+                for result in results:
+                    (file_path, sec_id, run_time, cmd_rv, ver_read, ver_auth, num_fs) = result
+                    if prc != file_path:
+                        continue
+                    if not sec_id in stats:
+                        stats[sec_id] = 0
+                    if cmd_rv == 0:
+                        stats[sec_id] += 1
+                    collected_result[sec_id] = (run_time, cmd_rv, ver_read, ver_auth, num_fs)
+                rs.write(f'{prc:64}\t{collected_result[0][2]}\t{collected_result[0][3]}')
+                print(f'{prc:70}\t{collected_result[0][2]}\t{collected_result[0][3]}\t{collected_result[0][4]}\t', end='')
+                for i in range(5):
+                    #print(f'{collected_result[i][0]:.0f}\t{collected_result[i][1]}\t',end='')
+                    print(f'{collected_result[i][1]}\t',end='')
+                    rs.write(f'\t{collected_result[i][1]}')
+                for i in range(5):
+                    print(f'{collected_result[i][0]:.0f}\t',end='')
+                rs.write('\n')
+                print('')
+            print(f'\n\nGLOB: {stats[0]}')
+            print(f'TREE: {stats[1]}')
+            print(f'TESS: {stats[2]}')
+            print(f'GEOM: {stats[3]}')
+            print(f'EXTG: {stats[4]}')
+    else:
+        for line in lines:
+            prc_file = line.strip()
+            #print(prc_file)
+            describe_one_prc(prc_file)
+
+
+

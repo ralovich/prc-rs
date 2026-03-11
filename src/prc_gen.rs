@@ -16,6 +16,7 @@ use crate::prc_builtin::PrcCompressedFaceType::*;
 use crate::prc_builtin::PrcTransformation::*;
 use crate::prc_builtin::*;
 use bitstream_io::{BitReader, BitWrite};
+use log::{trace, warn};
 use std::io;
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
@@ -30,6 +31,7 @@ impl Name {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("Name::from_reader()");
         let mut same_name: Boolean = Default::default();
         same_name = Boolean::from_reader(rdr)?;
         let name_cond = !same_name;
@@ -73,6 +75,7 @@ impl AttributeEntry {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("AttributeEntry::from_reader()");
         let mut flag: Boolean = Default::default();
         flag = Boolean::from_reader(rdr)?;
         let integer_title_cond = !!flag;
@@ -139,6 +142,7 @@ impl AttributeKeyValue {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("AttributeKeyValue::from_reader()");
         let mut title: AttributeEntry = Default::default();
         title = AttributeEntry::from_reader(rdr, _ctx)?;
         let mut type_: UnsignedInteger = Default::default();
@@ -250,6 +254,7 @@ impl PRC_TYPE_MISC_Attribute {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MISC_Attribute::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -306,6 +311,7 @@ impl AttributeData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("AttributeData::from_reader()");
         let mut attribute_count: UnsignedInteger = Default::default();
         attribute_count = UnsignedInteger::from_reader(rdr)?;
         let mut attributes: Vec<PRC_TYPE_MISC_Attribute> =
@@ -347,6 +353,7 @@ impl ContentPRCBase {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ContentPRCBase::from_reader()");
         let mut attribute_data: AttributeData = Default::default();
         attribute_data = AttributeData::from_reader(rdr, _ctx)?;
         let mut entity_name: Name = Default::default();
@@ -384,6 +391,7 @@ impl ElementGraphicsBehavior {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ElementGraphicsBehavior::from_reader()");
         let mut use_context: Boolean = Default::default();
         use_context = Boolean::from_reader(rdr)?;
         let biased_layer_index_cond = !use_context;
@@ -466,6 +474,7 @@ impl GeometrySummary {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("GeometrySummary::from_reader()");
         let mut number_of_bodies: UnsignedInteger = Default::default();
         number_of_bodies = UnsignedInteger::from_reader(rdr)?;
         let mut bodies: Vec<BodyInformation> =
@@ -507,6 +516,7 @@ impl BodyInformation {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("BodyInformation::from_reader()");
         let mut body_serial_type: UnsignedInteger = Default::default();
         body_serial_type = UnsignedInteger::from_reader(rdr)?;
         let tolerance_cond = body_serial_type.value == PRC_TYPE_TOPO_BrepDataCompress as u32
@@ -556,6 +566,7 @@ impl ContextGraphics {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ContextGraphics::from_reader()");
         let mut number_of_treat_type: UnsignedInteger = Default::default();
         number_of_treat_type = UnsignedInteger::from_reader(rdr)?;
         let mut treat_types: Vec<GraphicsInformation> =
@@ -598,6 +609,7 @@ impl GraphicsInformation {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("GraphicsInformation::from_reader()");
         let mut element_type: UnsignedInteger = Default::default();
         element_type = UnsignedInteger::from_reader(rdr)?;
         let mut number_of_element: UnsignedInteger = Default::default();
@@ -644,6 +656,7 @@ impl ElementInformation {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ElementInformation::from_reader()");
         let mut has_graphics: Boolean = Default::default();
         has_graphics = Boolean::from_reader(rdr)?;
         let graphic_behavior_cond = !!has_graphics;
@@ -689,6 +702,7 @@ impl ExtraGeometry {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ExtraGeometry::from_reader()");
         let mut summary: GeometrySummary = Default::default();
         summary = GeometrySummary::from_reader(rdr, _ctx)?;
         let mut context_data: ContextGraphics = Default::default();
@@ -727,6 +741,7 @@ impl PRC_TYPE_ASM_FileStructureExtraGeometry {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_ASM_FileStructureExtraGeometry::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -794,6 +809,7 @@ impl Entity_schema_definition {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("Entity_schema_definition::from_reader()");
         let mut entity_type: UnsignedInteger = Default::default();
         entity_type = UnsignedInteger::from_reader(rdr)?;
         let mut token_count: UnsignedInteger = Default::default();
@@ -840,6 +856,7 @@ impl Schema {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("Schema::from_reader()");
         let mut schema_count: UnsignedInteger = Default::default();
         schema_count = UnsignedInteger::from_reader(rdr)?;
         let mut schemas: Vec<Entity_schema_definition> =
@@ -883,6 +900,7 @@ impl UniqueId {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("UniqueId::from_reader()");
         let mut unique_id0: UnsignedInteger = Default::default();
         unique_id0 = UnsignedInteger::from_reader(rdr)?;
         let mut unique_id1: UnsignedInteger = Default::default();
@@ -928,6 +946,7 @@ impl FontKey {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("FontKey::from_reader()");
         let mut font_size: UnsignedInteger = Default::default();
         font_size = UnsignedInteger::from_reader(rdr)?;
         let mut font_attributes: UnsignedCharacter = Default::default();
@@ -965,6 +984,7 @@ impl FontKeysSameFont {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("FontKeysSameFont::from_reader()");
         let mut font_name: String = Default::default();
         font_name = String::from_reader(rdr)?;
         let mut character_set: UnsignedInteger = Default::default();
@@ -1016,6 +1036,7 @@ impl MarkupSerializationHelper {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("MarkupSerializationHelper::from_reader()");
         let mut default_font_family_name: String = Default::default();
         default_font_family_name = String::from_reader(rdr)?;
         let mut font_keys_count: UnsignedInteger = Default::default();
@@ -1063,6 +1084,7 @@ impl RgbColor {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("RgbColor::from_reader()");
         let mut red: Double = Default::default();
         red = Double::from_reader(rdr)?;
         let mut green: Double = Default::default();
@@ -1103,6 +1125,7 @@ impl PRC_TYPE_GRAPH_Picture {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_GRAPH_Picture::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_GRAPH_Picture, PRCType::try_from(id.value).unwrap());
@@ -1160,6 +1183,7 @@ impl Vector2D {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("Vector2D::from_reader()");
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
         let mut y: Double = Default::default();
@@ -1193,6 +1217,7 @@ impl Vector3D {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("Vector3D::from_reader()");
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
         let mut y: Double = Default::default();
@@ -1234,6 +1259,7 @@ impl Transformation2D {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("Transformation2D::from_reader()");
         let mut behavior: UnsignedCharacter = Default::default();
         behavior = UnsignedCharacter::from_reader(rdr)?;
         let translation_cond = (behavior.value as u8 & PRC_TRANSFORMATION_Translate as u8) != 0;
@@ -1360,6 +1386,7 @@ impl Transformation2DWithBit {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("Transformation2DWithBit::from_reader()");
         let mut has_transformation: Boolean = Default::default();
         has_transformation = Boolean::from_reader(rdr)?;
         let transformation_cond = !!has_transformation;
@@ -1410,6 +1437,7 @@ impl Transformation3D {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("Transformation3D::from_reader()");
         let mut behavior: UnsignedCharacter = Default::default();
         behavior = UnsignedCharacter::from_reader(rdr)?;
         let translation_cond = (behavior.value as u8 & PRC_TRANSFORMATION_Translate as u8) != 0;
@@ -1536,6 +1564,7 @@ impl Transformation3DWithBit {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("Transformation3DWithBit::from_reader()");
         let mut has_transformation: Boolean = Default::default();
         has_transformation = Boolean::from_reader(rdr)?;
         let transformation_cond = !!has_transformation;
@@ -1581,6 +1610,7 @@ impl PRC_TYPE_MISC_CartesianTransformation {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MISC_CartesianTransformation::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -1620,6 +1650,7 @@ impl PRC_TYPE_MISC_GeneralTransformation {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MISC_GeneralTransformation::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -1665,7 +1696,8 @@ impl TransformationUNUSED {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        dbg!("TransformationUNUSED structure contains FIXME!");
+        warn!("TransformationUNUSED structure contains FIXME!");
+        trace!("TransformationUNUSED::from_reader()");
         let mut id_type_id: u32 = 0;
         let mut id_concrete: TransformationUNUSED_idConcrete =
             TransformationUNUSED_idConcrete::Invalid(id_type_id);
@@ -1729,6 +1761,7 @@ impl PRC_TYPE_GRAPH_TextureTransformation {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_GRAPH_TextureTransformation::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -1798,6 +1831,7 @@ impl ContentPRCRefBase {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ContentPRCRefBase::from_reader()");
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
         let mut nonpersistent_id: UnsignedInteger = Default::default();
@@ -1868,6 +1902,14 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_GRAPH_TextureDefinition::from_reader()");
+        UnsignedInteger::search_and_seek_back(
+            rdr,
+            PRC_TYPE_GRAPH_TextureDefinition as u32,
+            9999,
+            5,
+        );
+
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -2186,6 +2228,7 @@ impl PRC_TYPE_GRAPH_Material {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_GRAPH_Material::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -2275,6 +2318,7 @@ impl PRC_TYPE_GRAPH_TextureApplication {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_GRAPH_TextureApplication::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -2336,6 +2380,7 @@ impl Material {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("Material::from_reader()");
         let mut id_type_id: u32 = 0;
         let mut id_concrete: Material_idConcrete = Material_idConcrete::Invalid(id_type_id);
         id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
@@ -2397,6 +2442,7 @@ impl PRC_TYPE_GRAPH_LinePattern {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_GRAPH_LinePattern::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -2477,6 +2523,7 @@ impl PRC_TYPE_GRAPH_Style {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_GRAPH_Style::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_GRAPH_Style, PRCType::try_from(id.value).unwrap());
@@ -2615,6 +2662,7 @@ impl PRC_TYPE_GRAPH_DottingPattern {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_GRAPH_DottingPattern::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -2679,6 +2727,7 @@ impl HatchingLine {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("HatchingLine::from_reader()");
         let mut start_point: Vector2D = Default::default();
         start_point = Vector2D::from_reader(rdr, _ctx)?;
         let mut end_point: Vector2D = Default::default();
@@ -2727,6 +2776,7 @@ impl PRC_TYPE_GRAPH_HatchingPattern {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_GRAPH_HatchingPattern::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -2794,6 +2844,7 @@ impl PRC_TYPE_GRAPH_SolidPattern {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_GRAPH_SolidPattern::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -2877,6 +2928,7 @@ impl ContentBaseTessData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ContentBaseTessData::from_reader()");
         let mut is_calculated: Boolean = Default::default();
         is_calculated = Boolean::from_reader(rdr)?;
         let mut number_of_coordinates: UnsignedInteger = Default::default();
@@ -2931,6 +2983,7 @@ impl PRC_TYPE_TESS_Markup {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TESS_Markup::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_TESS_Markup, PRCType::try_from(id.value).unwrap());
@@ -3012,6 +3065,7 @@ impl PRC_TYPE_GRAPH_VPicturePattern {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_GRAPH_VPicturePattern::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -3067,6 +3121,7 @@ impl PRC_TYPE_GRAPH_FillPattern {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_GRAPH_FillPattern::from_reader()");
         let mut data_type_id: u32 = 0;
         let mut data_concrete: PRC_TYPE_GRAPH_FillPattern_dataConcrete =
             PRC_TYPE_GRAPH_FillPattern_dataConcrete::Invalid(data_type_id);
@@ -3144,6 +3199,7 @@ impl GraphicsContent {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("GraphicsContent::from_reader()");
         let mut biased_layer_index: UnsignedInteger = Default::default();
         biased_layer_index = UnsignedInteger::from_reader(rdr)?;
         let mut biased_index_of_line_style: UnsignedInteger = Default::default();
@@ -3190,6 +3246,7 @@ impl PRC_TYPE_ROOT_PRCBaseWithGraphics {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader()");
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
         let mut same_graphics: Boolean = Default::default();
@@ -3244,6 +3301,7 @@ impl RepresentationItemContent {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("RepresentationItemContent::from_reader()");
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
         let mut biased_index_local_coordinate_system: UnsignedInteger = Default::default();
@@ -3287,6 +3345,7 @@ impl PRC_TYPE_RI_CoordinateSystem {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_RI_CoordinateSystem::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -3392,6 +3451,7 @@ impl FileStructureInternalGlobalData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("FileStructureInternalGlobalData::from_reader()");
         let mut tess_chord: Double = Default::default();
         tess_chord = Double::from_reader(rdr)?;
         let mut tess_angle: Double = Default::default();
@@ -3562,6 +3622,7 @@ impl PRC_TYPE_ASM_FileStructureGlobals {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_ASM_FileStructureGlobals::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -3630,6 +3691,7 @@ impl ProductOccurrenceReference {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ProductOccurrenceReference::from_reader()");
         let mut unique_id: UniqueId = Default::default();
         unique_id = UniqueId::from_reader(rdr, _ctx)?;
         let mut root_index: UnsignedInteger = Default::default();
@@ -3676,6 +3738,7 @@ impl PRC_TYPE_ASM_ModelFile {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_ASM_ModelFile::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_ASM_ModelFile, PRCType::try_from(id.value).unwrap());
@@ -3696,7 +3759,7 @@ impl PRC_TYPE_ASM_ModelFile {
             let element = ProductOccurrenceReference::from_reader(rdr, _ctx)?;
             product_occurences.push(element);
         }
-        dbg!("PRC_TYPE_ASM_ModelFile.file_structure_index_in_model_file field contains FIXME!");
+        warn!("PRC_TYPE_ASM_ModelFile.file_structure_index_in_model_file field contains FIXME!");
         let mut file_structure_index_in_model_file: Vec<UnsignedInteger> =
             Vec::with_capacity((number_of_root_product_occurences.value) as usize);
         for _i in 0..(number_of_root_product_occurences.value) {
@@ -3766,6 +3829,7 @@ impl BoundingBox {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("BoundingBox::from_reader()");
         let mut minimum_corner: Vector3D = Default::default();
         minimum_corner = Vector3D::from_reader(rdr, _ctx)?;
         let mut maximum_corner: Vector3D = Default::default();
@@ -3806,6 +3870,7 @@ impl PRC_TYPE_RI_BrepModel {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_RI_BrepModel::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_RI_BrepModel, PRCType::try_from(id.value).unwrap());
@@ -3892,6 +3957,7 @@ impl PRC_TYPE_RI_Curve {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_RI_Curve::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_RI_Curve, PRCType::try_from(id.value).unwrap());
@@ -3973,6 +4039,7 @@ impl PRC_TYPE_RI_Direction {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_RI_Direction::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_RI_Direction, PRCType::try_from(id.value).unwrap());
@@ -4040,6 +4107,7 @@ impl PRC_TYPE_RI_Plane {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_RI_Plane::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_RI_Plane, PRCType::try_from(id.value).unwrap());
@@ -4120,6 +4188,7 @@ impl PRC_TYPE_RI_PointSet {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_RI_PointSet::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_RI_PointSet, PRCType::try_from(id.value).unwrap());
@@ -4179,6 +4248,7 @@ impl PRC_TYPE_RI_PolyBrepModel {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_RI_PolyBrepModel::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -4232,6 +4302,7 @@ impl PRC_TYPE_RI_PolyWire {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_RI_PolyWire::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_RI_PolyWire, PRCType::try_from(id.value).unwrap());
@@ -4277,6 +4348,7 @@ impl PRC_TYPE_RI_Set {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_RI_Set::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_RI_Set, PRCType::try_from(id.value).unwrap());
@@ -4334,6 +4406,7 @@ impl PRC_TYPE_RI_RepresentationItem {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_RI_RepresentationItem::from_reader()");
         let mut data_type_id: u32 = 0;
         let mut data_concrete: PRC_TYPE_RI_RepresentationItem_dataConcrete =
             PRC_TYPE_RI_RepresentationItem_dataConcrete::Invalid(data_type_id);
@@ -4439,6 +4512,7 @@ impl AdditionalTargetData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("AdditionalTargetData::from_reader()");
         let mut flag: Boolean = Default::default();
         flag = Boolean::from_reader(rdr)?;
         let unique_id_cond = !flag;
@@ -4512,6 +4586,7 @@ impl PRC_TYPE_MISC_ReferenceOnTopology {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MISC_ReferenceOnTopology::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -4577,6 +4652,7 @@ impl PRC_TYPE_MISC_ReferenceOnPRCBase {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MISC_ReferenceOnPRCBase::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -4643,6 +4719,7 @@ impl ReferenceData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ReferenceData::from_reader()");
         let mut data_type_id: u32 = 0;
         let mut data_concrete: ReferenceData_dataConcrete =
             ReferenceData_dataConcrete::Invalid(data_type_id);
@@ -4709,6 +4786,7 @@ impl ContentEntityReference {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ContentEntityReference::from_reader()");
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
         let mut index_of_local_coordinate_system: UnsignedInteger = Default::default();
@@ -4765,6 +4843,7 @@ impl ContentExtendedEntityReference {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ContentExtendedEntityReference::from_reader()");
         let mut content_entity_reference: ContentEntityReference = Default::default();
         content_entity_reference = ContentEntityReference::from_reader(rdr, _ctx)?;
         let mut has_reference_data: Boolean = Default::default();
@@ -4820,6 +4899,7 @@ impl PRC_TYPE_MISC_MarkupLinkedItem {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MISC_MarkupLinkedItem::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -4894,6 +4974,7 @@ impl PRC_TYPE_MKP_Leader {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MKP_Leader::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_MKP_Leader, PRCType::try_from(id.value).unwrap());
@@ -4989,6 +5070,7 @@ impl PRC_TYPE_MKP_Markup {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MKP_Markup::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_MKP_Markup, PRCType::try_from(id.value).unwrap());
@@ -5080,6 +5162,7 @@ impl PRC_TYPE_MKP_AnnotationItem {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MKP_AnnotationItem::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -5135,6 +5218,7 @@ impl PRC_TYPE_MKP_AnnotationSet {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MKP_AnnotationSet::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -5201,6 +5285,7 @@ impl PRC_TYPE_MKP_AnnotationReference {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MKP_AnnotationReference::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -5263,6 +5348,7 @@ impl AnnotationEntity {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("AnnotationEntity::from_reader()");
         let mut data_type_id: u32 = 0;
         let mut data_concrete: AnnotationEntity_dataConcrete =
             AnnotationEntity_dataConcrete::Invalid(data_type_id);
@@ -5334,6 +5420,7 @@ impl MarkupData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("MarkupData::from_reader()");
         let mut number_of_linked_items: UnsignedInteger = Default::default();
         number_of_linked_items = UnsignedInteger::from_reader(rdr)?;
         let mut linked_items: Vec<PRC_TYPE_MISC_MarkupLinkedItem> =
@@ -5426,6 +5513,7 @@ impl ContentSurface {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ContentSurface::from_reader()");
         let mut has_base_geometry: Boolean = Default::default();
         has_base_geometry = Boolean::from_reader(rdr)?;
         let attribute_data_cond = !!has_base_geometry;
@@ -5498,6 +5586,7 @@ impl Domain {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("Domain::from_reader()");
         let mut min_uv: Vector2D = Default::default();
         min_uv = Vector2D::from_reader(rdr, _ctx)?;
         let mut max_uv: Vector2D = Default::default();
@@ -5536,6 +5625,7 @@ impl PRC_TYPE_SURF_Plane {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_SURF_Plane::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_SURF_Plane, PRCType::try_from(id.value).unwrap());
@@ -5607,6 +5697,7 @@ impl PRC_TYPE_GRAPH_AmbientLight {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_GRAPH_AmbientLight::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -5677,6 +5768,7 @@ impl PRC_TYPE_GRAPH_PointLight {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_GRAPH_PointLight::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -5765,6 +5857,7 @@ impl PRC_TYPE_GRAPH_DirectionalLight {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_GRAPH_DirectionalLight::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -5848,6 +5941,7 @@ impl PRC_TYPE_GRAPH_SpotLight {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_GRAPH_SpotLight::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -5942,6 +6036,7 @@ impl Light {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("Light::from_reader()");
         let mut id_type_id: u32 = 0;
         let mut id_concrete: Light_idConcrete = Light_idConcrete::Invalid(id_type_id);
         id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
@@ -6016,6 +6111,7 @@ impl PRC_TYPE_GRAPH_Camera {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_GRAPH_Camera::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_GRAPH_Camera, PRCType::try_from(id.value).unwrap());
@@ -6117,6 +6213,7 @@ impl PRC_TYPE_GRAPH_SceneDisplayParameters {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_GRAPH_SceneDisplayParameters::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -6264,6 +6361,7 @@ impl ContentLayerFilterItems {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ContentLayerFilterItems::from_reader()");
         let mut b_is_inclusive: Boolean = Default::default();
         b_is_inclusive = Boolean::from_reader(rdr)?;
         let mut number_of_layers: UnsignedInteger = Default::default();
@@ -6311,6 +6409,7 @@ impl PRC_TYPE_MISC_EntityReference {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MISC_EntityReference::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -6359,6 +6458,7 @@ impl ContentEntityFilterItems {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ContentEntityFilterItems::from_reader()");
         let mut b_is_inclusive: Boolean = Default::default();
         b_is_inclusive = Boolean::from_reader(rdr)?;
         let mut number_of_entities: UnsignedInteger = Default::default();
@@ -6409,6 +6509,7 @@ impl PRC_TYPE_ASM_Filter {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_ASM_Filter::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_ASM_Filter, PRCType::try_from(id.value).unwrap());
@@ -6479,6 +6580,7 @@ impl PRC_TYPE_MKP_View {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MKP_View::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_MKP_View, PRCType::try_from(id.value).unwrap());
@@ -6618,6 +6720,7 @@ impl PRC_TYPE_ASM_PartDefinition {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_ASM_PartDefinition::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -6707,6 +6810,7 @@ impl FileIdentifier {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("FileIdentifier::from_reader()");
         let mut flag: Boolean = Default::default();
         flag = Boolean::from_reader(rdr)?;
         let unique_id_cond = !flag;
@@ -6757,6 +6861,7 @@ impl ReferencesOfProductOccurrence {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ReferencesOfProductOccurrence::from_reader()");
         let mut biased_index_part: UnsignedInteger = Default::default();
         biased_index_part = UnsignedInteger::from_reader(rdr)?;
         let mut biased_index_prototype: UnsignedInteger = Default::default();
@@ -6847,6 +6952,7 @@ impl ProductInformation {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ProductInformation::from_reader()");
         let mut unit_from_cad_file: Boolean = Default::default();
         unit_from_cad_file = Boolean::from_reader(rdr)?;
         let mut unit: Double = Default::default();
@@ -6909,6 +7015,7 @@ impl PRC_TYPE_ASM_ProductOccurrence {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_ASM_ProductOccurrence::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -7112,6 +7219,7 @@ impl PRC_TYPE_ASM_FileStructure {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_ASM_FileStructure::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -7170,6 +7278,7 @@ impl PRC_TYPE_ASM_FileStructureTree {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_ASM_FileStructureTree::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -7253,6 +7362,7 @@ impl ColorRGB {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ColorRGB::from_reader()");
         let mut color: [UnsignedCharacter; 3] = [Default::default(); 3];
         for i in 0..3 {
             color[i as usize] = UnsignedCharacter::from_reader(rdr)?;
@@ -7284,6 +7394,7 @@ impl ColorRGBA {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ColorRGBA::from_reader()");
         let mut color: [UnsignedCharacter; 4] = [Default::default(); 4];
         for i in 0..4 {
             color[i as usize] = UnsignedCharacter::from_reader(rdr)?;
@@ -7316,6 +7427,7 @@ impl ColorDataRemainderRGB {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ColorDataRemainderRGB::from_reader()");
         let mut is_same: Boolean = Default::default();
         is_same = Boolean::from_reader(rdr)?;
         let color_cond = !is_same;
@@ -7357,6 +7469,7 @@ impl ColorDataRemainderRGBA {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ColorDataRemainderRGBA::from_reader()");
         let mut is_same: Boolean = Default::default();
         is_same = Boolean::from_reader(rdr)?;
         let color_cond = !is_same;
@@ -7402,12 +7515,11 @@ impl VertexColors {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("VertexColors::from_reader()");
         let mut is_rgba: Boolean = Default::default();
         is_rgba = Boolean::from_reader(rdr)?;
-        dbg!(&is_rgba);
         let mut b_optimized: Boolean = Default::default();
         b_optimized = Boolean::from_reader(rdr)?;
-        dbg!(&b_optimized);
         let color_data_rgb_first_vertex_cond = !b_optimized && !is_rgba;
         let mut color_data_rgb_first_vertex: ColorRGB = Default::default();
         if color_data_rgb_first_vertex_cond {
@@ -7521,6 +7633,7 @@ impl PRC_TYPE_TESS_Face {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TESS_Face::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_TESS_Face, PRCType::try_from(id.value).unwrap());
@@ -7548,7 +7661,7 @@ impl PRC_TYPE_TESS_Face {
         start_triangulated = UnsignedInteger::from_reader(rdr)?;
         let mut size_of_triangulateddata: UnsignedInteger = Default::default();
         size_of_triangulateddata = UnsignedInteger::from_reader(rdr)?;
-        dbg!(&size_of_triangulateddata);
+        trace!("{:?}", &size_of_triangulateddata);
         _ctx.VertexColors_number_of_colors = size_of_triangulateddata.value;
         dbg!(_ctx.VertexColors_number_of_colors);
         let mut triangulateddata: Vec<UnsignedInteger> =
@@ -7559,21 +7672,21 @@ impl PRC_TYPE_TESS_Face {
         }
         let mut number_of_textured_coordinate_indices: UnsignedInteger = Default::default();
         number_of_textured_coordinate_indices = UnsignedInteger::from_reader(rdr)?;
-        dbg!(&number_of_textured_coordinate_indices);
+        trace!("{:?}", &number_of_textured_coordinate_indices);
         let mut has_vertex_colors: Boolean = Default::default();
         has_vertex_colors = Boolean::from_reader(rdr)?;
-        dbg!(&has_vertex_colors);
+        trace!("{:?}", &has_vertex_colors);
         let vertex_color_data_cond = !!has_vertex_colors;
         let mut vertex_color_data: VertexColors = Default::default();
         if vertex_color_data_cond {
             vertex_color_data = VertexColors::from_reader(rdr, _ctx)?;
-            dbg!(&vertex_color_data);
+            trace!("{:?}", &vertex_color_data);
         }
         let behavior_cond = size_of_line_attributes.value > 0;
         let mut behavior: UnsignedInteger = Default::default();
         if behavior_cond {
             behavior = UnsignedInteger::from_reader(rdr)?;
-            dbg!(&behavior);
+            trace!("{:?}", &behavior);
         }
         let _ = _ctx.se.eval(rdr, PRC_TYPE_TESS_Face as u32, false, 0);
         let rv = Self {
@@ -7675,6 +7788,7 @@ impl PRC_TYPE_TESS_3D {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TESS_3D::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_TESS_3D, PRCType::try_from(id.value).unwrap());
@@ -7863,6 +7977,7 @@ impl PRC_TYPE_TESS_3D_Wire {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TESS_3D_Wire::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_TESS_3D_Wire, PRCType::try_from(id.value).unwrap());
@@ -7940,21 +8055,17 @@ impl BinaryTextureData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("BinaryTextureData::from_reader()");
         let mut texture_binary_data_size: UnsignedInteger = Default::default();
         texture_binary_data_size = UnsignedInteger::from_reader(rdr)?;
-        dbg!(&texture_binary_data_size);
         let mut texture_binary_data: Vec<UnsignedInteger> =
             Vec::with_capacity((texture_binary_data_size.value / 32) as usize);
         for _i in 0..(texture_binary_data_size.value / 32) {
-            let _at = "BinaryTextureData.texture_binary_data";
-            dbg!(&_at, &_i);
             let element = UnsignedInteger::from_reader(rdr)?;
-            dbg!(&element);
             texture_binary_data.push(element);
         }
         let mut last_integer_used_bit_number: UnsignedInteger = Default::default();
         last_integer_used_bit_number = UnsignedInteger::from_reader(rdr)?;
-        dbg!(&last_integer_used_bit_number);
         assert!(last_integer_used_bit_number.value >= 0 && last_integer_used_bit_number.value < 32);
         let rv = Self {
             texture_binary_data_size,
@@ -7996,34 +8107,25 @@ impl CompressedTextureParameter {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CompressedTextureParameter::from_reader()");
         let mut binary_texture_data: BinaryTextureData = Default::default();
         binary_texture_data = BinaryTextureData::from_reader(rdr, _ctx)?;
-        dbg!(&binary_texture_data);
         let mut reference_array_size: UnsignedInteger = Default::default();
         reference_array_size = UnsignedInteger::from_reader(rdr)?;
-        dbg!(&reference_array_size);
         let mut reference_array: Vec<NumberOfBitsThenUnsignedInteger> =
             Vec::with_capacity((reference_array_size.value) as usize);
         for _i in 0..(reference_array_size.value) {
-            let _at = "CompressedTextureParameter.reference_array";
-            dbg!(&_at, &_i);
             let element = NumberOfBitsThenUnsignedInteger::from_reader(rdr)?;
-            dbg!(&element);
             reference_array.push(element);
         }
         let mut texture_parameters_tolerance: Double = Default::default();
         texture_parameters_tolerance = Double::from_reader(rdr)?;
-        dbg!(&texture_parameters_tolerance);
         let mut texture_parameters_size: UnsignedInteger = Default::default();
         texture_parameters_size = UnsignedInteger::from_reader(rdr)?;
-        dbg!(&texture_parameters_size);
         let mut texture_parameters: Vec<FloatAsBytes> =
             Vec::with_capacity((texture_parameters_size.value) as usize);
         for _i in 0..(texture_parameters_size.value) {
-            let _at = "CompressedTextureParameter.texture_parameters";
-            dbg!(&_at, &_i);
             let element = FloatAsBytes::from_reader(rdr)?;
-            dbg!(&element);
             texture_parameters.push(element);
         }
         let rv = Self {
@@ -8103,6 +8205,7 @@ impl PRC_TYPE_TESS_3D_Compressed {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TESS_3D_Compressed::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -8113,10 +8216,10 @@ impl PRC_TYPE_TESS_3D_Compressed {
         is_calculated = Boolean::from_reader(rdr)?;
         let mut has_faces: Boolean = Default::default();
         has_faces = Boolean::from_reader(rdr)?;
-        dbg!(&has_faces);
+        trace!("{:?}", &has_faces);
         let mut tolerance: Double = Default::default();
         tolerance = Double::from_reader(rdr)?;
-        dbg!(&tolerance);
+        trace!("{:?}", &tolerance);
         let origin_array_cond = _ctx.ver_authoring >= 7031;
         let mut origin_array: [FloatAsBytes; 3] = [Default::default(); 3];
         if origin_array_cond {
@@ -8127,20 +8230,20 @@ impl PRC_TYPE_TESS_3D_Compressed {
         dbg!(origin_array);
         let mut point_array: CompressedIntegerArray = Default::default();
         point_array = CompressedIntegerArray::from_reader(rdr)?;
-        dbg!(&point_array);
+        trace!("{:?}", &point_array);
         let mut edge_status_array: CharacterArray = Default::default();
         edge_status_array = CharacterArray::from_reader(rdr, 2)?;
-        dbg!(&edge_status_array);
+        trace!("{:?}", &edge_status_array);
         let mut triangle_face_array: CompressedIndiceArray = Default::default();
         triangle_face_array = CompressedIndiceArray::from_reader(rdr)?;
-        dbg!(&triangle_face_array);
+        trace!("{:?}", &triangle_face_array);
         assert!(
             edge_status_array.a.len() == 3 * triangle_face_array.a.len()
                 || edge_status_array.a.len() == triangle_face_array.a.len()
         );
         let mut reference_array_size: UnsignedInteger = Default::default();
         reference_array_size = UnsignedInteger::from_reader(rdr)?;
-        dbg!(&reference_array_size);
+        trace!("{:?}", &reference_array_size);
         let mut point_is_reference_array: Vec<Boolean> =
             Vec::with_capacity((reference_array_size.value) as usize);
         for _i in 0..(reference_array_size.value) {
@@ -8157,14 +8260,14 @@ impl PRC_TYPE_TESS_3D_Compressed {
             rdr,
             TESS_3D_Compressed__number_of_reference_points(&point_is_reference_array) > 3,
         )?;
-        dbg!(&point_reference_array);
+        trace!("{:?}", &point_reference_array);
         assert_eq!(
             TESS_3D_Compressed__number_of_reference_points(&point_is_reference_array) as usize,
             point_reference_array.a.len()
         );
         let mut must_recalculate_normals: Boolean = Default::default();
         must_recalculate_normals = Boolean::from_reader(rdr)?;
-        dbg!(&must_recalculate_normals);
+        trace!("{:?}", &must_recalculate_normals);
         TESS_3D_Compressed__get_points(
             &point_array.a,
             tolerance.value,
@@ -8173,7 +8276,7 @@ impl PRC_TYPE_TESS_3D_Compressed {
             &edge_status_array.a,
             &triangle_face_array.a,
         );
-        dbg!("PRC_TYPE_TESS_3D_Compressed.normal_is_reversed field contains FIXME!");
+        warn!("PRC_TYPE_TESS_3D_Compressed.normal_is_reversed field contains FIXME!");
         let normal_is_reversed_cond = !!must_recalculate_normals;
         let mut normal_is_reversed: Vec<Boolean> = Vec::with_capacity(
             (TESS_3D_Compressed__number_of_normals(&triangle_face_array.a)) as usize,
@@ -8189,25 +8292,25 @@ impl PRC_TYPE_TESS_3D_Compressed {
         let mut crease_angle: Double = Default::default();
         if crease_angle_cond {
             crease_angle = Double::from_reader(rdr)?;
-            dbg!(&crease_angle);
+            trace!("{:?}", &crease_angle);
         }
         let normal_recalculation_flags_cond = !!must_recalculate_normals;
         let mut normal_recalculation_flags: UnsignedCharacter = Default::default();
         if normal_recalculation_flags_cond {
             normal_recalculation_flags = UnsignedCharacter::from_reader(rdr)?;
-            dbg!(&normal_recalculation_flags);
+            trace!("{:?}", &normal_recalculation_flags);
         }
         let normal_angle_number_of_bits_cond = !must_recalculate_normals;
         let mut normal_angle_number_of_bits: UnsignedCharacter = Default::default();
         if normal_angle_number_of_bits_cond {
             normal_angle_number_of_bits = UnsignedCharacter::from_reader(rdr)?;
-            dbg!(&normal_angle_number_of_bits);
+            trace!("{:?}", &normal_angle_number_of_bits);
         }
         let normal_binary_data_size_cond = !must_recalculate_normals;
         let mut normal_binary_data_size: UnsignedInteger = Default::default();
         if normal_binary_data_size_cond {
             normal_binary_data_size = UnsignedInteger::from_reader(rdr)?;
-            dbg!(&normal_binary_data_size);
+            trace!("{:?}", &normal_binary_data_size);
         }
         let normal_binary_data_cond = !must_recalculate_normals;
         let mut normal_binary_data: Vec<Boolean> =
@@ -8224,9 +8327,9 @@ impl PRC_TYPE_TESS_3D_Compressed {
         if normal_angle_array_cond {
             normal_angle_array =
                 ShortArray::from_reader(rdr, normal_angle_number_of_bits.value as u8)?;
-            dbg!(&normal_angle_array);
+            trace!("{:?}", &normal_angle_array);
         }
-        dbg!("PRC_TYPE_TESS_3D_Compressed.is_face_planar field contains FIXME!");
+        warn!("PRC_TYPE_TESS_3D_Compressed.is_face_planar field contains FIXME!");
         let is_face_planar_cond = !must_recalculate_normals;
         let mut is_face_planar: Vec<Boolean> =
             Vec::with_capacity((number_of_faces_stored_in_mesh(&triangle_face_array.a)) as usize);
@@ -8239,8 +8342,8 @@ impl PRC_TYPE_TESS_3D_Compressed {
         dbg!(format(&is_face_planar));
         let mut is_point_color: Boolean = Default::default();
         is_point_color = Boolean::from_reader(rdr)?;
-        dbg!(&is_point_color);
-        dbg!("PRC_TYPE_TESS_3D_Compressed.is_point_color_on_face field contains FIXME!");
+        trace!("{:?}", &is_point_color);
+        warn!("PRC_TYPE_TESS_3D_Compressed.is_point_color_on_face field contains FIXME!");
         let is_point_color_on_face_cond = !is_point_color;
         let mut is_point_color_on_face: Vec<Boolean> =
             Vec::with_capacity((number_of_faces_stored_in_mesh(&triangle_face_array.a)) as usize);
@@ -8255,12 +8358,12 @@ impl PRC_TYPE_TESS_3D_Compressed {
         let mut point_color_array: CharacterArray = Default::default();
         if point_color_array_cond {
             point_color_array = CharacterArray::from_reader(rdr, 8)?;
-            dbg!(&point_color_array);
+            trace!("{:?}", &point_color_array);
         }
         let mut is_multiple_line_attribute: Boolean = Default::default();
         is_multiple_line_attribute = Boolean::from_reader(rdr)?;
-        dbg!(&is_multiple_line_attribute);
-        dbg!(
+        trace!("{:?}", &is_multiple_line_attribute);
+        warn!(
             "PRC_TYPE_TESS_3D_Compressed.is_multiple_line_attribute_on_face field contains FIXME!"
         );
         let is_multiple_line_attribute_on_face_cond = !!is_multiple_line_attribute;
@@ -8275,21 +8378,21 @@ impl PRC_TYPE_TESS_3D_Compressed {
         dbg!(format(&is_multiple_line_attribute_on_face));
         let mut line_attribute_array: ShortArray = Default::default();
         line_attribute_array = ShortArray::from_reader(rdr, 16)?;
-        dbg!(&line_attribute_array);
+        trace!("{:?}", &line_attribute_array);
         let mut no_texture: Boolean = Default::default();
         no_texture = Boolean::from_reader(rdr)?;
-        dbg!(&no_texture);
+        trace!("{:?}", &no_texture);
         let texture_data_cond = !no_texture;
         let mut texture_data: CompressedTextureParameter = Default::default();
         if texture_data_cond {
             texture_data = CompressedTextureParameter::from_reader(rdr, _ctx)?;
-            dbg!(&texture_data);
+            trace!("{:?}", &texture_data);
         }
         let all_faces_have_texture_cond = !no_texture;
         let mut all_faces_have_texture: Boolean = Default::default();
         if all_faces_have_texture_cond {
             all_faces_have_texture = Boolean::from_reader(rdr)?;
-            dbg!(&all_faces_have_texture);
+            trace!("{:?}", &all_faces_have_texture);
         }
         let face_has_texture_cond = !no_texture;
         let mut face_has_texture: Vec<Boolean> =
@@ -8303,12 +8406,12 @@ impl PRC_TYPE_TESS_3D_Compressed {
         dbg!(format(&face_has_texture));
         let mut has_behaviors: Boolean = Default::default();
         has_behaviors = Boolean::from_reader(rdr)?;
-        dbg!(&has_behaviors);
+        trace!("{:?}", &has_behaviors);
         let behaviors_array_cond = !!has_behaviors;
         let mut behaviors_array: CharacterArray = Default::default();
         if behaviors_array_cond {
             behaviors_array = CharacterArray::from_reader(rdr, 8)?;
-            dbg!(&behaviors_array);
+            trace!("{:?}", &behaviors_array);
         }
         let _ = _ctx
             .se
@@ -8557,6 +8660,7 @@ impl PRC_TYPE_TESS {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TESS::from_reader()");
         UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D as u32, 9999, 5);
         UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D_Wire as u32, 9999, 5);
         UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_Markup as u32, 9999, 5);
@@ -8566,7 +8670,6 @@ impl PRC_TYPE_TESS {
         let mut id_concrete: PRC_TYPE_TESS_idConcrete =
             PRC_TYPE_TESS_idConcrete::Invalid(id_type_id);
         id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
-        dbg!(&id_type_id);
         let id_tid: PRCType = PRCType::try_from(id_type_id).unwrap();
         id_concrete = match id_tid {
             PRCType::PRC_TYPE_TESS_3D => {
@@ -8586,7 +8689,6 @@ impl PRC_TYPE_TESS {
                 id_type_id.to_string()
             ),
         };
-        dbg!(&id_concrete);
         let _ = _ctx.se.eval(rdr, PRC_TYPE_TESS as u32, false, 0);
         let rv = Self { id_concrete };
         Ok(rv)
@@ -8638,6 +8740,7 @@ impl PRC_TYPE_ASM_FileStructureTessellation {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_ASM_FileStructureTessellation::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -8702,6 +8805,7 @@ impl BaseTopology {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("BaseTopology::from_reader()");
         let mut has_base: Boolean = Default::default();
         has_base = Boolean::from_reader(rdr)?;
         let attribute_data_cond = !!has_base;
@@ -8769,6 +8873,7 @@ impl ContentBody {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ContentBody::from_reader()");
         let mut base: BaseTopology = Default::default();
         base = BaseTopology::from_reader(rdr, _ctx)?;
         let mut bounding_box_behavior: UnsignedCharacter = Default::default();
@@ -8806,6 +8911,7 @@ impl PRC_TYPE_TOPO_MultipleVertex {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TOPO_MultipleVertex::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -8866,6 +8972,7 @@ impl PRC_TYPE_TOPO_UniqueVertex {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TOPO_UniqueVertex::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -8933,6 +9040,7 @@ impl Interval {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("Interval::from_reader()");
         let mut min_value: Double = Default::default();
         min_value = Double::from_reader(rdr)?;
         let mut max_value: Double = Default::default();
@@ -8969,6 +9077,7 @@ impl Parameterization {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("Parameterization::from_reader()");
         let mut trim_interval: Interval = Default::default();
         trim_interval = Interval::from_reader(rdr, _ctx)?;
         let mut coeff_a: Double = Default::default();
@@ -9013,6 +9122,7 @@ impl UVParameterization {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("UVParameterization::from_reader()");
         let mut swap_uv: Boolean = Default::default();
         swap_uv = Boolean::from_reader(rdr)?;
         let mut suface_domain: Domain = Default::default();
@@ -9072,6 +9182,7 @@ impl ContentCurve {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ContentCurve::from_reader()");
         let mut has_base_geometry: Boolean = Default::default();
         has_base_geometry = Boolean::from_reader(rdr)?;
         let attribute_data_cond = !!has_base_geometry;
@@ -9169,6 +9280,7 @@ impl PRC_TYPE_CRV_Blend02Boundary {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_CRV_Blend02Boundary::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -9335,6 +9447,7 @@ impl ControlPointsNurbsCrv {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ControlPointsNurbsCrv::from_reader()");
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
         let mut y: Double = Default::default();
@@ -9400,6 +9513,7 @@ impl PRC_TYPE_CRV_NURBS {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_CRV_NURBS::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_CRV_NURBS, PRCType::try_from(id.value).unwrap());
@@ -9497,6 +9611,7 @@ impl PRC_TYPE_CRV_Circle {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_CRV_Circle::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_CRV_Circle, PRCType::try_from(id.value).unwrap());
@@ -9574,6 +9689,7 @@ impl CompositeSubCurve {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CompositeSubCurve::from_reader()");
         let mut subcurve: PtrCurve = Default::default();
         subcurve = PtrCurve::from_reader(rdr, _ctx)?;
         let mut sense: Boolean = Default::default();
@@ -9612,6 +9728,7 @@ impl PRC_TYPE_CRV_Composite {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_CRV_Composite::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_CRV_Composite, PRCType::try_from(id.value).unwrap());
@@ -9712,6 +9829,7 @@ impl PRC_TYPE_CRV_OnSurf {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_CRV_OnSurf::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_CRV_OnSurf, PRCType::try_from(id.value).unwrap());
@@ -9809,6 +9927,7 @@ impl PRC_TYPE_CRV_Ellipse {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_CRV_Ellipse::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_CRV_Ellipse, PRCType::try_from(id.value).unwrap());
@@ -9892,6 +10011,7 @@ impl PRC_TYPE_MATH_FCT_1D_Polynom {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MATH_FCT_1D_Polynom::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -9948,6 +10068,7 @@ impl PRC_TYPE_MATH_FCT_1D_Trigonometric {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MATH_FCT_1D_Trigonometric::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -10006,6 +10127,7 @@ impl PRC_TYPE_MATH_FCT_1D_Fraction {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MATH_FCT_1D_Fraction::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -10057,6 +10179,7 @@ impl PRC_TYPE_MATH_FCT_1D_ArctanCos {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MATH_FCT_1D_ArctanCos::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -10119,6 +10242,7 @@ impl CombinationFunctions {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CombinationFunctions::from_reader()");
         let mut coefficient: Double = Default::default();
         coefficient = Double::from_reader(rdr)?;
         let mut function: Box<PRC_TYPE_MATH_FCT_1D> = Box::new(Default::default());
@@ -10155,6 +10279,7 @@ impl PRC_TYPE_MATH_FCT_1D_Combination {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MATH_FCT_1D_Combination::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -10207,11 +10332,11 @@ impl PRC_TYPE_MATH_FCT_1D {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MATH_FCT_1D::from_reader()");
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_MATH_FCT_1D_idConcrete =
             PRC_TYPE_MATH_FCT_1D_idConcrete::Invalid(id_type_id);
         id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
-        dbg!(&id_type_id);
         let id_tid: PRCType = PRCType::try_from(id_type_id).unwrap();
         id_concrete = match id_tid {
             PRCType::PRC_TYPE_MATH_FCT_1D_Polynom => PRC_TYPE_MATH_FCT_1D_idConcrete::poly(
@@ -10234,7 +10359,6 @@ impl PRC_TYPE_MATH_FCT_1D {
                 id_type_id.to_string()
             ),
         };
-        dbg!(&id_concrete);
         let _ = _ctx.se.eval(rdr, PRC_TYPE_MATH_FCT_1D as u32, false, 0);
         let rv = Self { id_concrete };
         Ok(rv)
@@ -10286,6 +10410,7 @@ impl PRC_TYPE_MATH_FCT_3D_Linear {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MATH_FCT_3D_Linear::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -10339,6 +10464,7 @@ impl PRC_TYPE_MATH_FCT_3D_NonLinear {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MATH_FCT_3D_NonLinear::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -10410,11 +10536,11 @@ impl PRC_TYPE_MATH_FCT_3D {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_MATH_FCT_3D::from_reader()");
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_MATH_FCT_3D_idConcrete =
             PRC_TYPE_MATH_FCT_3D_idConcrete::Invalid(id_type_id);
         id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
-        dbg!(&id_type_id);
         let id_tid: PRCType = PRCType::try_from(id_type_id).unwrap();
         id_concrete = match id_tid {
             PRCType::PRC_TYPE_MATH_FCT_3D_Linear => PRC_TYPE_MATH_FCT_3D_idConcrete::lin(
@@ -10428,7 +10554,6 @@ impl PRC_TYPE_MATH_FCT_3D {
                 id_type_id.to_string()
             ),
         };
-        dbg!(&id_concrete);
         let _ = _ctx.se.eval(rdr, PRC_TYPE_MATH_FCT_3D as u32, false, 0);
         let rv = Self { id_concrete };
         Ok(rv)
@@ -10480,6 +10605,7 @@ impl PRC_TYPE_CRV_Equation {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_CRV_Equation::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_CRV_Equation, PRCType::try_from(id.value).unwrap());
@@ -10588,6 +10714,7 @@ impl Type0HelixData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("Type0HelixData::from_reader()");
         let mut origin0: Double = Default::default();
         origin0 = Double::from_reader(rdr)?;
         let mut direction0: Double = Default::default();
@@ -10661,6 +10788,7 @@ impl Type1HelixData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("Type1HelixData::from_reader()");
         let mut unit_z0: Double = Default::default();
         unit_z0 = Double::from_reader(rdr)?;
         let mut unit_u0: Double = Default::default();
@@ -10748,6 +10876,7 @@ impl PRC_TYPE_CRV_Helix {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_CRV_Helix::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_CRV_Helix, PRCType::try_from(id.value).unwrap());
@@ -10851,6 +10980,7 @@ impl PRC_TYPE_CRV_Hyperbola {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_CRV_Hyperbola::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_CRV_Hyperbola, PRCType::try_from(id.value).unwrap());
@@ -10943,6 +11073,7 @@ impl CrossingPointsCrvIntersection {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CrossingPointsCrvIntersection::from_reader()");
         let mut position: Vector3D = Default::default();
         position = Vector3D::from_reader(rdr, _ctx)?;
         let mut uv_surface_1: Vector2D = Default::default();
@@ -11020,6 +11151,7 @@ impl PRC_TYPE_CRV_Intersection {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_CRV_Intersection::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -11176,6 +11308,7 @@ impl PRC_TYPE_CRV_Line {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_CRV_Line::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_CRV_Line, PRCType::try_from(id.value).unwrap());
@@ -11254,6 +11387,7 @@ impl PRC_TYPE_CRV_Offset {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_CRV_Offset::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_CRV_Offset, PRCType::try_from(id.value).unwrap());
@@ -11347,6 +11481,7 @@ impl PRC_TYPE_CRV_Parabola {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_CRV_Parabola::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_CRV_Parabola, PRCType::try_from(id.value).unwrap());
@@ -11435,6 +11570,7 @@ impl PRC_TYPE_CRV_PolyLine {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_CRV_PolyLine::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_CRV_PolyLine, PRCType::try_from(id.value).unwrap());
@@ -11555,6 +11691,7 @@ impl PRC_TYPE_CRV_Transform {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_CRV_Transform::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_CRV_Transform, PRCType::try_from(id.value).unwrap());
@@ -11636,10 +11773,10 @@ impl PRC_TYPE_CRV {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_CRV::from_reader()");
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_CRV_idConcrete = PRC_TYPE_CRV_idConcrete::Invalid(id_type_id);
         id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
-        dbg!(&id_type_id);
         let id_tid: PRCType = PRCType::try_from(id_type_id).unwrap();
         id_concrete = match id_tid {
             PRCType::PRC_TYPE_ROOT => {
@@ -11695,7 +11832,6 @@ impl PRC_TYPE_CRV {
                 id_type_id.to_string()
             ),
         };
-        dbg!(&id_concrete);
         let _ = _ctx.se.eval(rdr, PRC_TYPE_CRV as u32, false, 0);
         let rv = Self { id_concrete };
         Ok(rv)
@@ -11769,6 +11905,7 @@ impl PtrCurve {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PtrCurve::from_reader()");
         let mut is_referenced: Boolean = Default::default();
         is_referenced = Boolean::from_reader(rdr)?;
         let curve_cond = !is_referenced;
@@ -11830,6 +11967,7 @@ impl PRC_TYPE_SURF_Blend01 {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_SURF_Blend01::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_SURF_Blend01, PRCType::try_from(id.value).unwrap());
@@ -11907,6 +12045,7 @@ impl PRC_TYPE_SURF_Blend02 {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_SURF_Blend02::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_SURF_Blend02, PRCType::try_from(id.value).unwrap());
@@ -12037,6 +12176,7 @@ impl PRC_TYPE_SURF_Blend03 {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_SURF_Blend03::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_SURF_Blend03, PRCType::try_from(id.value).unwrap());
@@ -12224,6 +12364,7 @@ impl ControlPointsNurbsSurf3 {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ControlPointsNurbsSurf3::from_reader()");
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
         let mut y: Double = Default::default();
@@ -12262,6 +12403,7 @@ impl ControlPointsNurbsSurf4 {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ControlPointsNurbsSurf4::from_reader()");
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
         let mut y: Double = Default::default();
@@ -12315,6 +12457,7 @@ impl PRC_TYPE_SURF_NURBS {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_SURF_NURBS::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_SURF_NURBS, PRCType::try_from(id.value).unwrap());
@@ -12465,6 +12608,7 @@ impl PRC_TYPE_SURF_Cone {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_SURF_Cone::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_SURF_Cone, PRCType::try_from(id.value).unwrap());
@@ -12525,6 +12669,7 @@ impl PRC_TYPE_SURF_Cylinder {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_SURF_Cylinder::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_SURF_Cylinder, PRCType::try_from(id.value).unwrap());
@@ -12581,6 +12726,7 @@ impl PRC_TYPE_SURF_Cylindrical {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_SURF_Cylindrical::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -12647,6 +12793,7 @@ impl PRC_TYPE_SURF_Offset {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_SURF_Offset::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_SURF_Offset, PRCType::try_from(id.value).unwrap());
@@ -12709,6 +12856,7 @@ impl PRC_TYPE_SURF_Pipe {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_SURF_Pipe::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_SURF_Pipe, PRCType::try_from(id.value).unwrap());
@@ -12775,6 +12923,7 @@ impl PRC_TYPE_SURF_Ruled {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_SURF_Ruled::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_SURF_Ruled, PRCType::try_from(id.value).unwrap());
@@ -12835,6 +12984,7 @@ impl PRC_TYPE_SURF_Sphere {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_SURF_Sphere::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_SURF_Sphere, PRCType::try_from(id.value).unwrap());
@@ -12894,6 +13044,7 @@ impl PRC_TYPE_SURF_Revolution {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_SURF_Revolution::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -12973,6 +13124,7 @@ impl PRC_TYPE_SURF_Extrusion {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_SURF_Extrusion::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -13038,6 +13190,7 @@ impl PRC_TYPE_SURF_FromCurves {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_SURF_FromCurves::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -13107,6 +13260,7 @@ impl PRC_TYPE_SURF_Torus {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_SURF_Torus::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_SURF_Torus, PRCType::try_from(id.value).unwrap());
@@ -13168,6 +13322,7 @@ impl PRC_TYPE_SURF_Transform {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_SURF_Transform::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -13226,6 +13381,7 @@ impl PRC_TYPE_SURF_Blend04 {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         panic!("PRC_TYPE_SURF_Blend04 not implemented");
+        trace!("PRC_TYPE_SURF_Blend04::from_reader()");
         let rv = Self {};
         Ok(rv)
     }
@@ -13249,6 +13405,7 @@ impl PRC_TYPE_SURF {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_SURF::from_reader()");
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_SURF_idConcrete =
             PRC_TYPE_SURF_idConcrete::Invalid(id_type_id);
@@ -13396,6 +13553,7 @@ impl PtrSurface {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PtrSurface::from_reader()");
         let mut is_referenced: Boolean = Default::default();
         is_referenced = Boolean::from_reader(rdr)?;
         let surface_cond = !is_referenced;
@@ -13454,6 +13612,7 @@ impl ContentWireEdge {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ContentWireEdge::from_reader()");
         let mut base: BaseTopology = Default::default();
         base = BaseTopology::from_reader(rdr, _ctx)?;
         let mut ptr_curve: PtrCurve = Default::default();
@@ -13509,6 +13668,7 @@ impl PRC_TYPE_TOPO_WireEdge {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TOPO_WireEdge::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_TOPO_WireEdge, PRCType::try_from(id.value).unwrap());
@@ -13547,6 +13707,7 @@ impl PRC_TYPE_TOPO_Edge {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TOPO_Edge::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_TOPO_Edge, PRCType::try_from(id.value).unwrap());
@@ -13618,6 +13779,7 @@ impl PRC_TYPE_TOPO_CoEdge {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TOPO_CoEdge::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_TOPO_CoEdge, PRCType::try_from(id.value).unwrap());
@@ -13675,6 +13837,7 @@ impl CoedgeInLoop {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CoedgeInLoop::from_reader()");
         let mut next_coedge: PtrTopology = Default::default();
         next_coedge = PtrTopology::from_reader(rdr, _ctx)?;
         let mut neighbor_index: UnsignedInteger = Default::default();
@@ -13713,6 +13876,7 @@ impl PRC_TYPE_TOPO_Loop {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TOPO_Loop::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_TOPO_Loop, PRCType::try_from(id.value).unwrap());
@@ -13778,6 +13942,7 @@ impl PRC_TYPE_TOPO_Face {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TOPO_Face::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_TOPO_Face, PRCType::try_from(id.value).unwrap());
@@ -13880,6 +14045,7 @@ impl FacesInShell {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("FacesInShell::from_reader()");
         let mut face: PtrTopology = Default::default();
         face = PtrTopology::from_reader(rdr, _ctx)?;
         let mut orientation: UnsignedCharacter = Default::default();
@@ -13915,6 +14081,7 @@ impl PRC_TYPE_TOPO_Shell {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TOPO_Shell::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_TOPO_Shell, PRCType::try_from(id.value).unwrap());
@@ -13974,6 +14141,7 @@ impl PRC_TYPE_TOPO_Connex {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TOPO_Connex::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_TOPO_Connex, PRCType::try_from(id.value).unwrap());
@@ -14025,6 +14193,7 @@ impl PRC_TYPE_ROOT {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_ROOT::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_ROOT, PRCType::try_from(id.value).unwrap());
@@ -14054,6 +14223,7 @@ impl PRC_TYPE_TOPO {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TOPO::from_reader()");
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_TOPO_idConcrete =
             PRC_TYPE_TOPO_idConcrete::Invalid(id_type_id);
@@ -14156,6 +14326,7 @@ impl PtrTopology {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PtrTopology::from_reader()");
         let mut is_stored: Boolean = Default::default();
         is_stored = Boolean::from_reader(rdr)?;
         let topo_cond = !is_stored;
@@ -14213,6 +14384,7 @@ impl PRC_TYPE_TOPO_SingleWireBody {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TOPO_SingleWireBody::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -14263,6 +14435,7 @@ impl PRC_TYPE_TOPO_BrepData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TOPO_BrepData::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_TOPO_BrepData, PRCType::try_from(id.value).unwrap());
@@ -14331,6 +14504,7 @@ impl CompressedPoint {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CompressedPoint::from_reader()");
         let mut point: Point3DWithVariableBitNumber = Default::default();
         point =
             Point3DWithVariableBitNumber::from_reader(rdr, _ctx.brep_data_compressed_tolerance)?;
@@ -14361,6 +14535,7 @@ impl CompressedVertex {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CompressedVertex::from_reader()");
         let mut already_stored: Boolean = Default::default();
         already_stored = Boolean::from_reader(rdr)?;
         let point_index_cond = !already_stored.value;
@@ -14427,6 +14602,7 @@ impl ParticularCircle {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ParticularCircle::from_reader()");
         let mut full_circle: Boolean = Default::default();
         full_circle = Boolean::from_reader(rdr)?;
         let start_end_data_cond = !_ctx.compressed_iso_spline;
@@ -14510,6 +14686,7 @@ impl GeneralCircle {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("GeneralCircle::from_reader()");
         let mut start_end_data: StartEndData = Default::default();
         start_end_data = StartEndData::from_reader(rdr, _ctx)?;
         let mut center: CompressedPoint = Default::default();
@@ -14552,6 +14729,7 @@ impl StartEndData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("StartEndData::from_reader()");
         let start_vertex_cond = !!_ctx.curve_trimming_face;
         let mut start_vertex: CompressedVertex = Default::default();
         if start_vertex_cond {
@@ -14637,6 +14815,7 @@ impl PRC_HCG_Line {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_HCG_Line::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
@@ -14677,6 +14856,7 @@ impl PRC_HCG_Circle {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_HCG_Circle::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
@@ -14752,6 +14932,7 @@ impl PRC_HCG_BSplineHermiteCurve {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_HCG_BSplineHermiteCurve::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
@@ -14835,6 +15016,7 @@ impl PRC_HCG_CompositeCurve {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_HCG_CompositeCurve::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
@@ -14902,6 +15084,7 @@ impl PRC_HCG_Ellipse {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         panic!("PRC_HCG_Ellipse: not implemented");
+        trace!("PRC_HCG_Ellipse::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
@@ -14935,6 +15118,7 @@ impl CompressedCurve {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CompressedCurve::from_reader()");
         let mut id_type_id: u32 = 0;
         let mut id_concrete: CompressedCurve_idConcrete =
             CompressedCurve_idConcrete::Invalid(id_type_id);
@@ -15018,6 +15202,7 @@ impl ContentCompressedIsoFace {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ContentCompressedIsoFace::from_reader()");
         let mut orientation_loop_with_surface: Boolean = Default::default();
         orientation_loop_with_surface = Boolean::from_reader(rdr)?;
         let mut first_trim_curve: RefOrCompressedCurve = Default::default();
@@ -15124,6 +15309,7 @@ impl RefOrCompressedCurve {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("RefOrCompressedCurve::from_reader()");
         let mut curve_is_not_already_stored: Boolean = Default::default();
         curve_is_not_already_stored = Boolean::from_reader(rdr)?;
         let index_compressed_curve_cond = !curve_is_not_already_stored.value;
@@ -15190,9 +15376,10 @@ impl AnaFaceTrimLoop {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("AnaFaceTrimLoop::from_reader()");
         let mut loop_surface_orientation: Boolean = Default::default();
         loop_surface_orientation = Boolean::from_reader(rdr)?;
-        dbg!("AnaFaceTrimLoop.curves field contains FIXME!");
+        warn!("AnaFaceTrimLoop.curves field contains FIXME!");
         let mut curves: Vec<RefOrCompressedCurve> = Vec::with_capacity((999) as usize);
         for _i in 0..(999) {
             let element = RefOrCompressedCurve::from_reader(rdr, _ctx)?;
@@ -15242,14 +15429,13 @@ impl ContentCompressedAnaFace {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ContentCompressedAnaFace::from_reader()");
         let mut is_trimmed: Boolean = Default::default();
         is_trimmed = Boolean::from_reader(rdr)?;
-        dbg!(&is_trimmed);
         let trim_loop_cond = !!is_trimmed.value;
         let mut trim_loop: AnaFaceTrimLoop = Default::default();
         if trim_loop_cond {
             trim_loop = AnaFaceTrimLoop::from_reader(rdr, _ctx)?;
-            dbg!(&trim_loop);
         }
         let point_on_torus_cond = all_loops_are_vertex_loops()
             && _ctx.get_surface_type().unwrap() == PRC_HCG_AnaTorus as u32
@@ -15257,7 +15443,6 @@ impl ContentCompressedAnaFace {
         let mut point_on_torus: CompressedPoint = Default::default();
         if point_on_torus_cond {
             point_on_torus = CompressedPoint::from_reader(rdr, _ctx)?;
-            dbg!(&point_on_torus);
         }
         let rv = Self {
             is_trimmed,
@@ -15310,20 +15495,18 @@ impl ContentCompressedFace {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("ContentCompressedFace::from_reader()");
         let mut orientation_surface_with_shell: Boolean = Default::default();
         orientation_surface_with_shell = Boolean::from_reader(rdr)?;
-        dbg!(&orientation_surface_with_shell);
         let iso_face_cond = is_an_iso_face(_ctx.get_surface_type().unwrap());
         let mut iso_face: ContentCompressedIsoFace = Default::default();
         if iso_face_cond {
             iso_face = ContentCompressedIsoFace::from_reader(rdr, _ctx)?;
-            dbg!(&iso_face);
         }
         let ana_face_cond = !is_an_iso_face(_ctx.get_surface_type().unwrap());
         let mut ana_face: ContentCompressedAnaFace = Default::default();
         if ana_face_cond {
             ana_face = ContentCompressedAnaFace::from_reader(rdr, _ctx)?;
-            dbg!(&ana_face);
         }
         let rv = Self {
             orientation_surface_with_shell,
@@ -15364,9 +15547,9 @@ impl PRC_HCG_NewLoop {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_HCG_NewLoop::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        dbg!(&id);
         assert_eq!(
             PRC_HCG_NewLoop,
             PrcCompressedFaceType::try_from(id.value).unwrap()
@@ -15398,9 +15581,9 @@ impl PRC_HCG_EndLoop {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_HCG_EndLoop::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        dbg!(&id);
         assert_eq!(
             PRC_HCG_EndLoop,
             PrcCompressedFaceType::try_from(id.value).unwrap()
@@ -15436,6 +15619,7 @@ impl PRC_HCG_IsoPlane {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_HCG_IsoPlane::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
@@ -15492,6 +15676,7 @@ impl PRC_HCG_IsoCylinder {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_HCG_IsoCylinder::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
@@ -15531,6 +15716,7 @@ impl PRC_HCG_IsoTorus {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_HCG_IsoTorus::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
@@ -15577,6 +15763,7 @@ impl PRC_HCG_IsoSphere {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_HCG_IsoSphere::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
@@ -15615,6 +15802,7 @@ impl PRC_HCG_IsoCone {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_HCG_IsoCone::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
@@ -15656,6 +15844,7 @@ impl PRC_HCG_AnaPlane {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_HCG_AnaPlane::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
@@ -15714,6 +15903,7 @@ impl PRC_HCG_AnaCylinder {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_HCG_AnaCylinder::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
@@ -15768,6 +15958,7 @@ impl PRC_HCG_AnaTorus {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_HCG_AnaTorus::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
@@ -15825,6 +16016,7 @@ impl PRC_HCG_AnaSphere {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_HCG_AnaSphere::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
@@ -15873,6 +16065,7 @@ impl PRC_HCG_AnaCone {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_HCG_AnaCone::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
@@ -15925,9 +16118,9 @@ impl PRC_HCG_AnaNurbs {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_HCG_AnaNurbs::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        dbg!(&id);
         assert_eq!(
             PRC_HCG_AnaNurbs,
             PrcCompressedFaceType::try_from(id.value).unwrap()
@@ -15935,10 +16128,8 @@ impl PRC_HCG_AnaNurbs {
         _ctx.push_face_type(id.value);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
-        dbg!(&face);
         let mut compressed_surface: CompressedNurbs = Default::default();
         compressed_surface = CompressedNurbs::from_reader(rdr, _ctx)?;
-        dbg!(&compressed_surface);
         _ctx.pop_face_type();
         let rv = Self {
             id,
@@ -15975,6 +16166,7 @@ impl PRC_HCG_AnaGenericFace {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_HCG_AnaGenericFace::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
@@ -16021,6 +16213,7 @@ impl CompressedMultiplicitiesU {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CompressedMultiplicitiesU::from_reader()");
         let mut multiplicity_is_stored: Boolean = Default::default();
         multiplicity_is_stored = Boolean::from_reader(rdr)?;
         let multiplicity_cond = !multiplicity_is_stored;
@@ -16069,6 +16262,7 @@ impl CompressedMultiplicitiesV {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CompressedMultiplicitiesV::from_reader()");
         let mut multiplicity_is_stored: Boolean = Default::default();
         multiplicity_is_stored = Boolean::from_reader(rdr)?;
         let multiplicity_cond = !multiplicity_is_stored;
@@ -16122,6 +16316,7 @@ impl InteriorCompressedControlPoints {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("InteriorCompressedControlPoints::from_reader()");
         let mut _type: UnsignedIntegerWithVariableBitNumber = Default::default();
         _type = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 2)?;
         let p1z_cond = _type.value == 1;
@@ -16268,6 +16463,7 @@ impl CompressedControlPoints {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CompressedControlPoints::from_reader()");
         let mut p00: Vector3D = Default::default();
         p00 = Vector3D::from_reader(rdr, _ctx)?;
         let mut ccpt_in_v: Vec<Point3DWithVariableBitNumber> =
@@ -16335,6 +16531,7 @@ impl CompressedKnot {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CompressedKnot::from_reader()");
         let knot_cond = _ctx.CompressedKnots_number_bit_parameter > 30;
         let mut knot: Double = Default::default();
         if knot_cond {
@@ -16392,6 +16589,7 @@ impl CompressedKnotsU {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CompressedKnotsU::from_reader()");
         let mut is_unknown_form: Boolean = Default::default();
         is_unknown_form = Boolean::from_reader(rdr)?;
         let is_pseudo_uniform_cond = !is_unknown_form.value;
@@ -16456,6 +16654,7 @@ impl CompressedKnotsV {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CompressedKnotsV::from_reader()");
         let mut is_unknown_form: Boolean = Default::default();
         is_unknown_form = Boolean::from_reader(rdr)?;
         let is_pseudo_uniform_cond = !is_unknown_form.value;
@@ -16518,6 +16717,7 @@ impl CompressedKnotVectorU {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CompressedKnotVectorU::from_reader()");
         let mut is_uniform: Boolean = Default::default();
         is_uniform = Boolean::from_reader(rdr)?;
         let knots_cond = !is_uniform.value;
@@ -16559,6 +16759,7 @@ impl CompressedKnotVectorV {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CompressedKnotVectorV::from_reader()");
         let mut is_uniform: Boolean = Default::default();
         is_uniform = Boolean::from_reader(rdr)?;
         let knots_cond = !is_uniform.value;
@@ -16602,6 +16803,7 @@ impl CompressedWeights {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CompressedWeights::from_reader()");
         let mut number_bit_weight: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_bit_weight = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 6)?;
         let weights_cond = number_bit_weight.value > 30;
@@ -16708,6 +16910,7 @@ impl CompressedNurbs {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CompressedNurbs::from_reader()");
         let mut degree_in_u: UnsignedIntegerWithVariableBitNumber = Default::default();
         degree_in_u = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 5)?;
         _ctx.CompressedNurbs_number_bits_u = if degree_in_u.value != 0 {
@@ -16845,6 +17048,7 @@ impl IsoNurbsTrimCrv {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("IsoNurbsTrimCrv::from_reader()");
         let mut iso_boundary: Boolean = Default::default();
         iso_boundary = Boolean::from_reader(rdr)?;
         let is_a_circle_cond = !iso_boundary.value;
@@ -16921,6 +17125,7 @@ impl IsoNurbsTrimCurve {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("IsoNurbsTrimCurve::from_reader()");
         let mut is_referenced: Boolean = Default::default();
         is_referenced = Boolean::from_reader(rdr)?;
         let trim_curve_index_cond = is_referenced.value;
@@ -16994,6 +17199,7 @@ impl PRC_HCG_IsoNurbs {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         _ctx.compressed_iso_spline = true;
+        trace!("PRC_HCG_IsoNurbs::from_reader()");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
@@ -17123,6 +17329,7 @@ impl CompressedFace {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CompressedFace::from_reader()");
         let mut id_type_id: u32 = 0;
         let mut id_concrete: CompressedFace_idConcrete =
             CompressedFace_idConcrete::Invalid(id_type_id);
@@ -17250,6 +17457,7 @@ impl CompressedShell {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CompressedShell::from_reader()");
         let mut single_face: Boolean = Default::default();
         single_face = Boolean::from_reader(rdr)?;
         let number_of_faces_cond = !single_face;
@@ -17340,6 +17548,7 @@ impl CompressedConnex {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("CompressedConnex::from_reader()");
         let mut number_of_shells: UnsignedInteger = Default::default();
         number_of_shells = UnsignedInteger::from_reader(rdr)?;
         let mut shells: Vec<CompressedShell> =
@@ -17381,6 +17590,7 @@ impl MultipleCompressedConnex {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("MultipleCompressedConnex::from_reader()");
         let mut number_of_connex: UnsignedInteger = Default::default();
         number_of_connex = UnsignedInteger::from_reader(rdr)?;
         let mut connex: Vec<CompressedConnex> =
@@ -17425,6 +17635,7 @@ impl PRC_TYPE_TOPO_SingleWireBodyCompress {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         _ctx.curve_trimming_face = false;
+        trace!("PRC_TYPE_TOPO_SingleWireBodyCompress::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -17487,6 +17698,7 @@ impl PRC_TYPE_TOPO_BrepDataCompress {
     ) -> io::Result<Self> {
         _ctx.curve_trimming_face = true;
         _ctx.BrepDataCompress_sum_num_faces = 0;
+        trace!("PRC_TYPE_TOPO_BrepDataCompress::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -17597,6 +17809,7 @@ impl PRC_TYPE_TOPO_Body {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TOPO_Body::from_reader()");
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_TOPO_Body_idConcrete =
             PRC_TYPE_TOPO_Body_idConcrete::Invalid(id_type_id);
@@ -17677,6 +17890,7 @@ impl PRC_TYPE_TOPO_Context {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TOPO_Context::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(PRC_TYPE_TOPO_Context, PRCType::try_from(id.value).unwrap());
@@ -17781,9 +17995,9 @@ impl FileStructureExactGeometry {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("FileStructureExactGeometry::from_reader()");
         let mut topo_context_count: UnsignedInteger = Default::default();
         topo_context_count = UnsignedInteger::from_reader(rdr)?;
-        dbg!(&topo_context_count);
         UnsignedInteger::search_and_seek_back(
             rdr,
             PRCType::PRC_TYPE_TOPO_Context as u32,
@@ -17793,10 +18007,7 @@ impl FileStructureExactGeometry {
         let mut topo_contexts: Vec<PRC_TYPE_TOPO_Context> =
             Vec::with_capacity((topo_context_count.value) as usize);
         for _i in 0..(topo_context_count.value) {
-            let _at = "FileStructureExactGeometry.topo_contexts";
-            dbg!(&_at, &_i);
             let element = PRC_TYPE_TOPO_Context::from_reader(rdr, _ctx)?;
-            dbg!(&element);
             topo_contexts.push(element);
         }
         let rv = Self {
@@ -17834,6 +18045,7 @@ impl PRC_TYPE_ASM_FileStructureGeometry {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_ASM_FileStructureGeometry::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
