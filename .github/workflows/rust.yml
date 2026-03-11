@@ -16,8 +16,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Install Dependencies
+      run: sudo apt update && sudo apt install lz4 ugrep colordiff
     - name: Build
-      run: cargo build --verbose --profile=reldeb --all
+      run: |
+        cargo build --verbose --profile=reldeb --all
+        cargo build --verbose --profile=reldeb --tests
     - name: Checkout test data
       uses: actions/checkout@v4
       with:
@@ -33,7 +37,7 @@ jobs:
         #cat /proc/cpuinfo
         cargo test --verbose --profile=reldeb
         cd prc-db/prcs
-        describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt ../../testdata/prc_describe
-        #tree
+        #describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt ../../testdata/prc_describe
+        RUST_LOG=trace RUST_BACKTRACE=1 describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt ../../testdata/prc_describe_mt
         du -d 1 -h
-        diff ../../testdata/expected_all.txt review_summary.txt
+        diff ../../testdata/expected_all.txt review_summary.txt | colordiff

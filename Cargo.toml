@@ -1,6 +1,7 @@
 [package]
 name = "prc_rs"
 version = "0.1.0"
+authors = ["Kristof Ralovich <tade60@freemail.hu>"]
 edition = "2024"
 license = "MIT"
 
@@ -13,9 +14,7 @@ crate-type = ["lib", "staticlib"]
 inflate = "0.4"
 libdeflater = "1.25.2"
 log = "0.4.29"
-#nom = "8.0.0"
 byteorder = "1"
-#bitreader = "0.3.11"
 modular-bitfield = "0.13.1"
 bitvec = "1.0.1"
 static_assertions = "1.1.0"
