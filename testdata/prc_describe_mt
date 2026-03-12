@@ -104,7 +104,7 @@ if __name__ == '__main__':
 
         with open('review_summary.txt', 'a') as rs:
             now = str(datetime.datetime.now())
-            rs.write(f'\n\n\n\n\n{now}\n')
+            #rs.write(f'\n\n\n\n\n{now}\n')
             print(now)
             ncases = len(lines)
             stats = {}
