@@ -520,8 +520,7 @@
                         "name": "rotation",
                         "data_type": "Vector2D",
                         "condition": "((behavior.value & PRC_TRANSFORMATION_Rotate)) && (!(behavior.value & PRC_TRANSFORMATION_NonOrtho))",
-                        "condition_rust": "((self.behavior.value as u8 & PRC_TRANSFORMATION_Rotate as u8) != 0) && ((self.behavior.value as u8 & PRC_TRANSFORMATION_NonOrtho as u8) == 0)",
-                        "multiplicity": 2
+                        "condition_rust": "((self.behavior.value as u8 & PRC_TRANSFORMATION_Rotate as u8) != 0) && ((self.behavior.value as u8 & PRC_TRANSFORMATION_NonOrtho as u8) == 0)"
                     },
                     {
                         "name": "non_uniform_scale",
