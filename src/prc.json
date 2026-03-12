@@ -1,5 +1,4 @@
-{
-    "emacs": "-*- mode: rust; coding: utf-8-unix -*-",
+{"emacs": "-*- mode: rust; coding: utf-8-unix -*-",
     "SPDX-License-Identifier": "MIT",
     "SPDX-FileCopyrightText": "Copyright Kristóf Ralovich (C) 2025-2026. All rights reserved.",
     "version": 8137,
@@ -8,6 +7,7 @@
         "Boolean",
         "Double",
         "UnsignedInteger",
+        "Character",
         "UnsignedCharacter",
         "Integer",
         "UserData",
@@ -20,19 +20,19 @@
         "CompressedIntegerArray",
         "CompressedIndiceArray",
         "CompressedIndiceArrayWithoutBit",
-        "IntegerWithVariableBitNumber",
         "DoubleWithVariableBitNumber",
-        "Point3DWithVariableBitNumber"
+        "Point3DWithVariableBitNumber",
+        "CompressedPoint"
     ],
     "vbr_1param": [
         "UnsignedIntegerWithVariableBitNumber",
         "CompressedIndiceArrayWithoutBit",
         "CharacterArray",
         "ShortArray",
-        "UNUSEDIntegerWithVariableBitNumber",
-        "Point3DWithVariableBitNumber"
+        "CompressedPoint"
     ],
     "vbr_2param": [
+        "Point3DWithVariableBitNumber",
         "DoubleWithVariableBitNumber"
     ],
     "structures": [
@@ -377,7 +377,7 @@
                     },
                     {
                         "name": "font_attributes",
-                        "data_type": "UnsignedCharacter"
+                        "data_type": "Character"
                     }
                 ]
             },
@@ -501,44 +501,44 @@
                 "fields": [
                     {
                         "name": "behavior",
-                        "data_type": "UnsignedCharacter"
+                        "data_type": "Character"
                     },
                     {
                         "name": "translation",
                         "data_type": "Vector2D",
                         "condition": "(behavior.value & PRC_TRANSFORMATION_Translate)",
-                        "condition_rust": "(self.behavior.value as u8 & PRC_TRANSFORMATION_Translate as u8) != 0"
+                        "condition_rust": "(self.behavior.value & PRC_TRANSFORMATION_Translate as i8) != 0"
                     },
                     {
                         "name": "non_ortho_matrix",
                         "data_type": "Vector2D",
                         "condition": "(behavior.value & PRC_TRANSFORMATION_NonOrtho)",
-                        "condition_rust": "(self.behavior.value as u8 & PRC_TRANSFORMATION_NonOrtho as u8) != 0",
+                        "condition_rust": "(self.behavior.value & PRC_TRANSFORMATION_NonOrtho as i8) != 0",
                         "multiplicity": 2
                     },
                     {
                         "name": "rotation",
                         "data_type": "Vector2D",
                         "condition": "((behavior.value & PRC_TRANSFORMATION_Rotate)) && (!(behavior.value & PRC_TRANSFORMATION_NonOrtho))",
-                        "condition_rust": "((self.behavior.value as u8 & PRC_TRANSFORMATION_Rotate as u8) != 0) && ((self.behavior.value as u8 & PRC_TRANSFORMATION_NonOrtho as u8) == 0)"
+                        "condition_rust": "((self.behavior.value & PRC_TRANSFORMATION_Rotate as i8) != 0) && ((self.behavior.value & PRC_TRANSFORMATION_NonOrtho as i8) == 0)"
                     },
                     {
                         "name": "non_uniform_scale",
                         "data_type": "Vector2D",
                         "condition": "(behavior.value & PRC_TRANSFORMATION_NonUniformScale)",
-                        "condition_rust": "(self.behavior.value as u8 & PRC_TRANSFORMATION_NonUniformScale as u8) != 0"
+                        "condition_rust": "(self.behavior.value & PRC_TRANSFORMATION_NonUniformScale as i8) != 0"
                     },
                     {
                         "name": "scale",
                         "data_type": "Double",
                         "condition": "(behavior.value & PRC_TRANSFORMATION_Scale)",
-                        "condition_rust": "(self.behavior.value as u8 & PRC_TRANSFORMATION_Scale as u8) != 0"
+                        "condition_rust": "(self.behavior.value & PRC_TRANSFORMATION_Scale as i8) != 0"
                     },
                     {
                         "name": "homogeneous",
                         "data_type": "Double",
                         "condition": "(behavior.value & PRC_TRANSFORMATION_Homogeneous)",
-                        "condition_rust": "(self.behavior.value as u8 & PRC_TRANSFORMATION_Homogeneous as u8) != 0",
+                        "condition_rust": "(self.behavior.value & PRC_TRANSFORMATION_Homogeneous as i8) != 0",
                         "multiplicity": 3
                     }
                 ]
@@ -561,7 +561,7 @@
                 "fields": [
                     {
                         "name": "behavior",
-                        "data_type": "UnsignedCharacter"
+                        "data_type": "Character"
                     },
                     {
                         "name": "translation",
@@ -677,7 +677,8 @@
                     },
                     {
                         "name": "transform_2d",
-                        "data_type": "Boolean"
+                        "data_type": "Boolean",
+                        "on_set": "assert_eq!(transform_2d.value, true);"
                     },
                     {
                         "name": "transform",
@@ -708,7 +709,9 @@
                 ]
             },
             "PRC_TYPE_GRAPH_TextureDefinition": {
+                "bug": "https://github.com/pdf-association/pdf-issues/issues/412",
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/485",
+                "on_enter": "UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_GRAPH_TextureDefinition as u32, 9999, 5);",
                 "fields": [
                     {
                         "name": "id",
@@ -725,7 +728,8 @@
                     },
                     {
                         "name": "texture_dimension",
-                        "data_type": "UnsignedCharacter"
+                        "data_type": "Character",
+                        "on_set": "assert_eq!(texture_dimension.value, 2 as i8)"
                     },
                     {
                         "name": "texture_mapping_type",
@@ -755,25 +759,31 @@
                     },
                     {
                         "name": "number_of_texture_mapping_attributes_intensities",
-                        "data_type": "UnsignedInteger"
+                        "data_type": "UnsignedInteger",
+                        "on_set": "assert!(number_of_texture_mapping_attributes_intensities.value == 0 || number_of_texture_mapping_attributes_intensities.value == 1)"
                     },
                     {
                         "name": "texture_mapping_attributes_intensities",
                         "data_type": "Double",
                         "is_vec": true,
                         "size": "number_of_texture_mapping_attributes_intensities.value",
-                        "default_value_TODO": "texture_mapping_attributes_intensities[0] = 1.0"
+                        "default_value_TODO": "texture_mapping_attributes_intensities[0] = 1.0",
+                        "condition": "self.number_of_texture_mapping_attributes_intensities.value != 0",
+                        "condition_rust": "self.number_of_texture_mapping_attributes_intensities.value != 0"
                     },
                     {
                         "name": "number_of_texture_mapping_attributes_components",
-                        "data_type": "UnsignedInteger"
+                        "data_type": "UnsignedInteger",
+                        "on_set": "assert!(number_of_texture_mapping_attributes_components.value == 0 || number_of_texture_mapping_attributes_components.value == 1)"
                     },
                     {
                         "name": "texture_mapping_attributes_components",
-                        "data_type": "UnsignedCharacter",
+                        "data_type": "Character",
                         "is_vec": true,
                         "size": "number_of_texture_mapping_attributes_components.value",
-                        "default_value_TODO": "texture_mapping_attributes_components[0] = 0x000F"
+                        "default_value_TODO": "texture_mapping_attributes_components[0] = 0x000F",
+                        "condition": "self.number_of_texture_mapping_attributes_components.value != 0",
+                        "condition_rust": "self.number_of_texture_mapping_attributes_components.value != 0"
                     },
                     {
                         "name": "texture_function",
@@ -784,7 +794,8 @@
                         "data_type": "Double",
                         "multiplicity": 4,
                         "condition": "texture_function.value == TextureFunction::Blend",
-                        "condition_rust": "self.texture_function.value as i32 == TextureFunction::Blend as i32"
+                        "condition_rust": "self.texture_function.value as i32 == TextureFunction::Blend as i32",
+                        "on_set": "for idx in 0..4 { assert!(blend_src[idx].value >= 0.0 && blend_src[idx].value <= 1.0); }"
                     },
                     {
                         "name": "blend_src_rgb",
@@ -808,7 +819,7 @@
                     },
                     {
                         "name": "texture_application_mode",
-                        "data_type": "UnsignedCharacter"
+                        "data_type": "Character"
                     },
                     {
                         "name": "alpha_test",
@@ -830,13 +841,13 @@
                         "name": "texture_wrapping_mode_t",
                         "data_type": "Integer",
                         "condition": "texture_dimension.value > 1",
-                        "condition_rust": "self.texture_dimension.value as u8 > 1"
+                        "condition_rust": "self.texture_dimension.value > 1"
                     },
                     {
                         "name": "texture_wrapping_mode_r",
                         "data_type": "Integer",
                         "condition": "texture_dimension.value > 2",
-                        "condition_rust": "self.texture_dimension.value as u8 > 2"
+                        "condition_rust": "self.texture_dimension.value > 2"
                     },
                     {
                         "name": "has_texture_transformation",
@@ -973,6 +984,7 @@
                 ]
             },
             "PRC_TYPE_GRAPH_Style": {
+                "bug": "https://github.com/pdf-association/pdf-issues/issues/738",
                 "fields": [
                     {
                         "name": "id",
@@ -1009,7 +1021,7 @@
                     },
                     {
                         "name": "transparency",
-                        "data_type": "UnsignedCharacter",
+                        "data_type": "Character",
                         "condition": "!!is_transparency",
                         "condition_rust": "!!self.is_transparency"
                     },
@@ -1019,13 +1031,14 @@
                     },
                     {
                         "name": "rendering_parameters",
-                        "data_type": "UnsignedCharacter",
+                        "data_type": "Character",
                         "condition": "!!is_rendering_parameters",
                         "condition_rust": "!!self.is_rendering_parameters"
                     },
                     {
                         "name": "flag1",
-                        "data_type": "Boolean"
+                        "data_type": "Boolean",
+                        "NOon_set": "assert_eq!(flag1.value, false);"
                     },
                     {
                         "name": "val1",
@@ -1035,7 +1048,8 @@
                     },
                     {
                         "name": "flag2",
-                        "data_type": "Boolean"
+                        "data_type": "Boolean",
+                        "NOon_set": "assert_eq!(flag2.value, false);"
                     },
                     {
                         "name": "val2",
@@ -1213,7 +1227,7 @@
                     },
                     {
                         "name": "behavior",
-                        "data_type": "UnsignedCharacter"
+                        "data_type": "Character"
                     }
                 ]
             },
@@ -2850,7 +2864,7 @@
                     },
                     {
                         "name": "product_information_flags",
-                        "data_type": "UnsignedCharacter"
+                        "data_type": "Character"
                     },
                     {
                         "name": "product_load_status",
@@ -2875,7 +2889,7 @@
                     },
                     {
                         "name": "product_behavior",
-                        "data_type": "UnsignedCharacter"
+                        "data_type": "Character"
                     },
                     {
                         "name": "product_information",
@@ -3232,7 +3246,7 @@
                     },
                     {
                         "name": "normal_recalculation_flags",
-                        "data_type": "UnsignedCharacter",
+                        "data_type": "Character",
                         "condition": "!!must_calculate_normals && ctx.ver_authoring >= 7047",
                         "condition_rust": "!!self.must_calculate_normals.value && _ctx.ver_authoring >= 7047",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/705",
@@ -3363,7 +3377,7 @@
                     {
                         "name": "last_integer_used_bit_number",
                         "data_type": "UnsignedInteger",
-                        "on_set": "assert!(last_integer_used_bit_number.value >= 0 && last_integer_used_bit_number.value < 32)"
+                        "on_set": "assert!(/*last_integer_used_bit_number.value >= 0 &&*/ last_integer_used_bit_number.value < 32)"
                     }
                 ]
             },
@@ -3404,6 +3418,8 @@
             "PRC_TYPE_TESS_3D_Compressed": {
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/416",
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/426",
+                "bug": "https://github.com/pdf-association/pdf-issues/issues/436",
+                "bug": "https://github.com/pdf-association/pdf-issues/issues/540",
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/727",
                 "debug": false,
                 "fields": [
@@ -3504,14 +3520,14 @@
                     },
                     {
                         "name": "normal_recalculation_flags",
-                        "data_type": "UnsignedCharacter",
+                        "data_type": "Character",
                         "condition": "!!must_recalculate_normals",
                         "condition_rust": "!!self.must_recalculate_normals",
                         "debug": true
                     },
                     {
                         "name": "normal_angle_number_of_bits",
-                        "data_type": "UnsignedCharacter",
+                        "data_type": "Character",
                         "condition": "!must_recalculate_normals",
                         "condition_rust": "!self.must_recalculate_normals",
                         "debug": true
@@ -3647,6 +3663,7 @@
                 ]
             },
             "PRC_TYPE_TESS": {
+                "on_enter": "UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D as u32, 9999, 5); UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D_Wire as u32, 9999, 5); UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_Markup as u32, 9999, 5); UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D_Compressed as u32, 9999, 5);",
                 "fields": [
                     {
                         "name": "id",
@@ -3727,7 +3744,7 @@
                     },
                     {
                         "name": "bounding_box_behavior",
-                        "data_type": "UnsignedCharacter"
+                        "data_type": "Character"
                     }
                 ]
             },
@@ -4595,7 +4612,8 @@
                     },
                     {
                         "name": "_type",
-                        "data_type": "UnsignedCharacter"
+                        "data_type": "Character",
+                        "on_set": "assert!(_type.value == 0 || _type.value == 1);"
                     },
                     {
                         "name": "orientation",
@@ -4652,7 +4670,8 @@
                     },
                     {
                         "name": "_type",
-                        "data_type": "UnsignedCharacter"
+                        "data_type": "Character",
+                        "on_set": "assert!(_type.value == 0 || _type.value == 1);"
                     }
                 ]
             },
@@ -4684,7 +4703,7 @@
                     },
                     {
                         "name": "flags",
-                        "data_type": "UnsignedCharacter"
+                        "data_type": "Character"
                     }
                 ]
             },
@@ -4879,7 +4898,8 @@
                     },
                     {
                         "name": "_type",
-                        "data_type": "UnsignedCharacter"
+                        "data_type": "Character",
+                        "on_set": "assert!(_type.value == 0 || _type.value == 1);"
                     }
                 ]
             },
@@ -5152,12 +5172,14 @@
                     },
                     {
                         "name": "parameterization_type",
-                        "data_type": "UnsignedCharacter"
+                        "data_type": "Character"
                     }
                 ]
             },
             "PRC_TYPE_SURF_Blend03": {
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/651",
+                "bug1": "https://github.com/pdf-association/pdf-issues/issues/715#issuecomment-3770493916",
+                "comment": "points, tangents, and second_derivatives arrays should be declared as Array<Vector3d>[number_of_elements * 3] size.",
                 "fields": [
                     {
                         "name": "id",
@@ -5248,7 +5270,7 @@
                     },
                     {
                         "name": "reserved_char",
-                        "data_type": "UnsignedCharacter",
+                        "data_type": "Character",
                         "multiplicity": 3
                     },
                     {
@@ -5880,11 +5902,11 @@
                     },
                     {
                         "name": "coedge_orientation",
-                        "data_type": "UnsignedCharacter"
+                        "data_type": "Character"
                     },
                     {
                         "name": "uv_orientation",
-                        "data_type": "UnsignedCharacter"
+                        "data_type": "Character"
                     }
                 ]
             },
@@ -5913,7 +5935,7 @@
                     },
                     {
                         "name": "loop_orientation",
-                        "data_type": "UnsignedCharacter"
+                        "data_type": "Character"
                     },
                     {
                         "name": "number_of_coedges",
@@ -5986,7 +6008,7 @@
                     },
                     {
                         "name": "orientation",
-                        "data_type": "UnsignedCharacter"
+                        "data_type": "Character"
                     }
                 ]
             },
@@ -6137,40 +6159,9 @@
                         "name": "bounding_box",
                         "data_type": "BoundingBox",
                         "condition": "(base.bounding_box_behavior.value & PRC_BODY_BBOX_CADData) != 0",
-                        "condition_rust": "(self.base.bounding_box_behavior.value & PRC_BODY_BBOX_CADData as u8) != 0",
+                        "condition_rust": "(self.base.bounding_box_behavior.value & PRC_BODY_BBOX_CADData as i8) != 0",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/715",
                         "TODO": "(bounding_box_behavior & (PRC_BODY_BBOX_Evaluation | PRC_BODY_BBOX_Precise) != 0)."
-                    }
-                ]
-            },
-            "CompressedPoint": {
-                "rust_traits": [ "Copy" ],
-                "NOfields": [
-                    {
-                        "name": "num_bits",
-                        "data_type": "UnsignedIntegerWithVariableBitNumber",
-                        "vbr": "6"
-                    },
-                    {
-                        "name": "point_vbr",
-                        "data_type": "Point3DWithVariableBitNumber",
-                        "vbr": "self.num_bits.value",
-                        "tol": "_ctx.brep_data_compressed_tolerance",
-                        "condition": "self.num_bits.value <= 30",
-                        "condition_rust": "self.num_bits.value <= 30"
-                    },
-                    {
-                        "name": "point",
-                        "data_type": "Vector3D",
-                        "condition": "self.num_bits.value > 30",
-                        "condition_rust": "self.num_bits.value > 30"
-                    }
-                ],
-                "fields": [
-                    {
-                        "name": "point",
-                        "data_type": "Point3DWithVariableBitNumber",
-                        "vbr": "_ctx.brep_data_compressed_tolerance"
                     }
                 ]
             },
@@ -6191,6 +6182,7 @@
                     {
                         "name": "point_data",
                         "data_type": "CompressedPoint",
+                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0",
                         "condition": "!!self.already_stored.value",
                         "condition_rust": "!!self.already_stored.value"
                     }
@@ -6212,18 +6204,21 @@
                     {
                         "name": "center",
                         "data_type": "CompressedPoint",
+                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0",
                         "condition": "full_circle.value",
                         "condition_rust": "self.full_circle.value"
                     },
                     {
                         "name": "normal",
                         "data_type": "CompressedPoint",
+                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0",
                         "condition": "full_circle.value",
                         "condition_rust": "self.full_circle.value"
                     },
                     {
                         "name": "middle_of_arc",
                         "data_type": "CompressedPoint",
+                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0",
                         "condition": "!full_circle.value",
                         "condition_rust": "!self.full_circle.value"
                     }
@@ -6238,7 +6233,8 @@
                     },
                     {
                         "name": "center",
-                        "data_type": "CompressedPoint"
+                        "data_type": "CompressedPoint",
+                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0"
                     },
                     {
                         "name": "circle_angle",
@@ -6264,12 +6260,14 @@
                     {
                         "name": "start_point",
                         "data_type": "CompressedPoint",
+                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0",
                         "condition": "!_ctx.curve_trimming_face",
                         "condition_rust": "!_ctx.curve_trimming_face"
                     },
                     {
                         "name": "end_point",
                         "data_type": "CompressedPoint",
+                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0",
                         "condition": "!_ctx.curve_trimming_face",
                         "condition_rust": "!_ctx.curve_trimming_face"
                     }
@@ -6326,52 +6324,6 @@
             "PRC_HCG_BSplineHermiteCurve": {
                 "debug": false,
                 "on_leave": "_ctx.pop_face_type()",
-                "UNUSEDfields": [
-                    {
-                        "name": "point_number_bits",
-                        "data_type": "UnsignedIntegerWithVariableBitNumber",
-                        "vbr": "6"
-                    },
-                    {
-                        "name": "points",
-                        "data_type": "Vector3D",
-                        "is_vec": true,
-                        "size": "number_points.value - 2",
-                        "condition": "point_number_bits.value > 30",
-                        "condition_rust": "self.point_number_bits.value > 30"
-                    },
-                    {
-                        "name": "compressed_points",
-                        "data_type": "Point3DWithVariableBitNumber",
-                        "vbr": "_ctx.brep_data_compressed_tolerance",
-                        "is_vec": "true",
-                        "size": "number_points.value - 2",
-                        "condition": "point_number_bits.value <= 30",
-                        "condition_rust": "self.point_number_bits.value <= 30"
-                    },
-                    {
-                        "name": "tangent_number_bits",
-                        "data_type": "UnsignedIntegerWithVariableBitNumber",
-                        "vbr": "6"
-                    },
-                    {
-                        "name": "tangents",
-                        "data_type": "Vector3D",
-                        "is_vec": true,
-                        "size": "number_points.value",
-                        "condition": "tangent_number_bits.value > 30",
-                        "condition_rust": "self.tangent_number_bits.value > 30"
-                    },
-                    {
-                        "name": "compressed_tangents",
-                        "data_type": "Point3DWithVariableBitNumber",
-                        "vbr": "_ctx.brep_data_compressed_tolerance",
-                        "is_vec": true,
-                        "size": "number_points.value",
-                        "condition": "tangent_number_bits.value <= 30",
-                        "condition_rust": "self.tangent_number_bits.value <= 30"
-                    }
-                ],
                 "fields": [
                     {
                         "name": "id",
@@ -6395,18 +6347,50 @@
                         "vbr": "number_bits.value"
                     },
                     {
+                        "name": "point_number_bits",
+                        "data_type": "UnsignedIntegerWithVariableBitNumber",
+                        "vbr": "6"
+                    },
+                    {
                         "name": "points",
-                        "data_type": "Point3DWithVariableBitNumber",
-                        "vbr": "_ctx.brep_data_compressed_tolerance",
+                        "data_type": "Vector3D",
                         "is_vec": true,
-                        "size": "number_points.value - 2"
+                        "size": "number_points.value - 2",
+                        "condition": "point_number_bits.value > 30",
+                        "condition_rust": "self.point_number_bits.value > 30"
+                    },
+                    {
+                        "name": "compressed_points",
+                        "data_type": "Point3DWithVariableBitNumber",
+                        "vbr": "point_number_bits.value",
+                        "tol": "_ctx.brep_data_compressed_tolerance",
+                        "is_vec": "true",
+                        "size": "number_points.value - 2",
+                        "condition": "point_number_bits.value <= 30",
+                        "condition_rust": "self.point_number_bits.value <= 30"
+                    },
+                    {
+                        "name": "tangent_number_bits",
+                        "data_type": "UnsignedIntegerWithVariableBitNumber",
+                        "vbr": "6"
                     },
                     {
                         "name": "tangents",
-                        "data_type": "Point3DWithVariableBitNumber",
-                        "vbr": "_ctx.brep_data_compressed_tolerance",
+                        "data_type": "Vector3D",
                         "is_vec": true,
-                        "size": "number_points.value"
+                        "size": "number_points.value",
+                        "condition": "tangent_number_bits.value > 30",
+                        "condition_rust": "self.tangent_number_bits.value > 30"
+                    },
+                    {
+                        "name": "compressed_tangents",
+                        "data_type": "Point3DWithVariableBitNumber",
+                        "vbr": "tangent_number_bits.value",
+                        "tol": "_ctx.brep_data_compressed_tolerance",
+                        "is_vec": true,
+                        "size": "number_points.value",
+                        "condition": "tangent_number_bits.value <= 30",
+                        "condition_rust": "self.tangent_number_bits.value <= 30"
                     }
                 ]
             },
@@ -6580,6 +6564,7 @@
                     {
                         "name": "point_on_torus",
                         "data_type": "CompressedPoint",
+                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0",
                         "condition": "all_loops_are_vertex_loops() && ctx.get_surface_type() == PRC_HCG_AnaTorus as u32 && is_trimmed.value",
                         "condition_rust": "all_loops_are_vertex_loops() && _ctx.get_surface_type().unwrap() == PRC_HCG_AnaTorus as u32 && self.is_trimmed.value"
                     }
@@ -6771,11 +6756,13 @@
                     },
                     {
                         "name": "point",
-                        "data_type": "CompressedPoint"
+                        "data_type": "CompressedPoint",
+                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0"
                     },
                     {
                         "name": "direction",
-                        "data_type": "CompressedPoint"
+                        "data_type": "CompressedPoint",
+                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0"
                     }
                 ]
             },
@@ -6795,11 +6782,13 @@
                     },
                     {
                         "name": "center",
-                        "data_type": "CompressedPoint"
+                        "data_type": "CompressedPoint",
+                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0"
                     },
                     {
                         "name": "x_axis",
-                        "data_type": "CompressedPoint"
+                        "data_type": "CompressedPoint",
+                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0"
                     },
                     {
                         "name": "pointy_axis",
@@ -6823,7 +6812,8 @@
                     },
                     {
                         "name": "sphere_center",
-                        "data_type": "CompressedPoint"
+                        "data_type": "CompressedPoint",
+                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0"
                     }
                 ]
             },
@@ -6843,11 +6833,13 @@
                     },
                     {
                         "name": "axis_point",
-                        "data_type": "CompressedPoint"
+                        "data_type": "CompressedPoint",
+                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0"
                     },
                     {
                         "name": "apex_point",
-                        "data_type": "CompressedPoint"
+                        "data_type": "CompressedPoint",
+                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0"
                     }
                 ]
             },
@@ -6990,14 +6982,16 @@
                     {
                         "name": "ccpt_in_v",
                         "data_type": "Point3DWithVariableBitNumber",
-                        "vbr": "_ctx.nurbs_tolerance",
+                        "vbr": "_ctx.CompressedNurbs_number_of_bits_for_isomin + 1",
+                        "tol": "_ctx.nurbs_tolerance",
                         "is_vec": "true",
                         "size": "_ctx.CompressedNurbs_number_ccpt_in_v-1"
                     },
                     {
                         "name": "ccpt_in_u",
                         "data_type": "Point3DWithVariableBitNumber",
-                        "vbr": "_ctx.nurbs_tolerance",
+                        "vbr": "_ctx.CompressedNurbs_number_of_bits_for_isomin + 1",
+                        "tol": "_ctx.nurbs_tolerance",
                         "is_vec": "true",
                         "size": "_ctx.CompressedNurbs_number_ccpt_in_u-1"
                     },
@@ -7556,7 +7550,7 @@
                     },
                     {
                         "name": "behavior",
-                        "data_type": "UnsignedCharacter"
+                        "data_type": "Character"
                     },
                     {
                         "SPECBUG": true,

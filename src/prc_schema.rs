@@ -4,8 +4,8 @@
 //
 // SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026. All rights reserved.
 
+use crate::constants::PRCType;
 use crate::prc_builtin;
-use crate::prc_builtin::PRCType;
 use crate::prc_gen::Entity_schema_definition;
 use bitstream_io::BitReader;
 use log::debug;

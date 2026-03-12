@@ -51,12 +51,13 @@ use std::io;
 use bitstream_io::{BitReader, BitWrite};
 use log::{trace, warn};
 use crate::prc_builtin::*;
-use crate::prc_builtin::PRCType::*;
-use crate::prc_builtin::PrcTransformation::*;
-use crate::prc_builtin::PrcCompressedFaceType::*;
-use crate::prc_builtin::PrcCompressedCurveType::*;
+use crate::constants::PRCType::*;
+use crate::constants::PrcTransformation::*;
+use crate::constants::PrcCompressedFaceType::*;
+use crate::constants::PrcCompressedCurveType::*;
 use crate::common::PrcParsingContext;
 use crate::common::CurrentFaceType;
+use crate::constants::*;
 
 ''')
 
@@ -138,11 +139,11 @@ use crate::common::CurrentFaceType;
             elif len(d['structures'][0][struct_name]['fields']) >= 1:
                 emit_SEEval_after = d['structures'][0][struct_name]['fields'][-1]['name']
             #print('%s: call_schema_eval=%s emit_SEEval_after=%s has_UserData=%s' % (struct_name, call_schema_eval, emit_SEEval_after, str(has_UserData)) )
+            rs.write(f'  trace!("{struct_name}::from_reader()");\n')
             if 'FIXME' in d['structures'][0][struct_name]:
                 rs.write(f'  warn!("{struct_name} structure contains FIXME!");\n')
             if 'on_enter' in d['structures'][0][struct_name]:
                 rs.write(f'  {d['structures'][0][struct_name]['on_enter']};\n')
-            rs.write(f'  trace!("{struct_name}::from_reader()");\n')
             for f in d['structures'][0][struct_name]['fields']:
                 #print(f'{struct_name}.{f['name']}')
                 is_virtual_type_switch = 'eligible_type_ids' in f
@@ -203,10 +204,10 @@ use crate::common::CurrentFaceType;
                             rs.write(f'    if {f['name']}_cond {{\n')
                         rs.write('    for _i in 0..(%s) {\n' % f['size'])
                         if do_debug:
-                            rs.write(f'      let _at = "{struct_name}.{f['name']}";trace!(&_at, &_i);\n')
+                            rs.write(f'      let _at = "{struct_name}.{f['name']}";trace!("{{}} {{}}", &_at, &_i);\n')
                         rs.write('      let element = %s;\n' %  field_reader )
                         if do_debug:
-                            rs.write(f'      trace!("{{:?}}", &element);\n')
+                            rs.write(f'      trace!("{{:#?}}", &element);\n')
                         rs.write('      %s.push(element);\n' % f['name'])
                         rs.write('    }\n')
                         if is_conditional:
@@ -219,7 +220,7 @@ use crate::common::CurrentFaceType;
                         rs.write(f'    for i in 0..{f['multiplicity']} {{\n')
                         rs.write(f'      {f['name']}[i as usize] = {field_reader};\n')
                         if do_debug:
-                            rs.write(f'      trace!("{{}} {{:?}}", i, &{f['name']}[i as usize]);\n')
+                            rs.write(f'      trace!("{{}} {{:#?}}", i, &{f['name']}[i as usize]);\n')
                         rs.write(f'    }}\n')
                         if is_conditional:
                             rs.write('    }\n')

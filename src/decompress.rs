@@ -1,3 +1,12 @@
+// -*- mode: rust; coding: utf-8-unix -*-
+
+// SPDX-License-Identifier: MIT
+//
+// SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026.
+// All rights reserved.
+
+#![allow(unused)]
+
 use inflate::inflate_bytes_zlib;
 use libdeflater::*;
 
@@ -6,14 +15,15 @@ pub fn decompress(section_compressed: &[u8]) -> Result<Vec<u8>, String> {
     if use_slow {
         let section = inflate_bytes_zlib(&section_compressed)?;
         Ok(section)
-    }
-    else {
+    } else {
         let decompressed_data = {
             let mut decompressor = Decompressor::new();
             let mut outbuf = Vec::new();
             let mut output_size = section_compressed.len() as usize * 32;
             outbuf.resize(output_size, 0);
-            decompressor.zlib_decompress(&section_compressed, &mut outbuf).unwrap();
+            decompressor
+                .zlib_decompress(&section_compressed, &mut outbuf)
+                .unwrap();
             // let mut rv = decompressor.zlib_decompress(&section_compressed, &mut outbuf);
             // while rv == Err(DecompressionError::InsufficientSpace) {
             //     output_size *= 2;

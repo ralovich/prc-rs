@@ -10,10 +10,11 @@
 
 use crate::common::CurrentFaceType;
 use crate::common::PrcParsingContext;
-use crate::prc_builtin::PRCType::*;
-use crate::prc_builtin::PrcCompressedCurveType::*;
-use crate::prc_builtin::PrcCompressedFaceType::*;
-use crate::prc_builtin::PrcTransformation::*;
+use crate::constants::PRCType::*;
+use crate::constants::PrcCompressedCurveType::*;
+use crate::constants::PrcCompressedFaceType::*;
+use crate::constants::PrcTransformation::*;
+use crate::constants::*;
 use crate::prc_builtin::*;
 use bitstream_io::{BitReader, BitWrite};
 use log::{trace, warn};
@@ -938,7 +939,7 @@ impl UniqueId {
 #[allow(non_camel_case_types)]
 pub struct FontKey {
     pub font_size: UnsignedInteger,
-    pub font_attributes: UnsignedCharacter,
+    pub font_attributes: Character,
 }
 impl FontKey {
     #[allow(unused_assignments)]
@@ -949,8 +950,8 @@ impl FontKey {
         trace!("FontKey::from_reader()");
         let mut font_size: UnsignedInteger = Default::default();
         font_size = UnsignedInteger::from_reader(rdr)?;
-        let mut font_attributes: UnsignedCharacter = Default::default();
-        font_attributes = UnsignedCharacter::from_reader(rdr)?;
+        let mut font_attributes: Character = Default::default();
+        font_attributes = Character::from_reader(rdr)?;
         let rv = Self {
             font_size,
             font_attributes,
@@ -1245,7 +1246,7 @@ impl Vector3D {
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct Transformation2D {
-    pub behavior: UnsignedCharacter,
+    pub behavior: Character,
     pub translation: Option<Vector2D>,
     pub non_ortho_matrix: Option<[Vector2D; 2]>,
     pub rotation: Option<Vector2D>,
@@ -1260,38 +1261,38 @@ impl Transformation2D {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!("Transformation2D::from_reader()");
-        let mut behavior: UnsignedCharacter = Default::default();
-        behavior = UnsignedCharacter::from_reader(rdr)?;
-        let translation_cond = (behavior.value as u8 & PRC_TRANSFORMATION_Translate as u8) != 0;
+        let mut behavior: Character = Default::default();
+        behavior = Character::from_reader(rdr)?;
+        let translation_cond = (behavior.value & PRC_TRANSFORMATION_Translate as i8) != 0;
         let mut translation: Vector2D = Default::default();
         if translation_cond {
             translation = Vector2D::from_reader(rdr, _ctx)?;
         }
-        let non_ortho_matrix_cond = (behavior.value as u8 & PRC_TRANSFORMATION_NonOrtho as u8) != 0;
+        let non_ortho_matrix_cond = (behavior.value & PRC_TRANSFORMATION_NonOrtho as i8) != 0;
         let mut non_ortho_matrix: [Vector2D; 2] = [Default::default(); 2];
         if non_ortho_matrix_cond {
             for i in 0..2 {
                 non_ortho_matrix[i as usize] = Vector2D::from_reader(rdr, _ctx)?;
             }
         }
-        let rotation_cond = ((behavior.value as u8 & PRC_TRANSFORMATION_Rotate as u8) != 0)
-            && ((behavior.value as u8 & PRC_TRANSFORMATION_NonOrtho as u8) == 0);
+        let rotation_cond = ((behavior.value & PRC_TRANSFORMATION_Rotate as i8) != 0)
+            && ((behavior.value & PRC_TRANSFORMATION_NonOrtho as i8) == 0);
         let mut rotation: Vector2D = Default::default();
         if rotation_cond {
             rotation = Vector2D::from_reader(rdr, _ctx)?;
         }
         let non_uniform_scale_cond =
-            (behavior.value as u8 & PRC_TRANSFORMATION_NonUniformScale as u8) != 0;
+            (behavior.value & PRC_TRANSFORMATION_NonUniformScale as i8) != 0;
         let mut non_uniform_scale: Vector2D = Default::default();
         if non_uniform_scale_cond {
             non_uniform_scale = Vector2D::from_reader(rdr, _ctx)?;
         }
-        let scale_cond = (behavior.value as u8 & PRC_TRANSFORMATION_Scale as u8) != 0;
+        let scale_cond = (behavior.value & PRC_TRANSFORMATION_Scale as i8) != 0;
         let mut scale: Double = Default::default();
         if scale_cond {
             scale = Double::from_reader(rdr)?;
         }
-        let homogeneous_cond = (behavior.value as u8 & PRC_TRANSFORMATION_Homogeneous as u8) != 0;
+        let homogeneous_cond = (behavior.value & PRC_TRANSFORMATION_Homogeneous as i8) != 0;
         let mut homogeneous: [Double; 3] = [Default::default(); 3];
         if homogeneous_cond {
             for i in 0..3 {
@@ -1332,36 +1333,36 @@ impl Transformation2D {
     ) -> std::io::Result<()> {
         let behavior = self.behavior.clone();
         behavior.to_writer(_w)?;
-        let translation_cond = (behavior.value as u8 & PRC_TRANSFORMATION_Translate as u8) != 0;
+        let translation_cond = (behavior.value & PRC_TRANSFORMATION_Translate as i8) != 0;
         let translation = self.translation.as_ref().unwrap();
         if translation_cond {
             translation.to_writer(_w, _ctx)?;
         }
         let non_ortho_matrix = self.non_ortho_matrix.clone();
-        if (behavior.value as u8 & PRC_TRANSFORMATION_NonOrtho as u8) != 0 {
+        if (behavior.value & PRC_TRANSFORMATION_NonOrtho as i8) != 0 {
             for i in self.non_ortho_matrix.as_ref().unwrap() {
                 i.to_writer(_w, _ctx)?;
             }
         }
-        let rotation_cond = ((behavior.value as u8 & PRC_TRANSFORMATION_Rotate as u8) != 0)
-            && ((behavior.value as u8 & PRC_TRANSFORMATION_NonOrtho as u8) == 0);
+        let rotation_cond = ((behavior.value & PRC_TRANSFORMATION_Rotate as i8) != 0)
+            && ((behavior.value & PRC_TRANSFORMATION_NonOrtho as i8) == 0);
         let rotation = self.rotation.as_ref().unwrap();
         if rotation_cond {
             rotation.to_writer(_w, _ctx)?;
         }
         let non_uniform_scale_cond =
-            (behavior.value as u8 & PRC_TRANSFORMATION_NonUniformScale as u8) != 0;
+            (behavior.value & PRC_TRANSFORMATION_NonUniformScale as i8) != 0;
         let non_uniform_scale = self.non_uniform_scale.as_ref().unwrap();
         if non_uniform_scale_cond {
             non_uniform_scale.to_writer(_w, _ctx)?;
         }
-        let scale_cond = (behavior.value as u8 & PRC_TRANSFORMATION_Scale as u8) != 0;
+        let scale_cond = (behavior.value & PRC_TRANSFORMATION_Scale as i8) != 0;
         let scale = self.scale.as_ref().unwrap();
         if scale_cond {
             scale.to_writer(_w)?;
         }
         let homogeneous = self.homogeneous.clone();
-        if (behavior.value as u8 & PRC_TRANSFORMATION_Homogeneous as u8) != 0 {
+        if (behavior.value & PRC_TRANSFORMATION_Homogeneous as i8) != 0 {
             for i in self.homogeneous.as_ref().unwrap() {
                 i.to_writer(_w)?;
             }
@@ -1419,7 +1420,7 @@ impl Transformation2DWithBit {
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct Transformation3D {
-    pub behavior: UnsignedCharacter,
+    pub behavior: Character,
     pub translation: Option<Vector3D>,
     pub non_ortho_matrix: Option<[Vector3D; 3]>,
     pub rotation: Option<[Vector3D; 2]>,
@@ -1434,8 +1435,8 @@ impl Transformation3D {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!("Transformation3D::from_reader()");
-        let mut behavior: UnsignedCharacter = Default::default();
-        behavior = UnsignedCharacter::from_reader(rdr)?;
+        let mut behavior: Character = Default::default();
+        behavior = Character::from_reader(rdr)?;
         let translation_cond = (behavior.value as u8 & PRC_TRANSFORMATION_Translate as u8) != 0;
         let mut translation: Vector3D = Default::default();
         if translation_cond {
@@ -1692,8 +1693,8 @@ impl TransformationUNUSED {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        warn!("TransformationUNUSED structure contains FIXME!");
         trace!("TransformationUNUSED::from_reader()");
+        warn!("TransformationUNUSED structure contains FIXME!");
         let mut id_type_id: u32 = 0;
         let mut id_concrete: TransformationUNUSED_idConcrete =
             TransformationUNUSED_idConcrete::Invalid(id_type_id);
@@ -1770,6 +1771,7 @@ impl PRC_TYPE_GRAPH_TextureTransformation {
         invert_t = Boolean::from_reader(rdr)?;
         let mut transform_2d: Boolean = Default::default();
         transform_2d = Boolean::from_reader(rdr)?;
+        assert_eq!(transform_2d.value, true);
         let transform_cond = !!transform_2d;
         let mut transform: Transformation2D = Default::default();
         if transform_cond {
@@ -1867,23 +1869,23 @@ pub struct PRC_TYPE_GRAPH_TextureDefinition {
     pub id: UnsignedInteger,
     pub base: ContentPRCRefBase,
     pub biased_picture_index: UnsignedInteger,
-    pub texture_dimension: UnsignedCharacter,
+    pub texture_dimension: Character,
     pub texture_mapping_type: Integer,
     pub texture_mapping_operator: Option<Integer>,
     pub has_transformation: Option<Boolean>,
     pub transformation: Option<PRC_TYPE_MISC_CartesianTransformation>,
     pub texture_mapping_attributes: UnsignedInteger,
     pub number_of_texture_mapping_attributes_intensities: UnsignedInteger,
-    pub texture_mapping_attributes_intensities: Vec<Double>,
+    pub texture_mapping_attributes_intensities: Option<Vec<Double>>,
     pub number_of_texture_mapping_attributes_components: UnsignedInteger,
-    pub texture_mapping_attributes_components: Vec<UnsignedCharacter>,
+    pub texture_mapping_attributes_components: Option<Vec<Character>>,
     pub texture_function: Integer,
     pub blend_src: Option<[Double; 4]>,
     pub blend_src_rgb: Integer,
     pub blend_dst_rgb: Option<Integer>,
     pub blend_src_alpha: Integer,
     pub blend_dst_alpha: Option<Integer>,
-    pub texture_application_mode: UnsignedCharacter,
+    pub texture_application_mode: Character,
     pub alpha_test: Option<Integer>,
     pub alpha_test_reference: Option<Double>,
     pub texture_wrapping_mode_s: Integer,
@@ -1899,6 +1901,12 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!("PRC_TYPE_GRAPH_TextureDefinition::from_reader()");
+        UnsignedInteger::search_and_seek_back(
+            rdr,
+            PRC_TYPE_GRAPH_TextureDefinition as u32,
+            9999,
+            5,
+        );
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -1909,8 +1917,9 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
         let mut biased_picture_index: UnsignedInteger = Default::default();
         biased_picture_index = UnsignedInteger::from_reader(rdr)?;
-        let mut texture_dimension: UnsignedCharacter = Default::default();
-        texture_dimension = UnsignedCharacter::from_reader(rdr)?;
+        let mut texture_dimension: Character = Default::default();
+        texture_dimension = Character::from_reader(rdr)?;
+        assert_eq!(texture_dimension.value, 2 as i8);
         let mut texture_mapping_type: Integer = Default::default();
         texture_mapping_type = Integer::from_reader(rdr)?;
         let texture_mapping_operator_cond =
@@ -1936,20 +1945,36 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         let mut number_of_texture_mapping_attributes_intensities: UnsignedInteger =
             Default::default();
         number_of_texture_mapping_attributes_intensities = UnsignedInteger::from_reader(rdr)?;
+        assert!(
+            number_of_texture_mapping_attributes_intensities.value == 0
+                || number_of_texture_mapping_attributes_intensities.value == 1
+        );
+        let texture_mapping_attributes_intensities_cond =
+            number_of_texture_mapping_attributes_intensities.value != 0;
         let mut texture_mapping_attributes_intensities: Vec<Double> =
             Vec::with_capacity((number_of_texture_mapping_attributes_intensities.value) as usize);
-        for _i in 0..(number_of_texture_mapping_attributes_intensities.value) {
-            let element = Double::from_reader(rdr)?;
-            texture_mapping_attributes_intensities.push(element);
+        if texture_mapping_attributes_intensities_cond {
+            for _i in 0..(number_of_texture_mapping_attributes_intensities.value) {
+                let element = Double::from_reader(rdr)?;
+                texture_mapping_attributes_intensities.push(element);
+            }
         }
         let mut number_of_texture_mapping_attributes_components: UnsignedInteger =
             Default::default();
         number_of_texture_mapping_attributes_components = UnsignedInteger::from_reader(rdr)?;
-        let mut texture_mapping_attributes_components: Vec<UnsignedCharacter> =
+        assert!(
+            number_of_texture_mapping_attributes_components.value == 0
+                || number_of_texture_mapping_attributes_components.value == 1
+        );
+        let texture_mapping_attributes_components_cond =
+            number_of_texture_mapping_attributes_components.value != 0;
+        let mut texture_mapping_attributes_components: Vec<Character> =
             Vec::with_capacity((number_of_texture_mapping_attributes_components.value) as usize);
-        for _i in 0..(number_of_texture_mapping_attributes_components.value) {
-            let element = UnsignedCharacter::from_reader(rdr)?;
-            texture_mapping_attributes_components.push(element);
+        if texture_mapping_attributes_components_cond {
+            for _i in 0..(number_of_texture_mapping_attributes_components.value) {
+                let element = Character::from_reader(rdr)?;
+                texture_mapping_attributes_components.push(element);
+            }
         }
         let mut texture_function: Integer = Default::default();
         texture_function = Integer::from_reader(rdr)?;
@@ -1959,6 +1984,9 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
             for i in 0..4 {
                 blend_src[i as usize] = Double::from_reader(rdr)?;
             }
+        }
+        for idx in 0..4 {
+            assert!(blend_src[idx].value >= 0.0 && blend_src[idx].value <= 1.0);
         }
         let mut blend_src_rgb: Integer = Default::default();
         blend_src_rgb = Integer::from_reader(rdr)?;
@@ -1974,8 +2002,8 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         if blend_dst_alpha_cond {
             blend_dst_alpha = Integer::from_reader(rdr)?;
         }
-        let mut texture_application_mode: UnsignedCharacter = Default::default();
-        texture_application_mode = UnsignedCharacter::from_reader(rdr)?;
+        let mut texture_application_mode: Character = Default::default();
+        texture_application_mode = Character::from_reader(rdr)?;
         let alpha_test_cond =
             (texture_application_mode.value as u16 & TextureApplicationMode::AlphaTest as u16) != 0;
         let mut alpha_test: Integer = Default::default();
@@ -1990,12 +2018,12 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         }
         let mut texture_wrapping_mode_s: Integer = Default::default();
         texture_wrapping_mode_s = Integer::from_reader(rdr)?;
-        let texture_wrapping_mode_t_cond = texture_dimension.value as u8 > 1;
+        let texture_wrapping_mode_t_cond = texture_dimension.value > 1;
         let mut texture_wrapping_mode_t: Integer = Default::default();
         if texture_wrapping_mode_t_cond {
             texture_wrapping_mode_t = Integer::from_reader(rdr)?;
         }
-        let texture_wrapping_mode_r_cond = texture_dimension.value as u8 > 2;
+        let texture_wrapping_mode_r_cond = texture_dimension.value > 2;
         let mut texture_wrapping_mode_r: Integer = Default::default();
         if texture_wrapping_mode_r_cond {
             texture_wrapping_mode_r = Integer::from_reader(rdr)?;
@@ -2033,9 +2061,17 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
             },
             texture_mapping_attributes,
             number_of_texture_mapping_attributes_intensities,
-            texture_mapping_attributes_intensities,
+            texture_mapping_attributes_intensities: if texture_mapping_attributes_intensities_cond {
+                Some(texture_mapping_attributes_intensities)
+            } else {
+                None
+            },
             number_of_texture_mapping_attributes_components,
-            texture_mapping_attributes_components,
+            texture_mapping_attributes_components: if texture_mapping_attributes_components_cond {
+                Some(texture_mapping_attributes_components)
+            } else {
+                None
+            },
             texture_function,
             blend_src: if blend_src_cond {
                 Some(blend_src)
@@ -2126,16 +2162,24 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         number_of_texture_mapping_attributes_intensities.to_writer(_w)?;
         let texture_mapping_attributes_intensities =
             self.texture_mapping_attributes_intensities.clone();
-        for i in &self.texture_mapping_attributes_intensities {
-            i.to_writer(_w)?;
+        if number_of_texture_mapping_attributes_intensities.value != 0 {
+            for i in self
+                .texture_mapping_attributes_intensities
+                .as_ref()
+                .unwrap()
+            {
+                i.to_writer(_w)?;
+            }
         }
         let number_of_texture_mapping_attributes_components =
             self.number_of_texture_mapping_attributes_components.clone();
         number_of_texture_mapping_attributes_components.to_writer(_w)?;
         let texture_mapping_attributes_components =
             self.texture_mapping_attributes_components.clone();
-        for i in &self.texture_mapping_attributes_components {
-            i.to_writer(_w)?;
+        if number_of_texture_mapping_attributes_components.value != 0 {
+            for i in self.texture_mapping_attributes_components.as_ref().unwrap() {
+                i.to_writer(_w)?;
+            }
         }
         let texture_function = self.texture_function.clone();
         texture_function.to_writer(_w)?;
@@ -2175,12 +2219,12 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         }
         let texture_wrapping_mode_s = self.texture_wrapping_mode_s.clone();
         texture_wrapping_mode_s.to_writer(_w)?;
-        let texture_wrapping_mode_t_cond = texture_dimension.value as u8 > 1;
+        let texture_wrapping_mode_t_cond = texture_dimension.value > 1;
         let texture_wrapping_mode_t = self.texture_wrapping_mode_t.as_ref().unwrap();
         if texture_wrapping_mode_t_cond {
             texture_wrapping_mode_t.to_writer(_w)?;
         }
-        let texture_wrapping_mode_r_cond = texture_dimension.value as u8 > 2;
+        let texture_wrapping_mode_r_cond = texture_dimension.value > 2;
         let texture_wrapping_mode_r = self.texture_wrapping_mode_r.as_ref().unwrap();
         if texture_wrapping_mode_r_cond {
             texture_wrapping_mode_r.to_writer(_w)?;
@@ -2498,9 +2542,9 @@ pub struct PRC_TYPE_GRAPH_Style {
     pub is_material: Boolean,
     pub biased_color_index: UnsignedInteger,
     pub is_transparency: Boolean,
-    pub transparency: Option<UnsignedCharacter>,
+    pub transparency: Option<Character>,
     pub is_rendering_parameters: Boolean,
-    pub rendering_parameters: Option<UnsignedCharacter>,
+    pub rendering_parameters: Option<Character>,
     pub flag1: Boolean,
     pub val1: Option<UnsignedCharacter>,
     pub flag2: Boolean,
@@ -2531,16 +2575,16 @@ impl PRC_TYPE_GRAPH_Style {
         let mut is_transparency: Boolean = Default::default();
         is_transparency = Boolean::from_reader(rdr)?;
         let transparency_cond = !!is_transparency;
-        let mut transparency: UnsignedCharacter = Default::default();
+        let mut transparency: Character = Default::default();
         if transparency_cond {
-            transparency = UnsignedCharacter::from_reader(rdr)?;
+            transparency = Character::from_reader(rdr)?;
         }
         let mut is_rendering_parameters: Boolean = Default::default();
         is_rendering_parameters = Boolean::from_reader(rdr)?;
         let rendering_parameters_cond = !!is_rendering_parameters;
-        let mut rendering_parameters: UnsignedCharacter = Default::default();
+        let mut rendering_parameters: Character = Default::default();
         if rendering_parameters_cond {
-            rendering_parameters = UnsignedCharacter::from_reader(rdr)?;
+            rendering_parameters = Character::from_reader(rdr)?;
         }
         let mut flag1: Boolean = Default::default();
         flag1 = Boolean::from_reader(rdr)?;
@@ -2964,7 +3008,7 @@ pub struct PRC_TYPE_TESS_Markup {
     pub number_of_text_strings: UnsignedInteger,
     pub text_strings: Vec<String>,
     pub tessellation_label: String,
-    pub behavior: UnsignedCharacter,
+    pub behavior: Character,
 }
 impl PRC_TYPE_TESS_Markup {
     #[allow(unused_assignments)]
@@ -2996,8 +3040,8 @@ impl PRC_TYPE_TESS_Markup {
         }
         let mut tessellation_label: String = Default::default();
         tessellation_label = String::from_reader(rdr)?;
-        let mut behavior: UnsignedCharacter = Default::default();
-        behavior = UnsignedCharacter::from_reader(rdr)?;
+        let mut behavior: Character = Default::default();
+        behavior = Character::from_reader(rdr)?;
         let _ = _ctx.se.eval(rdr, PRC_TYPE_TESS_Markup as u32, false, 0);
         let rv = Self {
             id,
@@ -6932,7 +6976,7 @@ impl ReferencesOfProductOccurrence {
 pub struct ProductInformation {
     pub unit_from_cad_file: Boolean,
     pub unit: Double,
-    pub product_information_flags: UnsignedCharacter,
+    pub product_information_flags: Character,
     pub product_load_status: Integer,
 }
 impl ProductInformation {
@@ -6946,8 +6990,8 @@ impl ProductInformation {
         unit_from_cad_file = Boolean::from_reader(rdr)?;
         let mut unit: Double = Default::default();
         unit = Double::from_reader(rdr)?;
-        let mut product_information_flags: UnsignedCharacter = Default::default();
-        product_information_flags = UnsignedCharacter::from_reader(rdr)?;
+        let mut product_information_flags: Character = Default::default();
+        product_information_flags = Character::from_reader(rdr)?;
         let mut product_load_status: Integer = Default::default();
         product_load_status = Integer::from_reader(rdr)?;
         let rv = Self {
@@ -6981,7 +7025,7 @@ pub struct PRC_TYPE_ASM_ProductOccurrence {
     pub id: UnsignedInteger,
     pub base: PRC_TYPE_ROOT_PRCBaseWithGraphics,
     pub references_product_occurrence: ReferencesOfProductOccurrence,
-    pub product_behavior: UnsignedCharacter,
+    pub product_behavior: Character,
     pub product_information: ProductInformation,
     pub has_transformation: Boolean,
     pub location_concrete: PRC_TYPE_ASM_ProductOccurrence_locationConcrete,
@@ -7015,8 +7059,8 @@ impl PRC_TYPE_ASM_ProductOccurrence {
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
         let mut references_product_occurrence: ReferencesOfProductOccurrence = Default::default();
         references_product_occurrence = ReferencesOfProductOccurrence::from_reader(rdr, _ctx)?;
-        let mut product_behavior: UnsignedCharacter = Default::default();
-        product_behavior = UnsignedCharacter::from_reader(rdr)?;
+        let mut product_behavior: Character = Default::default();
+        product_behavior = Character::from_reader(rdr)?;
         let mut product_information: ProductInformation = Default::default();
         product_information = ProductInformation::from_reader(rdr, _ctx)?;
         let mut has_transformation: Boolean = Default::default();
@@ -7758,7 +7802,7 @@ pub struct PRC_TYPE_TESS_3D {
     pub has_faces: Boolean,
     pub has_loops: Option<Boolean>,
     pub must_calculate_normals: Option<Boolean>,
-    pub normal_recalculation_flags: Option<UnsignedCharacter>,
+    pub normal_recalculation_flags: Option<Character>,
     pub crease_angle: Option<Double>,
     pub number_of_normal_coordinates: UnsignedInteger,
     pub normal_coordinates: Vec<Double>,
@@ -7797,9 +7841,9 @@ impl PRC_TYPE_TESS_3D {
         }
         let normal_recalculation_flags_cond =
             !!must_calculate_normals.value && _ctx.ver_authoring >= 7047;
-        let mut normal_recalculation_flags: UnsignedCharacter = Default::default();
+        let mut normal_recalculation_flags: Character = Default::default();
         if normal_recalculation_flags_cond {
-            normal_recalculation_flags = UnsignedCharacter::from_reader(rdr)?;
+            normal_recalculation_flags = Character::from_reader(rdr)?;
         }
         let crease_angle_cond = !!must_calculate_normals.value && _ctx.ver_authoring >= 7047;
         let mut crease_angle: Double = Default::default();
@@ -8055,7 +8099,10 @@ impl BinaryTextureData {
         }
         let mut last_integer_used_bit_number: UnsignedInteger = Default::default();
         last_integer_used_bit_number = UnsignedInteger::from_reader(rdr)?;
-        assert!(last_integer_used_bit_number.value >= 0 && last_integer_used_bit_number.value < 32);
+        assert!(
+            /*last_integer_used_bit_number.value >= 0 &&*/
+            last_integer_used_bit_number.value < 32
+        );
         let rv = Self {
             texture_binary_data_size,
             texture_binary_data,
@@ -8169,8 +8216,8 @@ pub struct PRC_TYPE_TESS_3D_Compressed {
     pub must_recalculate_normals: Boolean,
     pub normal_is_reversed: Option<Vec<Boolean>>,
     pub crease_angle: Option<Double>,
-    pub normal_recalculation_flags: Option<UnsignedCharacter>,
-    pub normal_angle_number_of_bits: Option<UnsignedCharacter>,
+    pub normal_recalculation_flags: Option<Character>,
+    pub normal_angle_number_of_bits: Option<Character>,
     pub normal_binary_data_size: Option<UnsignedInteger>,
     pub normal_binary_data: Option<Vec<Boolean>>,
     pub normal_angle_array: Option<ShortArray>,
@@ -8284,15 +8331,15 @@ impl PRC_TYPE_TESS_3D_Compressed {
             trace!("{:?}", &crease_angle);
         }
         let normal_recalculation_flags_cond = !!must_recalculate_normals;
-        let mut normal_recalculation_flags: UnsignedCharacter = Default::default();
+        let mut normal_recalculation_flags: Character = Default::default();
         if normal_recalculation_flags_cond {
-            normal_recalculation_flags = UnsignedCharacter::from_reader(rdr)?;
+            normal_recalculation_flags = Character::from_reader(rdr)?;
             trace!("{:?}", &normal_recalculation_flags);
         }
         let normal_angle_number_of_bits_cond = !must_recalculate_normals;
-        let mut normal_angle_number_of_bits: UnsignedCharacter = Default::default();
+        let mut normal_angle_number_of_bits: Character = Default::default();
         if normal_angle_number_of_bits_cond {
-            normal_angle_number_of_bits = UnsignedCharacter::from_reader(rdr)?;
+            normal_angle_number_of_bits = Character::from_reader(rdr)?;
             trace!("{:?}", &normal_angle_number_of_bits);
         }
         let normal_binary_data_size_cond = !must_recalculate_normals;
@@ -8650,6 +8697,10 @@ impl PRC_TYPE_TESS {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!("PRC_TYPE_TESS::from_reader()");
+        UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D as u32, 9999, 5);
+        UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D_Wire as u32, 9999, 5);
+        UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_Markup as u32, 9999, 5);
+        UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D_Compressed as u32, 9999, 5);
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_TESS_idConcrete =
             PRC_TYPE_TESS_idConcrete::Invalid(id_type_id);
@@ -8849,7 +8900,7 @@ impl BaseTopology {
 #[allow(non_camel_case_types)]
 pub struct ContentBody {
     pub base: BaseTopology,
-    pub bounding_box_behavior: UnsignedCharacter,
+    pub bounding_box_behavior: Character,
 }
 impl ContentBody {
     #[allow(unused_assignments)]
@@ -8860,8 +8911,8 @@ impl ContentBody {
         trace!("ContentBody::from_reader()");
         let mut base: BaseTopology = Default::default();
         base = BaseTopology::from_reader(rdr, _ctx)?;
-        let mut bounding_box_behavior: UnsignedCharacter = Default::default();
-        bounding_box_behavior = UnsignedCharacter::from_reader(rdr)?;
+        let mut bounding_box_behavior: Character = Default::default();
+        bounding_box_behavior = Character::from_reader(rdr)?;
         let rv = Self {
             base,
             bounding_box_behavior,
@@ -10848,7 +10899,7 @@ pub struct PRC_TYPE_CRV_Helix {
     pub transform2d: Option<Transformation2DWithBit>,
     pub transform3d: Option<Transformation3DWithBit>,
     pub paramaterization: Parameterization,
-    pub _type: UnsignedCharacter,
+    pub _type: Character,
     pub orientation: Boolean,
     pub start: Vector3D,
     pub type0_helix: Type0HelixData,
@@ -10878,8 +10929,9 @@ impl PRC_TYPE_CRV_Helix {
         }
         let mut paramaterization: Parameterization = Default::default();
         paramaterization = Parameterization::from_reader(rdr, _ctx)?;
-        let mut _type: UnsignedCharacter = Default::default();
-        _type = UnsignedCharacter::from_reader(rdr)?;
+        let mut _type: Character = Default::default();
+        _type = Character::from_reader(rdr)?;
+        assert!(_type.value == 0 || _type.value == 1);
         let mut orientation: Boolean = Default::default();
         orientation = Boolean::from_reader(rdr)?;
         let mut start: Vector3D = Default::default();
@@ -10956,7 +11008,7 @@ pub struct PRC_TYPE_CRV_Hyperbola {
     pub paramaterization: Parameterization,
     pub semi_axis: Double,
     pub semi_image_axis: Double,
-    pub _type: UnsignedCharacter,
+    pub _type: Character,
 }
 impl PRC_TYPE_CRV_Hyperbola {
     #[allow(unused_assignments)]
@@ -10986,8 +11038,9 @@ impl PRC_TYPE_CRV_Hyperbola {
         semi_axis = Double::from_reader(rdr)?;
         let mut semi_image_axis: Double = Default::default();
         semi_image_axis = Double::from_reader(rdr)?;
-        let mut _type: UnsignedCharacter = Default::default();
-        _type = UnsignedCharacter::from_reader(rdr)?;
+        let mut _type: Character = Default::default();
+        _type = Character::from_reader(rdr)?;
+        assert!(_type.value == 0 || _type.value == 1);
         let _ = _ctx.se.eval(rdr, PRC_TYPE_CRV_Hyperbola as u32, false, 0);
         let rv = Self {
             id,
@@ -11049,7 +11102,7 @@ pub struct CrossingPointsCrvIntersection {
     pub tangent: Vector3D,
     pub parameter: Double,
     pub scale: Double,
-    pub flags: UnsignedCharacter,
+    pub flags: Character,
 }
 impl CrossingPointsCrvIntersection {
     #[allow(unused_assignments)]
@@ -11070,8 +11123,8 @@ impl CrossingPointsCrvIntersection {
         parameter = Double::from_reader(rdr)?;
         let mut scale: Double = Default::default();
         scale = Double::from_reader(rdr)?;
-        let mut flags: UnsignedCharacter = Default::default();
-        flags = UnsignedCharacter::from_reader(rdr)?;
+        let mut flags: Character = Default::default();
+        flags = Character::from_reader(rdr)?;
         let rv = Self {
             position,
             uv_surface_1,
@@ -11457,7 +11510,7 @@ pub struct PRC_TYPE_CRV_Parabola {
     pub transform3d: Option<Transformation3DWithBit>,
     pub paramaterization: Parameterization,
     pub focal_length: Double,
-    pub _type: UnsignedCharacter,
+    pub _type: Character,
 }
 impl PRC_TYPE_CRV_Parabola {
     #[allow(unused_assignments)]
@@ -11485,8 +11538,9 @@ impl PRC_TYPE_CRV_Parabola {
         paramaterization = Parameterization::from_reader(rdr, _ctx)?;
         let mut focal_length: Double = Default::default();
         focal_length = Double::from_reader(rdr)?;
-        let mut _type: UnsignedCharacter = Default::default();
-        _type = UnsignedCharacter::from_reader(rdr)?;
+        let mut _type: Character = Default::default();
+        _type = Character::from_reader(rdr)?;
+        assert!(_type.value == 0 || _type.value == 1);
         let _ = _ctx.se.eval(rdr, PRC_TYPE_CRV_Parabola as u32, false, 0);
         let rv = Self {
             id,
@@ -12021,7 +12075,7 @@ pub struct PRC_TYPE_SURF_Blend02 {
     pub radius_1: Double,
     pub cliff_suface_0: PtrSurface,
     pub cliff_surface_1: PtrSurface,
-    pub parameterization_type: UnsignedCharacter,
+    pub parameterization_type: Character,
 }
 impl PRC_TYPE_SURF_Blend02 {
     #[allow(unused_assignments)]
@@ -12063,8 +12117,8 @@ impl PRC_TYPE_SURF_Blend02 {
         cliff_suface_0 = PtrSurface::from_reader(rdr, _ctx)?;
         let mut cliff_surface_1: PtrSurface = Default::default();
         cliff_surface_1 = PtrSurface::from_reader(rdr, _ctx)?;
-        let mut parameterization_type: UnsignedCharacter = Default::default();
-        parameterization_type = UnsignedCharacter::from_reader(rdr)?;
+        let mut parameterization_type: Character = Default::default();
+        parameterization_type = Character::from_reader(rdr)?;
         let _ = _ctx.se.eval(rdr, PRC_TYPE_SURF_Blend02 as u32, false, 0);
         let rv = Self {
             id,
@@ -12150,7 +12204,7 @@ pub struct PRC_TYPE_SURF_Blend03 {
     pub trim_v_min: Double,
     pub trim_v_max: Double,
     pub reserved_int: [Integer; 6],
-    pub reserved_char: [UnsignedCharacter; 3],
+    pub reserved_char: [Character; 3],
     pub number_of_supplimental_doubles: UnsignedInteger,
     pub supplimental_doubles: Vec<Double>,
 }
@@ -12227,9 +12281,9 @@ impl PRC_TYPE_SURF_Blend03 {
         for i in 0..6 {
             reserved_int[i as usize] = Integer::from_reader(rdr)?;
         }
-        let mut reserved_char: [UnsignedCharacter; 3] = [Default::default(); 3];
+        let mut reserved_char: [Character; 3] = [Default::default(); 3];
         for i in 0..3 {
-            reserved_char[i as usize] = UnsignedCharacter::from_reader(rdr)?;
+            reserved_char[i as usize] = Character::from_reader(rdr)?;
         }
         let mut number_of_supplimental_doubles: UnsignedInteger = Default::default();
         number_of_supplimental_doubles = UnsignedInteger::from_reader(rdr)?;
@@ -13364,8 +13418,8 @@ impl PRC_TYPE_SURF_Blend04 {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        panic!("PRC_TYPE_SURF_Blend04 not implemented");
         trace!("PRC_TYPE_SURF_Blend04::from_reader()");
+        panic!("PRC_TYPE_SURF_Blend04 not implemented");
         let rv = Self {};
         Ok(rv)
     }
@@ -13754,8 +13808,8 @@ pub struct PRC_TYPE_TOPO_CoEdge {
     pub base_tolopogy: BaseTopology,
     pub ptr_topology: PtrTopology,
     pub ptr_curves: PtrCurve,
-    pub coedge_orientation: UnsignedCharacter,
-    pub uv_orientation: UnsignedCharacter,
+    pub coedge_orientation: Character,
+    pub uv_orientation: Character,
 }
 impl PRC_TYPE_TOPO_CoEdge {
     #[allow(unused_assignments)]
@@ -13773,10 +13827,10 @@ impl PRC_TYPE_TOPO_CoEdge {
         ptr_topology = PtrTopology::from_reader(rdr, _ctx)?;
         let mut ptr_curves: PtrCurve = Default::default();
         ptr_curves = PtrCurve::from_reader(rdr, _ctx)?;
-        let mut coedge_orientation: UnsignedCharacter = Default::default();
-        coedge_orientation = UnsignedCharacter::from_reader(rdr)?;
-        let mut uv_orientation: UnsignedCharacter = Default::default();
-        uv_orientation = UnsignedCharacter::from_reader(rdr)?;
+        let mut coedge_orientation: Character = Default::default();
+        coedge_orientation = Character::from_reader(rdr)?;
+        let mut uv_orientation: Character = Default::default();
+        uv_orientation = Character::from_reader(rdr)?;
         let _ = _ctx.se.eval(rdr, PRC_TYPE_TOPO_CoEdge as u32, false, 0);
         let rv = Self {
             id,
@@ -13850,7 +13904,7 @@ impl CoedgeInLoop {
 pub struct PRC_TYPE_TOPO_Loop {
     pub id: UnsignedInteger,
     pub base_tolopogy: BaseTopology,
-    pub loop_orientation: UnsignedCharacter,
+    pub loop_orientation: Character,
     pub number_of_coedges: UnsignedInteger,
     pub coedge: Vec<CoedgeInLoop>,
 }
@@ -13866,8 +13920,8 @@ impl PRC_TYPE_TOPO_Loop {
         assert_eq!(PRC_TYPE_TOPO_Loop, PRCType::try_from(id.value).unwrap());
         let mut base_tolopogy: BaseTopology = Default::default();
         base_tolopogy = BaseTopology::from_reader(rdr, _ctx)?;
-        let mut loop_orientation: UnsignedCharacter = Default::default();
-        loop_orientation = UnsignedCharacter::from_reader(rdr)?;
+        let mut loop_orientation: Character = Default::default();
+        loop_orientation = Character::from_reader(rdr)?;
         let mut number_of_coedges: UnsignedInteger = Default::default();
         number_of_coedges = UnsignedInteger::from_reader(rdr)?;
         let mut coedge: Vec<CoedgeInLoop> = Vec::with_capacity((number_of_coedges.value) as usize);
@@ -14021,7 +14075,7 @@ impl PRC_TYPE_TOPO_Face {
 #[allow(non_camel_case_types)]
 pub struct FacesInShell {
     pub face: PtrTopology,
-    pub orientation: UnsignedCharacter,
+    pub orientation: Character,
 }
 impl FacesInShell {
     #[allow(unused_assignments)]
@@ -14032,8 +14086,8 @@ impl FacesInShell {
         trace!("FacesInShell::from_reader()");
         let mut face: PtrTopology = Default::default();
         face = PtrTopology::from_reader(rdr, _ctx)?;
-        let mut orientation: UnsignedCharacter = Default::default();
-        orientation = UnsignedCharacter::from_reader(rdr)?;
+        let mut orientation: Character = Default::default();
+        orientation = Character::from_reader(rdr)?;
         let rv = Self { face, orientation };
         Ok(rv)
     }
@@ -14433,7 +14487,7 @@ impl PRC_TYPE_TOPO_BrepData {
             connex.push(element);
         }
         let bounding_box_cond =
-            (base.bounding_box_behavior.value & PRC_BODY_BBOX_CADData as u8) != 0;
+            (base.bounding_box_behavior.value & PRC_BODY_BBOX_CADData as i8) != 0;
         let mut bounding_box: BoundingBox = Default::default();
         if bounding_box_cond {
             bounding_box = BoundingBox::from_reader(rdr, _ctx)?;
@@ -14468,40 +14522,11 @@ impl PRC_TYPE_TOPO_BrepData {
             i.to_writer(_w, _ctx)?;
         }
         let bounding_box_cond =
-            (base.bounding_box_behavior.value & PRC_BODY_BBOX_CADData as u8) != 0;
+            (base.bounding_box_behavior.value & PRC_BODY_BBOX_CADData as i8) != 0;
         let bounding_box = self.bounding_box.as_ref().unwrap();
         if bounding_box_cond {
             bounding_box.to_writer(_w, _ctx)?;
         }
-        Ok(())
-    }
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Eq, Copy)]
-#[allow(non_camel_case_types)]
-pub struct CompressedPoint {
-    pub point: Point3DWithVariableBitNumber,
-}
-impl CompressedPoint {
-    #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
-        rdr: &mut BitReader<R, E>,
-        _ctx: &mut PrcParsingContext,
-    ) -> io::Result<Self> {
-        trace!("CompressedPoint::from_reader()");
-        let mut point: Point3DWithVariableBitNumber = Default::default();
-        point =
-            Point3DWithVariableBitNumber::from_reader(rdr, _ctx.brep_data_compressed_tolerance)?;
-        let rv = Self { point };
-        Ok(rv)
-    }
-    pub fn to_writer<W: BitWrite + ?Sized>(
-        &self,
-        _w: &mut W,
-        _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
-        let point = self.point.clone();
-        point.to_writer(_w, _ctx.brep_data_compressed_tolerance)?;
         Ok(())
     }
 }
@@ -14533,7 +14558,8 @@ impl CompressedVertex {
         let point_data_cond = !!already_stored.value;
         let mut point_data: CompressedPoint = Default::default();
         if point_data_cond {
-            point_data = CompressedPoint::from_reader(rdr, _ctx)?;
+            point_data =
+                CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         let rv = Self {
             already_stored,
@@ -14565,7 +14591,7 @@ impl CompressedVertex {
         let point_data_cond = !!already_stored.value;
         let point_data = self.point_data.as_ref().unwrap();
         if point_data_cond {
-            point_data.to_writer(_w, _ctx)?;
+            point_data.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         Ok(())
     }
@@ -14597,17 +14623,20 @@ impl ParticularCircle {
         let center_cond = full_circle.value;
         let mut center: CompressedPoint = Default::default();
         if center_cond {
-            center = CompressedPoint::from_reader(rdr, _ctx)?;
+            center =
+                CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         let normal_cond = full_circle.value;
         let mut normal: CompressedPoint = Default::default();
         if normal_cond {
-            normal = CompressedPoint::from_reader(rdr, _ctx)?;
+            normal =
+                CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         let middle_of_arc_cond = !full_circle.value;
         let mut middle_of_arc: CompressedPoint = Default::default();
         if middle_of_arc_cond {
-            middle_of_arc = CompressedPoint::from_reader(rdr, _ctx)?;
+            middle_of_arc =
+                CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         let rv = Self {
             full_circle,
@@ -14641,17 +14670,17 @@ impl ParticularCircle {
         let center_cond = full_circle.value;
         let center = self.center.as_ref().unwrap();
         if center_cond {
-            center.to_writer(_w, _ctx)?;
+            center.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         let normal_cond = full_circle.value;
         let normal = self.normal.as_ref().unwrap();
         if normal_cond {
-            normal.to_writer(_w, _ctx)?;
+            normal.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         let middle_of_arc_cond = !full_circle.value;
         let middle_of_arc = self.middle_of_arc.as_ref().unwrap();
         if middle_of_arc_cond {
-            middle_of_arc.to_writer(_w, _ctx)?;
+            middle_of_arc.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         Ok(())
     }
@@ -14674,7 +14703,7 @@ impl GeneralCircle {
         let mut start_end_data: StartEndData = Default::default();
         start_end_data = StartEndData::from_reader(rdr, _ctx)?;
         let mut center: CompressedPoint = Default::default();
-        center = CompressedPoint::from_reader(rdr, _ctx)?;
+        center = CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         let mut circle_angle: Boolean = Default::default();
         circle_angle = Boolean::from_reader(rdr)?;
         let rv = Self {
@@ -14692,7 +14721,7 @@ impl GeneralCircle {
         let start_end_data = self.start_end_data.clone();
         start_end_data.to_writer(_w, _ctx)?;
         let center = self.center.clone();
-        center.to_writer(_w, _ctx)?;
+        center.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         let circle_angle = self.circle_angle.clone();
         circle_angle.to_writer(_w)?;
         Ok(())
@@ -14727,12 +14756,14 @@ impl StartEndData {
         let start_point_cond = !_ctx.curve_trimming_face;
         let mut start_point: CompressedPoint = Default::default();
         if start_point_cond {
-            start_point = CompressedPoint::from_reader(rdr, _ctx)?;
+            start_point =
+                CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         let end_point_cond = !_ctx.curve_trimming_face;
         let mut end_point: CompressedPoint = Default::default();
         if end_point_cond {
-            end_point = CompressedPoint::from_reader(rdr, _ctx)?;
+            end_point =
+                CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         let rv = Self {
             start_vertex: if start_vertex_cond {
@@ -14776,12 +14807,12 @@ impl StartEndData {
         let start_point_cond = !_ctx.curve_trimming_face;
         let start_point = self.start_point.as_ref().unwrap();
         if start_point_cond {
-            start_point.to_writer(_w, _ctx)?;
+            start_point.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         let end_point_cond = !_ctx.curve_trimming_face;
         let end_point = self.end_point.as_ref().unwrap();
         if end_point_cond {
-            end_point.to_writer(_w, _ctx)?;
+            end_point.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         Ok(())
     }
@@ -14907,8 +14938,12 @@ pub struct PRC_HCG_BSplineHermiteCurve {
     pub start_end_data: StartEndData,
     pub number_bits: UnsignedIntegerWithVariableBitNumber,
     pub number_points: UnsignedIntegerWithVariableBitNumber,
-    pub points: Vec<Point3DWithVariableBitNumber>,
-    pub tangents: Vec<Point3DWithVariableBitNumber>,
+    pub point_number_bits: UnsignedIntegerWithVariableBitNumber,
+    pub points: Option<Vec<Vector3D>>,
+    pub compressed_points: Option<Vec<Point3DWithVariableBitNumber>>,
+    pub tangent_number_bits: UnsignedIntegerWithVariableBitNumber,
+    pub tangents: Option<Vec<Vector3D>>,
+    pub compressed_tangents: Option<Vec<Point3DWithVariableBitNumber>>,
 }
 impl PRC_HCG_BSplineHermiteCurve {
     #[allow(unused_assignments)]
@@ -14930,23 +14965,51 @@ impl PRC_HCG_BSplineHermiteCurve {
         number_bits = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 4)?;
         let mut number_points: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_points = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, number_bits.value)?;
-        let mut points: Vec<Point3DWithVariableBitNumber> =
-            Vec::with_capacity((number_points.value - 2) as usize);
-        for _i in 0..(number_points.value - 2) {
-            let element = Point3DWithVariableBitNumber::from_reader(
-                rdr,
-                _ctx.brep_data_compressed_tolerance,
-            )?;
-            points.push(element);
+        let mut point_number_bits: UnsignedIntegerWithVariableBitNumber = Default::default();
+        point_number_bits = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 6)?;
+        let points_cond = point_number_bits.value > 30;
+        let mut points: Vec<Vector3D> = Vec::with_capacity((number_points.value - 2) as usize);
+        if points_cond {
+            for _i in 0..(number_points.value - 2) {
+                let element = Vector3D::from_reader(rdr, _ctx)?;
+                points.push(element);
+            }
         }
-        let mut tangents: Vec<Point3DWithVariableBitNumber> =
+        let compressed_points_cond = point_number_bits.value <= 30;
+        let mut compressed_points: Vec<Point3DWithVariableBitNumber> =
+            Vec::with_capacity((number_points.value - 2) as usize);
+        if compressed_points_cond {
+            for _i in 0..(number_points.value - 2) {
+                let element = Point3DWithVariableBitNumber::from_reader(
+                    rdr,
+                    point_number_bits.value,
+                    _ctx.brep_data_compressed_tolerance,
+                )?;
+                compressed_points.push(element);
+            }
+        }
+        let mut tangent_number_bits: UnsignedIntegerWithVariableBitNumber = Default::default();
+        tangent_number_bits = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 6)?;
+        let tangents_cond = tangent_number_bits.value > 30;
+        let mut tangents: Vec<Vector3D> = Vec::with_capacity((number_points.value) as usize);
+        if tangents_cond {
+            for _i in 0..(number_points.value) {
+                let element = Vector3D::from_reader(rdr, _ctx)?;
+                tangents.push(element);
+            }
+        }
+        let compressed_tangents_cond = tangent_number_bits.value <= 30;
+        let mut compressed_tangents: Vec<Point3DWithVariableBitNumber> =
             Vec::with_capacity((number_points.value) as usize);
-        for _i in 0..(number_points.value) {
-            let element = Point3DWithVariableBitNumber::from_reader(
-                rdr,
-                _ctx.brep_data_compressed_tolerance,
-            )?;
-            tangents.push(element);
+        if compressed_tangents_cond {
+            for _i in 0..(number_points.value) {
+                let element = Point3DWithVariableBitNumber::from_reader(
+                    rdr,
+                    tangent_number_bits.value,
+                    _ctx.brep_data_compressed_tolerance,
+                )?;
+                compressed_tangents.push(element);
+            }
         }
         _ctx.pop_face_type();
         let rv = Self {
@@ -14954,8 +15017,20 @@ impl PRC_HCG_BSplineHermiteCurve {
             start_end_data,
             number_bits,
             number_points,
-            points,
-            tangents,
+            point_number_bits,
+            points: if points_cond { Some(points) } else { None },
+            compressed_points: if compressed_points_cond {
+                Some(compressed_points)
+            } else {
+                None
+            },
+            tangent_number_bits,
+            tangents: if tangents_cond { Some(tangents) } else { None },
+            compressed_tangents: if compressed_tangents_cond {
+                Some(compressed_tangents)
+            } else {
+                None
+            },
         };
         Ok(rv)
     }
@@ -14972,13 +15047,41 @@ impl PRC_HCG_BSplineHermiteCurve {
         number_bits.to_writer(_w, 4)?;
         let number_points = self.number_points.clone();
         number_points.to_writer(_w, number_bits.value)?;
+        let point_number_bits = self.point_number_bits.clone();
+        point_number_bits.to_writer(_w, 6)?;
         let points = self.points.clone();
-        for i in &self.points {
-            i.to_writer(_w, _ctx.brep_data_compressed_tolerance)?;
+        if point_number_bits.value > 30 {
+            for i in self.points.as_ref().unwrap() {
+                i.to_writer(_w, _ctx)?;
+            }
         }
+        let compressed_points = self.compressed_points.clone();
+        if point_number_bits.value <= 30 {
+            for i in self.compressed_points.as_ref().unwrap() {
+                i.to_writer(
+                    _w,
+                    point_number_bits.value,
+                    _ctx.brep_data_compressed_tolerance,
+                )?;
+            }
+        }
+        let tangent_number_bits = self.tangent_number_bits.clone();
+        tangent_number_bits.to_writer(_w, 6)?;
         let tangents = self.tangents.clone();
-        for i in &self.tangents {
-            i.to_writer(_w, _ctx.brep_data_compressed_tolerance)?;
+        if tangent_number_bits.value > 30 {
+            for i in self.tangents.as_ref().unwrap() {
+                i.to_writer(_w, _ctx)?;
+            }
+        }
+        let compressed_tangents = self.compressed_tangents.clone();
+        if tangent_number_bits.value <= 30 {
+            for i in self.compressed_tangents.as_ref().unwrap() {
+                i.to_writer(
+                    _w,
+                    tangent_number_bits.value,
+                    _ctx.brep_data_compressed_tolerance,
+                )?;
+            }
         }
         Ok(())
     }
@@ -15067,8 +15170,8 @@ impl PRC_HCG_Ellipse {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        panic!("PRC_HCG_Ellipse: not implemented");
         trace!("PRC_HCG_Ellipse::from_reader()");
+        panic!("PRC_HCG_Ellipse: not implemented");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
@@ -15426,7 +15529,8 @@ impl ContentCompressedAnaFace {
             && is_trimmed.value;
         let mut point_on_torus: CompressedPoint = Default::default();
         if point_on_torus_cond {
-            point_on_torus = CompressedPoint::from_reader(rdr, _ctx)?;
+            point_on_torus =
+                CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         let rv = Self {
             is_trimmed,
@@ -15460,7 +15564,7 @@ impl ContentCompressedAnaFace {
             && is_trimmed.value;
         let point_on_torus = self.point_on_torus.as_ref().unwrap();
         if point_on_torus_cond {
-            point_on_torus.to_writer(_w, _ctx)?;
+            point_on_torus.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         Ok(())
     }
@@ -15898,9 +16002,9 @@ impl PRC_HCG_AnaCylinder {
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         let mut point: CompressedPoint = Default::default();
-        point = CompressedPoint::from_reader(rdr, _ctx)?;
+        point = CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         let mut direction: CompressedPoint = Default::default();
-        direction = CompressedPoint::from_reader(rdr, _ctx)?;
+        direction = CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         _ctx.pop_face_type();
         let rv = Self {
             id,
@@ -15920,9 +16024,9 @@ impl PRC_HCG_AnaCylinder {
         let face = self.face.clone();
         face.to_writer(_w, _ctx)?;
         let point = self.point.clone();
-        point.to_writer(_w, _ctx)?;
+        point.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         let direction = self.direction.clone();
-        direction.to_writer(_w, _ctx)?;
+        direction.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         Ok(())
     }
 }
@@ -15953,9 +16057,9 @@ impl PRC_HCG_AnaTorus {
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         let mut center: CompressedPoint = Default::default();
-        center = CompressedPoint::from_reader(rdr, _ctx)?;
+        center = CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         let mut x_axis: CompressedPoint = Default::default();
-        x_axis = CompressedPoint::from_reader(rdr, _ctx)?;
+        x_axis = CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         let mut pointy_axis: Vector3D = Default::default();
         pointy_axis = Vector3D::from_reader(rdr, _ctx)?;
         _ctx.pop_face_type();
@@ -15978,9 +16082,9 @@ impl PRC_HCG_AnaTorus {
         let face = self.face.clone();
         face.to_writer(_w, _ctx)?;
         let center = self.center.clone();
-        center.to_writer(_w, _ctx)?;
+        center.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         let x_axis = self.x_axis.clone();
-        x_axis.to_writer(_w, _ctx)?;
+        x_axis.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         let pointy_axis = self.pointy_axis.clone();
         pointy_axis.to_writer(_w, _ctx)?;
         Ok(())
@@ -16011,7 +16115,8 @@ impl PRC_HCG_AnaSphere {
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         let mut sphere_center: CompressedPoint = Default::default();
-        sphere_center = CompressedPoint::from_reader(rdr, _ctx)?;
+        sphere_center =
+            CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         _ctx.pop_face_type();
         let rv = Self {
             id,
@@ -16030,7 +16135,7 @@ impl PRC_HCG_AnaSphere {
         let face = self.face.clone();
         face.to_writer(_w, _ctx)?;
         let sphere_center = self.sphere_center.clone();
-        sphere_center.to_writer(_w, _ctx)?;
+        sphere_center.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         Ok(())
     }
 }
@@ -16060,9 +16165,11 @@ impl PRC_HCG_AnaCone {
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         let mut axis_point: CompressedPoint = Default::default();
-        axis_point = CompressedPoint::from_reader(rdr, _ctx)?;
+        axis_point =
+            CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         let mut apex_point: CompressedPoint = Default::default();
-        apex_point = CompressedPoint::from_reader(rdr, _ctx)?;
+        apex_point =
+            CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         _ctx.pop_face_type();
         let rv = Self {
             id,
@@ -16082,9 +16189,9 @@ impl PRC_HCG_AnaCone {
         let face = self.face.clone();
         face.to_writer(_w, _ctx)?;
         let axis_point = self.axis_point.clone();
-        axis_point.to_writer(_w, _ctx)?;
+        axis_point.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         let apex_point = self.apex_point.clone();
-        apex_point.to_writer(_w, _ctx)?;
+        apex_point.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         Ok(())
     }
 }
@@ -16453,13 +16560,21 @@ impl CompressedControlPoints {
         let mut ccpt_in_v: Vec<Point3DWithVariableBitNumber> =
             Vec::with_capacity((_ctx.CompressedNurbs_number_ccpt_in_v - 1) as usize);
         for _i in 0..(_ctx.CompressedNurbs_number_ccpt_in_v - 1) {
-            let element = Point3DWithVariableBitNumber::from_reader(rdr, _ctx.nurbs_tolerance)?;
+            let element = Point3DWithVariableBitNumber::from_reader(
+                rdr,
+                _ctx.CompressedNurbs_number_of_bits_for_isomin + 1,
+                _ctx.nurbs_tolerance,
+            )?;
             ccpt_in_v.push(element);
         }
         let mut ccpt_in_u: Vec<Point3DWithVariableBitNumber> =
             Vec::with_capacity((_ctx.CompressedNurbs_number_ccpt_in_u - 1) as usize);
         for _i in 0..(_ctx.CompressedNurbs_number_ccpt_in_u - 1) {
-            let element = Point3DWithVariableBitNumber::from_reader(rdr, _ctx.nurbs_tolerance)?;
+            let element = Point3DWithVariableBitNumber::from_reader(
+                rdr,
+                _ctx.CompressedNurbs_number_of_bits_for_isomin + 1,
+                _ctx.nurbs_tolerance,
+            )?;
             ccpt_in_u.push(element);
         }
         let mut ccpt_interior: Vec<InteriorCompressedControlPoints> = Vec::with_capacity(
@@ -16489,11 +16604,19 @@ impl CompressedControlPoints {
         p00.to_writer(_w, _ctx)?;
         let ccpt_in_v = self.ccpt_in_v.clone();
         for i in &self.ccpt_in_v {
-            i.to_writer(_w, _ctx.nurbs_tolerance)?;
+            i.to_writer(
+                _w,
+                _ctx.CompressedNurbs_number_of_bits_for_isomin + 1,
+                _ctx.nurbs_tolerance,
+            )?;
         }
         let ccpt_in_u = self.ccpt_in_u.clone();
         for i in &self.ccpt_in_u {
-            i.to_writer(_w, _ctx.nurbs_tolerance)?;
+            i.to_writer(
+                _w,
+                _ctx.CompressedNurbs_number_of_bits_for_isomin + 1,
+                _ctx.nurbs_tolerance,
+            )?;
         }
         let ccpt_interior = self.ccpt_interior.clone();
         for i in &self.ccpt_interior {
@@ -17182,8 +17305,8 @@ impl PRC_HCG_IsoNurbs {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        _ctx.compressed_iso_spline = true;
         trace!("PRC_HCG_IsoNurbs::from_reader()");
+        _ctx.compressed_iso_spline = true;
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
@@ -17618,8 +17741,8 @@ impl PRC_TYPE_TOPO_SingleWireBodyCompress {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        _ctx.curve_trimming_face = false;
         trace!("PRC_TYPE_TOPO_SingleWireBodyCompress::from_reader()");
+        _ctx.curve_trimming_face = false;
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -17680,9 +17803,9 @@ impl PRC_TYPE_TOPO_BrepDataCompress {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
+        trace!("PRC_TYPE_TOPO_BrepDataCompress::from_reader()");
         _ctx.curve_trimming_face = true;
         _ctx.BrepDataCompress_sum_num_faces = 0;
-        trace!("PRC_TYPE_TOPO_BrepDataCompress::from_reader()");
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -17858,7 +17981,7 @@ impl Default for PRC_TYPE_TOPO_Body_idConcrete {
 pub struct PRC_TYPE_TOPO_Context {
     pub id: UnsignedInteger,
     pub base: ContentPRCBase,
-    pub behavior: UnsignedCharacter,
+    pub behavior: Character,
     pub granularity: Double,
     pub tolerance: Double,
     pub has_face_thickness: Boolean,
@@ -17880,8 +18003,8 @@ impl PRC_TYPE_TOPO_Context {
         assert_eq!(PRC_TYPE_TOPO_Context, PRCType::try_from(id.value).unwrap());
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
-        let mut behavior: UnsignedCharacter = Default::default();
-        behavior = UnsignedCharacter::from_reader(rdr)?;
+        let mut behavior: Character = Default::default();
+        behavior = Character::from_reader(rdr)?;
         let mut granularity: Double = Default::default();
         granularity = Double::from_reader(rdr)?;
         let mut tolerance: Double = Default::default();
