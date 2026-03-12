@@ -6,10 +6,11 @@
 // All rights reserved.
 
 #![allow(non_snake_case)]
+#![allow(unused)]
 
+use crate::constants::*;
 use crate::prc_builtin::*;
 use crate::prc_gen::*;
-//use crate::prc_schema;
 use crate::prc_schema::SchemaEvaluator;
 use bitstream_io::BitReader;
 use log::{debug, info};
@@ -162,7 +163,7 @@ fn prc_parse_globals(
         let data = PRC_TYPE_ASM_FileStructureGlobals::from_reader(&mut reader, ctx).unwrap();
         if verbose {
             let _str = format!("{:#?}", data);
-            println!("{}", _str);
+            debug!("{}", _str);
         }
     }
 
@@ -202,7 +203,7 @@ fn prc_parse_tree(bytes: &Vec<u8>, ctx: &mut PrcParsingContext, verbose: bool) {
     // }
     let _str = format!("{:#?}", data);
     if verbose {
-        println!("{}", _str);
+        debug!("{}", _str);
     }
 
     let total_bits = (bytes.len() * 8) as u64;
@@ -233,7 +234,7 @@ fn prc_parse_tess(bytes: &Vec<u8>, ctx: &mut PrcParsingContext, verbose: bool) {
     let data = PRC_TYPE_ASM_FileStructureTessellation::from_reader(&mut reader, ctx).unwrap();
     let _str = format!("{:#?}", data);
     if verbose {
-        println!("{}", _str);
+        debug!("{}", _str);
     }
 
     let total_bits = (bytes.len() * 8) as u64;
@@ -264,7 +265,7 @@ fn prc_parse_geom(bytes: &Vec<u8>, ctx: &mut PrcParsingContext, verbose: bool) {
     let data = PRC_TYPE_ASM_FileStructureGeometry::from_reader(&mut reader, ctx).unwrap();
     let _str = format!("{:#?}", data);
     if verbose {
-        println!("{}", _str);
+        debug!("{}", _str);
     }
 
     let total_bits = (bytes.len() * 8) as u64;
@@ -281,7 +282,7 @@ fn prc_parse_geom(bytes: &Vec<u8>, ctx: &mut PrcParsingContext, verbose: bool) {
     ()
 }
 
-fn prc_parse_extgeom(bytes: &Vec<u8>, ctx: &mut PrcParsingContext) {
+fn prc_parse_extgeom(bytes: &Vec<u8>, ctx: &mut PrcParsingContext, verbose: bool) {
     debug!(
         "--prc_parse_extgeom {} bits ({} bytes)--",
         bytes.len() * 8,
@@ -294,7 +295,9 @@ fn prc_parse_extgeom(bytes: &Vec<u8>, ctx: &mut PrcParsingContext) {
 
     let data = PRC_TYPE_ASM_FileStructureExtraGeometry::from_reader(&mut reader, ctx).unwrap();
     let _str = format!("{:#?}", data);
-    //println!("{}", _str);
+    if verbose {
+        debug!("{}", _str);
+    }
 
     let total_bits = (bytes.len() * 8) as u64;
     let consumed_bits = reader.position_in_bits().unwrap();
@@ -310,7 +313,7 @@ fn prc_parse_extgeom(bytes: &Vec<u8>, ctx: &mut PrcParsingContext) {
     ()
 }
 
-fn prc_parse_modfile(bytes: &Vec<u8>, ctx: &mut PrcParsingContext) {
+fn prc_parse_modfile(bytes: &Vec<u8>, ctx: &mut PrcParsingContext, verbose: bool) {
     debug!(
         "--prc_parse_modfile {} bits ({} bytes)--",
         bytes.len() * 8,
@@ -323,11 +326,15 @@ fn prc_parse_modfile(bytes: &Vec<u8>, ctx: &mut PrcParsingContext) {
 
     let schema_data = Schema::from_reader(&mut reader, ctx);
     let _schema_str = format!("{:#?}", schema_data);
-    //println!("{}", _schema_str);
+    if verbose {
+        //debug!("{}", _schema_str);
+    }
 
     let data = PRC_TYPE_ASM_ModelFile::from_reader(&mut reader, ctx);
     let _str = format!("{:#?}", data);
-    //println!("{}", _str);
+    if verbose {
+        debug!("{}", _str);
+    }
 
     let total_bits = (bytes.len() * 8) as u64;
     let consumed_bits = reader.position_in_bits().unwrap();
@@ -385,7 +392,10 @@ pub fn prc_describe(
 
     let file_size_bytes = bytes.len();
     let mut mem_reader: Cursor<Vec<u8>> = Cursor::new(bytes);
-    debug!("Reading into memory [took {} ms]", now.elapsed().as_millis());
+    debug!(
+        "Reading into memory [took {} ms]",
+        now.elapsed().as_millis()
+    );
 
     let config = PRCHeader::from_reader(&mut mem_reader, file_size_bytes);
     let a = &config?;
@@ -430,12 +440,13 @@ pub fn prc_describe(
             prc_parse_extgeom(
                 &a.fsi[i].sections[PRCSectionKind::ExtraGeometry as usize],
                 &mut ctx,
+                verbose,
             );
         }
     }
-    if all {
+    if all || globals || tree || tess || geom || extgeom {
         // parse model file
-        prc_parse_modfile(&a.mf, &mut ctx);
+        prc_parse_modfile(&a.mf, &mut ctx, verbose);
     }
 
     info!("--parsed successfully \"{}\"--", display);
