@@ -1248,7 +1248,7 @@ pub struct Transformation2D {
     pub behavior: UnsignedCharacter,
     pub translation: Option<Vector2D>,
     pub non_ortho_matrix: Option<[Vector2D; 2]>,
-    pub rotation: Option<[Vector2D; 2]>,
+    pub rotation: Option<Vector2D>,
     pub non_uniform_scale: Option<Vector2D>,
     pub scale: Option<Double>,
     pub homogeneous: Option<[Double; 3]>,
@@ -1276,11 +1276,9 @@ impl Transformation2D {
         }
         let rotation_cond = ((behavior.value as u8 & PRC_TRANSFORMATION_Rotate as u8) != 0)
             && ((behavior.value as u8 & PRC_TRANSFORMATION_NonOrtho as u8) == 0);
-        let mut rotation: [Vector2D; 2] = [Default::default(); 2];
+        let mut rotation: Vector2D = Default::default();
         if rotation_cond {
-            for i in 0..2 {
-                rotation[i as usize] = Vector2D::from_reader(rdr, _ctx)?;
-            }
+            rotation = Vector2D::from_reader(rdr, _ctx)?;
         }
         let non_uniform_scale_cond =
             (behavior.value as u8 & PRC_TRANSFORMATION_NonUniformScale as u8) != 0;
@@ -1345,13 +1343,11 @@ impl Transformation2D {
                 i.to_writer(_w, _ctx)?;
             }
         }
-        let rotation = self.rotation.clone();
-        if ((behavior.value as u8 & PRC_TRANSFORMATION_Rotate as u8) != 0)
-            && ((behavior.value as u8 & PRC_TRANSFORMATION_NonOrtho as u8) == 0)
-        {
-            for i in self.rotation.as_ref().unwrap() {
-                i.to_writer(_w, _ctx)?;
-            }
+        let rotation_cond = ((behavior.value as u8 & PRC_TRANSFORMATION_Rotate as u8) != 0)
+            && ((behavior.value as u8 & PRC_TRANSFORMATION_NonOrtho as u8) == 0);
+        let rotation = self.rotation.as_ref().unwrap();
+        if rotation_cond {
+            rotation.to_writer(_w, _ctx)?;
         }
         let non_uniform_scale_cond =
             (behavior.value as u8 & PRC_TRANSFORMATION_NonUniformScale as u8) != 0;
@@ -1903,13 +1899,6 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!("PRC_TYPE_GRAPH_TextureDefinition::from_reader()");
-        UnsignedInteger::search_and_seek_back(
-            rdr,
-            PRC_TYPE_GRAPH_TextureDefinition as u32,
-            9999,
-            5,
-        );
-
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -8661,11 +8650,6 @@ impl PRC_TYPE_TESS {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!("PRC_TYPE_TESS::from_reader()");
-        UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D as u32, 9999, 5);
-        UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D_Wire as u32, 9999, 5);
-        UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_Markup as u32, 9999, 5);
-        UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D_Compressed as u32, 9999, 5);
-
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_TESS_idConcrete =
             PRC_TYPE_TESS_idConcrete::Invalid(id_type_id);

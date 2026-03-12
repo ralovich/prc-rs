@@ -27,7 +27,7 @@
 3D_PDF_PROSTEP-Change_process_2013.stream-228.prc               	7095	8137	0	0	0	0	0
 3D_PDF_PROSTEP-Guide_to_the_Heart.stream-87.prc                 	7094	8137	0	0	0	0	0
 3D_PDF_PROSTEP-Seats.stream-12.prc                              	7094	15216	0	0	0	0	0
-3D_Schreibtisch_2010.stream-954.prc                             	7094	8137	101	0	0	0	0
+3D_Schreibtisch_2010.stream-954.prc                             	7094	8137	0	0	0	0	0
 6-fault-blocks.stream-14.prc                                    	8137	8137	0	0	101	0	0
 Alamo_DotProduct_PointFuse_PDF3D.stream-92.prc                  	8137	8137	0	0	101	0	0
 Amphos21-Elevation.stream-8.prc                                 	8137	8137	0	0	101	0	0
