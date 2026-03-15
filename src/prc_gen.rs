@@ -1684,67 +1684,6 @@ impl PRC_TYPE_MISC_GeneralTransformation {
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
-pub struct TransformationUNUSED {
-    pub id_concrete: TransformationUNUSED_idConcrete,
-}
-impl TransformationUNUSED {
-    #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
-        rdr: &mut BitReader<R, E>,
-        _ctx: &mut PrcParsingContext,
-    ) -> io::Result<Self> {
-        trace!("TransformationUNUSED::from_reader()");
-        warn!("TransformationUNUSED structure contains FIXME!");
-        let mut id_type_id: u32 = 0;
-        let mut id_concrete: TransformationUNUSED_idConcrete =
-            TransformationUNUSED_idConcrete::Invalid(id_type_id);
-        id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
-        let id_tid: PRCType = PRCType::try_from(id_type_id).unwrap();
-        id_concrete = match id_tid {
-            PRCType::PRC_TYPE_MISC_CartesianTransformation => TransformationUNUSED_idConcrete::ct(
-                PRC_TYPE_MISC_CartesianTransformation::from_reader(rdr, _ctx)?,
-            ),
-            PRCType::PRC_TYPE_MISC_GeneralTransformation => TransformationUNUSED_idConcrete::gt(
-                PRC_TYPE_MISC_GeneralTransformation::from_reader(rdr, _ctx)?,
-            ),
-            _ => panic!(
-                "TransformationUNUSED: Unrecognized subtype: {}!",
-                id_type_id.to_string()
-            ),
-        };
-        let rv = Self { id_concrete };
-        Ok(rv)
-    }
-    pub fn to_writer<W: BitWrite + ?Sized>(
-        &self,
-        _w: &mut W,
-        _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
-        match &self.id_concrete {
-            TransformationUNUSED_idConcrete::ct(x) => &x.to_writer(_w, _ctx)?,
-            TransformationUNUSED_idConcrete::gt(x) => &x.to_writer(_w, _ctx)?,
-            TransformationUNUSED_idConcrete::Invalid(x) => {
-                panic!("TransformationUNUSED: Unrecognized subtype: {}!", x)
-            }
-        };
-        Ok(())
-    }
-}
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[allow(non_camel_case_types)]
-pub enum TransformationUNUSED_idConcrete {
-    Invalid(u32),
-    ct(PRC_TYPE_MISC_CartesianTransformation),
-    gt(PRC_TYPE_MISC_GeneralTransformation),
-}
-impl Default for TransformationUNUSED_idConcrete {
-    fn default() -> Self {
-        TransformationUNUSED_idConcrete::Invalid(0)
-    }
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
-#[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_TextureTransformation {
     pub id: UnsignedInteger,
     pub invert_s: Boolean,

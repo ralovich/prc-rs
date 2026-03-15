@@ -645,21 +645,6 @@
                     }
                 ]
             },
-            "TransformationUNUSED": {
-                "fields": [
-                    {
-                        "name": "id",
-                        "data_type": "UnsignedInteger",
-                        "eligible_type_kind": "PRCType",
-                        "eligible_type_ids": [
-                            ["PRC_TYPE_MISC_CartesianTransformation", "ct"],
-                            ["PRC_TYPE_MISC_GeneralTransformation", "gt"]
-                        ]
-                    }
-                ],
-                "comment": "this struct is not used and can be removed",
-                "FIXME": true
-            },
             "PRC_TYPE_GRAPH_TextureTransformation": {
                 "fields": [
                     {
