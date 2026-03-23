@@ -20,6 +20,12 @@
 3dpdf-Auto-Suspension.stream-103.prc                            	7094	15216	0	0	101	0	0
 3dpdf-Industrial-Grinder.stream-180.prc                         	7094	15216	0	0	0	0	0
 3dpdf-Industrial-Saw.stream-105.prc                             	7094	15216	0	0	0	0	0
+3D_PDF_Blu-ray.stream-71.prc                                    	7094	8137	0	0	101	0	0
+3D_PDF_Engineering_Spec_Sheet.stream-348.prc                    	7094	7094	0	101	101	101	0
+3D_PDF_iPhone_Replacement.stream-171.prc                        	7095	8137	101	0	101	0	0
+3D_PDF_Lamp.stream-20.prc                                       	7094	8137	0	0	101	0	0
+3D_PDF_Lamp.stream-273.prc                                      	7094	8137	0	0	101	0	0
+3D_PDF_Mounted_Airless_Sprayer_Maintenance.stream-154.prc       	7094	8137	0	0	101	0	0
 3D_PDF_PROSTEP-Advanced_Maintenance_Manual.stream-124.prc       	7094	8137	0	0	0	101	0
 3D_PDF_PROSTEP-Auto-Suspension.stream-88.prc                    	7094	8137	0	0	101	0	0
 3D_PDF_PROSTEP-Auto_Carburetor.stream-78.prc                    	7094	8137	0	0	0	0	0
@@ -27,6 +33,7 @@
 3D_PDF_PROSTEP-Change_process_2013.stream-228.prc               	7095	8137	0	0	0	0	0
 3D_PDF_PROSTEP-Guide_to_the_Heart.stream-87.prc                 	7094	8137	0	0	0	0	0
 3D_PDF_PROSTEP-Seats.stream-12.prc                              	7094	15216	0	0	0	0	0
+3D_PDF_Pump_Maintenance_Manual.stream-359.prc                   	7095	8137	101	0	101	0	0
 3D_Schreibtisch_2010.stream-954.prc                             	7094	8137	0	0	0	0	0
 6-fault-blocks.stream-14.prc                                    	8137	8137	0	0	101	0	0
 Alamo_DotProduct_PointFuse_PDF3D.stream-92.prc                  	8137	8137	0	0	101	0	0
@@ -70,7 +77,6 @@ Elo-2013-Gravity-Model-Mafic-Intrusions-PDF3D.stream-17.prc     	8137	8137	0	0	1
 Elysium_PDQ_Report_FAIL.stream-1320.prc                         	7094	15216	0	0	0	0	0
 ENGINE-TYPE-01-2-LITER_3D.stream-496.prc                        	7094	8137	0	0	101	101	0
 Engineering-Data-Release_LandingGear.stream-8995.prc            	7095	15216	0	0	0	101	0
-epix.prc                                                        	8137	8137	0	0	0	0	0
 EVS-Brochure.stream-16.prc                                      	8137	8137	0	0	101	0	0
 EVS-Brochure.stream-164.prc                                     	8137	8137	0	0	101	0	0
 EVS-Brochure.stream-170.prc                                     	8137	8137	0	0	101	0	0
