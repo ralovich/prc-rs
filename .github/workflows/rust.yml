@@ -10,7 +10,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  build_and_test:
 
     runs-on: ubuntu-latest
 
@@ -35,3 +35,14 @@ jobs:
         RUST_LOG=info RUST_BACKTRACE=1 describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt
         du -d 1 -h
         colordiff -u ../../testdata/expected_all.txt review_summary.txt
+    - name: Archive testing logs
+      uses: actions/upload-artifact@v4
+      with:
+        name: testing-logs
+        path: |
+          prc-db/prcs/globals_rs
+          prc-db/prcs/tree_rs
+          prc-db/prcs/tess_rs
+          prc-db/prcs/geom_rs
+          prc-db/prcs/ext_rs
+          prc-db/prcs/review_summary.txt
