@@ -67,7 +67,7 @@ def describe_one_section(_case):
         rv = subprocess.run(["ugrep", "-z", 'Number of file sections', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
         num_fs = rv.stdout.decode('UTF-8').strip().split()[7]
 
-    print('*', end = '', flush = True)
+    print('*', end = '\n', flush = True)
 
     return (file_path, sec_id, run_time, cmd_rv, ver_read, ver_auth, num_fs)
 
