@@ -12,6 +12,7 @@ import subprocess
 import multiprocessing as mp
 import time
 import datetime
+import tqdm
 
 describe = os.getenv("describe")
 INPUT = os.getenv("INPUT")
@@ -67,7 +68,7 @@ def describe_one_section(_case):
         rv = subprocess.run(["ugrep", "-z", 'Number of file sections', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
         num_fs = rv.stdout.decode('UTF-8').strip().split()[7]
 
-    print('*', end = '\n', flush = True)
+    #print('*', end = '', flush = True)
 
     return (file_path, sec_id, run_time, cmd_rv, ver_read, ver_auth, num_fs)
 
@@ -97,9 +98,17 @@ if __name__ == '__main__':
                 cases.append((prc, k, sec[0], sec[1]))
         print(f'Generated {len(cases)} work items')
 
-        with mp.Pool(ncpus) as p:
-            #print(p.map(describe_one_prc, lines))
-            results = p.map(describe_one_section, cases)
+        # with mp.Pool(ncpus) as p:
+        #     results = p.map(describe_one_section, cases)
+        with mp.Pool(ncpus) as p, tqdm.tqdm(total=len(cases)) as pbar:
+            results = []
+            for r in p.imap_unordered(describe_one_section, cases):
+                pbar.update()
+                #pbar.refresh()
+                results.append(r)
+            pbar.close()
+            p.close()
+            p.join()
         print('')
 
         with open('review_summary.txt', 'a') as rs:

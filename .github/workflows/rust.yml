@@ -17,7 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install Dependencies
-      run: sudo apt update && sudo apt install lz4 ugrep colordiff
+      run: sudo apt update && sudo apt install lz4 ugrep colordiff python3-tqdm
     - name: Build
       run: |
         cargo build --verbose --profile=reldeb --all
