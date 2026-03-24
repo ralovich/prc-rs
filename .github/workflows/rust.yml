@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Install Dependencies
       run: sudo apt update && sudo apt install lz4 ugrep colordiff python3-tqdm
     - name: Build
@@ -23,7 +23,7 @@ jobs:
         cargo build --verbose --profile=reldeb --all
         cargo build --verbose --profile=reldeb --tests
     - name: Checkout test data
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         repository: ralovich/prc-db
         path: prc-db
@@ -36,7 +36,7 @@ jobs:
         du -d 1 -h
         colordiff -u ../../testdata/expected_all.txt review_summary.txt
     - name: Archive testing logs
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: testing-logs
         path: |
