@@ -12,35 +12,40 @@ use std::path::PathBuf;
 // see https://github.com/git/git/blob/v2.52.0/src/varint.rs for ideas
 
 use clap::Parser;
+use log::warn;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    // globals
+    /// Parse global sections.
     #[arg(long, default_value_t = false)]
     gl: bool,
 
-    // tree
+    /// Parse tree sections.
     #[arg(long, default_value_t = false)]
     tr: bool,
 
-    // tessellation
+    /// Parse tessellation sections.
     #[arg(long, default_value_t = false)]
     te: bool,
 
-    // geometry
+    /// Parse geometry sections.
     #[arg(long, default_value_t = false)]
     ge: bool,
 
-    // extra geometry
+    /// Parse extra geometry sections.
     #[arg(long, default_value_t = false)]
     ex: bool,
 
-    // schemas
+    /// Parse schemas.
     #[arg(long, default_value_t = false)]
     sc: bool,
 
-    /// Sets the file to describe
+    /// Parse model file section.
+    #[arg(long, default_value_t = false)]
+    mf: bool,
+
+    /// Sets the file to describe.
     //#[arg(short, long, value_name = "FILE")]
     fname: PathBuf,
 }
@@ -51,15 +56,13 @@ fn main() {
 
     let args = Args::parse();
 
-    let all_sections: bool = args.gl && args.tr && args.te && args.ge && args.ex
-        || (!args.gl && !args.tr && !args.te && !args.ge && !args.ex && !args.sc);
+    let all_sections: bool = args.gl && args.tr && args.te && args.ge && args.ex && args.mf
+        || (!args.gl && !args.tr && !args.te && !args.ge && !args.ex && !args.sc && !args.mf);
 
     //let args: Vec<String> = env::args().collect();
 
     // The first argument is the path that was used to call the program.
     //println!("My path is {}.", args[0]);
-
-    // TODO: arg parsing with clap?
 
     // The rest of the arguments are the passed command line parameters.
     // Call the program like this:
@@ -74,15 +77,13 @@ fn main() {
     let fname = args.fname.into_os_string().into_string().unwrap();
     //println!("Given filename is {}.", fname);
 
-    #[allow(unused_assignments)]
     let mut verbose: bool = false;
     let stdout = std::io::stdout();
     if !stdout.is_terminal() {
-        //verbose = true;
+        verbose = true;
     }
-    verbose = true;
 
-    let _ = common::prc_describe(
+    match common::prc_describe_file(
         &fname,
         verbose,
         all_sections,
@@ -92,31 +93,35 @@ fn main() {
         args.ge,
         args.ex,
         args.sc,
-    );
-}
-
-#[cfg(test)]
-mod tests {
-    // Note this useful idiom: importing names from outer (for mod tests) scope.
-    use super::*;
-
-    fn add(a: i32, b: i32) -> i32 {
-        a + b
-    }
-
-    fn bad_add(a: i32, b: i32) -> i32 {
-        a - b
-    }
-
-    #[test]
-    fn test_add() {
-        assert_eq!(add(1, 2), 3);
-    }
-
-    #[test]
-    fn test_bad_add() {
-        // This assert would fire and test will fail.
-        // Please note, that private functions can be tested too!
-        assert_ne!(bad_add(1, 2), 3);
+        args.mf,
+    ) {
+        Ok(_data) => {},
+        Err(why) => {warn!("prc_describe_file FAILED: {}", why)},
     }
 }
+
+// #[cfg(test)]
+// mod tests {
+//     // Note this useful idiom: importing names from outer (for mod tests) scope.
+//     use super::*;
+//
+//     fn add(a: i32, b: i32) -> i32 {
+//         a + b
+//     }
+//
+//     fn bad_add(a: i32, b: i32) -> i32 {
+//         a - b
+//     }
+//
+//     #[test]
+//     fn test_add() {
+//         assert_eq!(add(1, 2), 3);
+//     }
+//
+//     #[test]
+//     fn test_bad_add() {
+//         // This assert would fire and test will fail.
+//         // Please note, that private functions can be tested too!
+//         assert_ne!(bad_add(1, 2), 3);
+//     }
+// }

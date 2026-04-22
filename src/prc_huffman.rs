@@ -5,6 +5,7 @@
 // SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026. All rights reserved.
 
 //use crate::prc_builtin;
+use measure_time::debug_time;
 use crate::prc_builtin::{UncompressedUnsignedInteger, UnsignedCharacter, UnsignedInteger};
 //use crate::prc_gen::Entity_schema_definition;
 use bitstream_io::{BitRead, BitReader, LittleEndian};
@@ -129,6 +130,9 @@ pub fn read_huffman_to_element_array_i16<R: BitRead>(
 
     let huffman_array_size = UnsignedInteger::from_reader(r)?.value;
     //dbg!(huffman_array_size);
+    if huffman_array_size == 0 {
+        return Ok(vec![]);
+    }
     let mut huffman_array: Vec<u32> = Vec::with_capacity(huffman_array_size as usize);
     for _i in 0..huffman_array_size {
         let ui = UncompressedUnsignedInteger::from_reader(r)?.value;
@@ -199,6 +203,7 @@ pub fn huffman_decode_i8(
     _tot_bits: usize,
     num_bits_per_elem: u8,
 ) -> Vec<i8> {
+    debug_time!("huffman_decode_i8");
     struct HuffTreeLeaf {
         pub value: i8,
         pub code_length: u32,
@@ -300,6 +305,7 @@ pub fn huffman_decode_i16(
     _tot_bits: usize,
     num_bits_per_elem: u8,
 ) -> Vec<i16> {
+    debug_time!("huffman_decode_i16");
     struct HuffTreeLeaf {
         pub value: i16,
         pub code_length: u32,
