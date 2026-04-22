@@ -124,7 +124,7 @@ if __name__ == '__main__':
 
         with open('review_summary.txt', 'a') as rs:
             now = str(datetime.datetime.now())
-            rs.write(f'\n\n\n\n\n{now}\n')
+            #rs.write(f'\n\n\n\n\n{now}\n')
             empty = " "
             print(f"{empty:64}\tverr\tvera\tn_fs\tgl\ttr\tte\tge\tex\tmf\tgl_ms\ttr_ms\tte_ms\tge_ms\tex_ms\tmf_ms")
             print(now)
