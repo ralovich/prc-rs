@@ -49,15 +49,19 @@ def codegen_rust(rs, d):
 
 use std::io;
 use bitstream_io::{BitReader, BitWrite};
-use log::{trace, warn};
+use log::{debug, trace, warn};
+use serde::{Serialize, Deserialize};
 use crate::prc_builtin::*;
-use crate::constants::PRCType::*;
+use crate::prc_builtin_ana::*;
+use crate::constants::PrcType::*;
 use crate::constants::PrcTransformation::*;
 use crate::constants::PrcCompressedFaceType::*;
 use crate::constants::PrcCompressedCurveType::*;
 use crate::common::PrcParsingContext;
 use crate::common::CurrentFaceType;
 use crate::constants::*;
+use crate::indent;
+
 
 ''')
 
@@ -84,7 +88,7 @@ use crate::constants::*;
             #
             # STRUCTURE DECLARATION
             #
-            rs.write('#[derive(Default, Debug, Clone, PartialEq, Eq)]\n')
+            rs.write('#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]\n')
             if 'rust_traits' in d['structures'][0][struct_name]:
                 for rt in d['structures'][0][struct_name]['rust_traits']:
                     rs.write('#[derive(%s)]\n' % rt)
@@ -139,7 +143,9 @@ use crate::constants::*;
             elif len(d['structures'][0][struct_name]['fields']) >= 1:
                 emit_SEEval_after = d['structures'][0][struct_name]['fields'][-1]['name']
             #print('%s: call_schema_eval=%s emit_SEEval_after=%s has_UserData=%s' % (struct_name, call_schema_eval, emit_SEEval_after, str(has_UserData)) )
-            rs.write(f'  trace!("{struct_name}::from_reader()");\n')
+            rs.write(f'  trace!("{{}}{struct_name}::from_reader()", indent::get());\n')
+            #rs.write(f'  indent::indent();\n')
+            rs.write(f'  let _ig = indent::IndentGuard::new();\n')
             if 'FIXME' in d['structures'][0][struct_name]:
                 rs.write(f'  warn!("{struct_name} structure contains FIXME!");\n')
             if 'on_enter' in d['structures'][0][struct_name]:
@@ -161,7 +167,7 @@ use crate::constants::*;
                         rs.write('  if %s {\n' % rust_condition_to_reader_condition(f['condition_rust']) )
                     rs.write('  %s_type_id = %s::from_reader_and_seek_back(rdr)?.value;\n' % (f['name'], f['data_type']) )
                     if do_debug:
-                        rs.write(f'  trace!("{{:?}}", &{f['name']}_type_id);\n')
+                        rs.write(f'  trace!("{{}}{f['name']}_type_id: {{:?}}", indent::get(), &{f['name']}_type_id);\n')
                     rs.write('  let %s_tid: %s = %s::try_from(%s_type_id).unwrap();\n' % (f['name'], f['eligible_type_kind'], f['eligible_type_kind'], f['name']) )
                     rs.write('  %s_concrete = match %s_tid {\n' % (f['name'], f['name']) )
                     for eti in f['eligible_type_ids']:
@@ -169,7 +175,7 @@ use crate::constants::*;
                     rs.write('    _ => panic!("%s: Unrecognized subtype: {}!", %s_type_id.to_string()),\n' % (struct_name, f['name']) )
                     rs.write('  };\n')
                     if do_debug:
-                        rs.write(f'  trace!("{{:?}}", &{f['name']}_concrete);\n')
+                        rs.write(f'  trace!("{{}}{f['name']}_concrete: {{:?}}", indent::get(), &{f['name']}_concrete);\n')
                     if is_conditional:
                         rs.write('  }\n')
                 else:
@@ -203,11 +209,11 @@ use crate::constants::*;
                         if is_conditional:
                             rs.write(f'    if {f['name']}_cond {{\n')
                         rs.write('    for _i in 0..(%s) {\n' % f['size'])
-                        if do_debug:
-                            rs.write(f'      let _at = "{struct_name}.{f['name']}";trace!("{{}} {{}}", &_at, &_i);\n')
+                        #if do_debug:
+                        #    rs.write(f'      let _at = "{struct_name}.{f['name']}";trace!("{struct_name}.{f['name']}[{{}}]: {{}}", &_i, &_at);\n')
                         rs.write('      let element = %s;\n' %  field_reader )
                         if do_debug:
-                            rs.write(f'      trace!("{{:#?}}", &element);\n')
+                            rs.write(f'      trace!("{{}}{struct_name}.{f['name']}[{{}}]: {{:#?}}", indent::get(), &_i, &element);\n')
                         rs.write('      %s.push(element);\n' % f['name'])
                         rs.write('    }\n')
                         if is_conditional:
@@ -220,7 +226,7 @@ use crate::constants::*;
                         rs.write(f'    for i in 0..{f['multiplicity']} {{\n')
                         rs.write(f'      {f['name']}[i as usize] = {field_reader};\n')
                         if do_debug:
-                            rs.write(f'      trace!("{{}} {{:#?}}", i, &{f['name']}[i as usize]);\n')
+                            rs.write(f'      trace!("{f['name']}[{{}}]: {{:#?}}", i, &{f['name']}[i as usize]);\n')
                         rs.write(f'    }}\n')
                         if is_conditional:
                             rs.write('    }\n')
@@ -230,7 +236,8 @@ use crate::constants::*;
                             rs.write(f'    if {f['name']}_cond {{\n')
                         rs.write('      %s = %s;\n' % (f['name'], field_reader) )
                         if do_debug:
-                            rs.write('      trace!("{:?}", &%s);\n' % f['name'] )
+                            rs.write(f'      trace!("{{}}{f['name']}: {{:?}}", indent::get(), &{f['name']});\n')
+                            #rs.write (f'      trace!("{f['name']}: {{:?}}", );\n')
                         if 'expected_value' in f:
                             rs.write('      assert_eq!(%s, %s::try_from(%s.value).unwrap());\n' % (f['expected_value'][1], f['expected_value'][0], f['name']) )
                         if is_conditional:
@@ -242,6 +249,7 @@ use crate::constants::*;
                     call_schema_eval = False
             if 'on_leave' in d['structures'][0][struct_name]:
                 rs.write(f'  {d['structures'][0][struct_name]['on_leave']};\n')
+            #rs.write(f'  indent::dedent();\n')
             rs.write('    let rv = Self {\n')
             for f in d['structures'][0][struct_name]['fields']:
                 is_virtual_type_switch = 'eligible_type_ids' in f
@@ -249,7 +257,7 @@ use crate::constants::*;
                 if is_virtual_type_switch:
                     #rs.write('          // VSWITCH\n')
                     #rs.write('          %s_type_id,\n' % f['name'] )
-                    #rs.write('          //let %s_tid: PRCType = PRCType::try_from(%s_type_id).unwrap();\n' % (f['name'], f['name']) )
+                    #rs.write('          //let %s_tid: PrcType = PrcType::try_from(%s_type_id).unwrap();\n' % (f['name'], f['name']) )
                     rs.write('          %s_concrete,\n' % f['name'] )
                     continue
                 #is_builtin = f['data_type'] in builtins
@@ -323,7 +331,7 @@ use crate::constants::*;
             # VSWITCH HELPERS
             #
             for k,v in vswitch.items():
-                rs.write('#[derive(Debug, Clone, PartialEq, Eq)]\n')
+                rs.write('#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]\n')
                 rs.write('#[allow(non_camel_case_types)]\n')
                 rs.write('pub enum %s_%sConcrete {\n' % (struct_name, k) )
                 rs.write('  Invalid(u32),\n')
@@ -360,4 +368,4 @@ home = Path.home()
 cwd = os.getcwd()
 dir_output_path = os.path.dirname(os.path.realpath(output_module))
 rs_output_path = os.path.basename(os.path.realpath(output_module))
-subprocess.run([str(home / ".cargo/bin/rustfmt"), "-v", rs_output_path], cwd = dir_output_path)
+subprocess.run(["rustfmt", "-v", rs_output_path], cwd = dir_output_path)

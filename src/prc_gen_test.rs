@@ -5,6 +5,9 @@
 // SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026. All rights reserved.
 //
 
+#![allow(unreachable_code)]
+#![allow(unused)]
+
 #[cfg(test)]
 mod tests {
     //use super::*;

@@ -5,12 +5,17 @@
 // SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026.
 // All rights reserved.
 
-#![allow(unused)]
+#![allow(unused, nonstandard_style)]
 
+use modular_bitfield::bitfield;
 use num_enum::TryFromPrimitive;
+use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::mem;
 
-pub enum PRCSectionKind {
+extern crate static_assertions as sa;
+
+pub enum PrcSectionKind {
     Global,
     Tree,
     Tessellation,
@@ -21,7 +26,7 @@ pub enum PRCSectionKind {
 #[allow(non_camel_case_types)]
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u32)]
-pub enum PRCType {
+pub enum PrcType {
     PRC_TYPE_ROOT = 0,
 
     PRC_TYPE_ROOT_PRCBase = 1,
@@ -166,12 +171,53 @@ pub enum PRCType {
     PRC_TYPE_MATH_FCT_3D_Linear = 911,
     PRC_TYPE_MATH_FCT_3D_NonLinear = 912,
 }
-impl fmt::Display for PRCType {
+impl fmt::Display for PrcType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?} ({})", self, *self as u32)
         // or, alternatively:
         // fmt::Debug::fmt(self, f)
     }
+}
+
+#[repr(u16)]
+#[allow(non_camel_case_types)]
+pub enum PrcGraphicsBehavior {
+    PRC_GRAPHICS_Show = 0x0001,
+    PRC_GRAPHICS_ChildHeritShow = 0x0002,
+    PRC_GRAPHICS_FatherHeritShow = 0x0004,
+    PRC_GRAPHICS_ChildHeritColor = 0x0008,
+    PRC_GRAPHICS_ParentHeritColor = 0x0010,
+    PRC_GRAPHICS_ChildHeritLayer = 0x0020,
+    PRC_GRAPHICS_ParentHeritLayer = 0x0040,
+    PRC_GRAPHICS_ChildHeritTransparency = 0x0080,
+    PRC_GRAPHICS_ParentHeritTransparency = 0x0100,
+    PRC_GRAPHICS_ChildHeritLinePattern = 0x0200,
+    PRC_GRAPHICS_ParentHeritLinePattern = 0x0400,
+    PRC_GRAPHICS_ChildHeritLineWidth = 0x0800,
+    PRC_GRAPHICS_ParentHeritLineWidth = 0x1000,
+    PRC_GRAPHICS_Removed = 0x2000,
+}
+
+#[bitfield]
+#[repr(u16)]
+#[derive(Debug)]
+pub struct PrcGraphicsBehaviorBitField {
+    PRC_GRAPHICS_Show: bool,
+    PRC_GRAPHICS_ChildHeritShow: bool,
+    PRC_GRAPHICS_FatherHeritShow: bool,
+    PRC_GRAPHICS_ChildHeritColor: bool,
+    PRC_GRAPHICS_ParentHeritColor: bool,
+    PRC_GRAPHICS_ChildHeritLayer: bool,
+    PRC_GRAPHICS_ParentHeritLayer: bool,
+    PRC_GRAPHICS_ChildHeritTransparency: bool,
+    PRC_GRAPHICS_ParentHeritTransparency: bool,
+    PRC_GRAPHICS_ChildHeritLinePattern: bool,
+    PRC_GRAPHICS_ParentHeritLinePattern: bool,
+    PRC_GRAPHICS_ChildHeritLineWidth: bool,
+    PRC_GRAPHICS_ParentHeritLineWidth: bool,
+    PRC_GRAPHICS_Removed: bool,
+    #[skip]
+    unused: modular_bitfield::specifiers::B2,
 }
 
 #[repr(u8)]
@@ -186,6 +232,23 @@ pub enum PrcTransformation {
     PRC_TRANSFORMATION_NonOrtho = 0x20,
     PRC_TRANSFORMATION_Homogeneous = 0x40,
 }
+#[bitfield]
+#[repr(u8)]
+#[derive(Debug)]
+pub struct PrcTransformationBitField {
+    //PRC_TRANSFORMATION_Identity = 0x00,
+    PRC_TRANSFORMATION_Translate: bool, // 0x01
+    PRC_TRANSFORMATION_Rotate: bool,    // 0x02
+    PRC_TRANSFORMATION_Mirror: bool,
+    PRC_TRANSFORMATION_Scale: bool,
+    PRC_TRANSFORMATION_NonUniformScale: bool,
+    PRC_TRANSFORMATION_NonOrtho: bool,
+    PRC_TRANSFORMATION_Homogeneous: bool,
+    #[skip]
+    unused: modular_bitfield::specifiers::B1,
+}
+
+
 
 #[repr(u8)]
 #[allow(non_camel_case_types)]
@@ -215,16 +278,22 @@ pub enum TextureApplicationMode {
     TextureColor = 0x0004,
 }
 
-#[allow(non_upper_case_globals)]
-pub const PRC_BODY_BBOX_Evaluation: u32 = 0x0001;
-#[allow(non_upper_case_globals)]
-pub const PRC_BODY_BBOX_Precise: u32 = 0x0002;
-#[allow(non_upper_case_globals)]
-pub const PRC_BODY_BBOX_CADData: u32 = 0x0003;
+
+#[bitfield]
+#[repr(u8)]
+#[derive(Debug)]
+pub struct PrcBodyBoundingBoxBehaviorBitField {
+    pub PRC_BODY_BBOX_Evaluation: bool, // 0x01
+    pub PRC_BODY_BBOX_Precise: bool,    // 0x02
+    pub PRC_BODY_BBOX_CADData: bool,    // 0x04
+    #[skip]
+    unused: modular_bitfield::specifiers::B5,
+}
+
 
 #[repr(u32)]
 #[allow(non_camel_case_types)]
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, TryFromPrimitive)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, Hash, PartialEq, Eq, TryFromPrimitive)]
 pub enum PrcCompressedFaceType {
     PRC_HCG_NewLoop = 0,
     PRC_HCG_EndLoop = 1,
@@ -252,7 +321,7 @@ impl fmt::Display for PrcCompressedFaceType {
 
 #[repr(u32)]
 #[allow(non_camel_case_types)]
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, TryFromPrimitive)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, Hash, PartialEq, Eq, TryFromPrimitive)]
 pub enum PrcCompressedCurveType {
     PRC_HCG_Line = 0,
     PRC_HCG_Circle = 1,
@@ -273,7 +342,6 @@ impl fmt::Display for PrcCompressedCurveType {
 #[allow(non_camel_case_types)]
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, TryFromPrimitive)]
 pub enum PrcTesselationFlags {
-    PRC_FACETESSDATA_NORMAL_Single = 0x40000000,
     PRC_FACETESSDATA_Polyface = 0x0001,
     PRC_FACETESSDATA_Triangle = 0x0002,
     PRC_FACETESSDATA_TriangleFan = 0x0004,
@@ -290,7 +358,37 @@ pub enum PrcTesselationFlags {
     PRC_FACETESSDATA_TriangleOneNormalTextued = 0x2000,
     PRC_FACETESSDATA_TriangleFanOneNormalTextured = 0x4000,
     PRC_FACETESSDATA_TriangleStripeOneNormalTextured = 0x8000,
+    PRC_FACETESSDATA_NORMAL_Single = 0x40000000,
 }
+
+#[bitfield]
+#[repr(u32)]
+#[derive(Debug)]
+pub struct PrcTesselationBitField {
+    pub PRC_FACETESSDATA_Polyface: bool, // 0x01
+    pub PRC_FACETESSDATA_Triangle: bool,    // 0x02
+    pub PRC_FACETESSDATA_TriangleFan: bool,  // 0x0004,
+    pub PRC_FACETESSDATA_TriangleStrip: bool,    // 0x08
+    pub PRC_FACETESSDATA_PolyfaceOneNormal: bool, // 0x0010,
+    pub PRC_FACETESSDATA_TriangleOneNormal: bool, // 0x0020,
+    pub PRC_FACETESSDATA_TriangleFanOneNormal: bool, // 0x0040,
+    pub PRC_FACETESSDATA_TriangleStripOneNormal: bool, // 0x0080,
+    pub PRC_FACETESSDATA_PolyfaceTextured: bool, // 0x0100,
+    pub PRC_FACETESSDATA_TriangleTextured: bool, // 0x0200,
+    pub PRC_FACETESSDATA_TriangleFanTextured: bool, // 0x0400,
+    pub PRC_FACETESSDATA_TriangleStripTextured: bool, // 0x0800,
+    pub PRC_FACETESSDATA_PolyfaceOneNormalTextured: bool, // 0x1000,
+    pub PRC_FACETESSDATA_TriangleOneNormalTextured: bool, // 0x2000,
+    pub PRC_FACETESSDATA_TriangleFanOneNormalTextured: bool, // 0x4000,
+    pub PRC_FACETESSDATA_TriangleStripeOneNormalTextured: bool, // 0x8000,
+    #[skip]
+    unused: modular_bitfield::specifiers::B14,
+    pub PRC_FACETESSDATA_NORMAL_Single: bool, // 0x40000000,
+    #[skip]
+    unused2: bool // 0x80000000,
+}
+sa::const_assert_eq!(4, mem::size_of::<PrcTesselationBitField>());
+
 
 /// PRC_TYPE_TESS_Face.sizes_wire
 #[repr(u32)]
@@ -306,6 +404,8 @@ pub enum PrcFaceWireTessellationFlags {
 #[allow(non_camel_case_types)]
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, TryFromPrimitive)]
 pub enum Prc3DWireTessFlags {
+    /// if the first point of this wire should be linked to the last point of the preceding wire
     PRC_3DWIRETESSDATA_IsClosing = 0x10000000,
+    /// if the last point of this wire should be linked to the first point of this wire
     PRC_3DWIRETESSDATA_IsContinuous = 0x20000000,
 }

@@ -4,7 +4,7 @@
 //
 // SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026. All rights reserved.
 
-use crate::constants::PRCType;
+use crate::constants::PrcType;
 use crate::prc_builtin;
 use crate::prc_gen::Entity_schema_definition;
 use bitstream_io::BitReader;
@@ -225,9 +225,9 @@ impl SchemaEvaluator {
     pub fn new(inp: &Vec<Entity_schema_definition>) -> SchemaEvaluator {
         let mut ops_per_type: HashMap<u32, Vec<u32>> = HashMap::new();
         for sch in inp {
-            let _type_name = match PRCType::try_from(sch.entity_type.value) {
+            let _type_name = match PrcType::try_from(sch.entity_type.value) {
                 Err(_) => sch.entity_type.value.to_string(),
-                _ => PRCType::try_from(sch.entity_type.value)
+                _ => PrcType::try_from(sch.entity_type.value)
                     .unwrap()
                     .to_string(),
             };
@@ -266,7 +266,7 @@ impl SchemaEvaluator {
 
         // instructions for this type
         let ops = &self.ops_per_type[&type_to_eval];
-        let type_name = match PRCType::try_from(type_to_eval) {
+        let type_name = match PrcType::try_from(type_to_eval) {
             Ok(t) => t.to_string(),
             Err(_) => type_to_eval.to_string(),
         };
@@ -638,7 +638,7 @@ impl SchemaEvaluator {
 mod tests {
     use super::*;
     use crate::prc_builtin::{Boolean, Double, Integer, String, UnsignedInteger};
-    use crate::prc_schema::PRCType::*;
+    use crate::prc_schema::PrcType::*;
     use crate::prc_schema::SchemaTokens::*;
     use bitstream_io::{BigEndian, BitWrite, BitWriter};
     use std::io::Cursor;
@@ -656,7 +656,7 @@ mod tests {
         let mut se: SchemaEvaluator = Default::default();
         let _ = se.eval(
             &mut r,
-            PRCType::PRC_TYPE_GRAPH_SceneDisplayParameters as u32,
+            PrcType::PRC_TYPE_GRAPH_SceneDisplayParameters as u32,
             false,
             0,
         );

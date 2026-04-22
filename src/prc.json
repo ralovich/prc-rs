@@ -1,4 +1,5 @@
-{"emacs": "-*- mode: rust; coding: utf-8-unix -*-",
+{
+    "emacs": "-*- mode: rust; coding: utf-8-unix -*-",
     "SPDX-License-Identifier": "MIT",
     "SPDX-FileCopyrightText": "Copyright Kristóf Ralovich (C) 2025-2026. All rights reserved.",
     "version": 8137,
@@ -9,6 +10,7 @@
         "UnsignedInteger",
         "Character",
         "UnsignedCharacter",
+        "UnsignedShort",
         "Integer",
         "UserData",
         "NumberOfBitsThenUnsignedInteger",
@@ -22,14 +24,16 @@
         "CompressedIndiceArrayWithoutBit",
         "DoubleWithVariableBitNumber",
         "Point3DWithVariableBitNumber",
-        "CompressedPoint"
+        "CompressedPoint",
+        "UncompressedBoolArray"
     ],
     "vbr_1param": [
         "UnsignedIntegerWithVariableBitNumber",
         "CompressedIndiceArrayWithoutBit",
         "CharacterArray",
         "ShortArray",
-        "CompressedPoint"
+        "CompressedPoint",
+        "UncompressedBoolArray"
     ],
     "vbr_2param": [
         "Point3DWithVariableBitNumber",
@@ -126,7 +130,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MISC_Attribute"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MISC_Attribute"]
                     },
                     {
                         "name": "attribute_title",
@@ -192,11 +196,11 @@
                     },
                     {
                         "name": "behavior_bit_field",
-                        "data_type": "UnsignedCharacter",
-                        "multiplicity": 2,
+                        "data_type": "UnsignedShort",
                         "condition": "!use_context",
                         "condition_rust": "!self.use_context",
-                        "on_set": "_ctx.behavior_bit_field = (behavior_bit_field[0].value as u16)<<8 | behavior_bit_field[1].value as u16"
+                        "UNUSEDon_set": "_ctx.behavior_bit_field = (behavior_bit_field[0].value as u16)<<8 | behavior_bit_field[1].value as u16",
+                        "on_set": "_ctx.behavior_bit_field = behavior_bit_field.value; debug!(\"{}behavior_bit_field: {:?}\", indent::get(), PrcGraphicsBehaviorBitField::from_bytes(behavior_bit_field.value.to_le_bytes()));"
                     }
                 ]
             },
@@ -291,7 +295,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_ASM_FileStructureExtraGeometry"]
+                        "expected_value": ["PrcType", "PRC_TYPE_ASM_FileStructureExtraGeometry"]
                     },
                     {
                         "name": "base",
@@ -443,7 +447,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_GRAPH_Picture"]
+                        "expected_value": ["PrcType", "PRC_TYPE_GRAPH_Picture"]
                     },
                     {
                         "name": "base",
@@ -501,7 +505,8 @@
                 "fields": [
                     {
                         "name": "behavior",
-                        "data_type": "Character"
+                        "data_type": "Character",
+                        "on_set": "debug!(\"{}behavior: {:?}\", indent::get(), PrcTransformationBitField::from_bytes(behavior.value.to_le_bytes()));"
                     },
                     {
                         "name": "translation",
@@ -561,7 +566,8 @@
                 "fields": [
                     {
                         "name": "behavior",
-                        "data_type": "Character"
+                        "data_type": "Character",
+                        "on_set": "debug!(\"{}behavior: {:?}\", indent::get(), PrcTransformationBitField::from_bytes(behavior.value.to_le_bytes()));"
                     },
                     {
                         "name": "translation",
@@ -623,7 +629,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MISC_CartesianTransformation"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MISC_CartesianTransformation"]
                     },
                     {
                         "name": "transform",
@@ -636,7 +642,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MISC_GeneralTransformation"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MISC_GeneralTransformation"]
                     },
                     {
                         "name": "general_transform",
@@ -650,7 +656,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_GRAPH_TextureTransformation"]
+                        "expected_value": ["PrcType", "PRC_TYPE_GRAPH_TextureTransformation"]
                     },
                     {
                         "name": "invert_s",
@@ -701,7 +707,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_GRAPH_TextureDefinition"]
+                        "expected_value": ["PrcType", "PRC_TYPE_GRAPH_TextureDefinition"]
                     },
                     {
                         "name": "base",
@@ -851,7 +857,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_GRAPH_Material"]
+                        "expected_value": ["PrcType", "PRC_TYPE_GRAPH_Material"]
                     },
                     {
                         "name": "base",
@@ -900,7 +906,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_GRAPH_TextureApplication"]
+                        "expected_value": ["PrcType", "PRC_TYPE_GRAPH_TextureApplication"]
                     },
                     {
                         "name": "base",
@@ -929,7 +935,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "eligible_type_kind": "PRCType",
+                        "eligible_type_kind": "PrcType",
                         "eligible_type_ids": [
                             ["PRC_TYPE_GRAPH_Material", "m"],
                             ["PRC_TYPE_GRAPH_TextureApplication", "ta"]
@@ -942,7 +948,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_GRAPH_LinePattern"]
+                        "expected_value": ["PrcType", "PRC_TYPE_GRAPH_LinePattern"]
                     },
                     {
                         "name": "base",
@@ -974,7 +980,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_GRAPH_Style"]
+                        "expected_value": ["PrcType", "PRC_TYPE_GRAPH_Style"]
                     },
                     {
                         "name": "base",
@@ -1049,7 +1055,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_GRAPH_DottingPattern"]
+                        "expected_value": ["PrcType", "PRC_TYPE_GRAPH_DottingPattern"]
                     },
                     {
                         "name": "base",
@@ -1098,7 +1104,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_GRAPH_HatchingPattern"]
+                        "expected_value": ["PrcType", "PRC_TYPE_GRAPH_HatchingPattern"]
                     },
                     {
                         "name": "base",
@@ -1125,7 +1131,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_GRAPH_SolidPattern"]
+                        "expected_value": ["PrcType", "PRC_TYPE_GRAPH_SolidPattern"]
                     },
                     {
                         "name": "base",
@@ -1164,14 +1170,14 @@
                         "name": "number_of_coordinates",
                         "data_type": "UnsignedInteger",
                         "debug": false,
-                        "on_set": "assert_eq!(number_of_coordinates.value % 3, 0)"
+                        "UNUSEDon_set": "assert_eq!(number_of_coordinates.value % 3, 0)"
                     },
                     {
                         "name": "coordinates",
                         "data_type": "Double",
                         "is_vec": true,
                         "size": "number_of_coordinates.value",
-                        "on_set": "dbg!(format(&coordinates))"
+                        "on_set": "debug!(\"{}coordinates: {}\", indent::get(), format(&coordinates))"
                     }
                 ]
             },
@@ -1180,7 +1186,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_TESS_Markup"]
+                        "expected_value": ["PrcType", "PRC_TYPE_TESS_Markup"]
                     },
                     {
                         "name": "tessellation_coordinates",
@@ -1217,15 +1223,20 @@
                 ]
             },
             "PRC_TYPE_GRAPH_VPicturePattern": {
+                "comment": "Vectorized picture pattern",
                 "fields": [
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_GRAPH_VPicturePattern"]
+                        "expected_value": ["PrcType", "PRC_TYPE_GRAPH_VPicturePattern"]
                     },
                     {
                         "name": "base",
                         "data_type": "ContentPRCRefBase"
+                    },
+                    {
+                        "name": "biased_next_pattern_index",
+                        "data_type": "UnsignedInteger"
                     },
                     {
                         "name": "pattern_dimensions",
@@ -1243,7 +1254,7 @@
                     {
                         "name": "data",
                         "data_type": "UnsignedInteger",
-                        "eligible_type_kind": "PRCType",
+                        "eligible_type_kind": "PrcType",
                         "eligible_type_ids": [
                             ["PRC_TYPE_GRAPH_DottingPattern", "dp"],
                             ["PRC_TYPE_GRAPH_HatchingPattern", "hp"],
@@ -1264,12 +1275,9 @@
                         "data_type": "UnsignedInteger"
                     },
                     {
-                        "name": "behavior_bit_field1",
-                        "data_type": "UnsignedCharacter"
-                    },
-                    {
-                        "name": "behavior_bit_field2",
-                        "data_type": "UnsignedCharacter"
+                        "name": "behavior_bit_field",
+                        "data_type": "UnsignedShort",
+                        "on_set": "debug!(\"{}behavior_bit_field: {:?}\", indent::get(), PrcGraphicsBehaviorBitField::from_bytes(behavior_bit_field.value.to_le_bytes()))"
                     }
                 ]
             },
@@ -1312,7 +1320,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_RI_CoordinateSystem"]
+                        "expected_value": ["PrcType", "PRC_TYPE_RI_CoordinateSystem"]
                     },
                     {
                         "name": "item_content",
@@ -1321,7 +1329,7 @@
                     {
                         "name": "transform",
                         "data_type": "UnsignedInteger",
-                        "eligible_type_kind": "PRCType",
+                        "eligible_type_kind": "PrcType",
                         "eligible_type_ids": [
                             ["PRC_TYPE_MISC_GeneralTransformation", "gt"],
                             ["PRC_TYPE_MISC_CartesianTransformation", "ct"]
@@ -1434,7 +1442,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_ASM_FileStructureGlobals"]
+                        "expected_value": ["PrcType", "PRC_TYPE_ASM_FileStructureGlobals"]
                     },
                     {
                         "name": "base",
@@ -1483,7 +1491,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_ASM_ModelFile"]
+                        "expected_value": ["PrcType", "PRC_TYPE_ASM_ModelFile"]
                     },
                     {
                         "name": "base",
@@ -1496,28 +1504,26 @@
                     {
                         "name": "units_in_mm",
                         "data_type": "Double",
-                        "condition": "!!units_from_cad_file",
-                        "condition_rust": "!!self.units_from_cad_file"
+                        "SPECBUG": true,
+                        "bug": "https://github.com/pdf-association/pdf-issues/issues/740"
                     },
                     {
-                        "name": "number_of_root_product_occurences",
+                        "name": "number_of_root_product_occurrences",
                         "data_type": "UnsignedInteger"
                     },
                     {
-                        "name": "product_occurences",
+                        "name": "product_occurrences",
                         "data_type": "ProductOccurrenceReference",
                         "is_vec": true,
-                        "size": "number_of_root_product_occurences.value"
+                        "size": "number_of_root_product_occurrences.value"
                     },
                     {
                         "name": "file_structure_index_in_model_file",
                         "data_type": "UnsignedInteger",
                         "is_vec": true,
-                        "size": "number_of_root_product_occurences.value",
+                        "size": "_ctx.filestructure_count",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/724",
-                        "SPECBUG": true,
-                        "size1": "number_of_file_structures.value",
-                        "FIXME": true
+                        "SPECBUG": true
                     },
                     {
                         "name": "user_data",
@@ -1544,7 +1550,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_RI_BrepModel"]
+                        "expected_value": ["PrcType", "PRC_TYPE_RI_BrepModel"]
                     },
                     {
                         "name": "item_content",
@@ -1581,7 +1587,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_RI_Curve"]
+                        "expected_value": ["PrcType", "PRC_TYPE_RI_Curve"]
                     },
                     {
                         "name": "item_content",
@@ -1614,7 +1620,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_RI_Direction"]
+                        "expected_value": ["PrcType", "PRC_TYPE_RI_Direction"]
                     },
                     {
                         "name": "item_content",
@@ -1645,7 +1651,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_RI_Plane"]
+                        "expected_value": ["PrcType", "PRC_TYPE_RI_Plane"]
                     },
                     {
                         "name": "item_content",
@@ -1678,7 +1684,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_RI_PointSet"]
+                        "expected_value": ["PrcType", "PRC_TYPE_RI_PointSet"]
                     },
                     {
                         "name": "item_content",
@@ -1705,7 +1711,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_RI_PolyBrepModel"]
+                        "expected_value": ["PrcType", "PRC_TYPE_RI_PolyBrepModel"]
                     },
                     {
                         "name": "item_content",
@@ -1726,7 +1732,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_RI_PolyWire"]
+                        "expected_value": ["PrcType", "PRC_TYPE_RI_PolyWire"]
                     },
                     {
                         "name": "item_content",
@@ -1743,7 +1749,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_RI_Set"]
+                        "expected_value": ["PrcType", "PRC_TYPE_RI_Set"]
                     },
                     {
                         "name": "item_content",
@@ -1771,7 +1777,7 @@
                     {
                         "name": "data",
                         "data_type": "UnsignedInteger",
-                        "eligible_type_kind": "PRCType",
+                        "eligible_type_kind": "PrcType",
                         "eligible_type_ids": [
                             ["PRC_TYPE_RI_BrepModel", "bm"],
                             ["PRC_TYPE_RI_Curve", "c"],
@@ -1823,14 +1829,14 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MISC_ReferenceOnTopology"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MISC_ReferenceOnTopology"]
                     },
                     {
                         "name": "type_of_entity",
                         "data_type": "UnsignedInteger",
-                        "NOexpected_value": ["PRCType", "PRC_TYPE_TOPO_Face"],
+                        "NOexpected_value": ["PrcType", "PRC_TYPE_TOPO_Face"],
                         "comment": "342 and 344 failed above assert",
-                        "on_set": "assert!(PRC_TYPE_TOPO_Face==PRCType::try_from(type_of_entity.value).unwrap() || PRC_TYPE_TOPO_Edge==PRCType::try_from(type_of_entity.value).unwrap())",
+                        "on_set": "assert!(PRC_TYPE_TOPO_Face==PrcType::try_from(type_of_entity.value).unwrap() || PRC_TYPE_TOPO_Edge==PrcType::try_from(type_of_entity.value).unwrap())",
                         "SPECBUG": "has also seen PRC_TYPE_TOPO_Edge in e.g. -342, -344"
                     },
                     {
@@ -1851,7 +1857,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MISC_ReferenceOnPRCBase"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MISC_ReferenceOnPRCBase"]
                     },
                     {
                         "name": "type_of_entity",
@@ -1878,7 +1884,7 @@
                     {
                         "name": "data",
                         "data_type": "UnsignedInteger",
-                        "eligible_type_kind": "PRCType",
+                        "eligible_type_kind": "PrcType",
                         "eligible_type_ids": [
                             ["PRC_TYPE_MISC_ReferenceOnTopology", "topo_reference"],
                             ["PRC_TYPE_MISC_ReferenceOnPRCBase", "non_topo_reference"]
@@ -1934,7 +1940,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MISC_MarkupLinkedItem"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MISC_MarkupLinkedItem"]
                     },
                     {
                         "name": "content_extended_entity_reference",
@@ -1968,7 +1974,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MKP_Leader"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MKP_Leader"]
                     },
                     {
                         "name": "base",
@@ -2009,7 +2015,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MKP_Markup"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MKP_Markup"]
                     },
                     {
                         "name": "base",
@@ -2058,7 +2064,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MKP_AnnotationItem"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MKP_AnnotationItem"]
                     },
                     {
                         "name": "base",
@@ -2079,7 +2085,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MKP_AnnotationSet"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MKP_AnnotationSet"]
                     },
                     {
                         "name": "base",
@@ -2106,7 +2112,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MKP_AnnotationReference"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MKP_AnnotationReference"]
                     },
                     {
                         "name": "base",
@@ -2135,7 +2141,7 @@
                     {
                         "name": "data",
                         "data_type": "UnsignedInteger",
-                        "eligible_type_kind": "PRCType",
+                        "eligible_type_kind": "PrcType",
                         "eligible_type_ids": [
                             ["PRC_TYPE_MKP_AnnotationItem", "ai"],
                             ["PRC_TYPE_MKP_AnnotationSet", "ans"],
@@ -2235,7 +2241,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_SURF_Plane"]
+                        "expected_value": ["PrcType", "PRC_TYPE_SURF_Plane"]
                     },
                     {
                         "name": "curve_data",
@@ -2269,11 +2275,12 @@
                 ]
             },
             "PRC_TYPE_GRAPH_AmbientLight": {
+                "comment": "TODO: according to adobe sdk 9, there is UserData in the tail",
                 "fields": [
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_GRAPH_AmbientLight"]
+                        "expected_value": ["PrcType", "PRC_TYPE_GRAPH_AmbientLight"]
                     },
                     {
                         "name": "base",
@@ -2298,11 +2305,12 @@
                 ]
             },
             "PRC_TYPE_GRAPH_PointLight": {
+                "comment": "TODO: according to adobe sdk 9, there is UserData in the tail",
                 "fields": [
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_GRAPH_PointLight"]
+                        "expected_value": ["PrcType", "PRC_TYPE_GRAPH_PointLight"]
                     },
                     {
                         "name": "base",
@@ -2343,11 +2351,12 @@
                 ]
             },
             "PRC_TYPE_GRAPH_DirectionalLight": {
+                "comment": "TODO: according to adobe sdk 9, there is UserData in the tail",
                 "fields": [
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_GRAPH_DirectionalLight"]
+                        "expected_value": ["PrcType", "PRC_TYPE_GRAPH_DirectionalLight"]
                     },
                     {
                         "name": "base",
@@ -2375,16 +2384,19 @@
                     },
                     {
                         "name": "intensity",
-                        "data_type": "Double"
+                        "data_type": "Double",
+                        "condition": "_ctx.ver_authoring >= 8137",
+                        "condition_rust": "_ctx.ver_authoring >= 8137"
                     }
                 ]
             },
             "PRC_TYPE_GRAPH_SpotLight": {
+                "comment": "TODO: according to adobe sdk 9, there is UserData in the tail",
                 "fields": [
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_GRAPH_SpotLight"]
+                        "expected_value": ["PrcType", "PRC_TYPE_GRAPH_SpotLight"]
                     },
                     {
                         "name": "base",
@@ -2441,7 +2453,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "eligible_type_kind": "PRCType",
+                        "eligible_type_kind": "PrcType",
                         "eligible_type_ids": [
                             ["PRC_TYPE_GRAPH_AmbientLight", "al"],
                             ["PRC_TYPE_GRAPH_PointLight", "pl"],
@@ -2456,7 +2468,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_GRAPH_Camera"]
+                        "expected_value": ["PrcType", "PRC_TYPE_GRAPH_Camera"]
                     },
                     {
                         "name": "base",
@@ -2510,7 +2522,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_GRAPH_SceneDisplayParameters"]
+                        "expected_value": ["PrcType", "PRC_TYPE_GRAPH_SceneDisplayParameters"]
                     },
                     {
                         "name": "base",
@@ -2580,7 +2592,9 @@
                     },
                     {
                         "name": "is_absolute",
-                        "data_type": "Boolean"
+                        "data_type": "Boolean",
+                        "condition": "_ctx.ver_authoring >= 8137",
+                        "condition_rust": "_ctx.ver_authoring >= 8137"
                     }
                 ]
             },
@@ -2607,7 +2621,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MISC_EntityReference"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MISC_EntityReference"]
                     },
                     {
                         "name": "content_entity_reference",
@@ -2642,7 +2656,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_ASM_Filter"]
+                        "expected_value": ["PrcType", "PRC_TYPE_ASM_Filter"]
                     },
                     {
                         "name": "base",
@@ -2672,7 +2686,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MKP_View"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MKP_View"]
                     },
                     {
                         "name": "base",
@@ -2704,35 +2718,49 @@
                     },
                     {
                         "name": "is_annotation_view",
-                        "data_type": "Boolean"
+                        "data_type": "Boolean",
+                        "condition": "_ctx.ver_authoring >= 8137",
+                        "condition_rust": "_ctx.ver_authoring >= 8137"
                     },
                     {
                         "name": "is_default_view",
-                        "data_type": "Boolean"
+                        "data_type": "Boolean",
+                        "condition": "_ctx.ver_authoring >= 8137",
+                        "condition_rust": "_ctx.ver_authoring >= 8137"
                     },
                     {
                         "name": "is_direction",
-                        "data_type": "Boolean"
+                        "data_type": "Boolean",
+                        "condition": "_ctx.ver_authoring >= 8137",
+                        "condition_rust": "_ctx.ver_authoring >= 8137"
                     },
                     {
                         "name": "number_of_linked_items",
-                        "data_type": "UnsignedInteger"
+                        "data_type": "UnsignedInteger",
+                        "condition": "_ctx.ver_authoring >= 8137",
+                        "condition_rust": "_ctx.ver_authoring >= 8137"
                     },
                     {
                         "name": "linked_items",
                         "data_type": "PRC_TYPE_MISC_ReferenceOnPRCBase",
                         "is_vec": true,
-                        "size": "number_of_linked_items.value"
+                        "size": "number_of_linked_items.value",
+                        "condition": "_ctx.ver_authoring >= 8137",
+                        "condition_rust": "_ctx.ver_authoring >= 8137"
                     },
                     {
                         "name": "number_of_filters",
-                        "data_type": "UnsignedInteger"
+                        "data_type": "UnsignedInteger",
+                        "condition": "_ctx.ver_authoring >= 8137",
+                        "condition_rust": "_ctx.ver_authoring >= 8137"
                     },
                     {
                         "name": "filters",
                         "data_type": "PRC_TYPE_ASM_Filter",
                         "is_vec": true,
-                        "size": "number_of_filters.value"
+                        "size": "number_of_filters.value",
+                        "condition": "_ctx.ver_authoring >= 8137",
+                        "condition_rust": "_ctx.ver_authoring >= 8137"
                     },
                     {
                         "name": "user_data",
@@ -2745,7 +2773,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_ASM_PartDefinition"]
+                        "expected_value": ["PrcType", "PRC_TYPE_ASM_PartDefinition"]
                     },
                     {
                         "name": "base",
@@ -2862,7 +2890,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_ASM_ProductOccurrence"]
+                        "expected_value": ["PrcType", "PRC_TYPE_ASM_ProductOccurrence"]
                     },
                     {
                         "name": "base",
@@ -2888,7 +2916,7 @@
                         "SPECBUG": true,
                         "name": "location",
                         "data_type": "UnsignedInteger",
-                        "eligible_type_kind": "PRCType",
+                        "eligible_type_kind": "PrcType",
                         "eligible_type_ids": [
                             ["PRC_TYPE_MISC_CartesianTransformation", "ct"],
                             ["PRC_TYPE_MISC_GeneralTransformation", "gt"]
@@ -2961,7 +2989,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_ASM_FileStructure"]
+                        "expected_value": ["PrcType", "PRC_TYPE_ASM_FileStructure"]
                     },
                     {
                         "name": "base",
@@ -2982,7 +3010,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_ASM_FileStructureTree"]
+                        "expected_value": ["PrcType", "PRC_TYPE_ASM_FileStructureTree"]
                     },
                     {
                         "name": "base",
@@ -3069,18 +3097,22 @@
             "VertexColors": {
                 "comment": "The number_of_colors stored in the color_data must be calculated from the number of point indices\n- found in the wire_indexes array in the case of a PRC_TYPE_TESS_3D_Wire\n- found in the sizes_triangulated in the case of a PRC_TYPE_TESS_Face",
                 "BACKUP": [
-                    {
-                        "name": "is_segment_color",
-                        "data_type": "Boolean",
-                        "debug": false,
-                        "comment": "asy does not write this field"
-                    }
                 ],
+                "on_enter": "debug!(\"{}_ctx.VertexColors_number_of_colors: {}\", indent::get(), _ctx.VertexColors_number_of_colors)",
                 "fields": [
                     {
                         "name": "is_rgba",
                         "data_type": "Boolean",
                         "debug": false
+                    },
+                    {
+                        "name": "is_segment_color",
+                        "data_type": "Boolean",
+                        "debug": false,
+                        "comment": "asy does not write this field",
+                        "comment1": "according to acrobat sdk 9, this field is there if written from 3DWireTess, but missing if written from TessFace",
+                        "condition": "_ctx.TESS_3D_Wire__is_inside()",
+                        "condition_rust": "_ctx.TESS_3D_Wire__is_inside()"
                     },
                     {
                         "name": "b_optimized",
@@ -3124,7 +3156,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_TESS_Face"]
+                        "expected_value": ["PrcType", "PRC_TYPE_TESS_Face"]
                     },
                     {
                         "name": "size_of_line_attributes",
@@ -3152,7 +3184,8 @@
                     },
                     {
                         "name": "used_entities_flag",
-                        "data_type": "UnsignedInteger"
+                        "data_type": "UnsignedInteger",
+                        "on_set": "debug!(\"used_entities_flag: {:?}\", PrcTesselationBitField::from_bytes(used_entities_flag.value.to_le_bytes()));"
                     },
                     {
                         "name": "start_triangulated",
@@ -3161,14 +3194,15 @@
                     {
                         "name": "size_of_triangulateddata",
                         "data_type": "UnsignedInteger",
-                        "on_set": "_ctx.VertexColors_number_of_colors = size_of_triangulateddata.value;\ndbg!(_ctx.VertexColors_number_of_colors)",
+                        "UNUSEDon_set": "_ctx.VertexColors_number_of_colors = size_of_triangulateddata.value;\ndebug!(\"{}_ctx.VertexColors_number_of_colors: {}\", indent::get(), _ctx.VertexColors_number_of_colors)",
                         "debug": true
                     },
                     {
                         "name": "triangulateddata",
                         "data_type": "UnsignedInteger",
                         "is_vec": true,
-                        "size": "size_of_triangulateddata.value"
+                        "size": "size_of_triangulateddata.value",
+                        "on_set": "_ctx.set_num_vertex_colors_from_tess_3d_face(used_entities_flag.value, &triangulateddata)"
                     },
                     {
                         "name": "number_of_textured_coordinate_indices",
@@ -3203,7 +3237,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_TESS_3D"]
+                        "expected_value": ["PrcType", "PRC_TYPE_TESS_3D"]
                     },
                     {
                         "name": "tessellation_coordinates",
@@ -3277,18 +3311,20 @@
                     },
                     {
                         "name": "number_of_face_tessellation",
-                        "data_type": "UnsignedInteger"
+                        "data_type": "UnsignedInteger",
+                        "debug": true
                     },
                     {
                         "name": "face_tessellation_data",
                         "data_type": "PRC_TYPE_TESS_Face",
                         "is_vec": true,
-                        "size": "number_of_face_tessellation.value"
+                        "size": "number_of_face_tessellation.value",
+                        "debug": true
                     },
                     {
                         "name": "number_of_texture_coordinates",
                         "data_type": "UnsignedInteger",
-                        "debug": false
+                        "debug": true
                     },
                     {
                         "name": "texture_coordinates",
@@ -3299,11 +3335,13 @@
                 ]
             },
             "PRC_TYPE_TESS_3D_Wire": {
+                "on_enter": "_ctx.TESS_3D_Wire__enter()",
+                "on_leave": "_ctx.TESS_3D_Wire__leave()",
                 "fields": [
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_TESS_3D_Wire"]
+                        "expected_value": ["PrcType", "PRC_TYPE_TESS_3D_Wire"]
                     },
                     {
                         "name": "tessellation_coordinates",
@@ -3312,13 +3350,14 @@
                     {
                         "name": "number_of_wire_indexes",
                         "data_type": "UnsignedInteger",
-                        "on_set": "_ctx.VertexColors_number_of_colors = number_of_wire_indexes.value;\ndbg!(_ctx.VertexColors_number_of_colors);\nif number_of_wire_indexes.value != 0 { /*assert_eq!(number_of_wire_indexes.value%3, 1);*/ }"
+                        "on_set": "_ctx.VertexColors_number_of_colors = number_of_wire_indexes.value;\ndebug!(\"{}_ctx.VertexColors_number_of_colors: {}\", indent::get(), _ctx.VertexColors_number_of_colors);\nif number_of_wire_indexes.value != 0 { /*assert_eq!(number_of_wire_indexes.value%3, 1);*/ }"
                     },
                     {
                         "name": "wire_indexes",
                         "data_type": "Integer",
                         "is_vec": true,
-                        "size": "number_of_wire_indexes.value"
+                        "size": "number_of_wire_indexes.value",
+                        "on_set": "_ctx.set_num_vertex_colors_from_tess_3d_wire(&wire_indexes)"
                     },
                     {
                         "name": "has_vertex_colors",
@@ -3337,7 +3376,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "Template"]
+                        "expected_value": ["PrcType", "Template"]
                     },
                     {
                         "name": "is_calculated",
@@ -3356,7 +3395,7 @@
                         "name": "texture_binary_data",
                         "data_type": "UnsignedInteger",
                         "is_vec": true,
-                        "size": "texture_binary_data_size.value / 32",
+                        "size": "texture_binary_data_size.value / 1",
                         "1FIXME": true
                     },
                     {
@@ -3407,11 +3446,13 @@
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/540",
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/727",
                 "debug": false,
+                "on_enter": "_ctx.t3dc.enter()",
+                "on_leave": "_ctx.t3dc.leave()",
                 "fields": [
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_TESS_3D_Compressed"]
+                        "expected_value": ["PrcType", "PRC_TYPE_TESS_3D_Compressed"]
                     },
                     {
                         "name": "is_calculated",
@@ -3435,7 +3476,7 @@
                         "condition_rust": "_ctx.ver_authoring >= 7031",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/705",
                         "SPECBUG": "missing OPTIONAL for field in 2014 spec",
-                        "on_set": "dbg!(origin_array)"
+                        "UNUSEDon_set": "debug!(\"{}origin_array: {:?}\", indent::get(), origin_array)"
                     },
                     {
                         "name": "point_array",
@@ -3464,37 +3505,36 @@
                     {
                         "name": "point_is_reference_array",
                         "comment": "indicates whether a point is a reference",
-                        "data_type": "Boolean",
-                        "is_vec": true,
-                        "size": "reference_array_size.value",
-                        "debug": false,
-                        "on_set": "println!(\"number_of_reference_points:{}\", TESS_3D_Compressed__number_of_reference_points(&point_is_reference_array));\ndbg!(format(&point_is_reference_array))"
+                        "data_type": "UncompressedBoolArray",
+                        "vbr": "reference_array_size.value",
+                        "debug": true,
+                        "on_set": "debug!(\"number_of_reference_points:{}\", _ctx.t3dc.number_of_reference_points(&point_is_reference_array.a));\ndebug!(\"{}point_is_reference_array: {}\", indent::get(), format(&point_is_reference_array.a))"
                     },
                     {
                         "name": "point_reference_array",
                         "data_type": "CompressedIndiceArrayWithoutBit",
-                        "vbr": "TESS_3D_Compressed__number_of_reference_points(&point_is_reference_array) > 3",
+                        "vbr": "_ctx.t3dc.number_of_reference_points(&point_is_reference_array.a) > 3",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/427",
                         "comment": "in this case, the boolean value which indicates whether the character array is compressed is not stored. Its value is implicit and set to number_of_reference_points > 3",
-                        "on_set": "assert_eq!(TESS_3D_Compressed__number_of_reference_points(&point_is_reference_array) as usize, point_reference_array.a.len())",
+                        "on_set": "assert_eq!(_ctx.t3dc.number_of_reference_points(&point_is_reference_array.a) as usize, point_reference_array.a.len())",
                         "debug": true
                     },
                     {
                         "name": "must_recalculate_normals",
                         "data_type": "Boolean",
                         "debug": true,
-                        "on_set": "TESS_3D_Compressed__get_points(&point_array.a, tolerance.value, &point_is_reference_array, &point_reference_array.a, &edge_status_array.a, &triangle_face_array.a)"
+                        "on_set": "_ctx.t3dc.get_points(&point_array.a, tolerance.value, &point_is_reference_array.a, &point_reference_array.a, &edge_status_array.a, &triangle_face_array.a)"
                     },
                     {
                         "name": "normal_is_reversed",
-                        "data_type": "Boolean",
-                        "is_vec": true,
+                        "data_type": "UncompressedBoolArray",
+                        "UNUSEDis_vec": true,
                         "comment": "SIZE is missing!",
                         "FIXME": true,
-                        "size": "TESS_3D_Compressed__number_of_normals(&triangle_face_array.a)",
+                        "vbr": "_ctx.t3dc.number_of_normals(&triangle_face_array.a)",
                         "condition": "!!must_recalculate_normals",
                         "condition_rust": "!!self.must_recalculate_normals",
-                        "on_set": "dbg!(format(&normal_is_reversed))"
+                        "on_set": "debug!(\"{}normal_is_reversed: {}\", indent::get(), format(&normal_is_reversed.a))"
                     },
                     {
                         "name": "crease_angle",
@@ -3508,6 +3548,7 @@
                         "data_type": "Character",
                         "condition": "!!must_recalculate_normals",
                         "condition_rust": "!!self.must_recalculate_normals",
+                        "comment": "Normal recalculation flags (not used; should be zero)",
                         "debug": true
                     },
                     {
@@ -3526,13 +3567,13 @@
                     },
                     {
                         "name": "normal_binary_data",
-                        "data_type": "Boolean",
-                        "is_vec": true,
-                        "size": "normal_binary_data_size.value",
+                        "data_type": "UncompressedBoolArray",
+                        "UNUSEDis_vec": true,
+                        "vbr": "normal_binary_data_size.value",
                         "condition": "!must_recalculate_normals",
                         "condition_rust": "!self.must_recalculate_normals",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/436",
-                        "on_set": "dbg!(format(&normal_binary_data))"
+                        "on_set": "debug!(\"{}normal_binary_data: {}\", indent::get(), format(&normal_binary_data.a))"
                     },
                     {
                         "name": "normal_angle_array",
@@ -3545,15 +3586,15 @@
                     },
                     {
                         "name": "is_face_planar",
-                        "data_type": "Boolean",
-                        "is_vec": true,
+                        "data_type": "UncompressedBoolArray",
+                        "UNUSEDis_vec": true,
                         "size1": "normal_binary_data_size.value",
                         "comment": "above size if wrong, SPECBUG not in spec",
                         "FIXME": true,
-                        "size": "number_of_faces_stored_in_mesh(&triangle_face_array.a)",
+                        "vbr": "_ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a)",
                         "condition": "!must_recalculate_normals",
                         "condition_rust": "!self.must_recalculate_normals",
-                        "on_set": "dbg!(format(&is_face_planar))"
+                        "on_set": "debug!(\"{}is_face_planar: {}\", indent::get(), format(&is_face_planar.a))"
                     },
                     {
                         "name": "is_point_color",
@@ -3562,14 +3603,14 @@
                     },
                     {
                         "name": "is_point_color_on_face",
-                        "data_type": "Boolean",
-                        "is_vec": true,
+                        "data_type": "UncompressedBoolArray",
+                        "UNUSEDis_vec": true,
                         "comment": "above size if wrong, SPECBUG not in spec",
                         "FIXME": true,
-                        "size": "number_of_faces_stored_in_mesh(&triangle_face_array.a)",
+                        "vbr": "_ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a)",
                         "condition": "!!is_point_color",
                         "condition_rust": "!self.is_point_color",
-                        "on_set": "dbg!(format(&is_point_color_on_face))"
+                        "on_set": "debug!(\"{}is_point_color_on_face: {}\", indent::get(), format(&is_point_color_on_face.a))"
                     },
                     {
                         "name": "point_color_array",
@@ -3586,14 +3627,14 @@
                     },
                     {
                         "name": "is_multiple_line_attribute_on_face",
-                        "data_type": "Boolean",
-                        "is_vec": true,
+                        "data_type": "UncompressedBoolArray",
+                        "UNUSEDis_vec": true,
                         "comment": "above size if wrong, SPECBUG not in spec",
                         "FIXME": true,
-                        "size": "number_of_faces_stored_in_mesh(&triangle_face_array.a)",
+                        "vbr": "_ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a)",
                         "condition": "!!is_multiple_line_attribute",
                         "condition_rust": "!!self.is_multiple_line_attribute",
-                        "on_set": "dbg!(format(&is_multiple_line_attribute_on_face))"
+                        "on_set": "debug!(\"{}is_multiple_line_attribute_on_face: {}\", indent::get(), format(&is_multiple_line_attribute_on_face.a))"
                     },
                     {
                         "name": "line_attribute_array",
@@ -3622,15 +3663,15 @@
                     },
                     {
                         "name": "face_has_texture",
-                        "data_type": "Boolean",
-                        "is_vec": true,
-                        "size": "number_of_faces_stored_in_mesh(&triangle_face_array.a)",
-                        "size": "normal_binary_data_size.value",
+                        "data_type": "UncompressedBoolArray",
+                        "UNUSEDis_vec": true,
+                        "vbr": "_ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a)",
+                        "size1": "normal_binary_data_size.value",
                         "comment": "above size if wrong, SPECBUG not in spec",
                         "comment": "FIXME: above array size is guesswork",
                         "condition": "!no_texture",
                         "condition_rust": "!self.no_texture",
-                        "on_set": "dbg!(format(&face_has_texture))"
+                        "on_set": "debug!(\"{}face_has_texture: {}\", indent::get(), format(&face_has_texture.a))"
                     },
                     {
                         "name": "has_behaviors",
@@ -3653,12 +3694,12 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "eligible_type_kind": "PRCType",
+                        "eligible_type_kind": "PrcType",
                         "eligible_type_ids": [
-                            ["PRC_TYPE_TESS_3D", "d3"],
-                            ["PRC_TYPE_TESS_3D_Wire", "d3w"],
-                            ["PRC_TYPE_TESS_Markup", "m"],
-                            ["PRC_TYPE_TESS_3D_Compressed", "d3c"]
+                            ["PRC_TYPE_TESS_3D", "tess_3d"],
+                            ["PRC_TYPE_TESS_3D_Wire", "tess_3d_wire"],
+                            ["PRC_TYPE_TESS_Markup", "tess_markup"],
+                            ["PRC_TYPE_TESS_3D_Compressed", "tess_3d_compressed"]
                         ],
                         "debug": false
                     }
@@ -3669,7 +3710,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_ASM_FileStructureTessellation"]
+                        "expected_value": ["PrcType", "PRC_TYPE_ASM_FileStructureTessellation"]
                     },
                     {
                         "name": "base",
@@ -3679,7 +3720,7 @@
                     {
                         "name": "tess_count",
                         "data_type": "UnsignedInteger",
-                        "debug": false
+                        "debug": true
                     },
                     {
                         "name": "tess",
@@ -3729,7 +3770,8 @@
                     },
                     {
                         "name": "bounding_box_behavior",
-                        "data_type": "Character"
+                        "data_type": "Character",
+                        "on_set": "debug!(\"bounding_box_behavior: {:?}\", PrcBodyBoundingBoxBehaviorBitField::from_bytes(bounding_box_behavior.value.to_le_bytes()));"
                     }
                 ]
             },
@@ -3738,7 +3780,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_TOPO_MultipleVertex"]
+                        "expected_value": ["PrcType", "PRC_TYPE_TOPO_MultipleVertex"]
                     },
                     {
                         "name": "base",
@@ -3761,7 +3803,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_TOPO_UniqueVertex"]
+                        "expected_value": ["PrcType", "PRC_TYPE_TOPO_UniqueVertex"]
                     },
                     {
                         "name": "base",
@@ -3892,7 +3934,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_CRV_Blend02Boundary"]
+                        "expected_value": ["PrcType", "PRC_TYPE_CRV_Blend02Boundary"]
                     },
                     {
                         "name": "curve_data",
@@ -4012,7 +4054,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_CRV_NURBS"]
+                        "expected_value": ["PrcType", "PRC_TYPE_CRV_NURBS"]
                     },
                     {
                         "name": "curve_data",
@@ -4063,7 +4105,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_CRV_Circle"]
+                        "expected_value": ["PrcType", "PRC_TYPE_CRV_Circle"]
                     },
                     {
                         "name": "curve_data",
@@ -4108,7 +4150,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_CRV_Composite"]
+                        "expected_value": ["PrcType", "PRC_TYPE_CRV_Composite"]
                     },
                     {
                         "name": "curve_data",
@@ -4151,7 +4193,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_CRV_OnSurf"]
+                        "expected_value": ["PrcType", "PRC_TYPE_CRV_OnSurf"]
                     },
                     {
                         "name": "curve_data",
@@ -4196,7 +4238,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_CRV_Ellipse"]
+                        "expected_value": ["PrcType", "PRC_TYPE_CRV_Ellipse"]
                     },
                     {
                         "name": "curve_data",
@@ -4233,7 +4275,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MATH_FCT_1D_Polynom"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MATH_FCT_1D_Polynom"]
                     },
                     {
                         "name": "number_of_coefficients",
@@ -4252,7 +4294,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MATH_FCT_1D_Trigonometric"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MATH_FCT_1D_Trigonometric"]
                     },
                     {
                         "name": "amplitude",
@@ -4277,7 +4319,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MATH_FCT_1D_Fraction"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MATH_FCT_1D_Fraction"]
                     },
                     {
                         "name": "numerator",
@@ -4296,7 +4338,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MATH_FCT_1D_ArctanCos"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MATH_FCT_1D_ArctanCos"]
                     },
                     {
                         "name": "a",
@@ -4338,7 +4380,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MATH_FCT_1D_Combination"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MATH_FCT_1D_Combination"]
                     },
                     {
                         "name": "number_of_coefficients",
@@ -4358,7 +4400,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "eligible_type_kind": "PRCType",
+                        "eligible_type_kind": "PrcType",
                         "eligible_type_ids": [
                             ["PRC_TYPE_MATH_FCT_1D_Polynom", "poly"],
                             ["PRC_TYPE_MATH_FCT_1D_Trigonometric", "trigon"],
@@ -4374,7 +4416,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MATH_FCT_3D_Linear"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MATH_FCT_3D_Linear"]
                     },
                     {
                         "name": "mat",
@@ -4392,7 +4434,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_MATH_FCT_3D_NonLinear"]
+                        "expected_value": ["PrcType", "PRC_TYPE_MATH_FCT_3D_NonLinear"]
                     },
                     {
                         "name": "left_transformation",
@@ -4432,7 +4474,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "eligible_type_kind": "PRCType",
+                        "eligible_type_kind": "PrcType",
                         "eligible_type_ids": [
                             ["PRC_TYPE_MATH_FCT_3D_Linear", "lin"],
                             ["PRC_TYPE_MATH_FCT_3D_NonLinear", "nonlin"]
@@ -4445,7 +4487,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_CRV_Equation"]
+                        "expected_value": ["PrcType", "PRC_TYPE_CRV_Equation"]
                     },
                     {
                         "name": "curve_data",
@@ -4573,7 +4615,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_CRV_Helix"]
+                        "expected_value": ["PrcType", "PRC_TYPE_CRV_Helix"]
                     },
                     {
                         "name": "curve_data",
@@ -4623,7 +4665,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_CRV_Hyperbola"]
+                        "expected_value": ["PrcType", "PRC_TYPE_CRV_Hyperbola"]
                     },
                     {
                         "name": "curve_data",
@@ -4697,7 +4739,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_CRV_Intersection"]
+                        "expected_value": ["PrcType", "PRC_TYPE_CRV_Intersection"]
                     },
                     {
                         "name": "curve_data",
@@ -4784,7 +4826,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_CRV_Line"]
+                        "expected_value": ["PrcType", "PRC_TYPE_CRV_Line"]
                     },
                     {
                         "name": "curve_data",
@@ -4813,7 +4855,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_CRV_Offset"]
+                        "expected_value": ["PrcType", "PRC_TYPE_CRV_Offset"]
                     },
                     {
                         "name": "curve_data",
@@ -4855,7 +4897,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_CRV_Parabola"]
+                        "expected_value": ["PrcType", "PRC_TYPE_CRV_Parabola"]
                     },
                     {
                         "name": "curve_data",
@@ -4893,7 +4935,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_CRV_PolyLine"]
+                        "expected_value": ["PrcType", "PRC_TYPE_CRV_PolyLine"]
                     },
                     {
                         "name": "curve_data",
@@ -4942,7 +4984,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_CRV_Transform"]
+                        "expected_value": ["PrcType", "PRC_TYPE_CRV_Transform"]
                     },
                     {
                         "name": "curve_data",
@@ -4980,7 +5022,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "eligible_type_kind": "PRCType",
+                        "eligible_type_kind": "PrcType",
                         "eligible_type_ids": [
                             ["PRC_TYPE_ROOT", "empty"],
                             ["PRC_TYPE_CRV_Blend02Boundary", "b02b"],
@@ -5059,7 +5101,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_SURF_Blend01"]
+                        "expected_value": ["PrcType", "PRC_TYPE_SURF_Blend01"]
                     },
                     {
                         "name": "curve_data",
@@ -5093,7 +5135,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_SURF_Blend02"]
+                        "expected_value": ["PrcType", "PRC_TYPE_SURF_Blend02"]
                     },
                     {
                         "name": "curve_data",
@@ -5169,7 +5211,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_SURF_Blend03"]
+                        "expected_value": ["PrcType", "PRC_TYPE_SURF_Blend03"]
                     },
                     {
                         "name": "curve_data",
@@ -5204,7 +5246,7 @@
                         "name": "points",
                         "data_type": "Vector3D",
                         "is_vec": true,
-                        "size": "number_of_elements.value"
+                        "size": "number_of_elements.value * 3"
                     },
                     {
                         "name": "rail_2_angles_v",
@@ -5216,7 +5258,7 @@
                         "name": "tangents",
                         "data_type": "Vector3D",
                         "is_vec": true,
-                        "size": "number_of_elements.value"
+                        "size": "number_of_elements.value * 3"
                     },
                     {
                         "name": "rail_2_derivatives_v",
@@ -5228,7 +5270,7 @@
                         "name": "second_derivatives",
                         "data_type": "Vector3D",
                         "is_vec": true,
-                        "size": "number_of_elements.value"
+                        "size": "number_of_elements.value * 3"
                     },
                     {
                         "name": "rail_2_second_derivatives",
@@ -5312,7 +5354,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_SURF_NURBS"]
+                        "expected_value": ["PrcType", "PRC_TYPE_SURF_NURBS"]
                     },
                     {
                         "name": "curve_data",
@@ -5389,7 +5431,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_SURF_Cone"]
+                        "expected_value": ["PrcType", "PRC_TYPE_SURF_Cone"]
                     },
                     {
                         "name": "curve_data",
@@ -5418,7 +5460,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_SURF_Cylinder"]
+                        "expected_value": ["PrcType", "PRC_TYPE_SURF_Cylinder"]
                     },
                     {
                         "name": "curve_data",
@@ -5443,7 +5485,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_SURF_Cylindrical"]
+                        "expected_value": ["PrcType", "PRC_TYPE_SURF_Cylindrical"]
                     },
                     {
                         "name": "curve_data",
@@ -5472,7 +5514,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_SURF_Offset"]
+                        "expected_value": ["PrcType", "PRC_TYPE_SURF_Offset"]
                     },
                     {
                         "name": "curve_data",
@@ -5501,7 +5543,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_SURF_Pipe"]
+                        "expected_value": ["PrcType", "PRC_TYPE_SURF_Pipe"]
                     },
                     {
                         "name": "curve_data",
@@ -5534,7 +5576,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_SURF_Ruled"]
+                        "expected_value": ["PrcType", "PRC_TYPE_SURF_Ruled"]
                     },
                     {
                         "name": "curve_data",
@@ -5563,7 +5605,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_SURF_Sphere"]
+                        "expected_value": ["PrcType", "PRC_TYPE_SURF_Sphere"]
                     },
                     {
                         "name": "curve_data",
@@ -5588,7 +5630,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_SURF_Revolution"]
+                        "expected_value": ["PrcType", "PRC_TYPE_SURF_Revolution"]
                     },
                     {
                         "name": "curve_data",
@@ -5629,7 +5671,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_SURF_Extrusion"]
+                        "expected_value": ["PrcType", "PRC_TYPE_SURF_Extrusion"]
                     },
                     {
                         "name": "curve_data",
@@ -5658,7 +5700,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_SURF_FromCurves"]
+                        "expected_value": ["PrcType", "PRC_TYPE_SURF_FromCurves"]
                     },
                     {
                         "name": "curve_data",
@@ -5691,7 +5733,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_SURF_Torus"]
+                        "expected_value": ["PrcType", "PRC_TYPE_SURF_Torus"]
                     },
                     {
                         "name": "curve_data",
@@ -5720,7 +5762,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_SURF_Transform"]
+                        "expected_value": ["PrcType", "PRC_TYPE_SURF_Transform"]
                     },
                     {
                         "name": "curve_data",
@@ -5754,7 +5796,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "eligible_type_kind": "PRCType",
+                        "eligible_type_kind": "PrcType",
                         "eligible_type_ids": [
                             ["PRC_TYPE_ROOT", "empty"],
                             ["PRC_TYPE_SURF_Blend01", "b01"],
@@ -5827,7 +5869,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_TOPO_WireEdge"]
+                        "expected_value": ["PrcType", "PRC_TYPE_TOPO_WireEdge"]
                     },
                     {
                         "name": "curve",
@@ -5840,7 +5882,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_TOPO_Edge"]
+                        "expected_value": ["PrcType", "PRC_TYPE_TOPO_Edge"]
                     },
                     {
                         "name": "wire_edge",
@@ -5871,7 +5913,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_TOPO_CoEdge"]
+                        "expected_value": ["PrcType", "PRC_TYPE_TOPO_CoEdge"]
                     },
                     {
                         "name": "base_tolopogy",
@@ -5912,7 +5954,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_TOPO_Loop"]
+                        "expected_value": ["PrcType", "PRC_TYPE_TOPO_Loop"]
                     },
                     {
                         "name": "base_tolopogy",
@@ -5939,7 +5981,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_TOPO_Face"]
+                        "expected_value": ["PrcType", "PRC_TYPE_TOPO_Face"]
                     },
                     {
                         "name": "base_tolopogy",
@@ -6002,7 +6044,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_TOPO_Shell"]
+                        "expected_value": ["PrcType", "PRC_TYPE_TOPO_Shell"]
                     },
                     {
                         "name": "base_tolopogy",
@@ -6029,7 +6071,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_TOPO_Connex"]
+                        "expected_value": ["PrcType", "PRC_TYPE_TOPO_Connex"]
                     },
                     {
                         "name": "base_tolopogy",
@@ -6053,7 +6095,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_ROOT"]
+                        "expected_value": ["PrcType", "PRC_TYPE_ROOT"]
                     }
                 ]
             },
@@ -6063,7 +6105,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "eligible_type_kind": "PRCType",
+                        "eligible_type_kind": "PrcType",
                         "eligible_type_ids": [
                             ["PRC_TYPE_ROOT", "empty"],
                             ["PRC_TYPE_TOPO_MultipleVertex", "mv"],
@@ -6105,7 +6147,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_TOPO_SingleWireBody"]
+                        "expected_value": ["PrcType", "PRC_TYPE_TOPO_SingleWireBody"]
                     },
                     {
                         "name": "base",
@@ -6123,7 +6165,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_TOPO_BrepData"]
+                        "expected_value": ["PrcType", "PRC_TYPE_TOPO_BrepData"]
                     },
                     {
                         "name": "base",
@@ -6143,10 +6185,9 @@
                     {
                         "name": "bounding_box",
                         "data_type": "BoundingBox",
-                        "condition": "(base.bounding_box_behavior.value & PRC_BODY_BBOX_CADData) != 0",
-                        "condition_rust": "(self.base.bounding_box_behavior.value & PRC_BODY_BBOX_CADData as i8) != 0",
-                        "bug": "https://github.com/pdf-association/pdf-issues/issues/715",
-                        "TODO": "(bounding_box_behavior & (PRC_BODY_BBOX_Evaluation | PRC_BODY_BBOX_Precise) != 0)."
+                        "condition": "have_bbox(base.bounding_box_behavior.value)",
+                        "condition_rust": "have_bbox(base.bounding_box_behavior.value)",
+                        "bug": "https://github.com/pdf-association/pdf-issues/issues/715"
                     }
                 ]
             },
@@ -6162,14 +6203,16 @@
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
                         "vbr": "_ctx.BrepDataCompress_number_of_bits_to_store_reference",
                         "condition": "!self.already_stored.value",
-                        "condition_rust": "!self.already_stored.value"
+                        "condition_rust": "!self.already_stored.value",
+                        "on_set": "if !already_stored.value { _ctx.BrepDataCompress_CompressedVertex_get(point_index.value); }"
                     },
                     {
                         "name": "point_data",
                         "data_type": "CompressedPoint",
                         "vbr": "_ctx.brep_data_compressed_tolerance / 100.0",
                         "condition": "!!self.already_stored.value",
-                        "condition_rust": "!!self.already_stored.value"
+                        "condition_rust": "!!self.already_stored.value",
+                        "on_set": "if !!already_stored.value { _ctx.BrepDataCompress_CompressedVertex_add([point_data.x, point_data.y, point_data.z]); }"
                     }
                 ]
             },
@@ -6178,7 +6221,8 @@
                 "fields": [
                     {
                         "name": "full_circle",
-                        "data_type": "Boolean"
+                        "data_type": "Boolean",
+                        "comment": "adobe sdk 9 says: start_point == end_point"
                     },
                     {
                         "name": "start_end_data",
@@ -6223,7 +6267,8 @@
                     },
                     {
                         "name": "circle_angle",
-                        "data_type": "Boolean"
+                        "data_type": "Boolean",
+                        "comment": "adobe sdk 9 says: circle_angle > PI"
                     }
                 ]
             },
@@ -6286,7 +6331,11 @@
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedCurveType", "PRC_HCG_Circle"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "on_set": "_ctx.push_face_type(id.value)",
+                        "FIXME": true,
+                        "comment": "this field is OPTIONAL",
+                        "condition1": "!_ctx.compressed_iso_spline",
+                        "condition_rust1": "!_ctx.compressed_iso_spline"
                     },
                     {
                         "name": "is_particular_circle",
@@ -6387,7 +6436,11 @@
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedCurveType", "PRC_HCG_CompositeCurve"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "on_set": "_ctx.push_face_type(id.value)",
+                        "FIXME": true,
+                        "comment": "this field is OPTIONAL",
+                        "condition1": "!_ctx.compressed_iso_spline",
+                        "condition_rust1": "!_ctx.compressed_iso_spline"
                     },
                     {
                         "name": "start_end_data",
@@ -6509,6 +6562,19 @@
                 ]
             },
             "AnaFaceTrimLoop": {
+                "on_enter": "return AnaFaceTrimLoop::from_reader_while_loop(rdr, _ctx);",
+                "UNUSEDfields": [
+                    {
+                        "name": "curve_is_not_already_stored",
+                        "data_type": "Boolean",
+                        "comment": "this represents a boolean flag that means curve_is_NOT_already_stored is TRUE; it is used when reading a PRC File to signal the end of the curves in a loop and the end of all loops."
+                    },
+                    {
+                        "name": "id",
+                        "data_type": "CompressedEntityType",
+                        "comment": "Will be PRC_HCG_EndLoop for last loop and PRC_HCG_NewLoop for all other loops"
+                    }
+                ],
                 "fields": [
                     {
                         "name": "loop_surface_orientation",
@@ -6520,16 +6586,6 @@
                         "is_vec": true,
                         "size": "999",
                         "FIXME": "size is not known!!!"
-                    },
-                    {
-                        "name": "curve_is_not_already_stored",
-                        "data_type": "Boolean",
-                        "comment": "this represents a boolean flag that means curve_is_NOT_already_stored is TRUE; it is used when reading a PRC File to signal the end of the curves in a loop and the end of all loops."
-                    },
-                    {
-                        "name": "id",
-                        "data_type": "CompressedEntityType",
-                        "comment": "Will be PRC_HCG_EndLoop for last loop and PRC_HCG_NewLoop for all other loops"
                     }
                 ]
             },
@@ -6768,16 +6824,22 @@
                     {
                         "name": "center",
                         "data_type": "CompressedPoint",
-                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0"
+                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0",
+                        "debug": true
                     },
                     {
                         "name": "x_axis",
                         "data_type": "CompressedPoint",
-                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0"
+                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0",
+                        "debug": true
                     },
                     {
-                        "name": "pointy_axis",
-                        "data_type": "Vector3D"
+                        "name": "y_axis",
+                        "data_type1": "CompressedPoint",
+                        "vbr": "_ctx.brep_data_compressed_tolerance / 100.0",
+                        "data_type": "Vector3D",
+                        "SPECBUG": "2014 spec says Vector3D, but SC2N570-PRC-WD and adobe sdk v9 says CompressedPoint",
+                        "debug": true
                     }
                 ]
             },
@@ -7432,7 +7494,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_TOPO_SingleWireBodyCompress"]
+                        "expected_value": ["PrcType", "PRC_TYPE_TOPO_SingleWireBodyCompress"]
                     },
                     {
                         "name": "base",
@@ -7449,12 +7511,13 @@
                 ]
             },
             "PRC_TYPE_TOPO_BrepDataCompress": {
-                "on_enter": "_ctx.curve_trimming_face = true;\n_ctx.BrepDataCompress_sum_num_faces = 0",
+                "on_enter": "_ctx.curve_trimming_face = true;\n_ctx.BrepDataCompress_sum_num_faces = 0;\n_ctx.BrepDataCompress_enter()",
+                "on_leave": "_ctx.BrepDataCompress_leave()",
                 "fields": [
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_TOPO_BrepDataCompress"]
+                        "expected_value": ["PrcType", "PRC_TYPE_TOPO_BrepDataCompress"]
                     },
                     {
                         "name": "base",
@@ -7510,12 +7573,12 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "eligible_type_kind": "PRCType",
+                        "eligible_type_kind": "PrcType",
                         "eligible_type_ids": [
-                            ["PRC_TYPE_TOPO_SingleWireBody", "swb"],
-                            ["PRC_TYPE_TOPO_BrepData", "bd"],
-                            ["PRC_TYPE_TOPO_SingleWireBodyCompress", "swbc"],
-                            ["PRC_TYPE_TOPO_BrepDataCompress", "bdc"]
+                            ["PRC_TYPE_TOPO_SingleWireBody", "topo_swb"],
+                            ["PRC_TYPE_TOPO_BrepData", "topo_bd"],
+                            ["PRC_TYPE_TOPO_SingleWireBodyCompress", "topo_swbc"],
+                            ["PRC_TYPE_TOPO_BrepDataCompress", "topo_bdc"]
                         ]
                     }
                 ]
@@ -7527,7 +7590,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_TOPO_Context"]
+                        "expected_value": ["PrcType", "PRC_TYPE_TOPO_Context"]
                     },
                     {
                         "name": "base",
@@ -7584,7 +7647,7 @@
                     {
                         "name": "topo_context_count",
                         "data_type": "UnsignedInteger",
-                        "on_set": "UnsignedInteger::search_and_seek_back(rdr, PRCType::PRC_TYPE_TOPO_Context as u32, 9999, topo_context_count.value)"
+                        "on_set": "UnsignedInteger::search_and_seek_back(rdr, PrcType::PRC_TYPE_TOPO_Context as u32, 9999, topo_context_count.value)"
                     },
                     {
                         "SPECBUG": true,
@@ -7602,7 +7665,7 @@
                     {
                         "name": "id",
                         "data_type": "UnsignedInteger",
-                        "expected_value": ["PRCType", "PRC_TYPE_ASM_FileStructureGeometry"]
+                        "expected_value": ["PrcType", "PRC_TYPE_ASM_FileStructureGeometry"]
                     },
                     {
                         "name": "base",

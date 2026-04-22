@@ -151,10 +151,10 @@ macro_rules! D {
     }};
 }
 
-fn getcofdoe(bits: u32, nbits: i16) -> Option<CodingOfFrequentDoubleOrExponent> {
+fn getcofdoe<'a>(bits: u32, nbits: i16) -> Option<& 'a CodingOfFrequentDoubleOrExponent> {
     for i in 0..N {
         if ACOFDOE[i].NumBits == nbits && ACOFDOE[i].Bits == bits {
-            return Some(ACOFDOE[i]);
+            return Some(&ACOFDOE[i]);
         }
     }
     None
@@ -178,7 +178,7 @@ pub fn read_double_from_reader<R: BitRead>(rdr: &mut R) -> io::Result<f64> {
                 unsafe {
                     value.d = c.s.d;
                 }
-                code = c;
+                code = *c;
                 found = true;
                 break;
             }
@@ -257,9 +257,9 @@ pub fn read_double_from_reader<R: BitRead>(rdr: &mut R) -> io::Result<f64> {
                     cbi = cbi - 1;
                 }
                 //unsafe { value.bytes[cbi as usize] = UnsignedCharacter::from_reader(rdr)?.value as u8; };
+                let uc8: u8 = rdr.read_to()?;
                 unsafe {
-                    let uc8: u8 = rdr.read_to().unwrap();
-                    value.bytes[cbi as usize] = uc8 as u8;
+                    value.bytes[cbi as usize] = uc8;
                 };
                 //println!("u64={:064b} d={}", unsafe { value.u }, unsafe { value.d } );
                 break;
@@ -350,7 +350,7 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
     let _ = w.write::<4, _>(b4)?;
     bits_written += 4;
 
-    bi -= 1; // NEXTBYTE(pb);
+    bi -= 1;
     let start = bi;
 
     let end: usize = 0;
