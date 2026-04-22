@@ -14,9 +14,9 @@
 - [ ] parsing PRC_TYPE_TESS_3D_Compressed: color data
 - [ ] parsing compressed NURBS
 - [ ] parsing AnaFaceTrimLoop
-- [ ] parsing VertexColors
-- [ ] parsing PRC_TYPE_SURF_Blend03
-- [ ] C API for parsing/reading
+- [x] parsing VertexColors
+- [x] parsing PRC_TYPE_SURF_Blend03
+- [x] C API for parsing/reading
 - [ ] PRC write/output
 
 ## PRC Test Data
