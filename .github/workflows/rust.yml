@@ -36,6 +36,7 @@ jobs:
         #describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt ../../testdata/prc_describe
         RUST_LOG=debug RUST_BACKTRACE=1 describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt
         du -d 1 -h
+        echo "colordiff -u ../../testdata/expected_all.txt review_summary.txt"
         colordiff -u ../../testdata/expected_all.txt review_summary.txt
     - name: Archive testing logs
       uses: actions/upload-artifact@v7
