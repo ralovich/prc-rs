@@ -8,11 +8,11 @@
 #![allow(non_snake_case)]
 #![allow(unused)]
 
-use crate::tess_3d_compressed::Tess3dCompressed;
 use crate::constants::*;
 use crate::prc_builtin::*;
 use crate::prc_gen::*;
 use crate::prc_schema::SchemaEvaluator;
+use crate::tess_3d_compressed::Tess3dCompressed;
 use bitstream_io::BitReader;
 use log::{debug, info, warn};
 use std::fs::File;
@@ -162,7 +162,6 @@ pub struct PrcParsingContext {
     pub se: SchemaEvaluator,
 
     //pub is_an_iso_face: bool, // ContentCompressedFace
-
     /// number_vertex_references  is just a portion of the referenced vertices. Technically,
     /// it is a number of referenced iso-vertices, i.e. vertices referenced from iso faces.
     /// In simple words, imagine there are two caches for compressed vertices - one for
@@ -224,8 +223,10 @@ pub struct PrcParsingContext {
     // The flag curve_is_not_already_stored indicates if the trim curve has already been stored in the
     // compressed brep data. If the curve has already been stored, the index of the curve is stored in the file;
     // otherwise, a compressed version of the trim curve is stored.
-    pub AnaFaceTrimLoop_curves: Vec<CompressedCurve>, /// the current loop
-    pub AnaFaceTrimLoop_loops: Vec<Vec<CompressedCurve>>, /// accumulator of loops
+    pub AnaFaceTrimLoop_curves: Vec<CompressedCurve>,
+    /// the current loop
+    pub AnaFaceTrimLoop_loops: Vec<Vec<CompressedCurve>>,
+    /// accumulator of loops
 
     /// Whether the parser is progressing within a PRC_TYPE_TESS_3D_Wire struct?
     TESS_3D_Wire_inside: bool,
@@ -258,12 +259,16 @@ impl PrcParsingContext {
     }
 
     pub fn BrepDataCompress_enter(&mut self) {
-        self.BrepDataCompress_CompressedVertex_array.push(Vec::new());
+        self.BrepDataCompress_CompressedVertex_array
+            .push(Vec::new());
     }
     pub fn BrepDataCompress_leave(&mut self) {
         assert!(!self.BrepDataCompress_CompressedVertex_array.is_empty());
         let last_idx = self.BrepDataCompress_CompressedVertex_array.len() - 1;
-        debug!("BrepDataCompress_leave: {} vertices", self.BrepDataCompress_CompressedVertex_array[last_idx].len());
+        debug!(
+            "BrepDataCompress_leave: {} vertices",
+            self.BrepDataCompress_CompressedVertex_array[last_idx].len()
+        );
     }
     pub fn BrepDataCompress_CompressedVertex_add(&mut self, pt: [f64; 3]) {
         if self.BrepDataCompress_CompressedVertex_array.is_empty() {
@@ -290,7 +295,10 @@ impl PrcParsingContext {
     pub fn set_curve_trimming_face(&mut self, on: bool) {
         let prev = self.curve_trimming_face;
         self.curve_trimming_face = on;
-        warn!("SetCurveTrimmingFace {} -> {}", prev, self.curve_trimming_face)
+        warn!(
+            "SetCurveTrimmingFace {} -> {}",
+            prev, self.curve_trimming_face
+        )
     }
     pub fn is_curve_trimming_face(&self) -> bool {
         self.curve_trimming_face
@@ -299,7 +307,10 @@ impl PrcParsingContext {
     pub fn set_compressed_iso_spline(&mut self, on: bool) {
         let prev = self.compressed_iso_spline;
         self.compressed_iso_spline = on;
-        warn!("set_compressed_iso_spline {} -> {}", prev, self.compressed_iso_spline);
+        warn!(
+            "set_compressed_iso_spline {} -> {}",
+            prev, self.compressed_iso_spline
+        );
     }
     pub fn is_compressed_iso_spline(&self) -> bool {
         self.compressed_iso_spline
@@ -310,14 +321,20 @@ impl PrcParsingContext {
     /// It is important to remember that implicit points must also have a color (see Special flags for 3DWireTessData tessellation).
     pub fn set_num_vertex_colors_from_tess_3d_wire(&mut self, wire_indexes: &Vec<Integer>) {
         // TODO
-        let mut wires : Vec<Vec<u32>> = vec![];
+        let mut wires: Vec<Vec<u32>> = vec![];
 
         let mut i = 0;
         while i < wire_indexes.len() {
-            if wire_indexes[i].value as u32 & Prc3DWireTessFlags::PRC_3DWIRETESSDATA_IsContinuous as u32 != 0 {
+            if wire_indexes[i].value as u32
+                & Prc3DWireTessFlags::PRC_3DWIRETESSDATA_IsContinuous as u32
+                != 0
+            {
                 warn!("PRC_3DWIRETESSDATA_IsContinuous not implemented!");
             }
-            if wire_indexes[i].value as u32 & Prc3DWireTessFlags::PRC_3DWIRETESSDATA_IsClosing as u32 != 0 {
+            if wire_indexes[i].value as u32
+                & Prc3DWireTessFlags::PRC_3DWIRETESSDATA_IsClosing as u32
+                != 0
+            {
                 warn!("PRC_3DWIRETESSDATA_IsClosing not implemented!");
             }
             let number_of_indices_per_wire_edge = wire_indexes[i].value as u32 & 0x0FFFFFFF;
@@ -327,7 +344,10 @@ impl PrcParsingContext {
             let start = i + 1;
             for j in 0..number_of_indices_per_wire_edge {
                 let id = start + j as usize;
-                wires.last_mut().unwrap().push(wire_indexes[id].value as u32);
+                wires
+                    .last_mut()
+                    .unwrap()
+                    .push(wire_indexes[id].value as u32);
                 i += 1;
             }
 
@@ -338,7 +358,6 @@ impl PrcParsingContext {
         for w in wires {
             self.VertexColors_number_of_colors += w.len() as u32;
         }
-
     }
 
     pub fn TESS_3D_Wire__enter(&mut self) {
@@ -353,18 +372,25 @@ impl PrcParsingContext {
 
     /// group___tf_face_tess_data_____serialize_content2.html
     /// Note that the number of colors is deduced from the number of point indices as calculated from sizes_triangulated (in the preceding example, this would be 38) * 3 or 4 (RBG or RGBA).
-    pub fn set_num_vertex_colors_from_tess_3d_face(&mut self, used_entities_flag: u32, triangulateddata: &Vec<UnsignedInteger>) {
+    pub fn set_num_vertex_colors_from_tess_3d_face(
+        &mut self,
+        used_entities_flag: u32,
+        triangulateddata: &Vec<UnsignedInteger>,
+    ) {
         // TODO
 
         let mut num_colors_per_triangle = 0u32;
         if used_entities_flag != PrcTesselationFlags::PRC_FACETESSDATA_Triangle as u32 {
-            warn!("Only PRC_FACETESSDATA_Triangle is implemented! VertexColors_number_of_colors will be off!");
+            warn!(
+                "Only PRC_FACETESSDATA_Triangle is implemented! VertexColors_number_of_colors will be off!"
+            );
         }
         num_colors_per_triangle = 3;
 
         self.VertexColors_number_of_colors = 0;
         for i in 0..triangulateddata.len() {
-            self.VertexColors_number_of_colors += num_colors_per_triangle * triangulateddata[i].value;
+            self.VertexColors_number_of_colors +=
+                num_colors_per_triangle * triangulateddata[i].value;
         }
     }
 
@@ -376,28 +402,31 @@ impl PrcParsingContext {
     }
     pub fn AnaFaceTrimLoop_add_curve_to_loop(&mut self, ref_or_cc: RefOrCompressedCurve) {
         if ref_or_cc.curve_is_not_already_stored.value {
-            debug!("CURVE TO LOOP: ADDING: {:?}", ref_or_cc.compressed_curve.as_ref().unwrap().id_concrete);
-            self.AnaFaceTrimLoop_curves.push(ref_or_cc.compressed_curve.unwrap());
-        }
-        else {
+            debug!(
+                "CURVE TO LOOP: ADDING: {:?}",
+                ref_or_cc.compressed_curve.as_ref().unwrap().id_concrete
+            );
+            self.AnaFaceTrimLoop_curves
+                .push(ref_or_cc.compressed_curve.unwrap());
+        } else {
             // TODO look up referenced curve
             let index = ref_or_cc.index_compressed_curve.as_ref().unwrap().value;
             let index_str;
             if index < self.AnaFaceTrimLoop_curves.len() as u32 {
                 index_str = "valid".to_string();
-            }
-            else {
+            } else {
                 index_str = "invalid".to_string();
             }
             debug!("CURVE TO LOOP: -> CURVE REF: {} ({})", index, index_str);
         }
     }
-//    pub fn AnaFaceTrimLoop_add_curve_to_loop1(&mut self, crv: CompressedCurve) {
-//        self.AnaFaceTrimLoop_curves.push(crv);
-//    }
+    //    pub fn AnaFaceTrimLoop_add_curve_to_loop1(&mut self, crv: CompressedCurve) {
+    //        self.AnaFaceTrimLoop_curves.push(crv);
+    //    }
     pub fn AnaFaceTrimLoop_store_loop(&mut self) {
         debug!("STORE LOOP");
-        self.AnaFaceTrimLoop_loops.push(self.AnaFaceTrimLoop_curves.clone());
+        self.AnaFaceTrimLoop_loops
+            .push(self.AnaFaceTrimLoop_curves.clone());
         self.AnaFaceTrimLoop_curves.clear();
     }
     //pub fn store_compressed_curve(&mut self, crv: CompressedCurve) {
@@ -449,11 +478,11 @@ fn prc_parse_globals(
         debug!("{}", _schema_str);
     }
 
-
     ctx.se = SchemaEvaluator::new(&schema_data.schemas);
 
     if parse_globals {
-        ctx.prc_parsed.fsi[i].globals = PRC_TYPE_ASM_FileStructureGlobals::from_reader(&mut reader, ctx).unwrap();
+        ctx.prc_parsed.fsi[i].globals =
+            PRC_TYPE_ASM_FileStructureGlobals::from_reader(&mut reader, ctx).unwrap();
         let data = &ctx.prc_parsed.fsi[i].globals;
         let _str = format!("{:#?}", data);
         if verbose {
@@ -487,7 +516,8 @@ fn prc_parse_tree(bytes: &Vec<u8>, i: usize, ctx: &mut PrcParsingContext, verbos
     let slice_of_u8 = bytes.as_slice();
     let mut reader = BitReader::endian(Cursor::new(slice_of_u8), bitstream_io::BigEndian);
 
-    ctx.prc_parsed.fsi[i].tree = PRC_TYPE_ASM_FileStructureTree::from_reader(&mut reader, ctx).unwrap();
+    ctx.prc_parsed.fsi[i].tree =
+        PRC_TYPE_ASM_FileStructureTree::from_reader(&mut reader, ctx).unwrap();
     let data = &ctx.prc_parsed.fsi[i].tree;
     let _str = format!("{:#?}", data);
     if verbose {
@@ -519,7 +549,8 @@ fn prc_parse_tess(bytes: &Vec<u8>, i: usize, ctx: &mut PrcParsingContext, verbos
     let slice_of_u8 = bytes.as_slice();
     let mut reader = BitReader::endian(Cursor::new(slice_of_u8), bitstream_io::BigEndian);
 
-    ctx.prc_parsed.fsi[i].tess = PRC_TYPE_ASM_FileStructureTessellation::from_reader(&mut reader, ctx).unwrap();
+    ctx.prc_parsed.fsi[i].tess =
+        PRC_TYPE_ASM_FileStructureTessellation::from_reader(&mut reader, ctx).unwrap();
     let data = &ctx.prc_parsed.fsi[i].tess;
     let _str = format!("{:#?}", data);
     if verbose {
@@ -553,7 +584,8 @@ fn prc_parse_geom(bytes: &Vec<u8>, i: usize, ctx: &mut PrcParsingContext, verbos
     let slice_of_u8 = bytes.as_slice();
     let mut reader = BitReader::endian(Cursor::new(slice_of_u8), bitstream_io::BigEndian);
 
-    ctx.prc_parsed.fsi[i].geom = PRC_TYPE_ASM_FileStructureGeometry::from_reader(&mut reader, ctx).unwrap();
+    ctx.prc_parsed.fsi[i].geom =
+        PRC_TYPE_ASM_FileStructureGeometry::from_reader(&mut reader, ctx).unwrap();
     let data = &ctx.prc_parsed.fsi[i].geom;
     let _str = format!("{:#?}", data);
     if verbose {
@@ -585,7 +617,8 @@ fn prc_parse_extgeom(bytes: &Vec<u8>, i: usize, ctx: &mut PrcParsingContext, ver
     let slice_of_u8 = bytes.as_slice();
     let mut reader = BitReader::endian(Cursor::new(slice_of_u8), bitstream_io::BigEndian);
 
-    ctx.prc_parsed.fsi[i].ext = PRC_TYPE_ASM_FileStructureExtraGeometry::from_reader(&mut reader, ctx).unwrap();
+    ctx.prc_parsed.fsi[i].ext =
+        PRC_TYPE_ASM_FileStructureExtraGeometry::from_reader(&mut reader, ctx).unwrap();
     let data = &ctx.prc_parsed.fsi[i].ext;
     let _str = format!("{:#?}", data);
     if verbose {
@@ -693,7 +726,9 @@ pub fn prc_describe(
     ctx.prc_parsed.uuida2 = header.uuida2;
     ctx.prc_parsed.uuida3 = header.uuida3;
     ctx.prc_parsed.fsi = Vec::with_capacity(header.fsi.len());
-    ctx.prc_parsed.fsi.resize(header.fsi.len(), Default::default());
+    ctx.prc_parsed
+        .fsi
+        .resize(header.fsi.len(), Default::default());
 
     // parse uncompressed files
     // TODO: could be processed concurrently
@@ -861,8 +896,8 @@ pub fn prc_explode(fname: &std::string::String) -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::io::Read;
     use super::*;
+    use std::io::Read;
 
     fn add(left: u64, right: u64) -> u64 {
         left + right
@@ -887,12 +922,27 @@ mod tests {
     #[test]
     fn test_describe() {
         let path = std::env::current_dir().unwrap();
-        println!("[test_describe] The current directory is {}", path.display());
-        let bytes_external =
-            get_file_as_byte_vec(&std::string::String::from("testdata/pmi_sample.stream-23.prc"));
+        println!(
+            "[test_describe] The current directory is {}",
+            path.display()
+        );
+        let bytes_external = get_file_as_byte_vec(&std::string::String::from(
+            "testdata/pmi_sample.stream-23.prc",
+        ));
         assert_eq!(bytes_external.len(), 24535usize);
 
-        let parsed = prc_describe(bytes_external, true, true, true, true, true, true, true, true, true);
+        let parsed = prc_describe(
+            bytes_external,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+        );
         assert!(parsed.is_ok());
 
         let parsed = parsed.unwrap();

@@ -5,8 +5,8 @@
 // SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026. All rights reserved.
 
 //use crate::prc_builtin;
-use measure_time::debug_time;
 use crate::prc_builtin::{UncompressedUnsignedInteger, UnsignedCharacter, UnsignedInteger};
+use measure_time::debug_time;
 //use crate::prc_gen::Entity_schema_definition;
 use bitstream_io::{BitRead, BitReader, LittleEndian};
 //use num_enum::TryFromPrimitive;

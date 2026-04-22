@@ -9,11 +9,11 @@
 #![allow(unused)]
 
 use crate::constants::*;
+use crate::function;
+use crate::prc_builtin::Boolean;
 use crate::prc_builtin::*;
 use log::{debug, warn};
 use measure_time::debug_time;
-use crate::function;
-use crate::prc_builtin::Boolean;
 
 #[derive(Default)]
 pub struct Tess3dCompressed {
@@ -29,13 +29,14 @@ impl Tess3dCompressed {
     }
     pub fn leave(&mut self) {}
     /// reconstruct vertices
-    pub fn get_points(&self,
-                      point_array: &Vec<i32>,
-                      tolerance: f64,
-                      point_is_reference_array: &Vec<bool>,
-                      point_reference_array: &Vec<i32>,
-                      edge_status_array: &Vec<i8>,
-                      triangle_face_array: &Vec<i32>,
+    pub fn get_points(
+        &self,
+        point_array: &Vec<i32>,
+        tolerance: f64,
+        point_is_reference_array: &Vec<bool>,
+        point_reference_array: &Vec<i32>,
+        edge_status_array: &Vec<i8>,
+        triangle_face_array: &Vec<i32>,
     ) {
         debug_time!("Tess3dCompress::get_points");
         assert_eq!(point_array.len() % 3, 0);
@@ -107,9 +108,7 @@ impl Tess3dCompressed {
         // }
         //assert_eq!(verts.len()*3, point_array.len());
     }
-    pub fn number_of_reference_points(&self,
-                                      points_is_reference_array: &Vec<bool>,
-    ) -> u32 {
+    pub fn number_of_reference_points(&self, points_is_reference_array: &Vec<bool>) -> u32 {
         // is the number of non-zero elements in the points_is_reference_array
         let mut num = 0;
         for i in 0..points_is_reference_array.len() {
@@ -119,7 +118,7 @@ impl Tess3dCompressed {
         }
         num
     }
-    pub fn number_of_triangles(&self,triangle_face_array: &Vec<i32>) -> u32 {
+    pub fn number_of_triangles(&self, triangle_face_array: &Vec<i32>) -> u32 {
         return triangle_face_array.len() as u32;
     }
     pub fn number_of_faces(&mut self, triangle_face_array: &Vec<i32>) -> u32 {
@@ -140,15 +139,17 @@ impl Tess3dCompressed {
         self.num_faces
     }
     /// triangle_face_array represents, for each triangle, the index of the face to which it belongs
-    pub fn number_of_triangles_in_face(&mut self,
-                                       triangle_face_array: &Vec<i32>,
-                                       face_id: u32,
+    pub fn number_of_triangles_in_face(
+        &mut self,
+        triangle_face_array: &Vec<i32>,
+        face_id: u32,
     ) -> u32 {
         if !self.triangles_in_face.is_empty() {
             return self.triangles_in_face[face_id as usize].len() as u32;
         }
 
-        self.triangles_in_face.resize(self.num_faces as usize, Vec::new());
+        self.triangles_in_face
+            .resize(self.num_faces as usize, Vec::new());
         for tri_id in 0..triangle_face_array.len() {
             // index of the face this triangle belongs to
             let _face_idx = triangle_face_array[tri_id];
@@ -157,7 +158,10 @@ impl Tess3dCompressed {
 
         let triangles_in_face = self.triangles_in_face[face_id as usize].len() as u32;
         if triangles_in_face == 0 {
-            warn!("BUG? number_of_triangles_in_face({}): {}", face_id, triangles_in_face);
+            warn!(
+                "BUG? number_of_triangles_in_face({}): {}",
+                face_id, triangles_in_face
+            );
         }
         /*
         println!(
@@ -174,8 +178,9 @@ impl Tess3dCompressed {
     ///
     /// The number of normals is implicit, depending on the number of triangles and faces.
     /// Vertices have always as many normals as number of faces to which they belong.
-    pub fn number_of_normals(&mut self,
-                             triangle_face_array: &Vec<i32>, /*is_face_planar: &Vec<bool>*/
+    pub fn number_of_normals(
+        &mut self,
+        triangle_face_array: &Vec<i32>, /*is_face_planar: &Vec<bool>*/
     ) -> u32 {
         debug_time!("TESS_3D_Compressed__number_of_normals");
         //panic!("number_of_normals: Not implemented yet");

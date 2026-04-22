@@ -95,8 +95,10 @@ fn main() {
         args.sc,
         args.mf,
     ) {
-        Ok(_data) => {},
-        Err(why) => {warn!("prc_describe_file FAILED: {}", why)},
+        Ok(_data) => {}
+        Err(why) => {
+            warn!("prc_describe_file FAILED: {}", why)
+        }
     }
 }
 

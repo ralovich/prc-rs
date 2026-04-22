@@ -151,7 +151,7 @@ macro_rules! D {
     }};
 }
 
-fn getcofdoe<'a>(bits: u32, nbits: i16) -> Option<& 'a CodingOfFrequentDoubleOrExponent> {
+fn getcofdoe<'a>(bits: u32, nbits: i16) -> Option<&'a CodingOfFrequentDoubleOrExponent> {
     for i in 0..N {
         if ACOFDOE[i].NumBits == nbits && ACOFDOE[i].Bits == bits {
             return Some(&ACOFDOE[i]);

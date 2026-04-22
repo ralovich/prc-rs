@@ -16,10 +16,13 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use measure_time::debug_time;
 use num_enum::TryFromPrimitive;
 //use std::convert::TryFrom;
+use crate::common::PrcParsingContext;
 use crate::constants;
+use crate::constants::PrcCompressedFaceType::PRC_HCG_NewLoop;
 use crate::decompress::decompress;
 use crate::function;
 use crate::prc_builtin::CompressedEntityTypeKind::{ComprCurv, ComprFace};
+use crate::prc_builtin::{Boolean, CompressedEntityType, UnsignedIntegerWithVariableBitNumber};
 use crate::prc_gen::{AnaFaceTrimLoop, CompressedMultiplicitiesU, CompressedMultiplicitiesV};
 use log::{debug, info, trace, warn};
 use rayon::prelude::*;
@@ -27,14 +30,9 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::io;
 use std::io::{/*Cursor,*/ Read, Seek, SeekFrom};
-use crate::common::PrcParsingContext;
-use crate::constants::PrcCompressedFaceType::PRC_HCG_NewLoop;
-use crate::prc_builtin::{Boolean, CompressedEntityType, UnsignedIntegerWithVariableBitNumber};
 
 impl AnaFaceTrimLoop {
-    pub fn fn1() {
-
-    }
+    pub fn fn1() {}
 
     pub fn from_reader_while_loop<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
@@ -42,11 +40,11 @@ impl AnaFaceTrimLoop {
     ) -> io::Result<Self> {
         trace!("AnaFaceTrimLoop::from_reader_while_loop()");
         let mut loop_surface_orientation: Boolean = Default::default();
-        let mut curve_type : u32 = PrcCompressedFaceType::PRC_HCG_NewLoop as u32;
+        let mut curve_type: u32 = PrcCompressedFaceType::PRC_HCG_NewLoop as u32;
         let mut curves: Vec<RefOrCompressedCurve> = Vec::new();
 
         // TODO: is this enough, or it should be curve_type_tmp.is_PRC_HCG_NewLoop()?
-        while curve_type == PrcCompressedFaceType::PRC_HCG_NewLoop as u32  {
+        while curve_type == PrcCompressedFaceType::PRC_HCG_NewLoop as u32 {
             _ctx.AnaFaceTrimLoop_start_new_loop();
             loop_surface_orientation = Boolean::from_reader(rdr)?;
             loop {
@@ -67,7 +65,11 @@ impl AnaFaceTrimLoop {
                     curve.compressed_curve = Some(CompressedCurve::from_reader(rdr, _ctx)?);
                 } else {
                     // readCurveRef();
-                    curve.index_compressed_curve = Some(UnsignedIntegerWithVariableBitNumber::from_reader(rdr, _ctx.BrepDataCompress_number_of_bits_to_store_reference)?);
+                    curve.index_compressed_curve =
+                        Some(UnsignedIntegerWithVariableBitNumber::from_reader(
+                            rdr,
+                            _ctx.BrepDataCompress_number_of_bits_to_store_reference,
+                        )?);
                 }
                 _ctx.AnaFaceTrimLoop_add_curve_to_loop(curve.clone());
                 curves.push(curve);
