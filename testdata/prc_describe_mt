@@ -5,6 +5,10 @@
 #
 # SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026. All rights reserved.
 
+# python3 -m venv .venv
+# .venv/bin/python -m pip freeze > requirements.txt
+# .venv/bin/python -m pip install -r requirements.txt
+# sudo apt install ugrep lz4
 # RUST_LOG=trace RUST_BACKTRACE=1 describe=~/dev/pdf3d/prc-rs/target/reldeb/prc_describe INPUT=list_all.txt time ./prc_describe_mt
 
 import os
@@ -39,6 +43,10 @@ def describe_one_prc(file_path):
     subprocess.run(["bash", "-c", f'{cmd}'])
 
     cmd = f'{describe} --ex \"{file_path}\" 2>&1 | lz4 -zfq - \"ext_rs/{log_path}.lz4\"'
+    print(cmd)
+    subprocess.run(["bash", "-c", f'{cmd}'])
+
+    cmd = f'{describe} --mf \"{file_path}\" 2>&1 | lz4 -zfq - \"mf_rs/{log_path}.lz4\"'
     print(cmd)
     subprocess.run(["bash", "-c", f'{cmd}'])
 
@@ -84,6 +92,9 @@ if __name__ == '__main__':
     prc_sections[2] = ('--te', 'tess_rs')
     prc_sections[3] = ('--ge', 'geom_rs')
     prc_sections[4] = ('--ex', 'ext_rs')
+    prc_sections[5] = ('--mf', 'mf_rs')
+    N = 6
+    assert(len(prc_sections) == N)
 
     for k, v in prc_sections.items():
         os.makedirs(v[1], exist_ok = True)
@@ -113,7 +124,9 @@ if __name__ == '__main__':
 
         with open('review_summary.txt', 'a') as rs:
             now = str(datetime.datetime.now())
-            #rs.write(f'\n\n\n\n\n{now}\n')
+            rs.write(f'\n\n\n\n\n{now}\n')
+            empty = " "
+            print(f"{empty:64}\tverr\tvera\tn_fs\tgl\ttr\tte\tge\tex\tmf\tgl_ms\ttr_ms\tte_ms\tge_ms\tex_ms\tmf_ms")
             print(now)
             ncases = len(lines)
             stats = {}
@@ -130,19 +143,20 @@ if __name__ == '__main__':
                     collected_result[sec_id] = (run_time, cmd_rv, ver_read, ver_auth, num_fs)
                 rs.write(f'{prc:64}\t{collected_result[0][2]}\t{collected_result[0][3]}')
                 print(f'{prc:64}\t{collected_result[0][2]}\t{collected_result[0][3]}\t{collected_result[0][4]}', end='')
-                for i in range(5):
+                for i in range(N):
                     #print(f'{collected_result[i][0]:.0f}\t{collected_result[i][1]}\t',end='')
                     print(f'\t{collected_result[i][1]}',end='')
                     rs.write(f'\t{collected_result[i][1]}')
-                for i in range(5):
+                for i in range(N):
                     print(f'\t{collected_result[i][0]:.0f}',end='')
                 rs.write('\n')
                 print('')
-            print(f'\n\nGLOB PASS:\t{stats[0]}\t({stats[0]/ncases*100.0:.0f}%)')
-            print(f'TREE PASS:\t{stats[1]}\t({stats[1]/ncases*100.0:.0f}%)')
-            print(f'TESS PASS:\t{stats[2]}\t({stats[2]/ncases*100.0:.0f}%)')
-            print(f'GEOM PASS:\t{stats[3]}\t({stats[3]/ncases*100.0:.0f}%)')
-            print(f'EXTG PASS:\t{stats[4]}\t({stats[4]/ncases*100.0:.0f}%)')
+            print(f'\n\nGLOB PASS: {stats[0]:4}/{ncases:4} ({stats[0]/ncases*100.0:.0f}%)\t\tFAIL: {ncases-stats[0]:4}/{ncases:4} ({(ncases-stats[0])/ncases*100.0:.0f}%)')
+            print(f'TREE PASS: {stats[1]:4}/{ncases:4} ({stats[1]/ncases*100.0:.0f}%)\t\tFAIL: {ncases-stats[1]:4}/{ncases:4} ({(ncases-stats[1])/ncases*100.0:.0f}%)')
+            print(f'TESS PASS: {stats[2]:4}/{ncases:4} ({stats[2]/ncases*100.0:.0f}%)\t\tFAIL: {ncases-stats[2]:4}/{ncases:4} ({(ncases-stats[2])/ncases*100.0:.0f}%)')
+            print(f'GEOM PASS: {stats[3]:4}/{ncases:4} ({stats[3]/ncases*100.0:.0f}%)\t\tFAIL: {ncases-stats[3]:4}/{ncases:4} ({(ncases-stats[3])/ncases*100.0:.0f}%)')
+            print(f'EXTG PASS: {stats[4]:4}/{ncases:4} ({stats[4]/ncases*100.0:.0f}%)\t\tFAIL: {ncases-stats[4]:4}/{ncases:4} ({(ncases-stats[4])/ncases*100.0:.0f}%)')
+            print(f'MODF PASS: {stats[5]:4}/{ncases:4} ({stats[5]/ncases*100.0:.0f}%)\t\tFAIL: {ncases-stats[5]:4}/{ncases:4} ({(ncases-stats[5])/ncases*100.0:.0f}%)')
     else:
         for line in lines:
             prc_file = line.strip()
