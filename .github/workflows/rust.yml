@@ -27,9 +27,11 @@ jobs:
       with:
         repository: ralovich/prc-db
         path: prc-db
-    - name: Run tests
+    - name: Run whitebox tests
       run: |
         cargo test --verbose --profile=reldeb
+    - name: Run blackbox tests
+      run: |
         cd prc-db/prcs
         #describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt ../../testdata/prc_describe
         RUST_LOG=debug RUST_BACKTRACE=1 describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt
