@@ -16,6 +16,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v5
+    - name: Lint
+      run: cargo fmt --all -- --check # cargo clippy --all-targets
     - name: Install Dependencies
       run: sudo apt update && sudo apt install lz4 ugrep colordiff python3-tqdm
     - name: Build

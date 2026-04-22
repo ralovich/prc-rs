@@ -7,8 +7,8 @@
 
 #![allow(unused)]
 
-use std::string::String;
 use std::cell::Cell;
+use std::string::String;
 
 thread_local! {
     pub static INDENT: std::cell::Cell<std::string::String> = const { std::cell::Cell::new(std::string::String::new()) };
@@ -55,12 +55,11 @@ pub fn get() -> std::string::String {
     s
 }
 
-
 pub struct IndentGuard {}
 impl IndentGuard {
     pub fn new() -> IndentGuard {
         indent();
-        Self{}
+        Self {}
     }
 }
 impl Drop for IndentGuard {

@@ -248,8 +248,6 @@ pub struct PrcTransformationBitField {
     unused: modular_bitfield::specifiers::B1,
 }
 
-
-
 #[repr(u8)]
 #[allow(non_camel_case_types)]
 pub enum TextureMappingType {
@@ -278,7 +276,6 @@ pub enum TextureApplicationMode {
     TextureColor = 0x0004,
 }
 
-
 #[bitfield]
 #[repr(u8)]
 #[derive(Debug)]
@@ -289,7 +286,6 @@ pub struct PrcBodyBoundingBoxBehaviorBitField {
     #[skip]
     unused: modular_bitfield::specifiers::B5,
 }
-
 
 #[repr(u32)]
 #[allow(non_camel_case_types)]
@@ -365,30 +361,29 @@ pub enum PrcTesselationFlags {
 #[repr(u32)]
 #[derive(Debug)]
 pub struct PrcTesselationBitField {
-    pub PRC_FACETESSDATA_Polyface: bool, // 0x01
-    pub PRC_FACETESSDATA_Triangle: bool,    // 0x02
-    pub PRC_FACETESSDATA_TriangleFan: bool,  // 0x0004,
-    pub PRC_FACETESSDATA_TriangleStrip: bool,    // 0x08
-    pub PRC_FACETESSDATA_PolyfaceOneNormal: bool, // 0x0010,
-    pub PRC_FACETESSDATA_TriangleOneNormal: bool, // 0x0020,
-    pub PRC_FACETESSDATA_TriangleFanOneNormal: bool, // 0x0040,
-    pub PRC_FACETESSDATA_TriangleStripOneNormal: bool, // 0x0080,
-    pub PRC_FACETESSDATA_PolyfaceTextured: bool, // 0x0100,
-    pub PRC_FACETESSDATA_TriangleTextured: bool, // 0x0200,
-    pub PRC_FACETESSDATA_TriangleFanTextured: bool, // 0x0400,
-    pub PRC_FACETESSDATA_TriangleStripTextured: bool, // 0x0800,
-    pub PRC_FACETESSDATA_PolyfaceOneNormalTextured: bool, // 0x1000,
-    pub PRC_FACETESSDATA_TriangleOneNormalTextured: bool, // 0x2000,
+    pub PRC_FACETESSDATA_Polyface: bool,                     // 0x01
+    pub PRC_FACETESSDATA_Triangle: bool,                     // 0x02
+    pub PRC_FACETESSDATA_TriangleFan: bool,                  // 0x0004,
+    pub PRC_FACETESSDATA_TriangleStrip: bool,                // 0x08
+    pub PRC_FACETESSDATA_PolyfaceOneNormal: bool,            // 0x0010,
+    pub PRC_FACETESSDATA_TriangleOneNormal: bool,            // 0x0020,
+    pub PRC_FACETESSDATA_TriangleFanOneNormal: bool,         // 0x0040,
+    pub PRC_FACETESSDATA_TriangleStripOneNormal: bool,       // 0x0080,
+    pub PRC_FACETESSDATA_PolyfaceTextured: bool,             // 0x0100,
+    pub PRC_FACETESSDATA_TriangleTextured: bool,             // 0x0200,
+    pub PRC_FACETESSDATA_TriangleFanTextured: bool,          // 0x0400,
+    pub PRC_FACETESSDATA_TriangleStripTextured: bool,        // 0x0800,
+    pub PRC_FACETESSDATA_PolyfaceOneNormalTextured: bool,    // 0x1000,
+    pub PRC_FACETESSDATA_TriangleOneNormalTextured: bool,    // 0x2000,
     pub PRC_FACETESSDATA_TriangleFanOneNormalTextured: bool, // 0x4000,
     pub PRC_FACETESSDATA_TriangleStripeOneNormalTextured: bool, // 0x8000,
     #[skip]
     unused: modular_bitfield::specifiers::B14,
     pub PRC_FACETESSDATA_NORMAL_Single: bool, // 0x40000000,
     #[skip]
-    unused2: bool // 0x80000000,
+    unused2: bool,                 // 0x80000000,
 }
 sa::const_assert_eq!(4, mem::size_of::<PrcTesselationBitField>());
-
 
 /// PRC_TYPE_TESS_Face.sizes_wire
 #[repr(u32)]

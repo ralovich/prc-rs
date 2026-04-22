@@ -18,9 +18,9 @@ use num_enum::TryFromPrimitive;
 use crate::constants;
 use crate::decompress::decompress;
 use crate::function;
+use crate::indent;
 use crate::prc_builtin::CompressedEntityTypeKind::{ComprCurv, ComprFace};
 use crate::prc_gen::{CompressedMultiplicitiesU, CompressedMultiplicitiesV};
-use crate::indent;
 use log::{debug, info, trace, warn};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -211,7 +211,6 @@ impl<'de> Deserialize<'de> for Boolean {
     }
 }
 
-
 #[derive(Serialize, Deserialize, Default, Clone, Copy, PartialEq, Eq)]
 pub struct Character {
     pub value: i8,
@@ -370,7 +369,8 @@ impl UnsignedInteger {
         let max_offset_bits: u64 = 25;
         let max_found_count: u32 = 1;
         let max_allowed_offset = 10;
-        let found_offsets = Self::search_and_seek_back(rdr, needle, max_offset_bits, max_found_count);
+        let found_offsets =
+            Self::search_and_seek_back(rdr, needle, max_offset_bits, max_found_count);
         dbg!(&found_offsets);
         if !found_offsets.is_empty() {
             if found_offsets[0] <= max_allowed_offset {
@@ -379,7 +379,13 @@ impl UnsignedInteger {
                 return Ok(ui);
             }
         }
-        Err(std::io::Error::new(std::io::ErrorKind::InvalidData, format!("[search_and_read did not find {} within {} bits]", needle, max_allowed_offset)))
+        Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!(
+                "[search_and_read did not find {} within {} bits]",
+                needle, max_allowed_offset
+            ),
+        ))
     }
     pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W) -> std::io::Result<()> {
         let mut val = self.value;
@@ -431,7 +437,6 @@ impl<'de> Deserialize<'de> for UnsignedInteger {
         deserializer.deserialize_u32(U32Visitor)
     }
 }
-
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 pub struct UncompressedUnsignedInteger {
@@ -630,14 +635,18 @@ impl<'de> Deserialize<'de> for Double {
             where
                 E: serde::de::Error,
             {
-                Ok(Double { value: value as f64 })
+                Ok(Double {
+                    value: value as f64,
+                })
             }
 
             fn visit_i64<E>(self, value: i64) -> Result<Double, E>
             where
                 E: serde::de::Error,
             {
-                Ok(Double { value: value as f64 })
+                Ok(Double {
+                    value: value as f64,
+                })
             }
 
             fn visit_f64<E>(self, value: f64) -> Result<Double, E>
@@ -1533,7 +1542,6 @@ impl fmt::Debug for UncompressedBoolArray {
     }
 }
 
-
 #[derive(Debug, PartialEq, Eq)]
 pub struct PRCHeader {
     pub verread: u32,
@@ -1686,7 +1694,10 @@ impl PRCHeader {
             }
         }
         let elapsed = now.elapsed();
-        debug!("Decompression took {:.2?}ms", elapsed.as_micros() as f64 / 1000.0);
+        debug!(
+            "Decompression took {:.2?}ms",
+            elapsed.as_micros() as f64 / 1000.0
+        );
 
         Ok(PRCHeader {
             verread,
@@ -2067,10 +2078,8 @@ mod tests {
                 };
 
                 u.to_writer(&mut w).unwrap();
-                d1.to_writer(&mut w)
-                    .unwrap();
-                d2.to_writer(&mut w)
-                .unwrap();
+                d1.to_writer(&mut w).unwrap();
+                d2.to_writer(&mut w).unwrap();
 
                 s.push(serde_json::to_string(&u).unwrap());
                 s.push(serde_json::to_string(&d1).unwrap());
@@ -2091,19 +2100,19 @@ mod tests {
         for i in 0..n {
             let ui = UnsignedInteger::from_reader(&mut r).unwrap().value;
             assert_eq!(i, ui);
-            let ui: u32 = serde_json::from_str(&s[i as usize*3 + 0]).unwrap();
+            let ui: u32 = serde_json::from_str(&s[i as usize * 3 + 0]).unwrap();
             assert_eq!(i, ui);
 
             let mut reference = i as f64 * 1.15;
             let recovered = Double::from_reader(&mut r).unwrap().value;
             assert_eq!(reference, recovered);
-            let recovered: Double = serde_json::from_str(&s[i as usize*3 + 1]).unwrap();
+            let recovered: Double = serde_json::from_str(&s[i as usize * 3 + 1]).unwrap();
             assert!((reference - recovered.value).abs() < 1E-9);
 
             reference = i as f64 * -1.11;
             let recovered = Double::from_reader(&mut r).unwrap().value;
             assert_eq!(reference, recovered);
-            let recovered: Double = serde_json::from_str(&s[i as usize*3 + 2]).unwrap();
+            let recovered: Double = serde_json::from_str(&s[i as usize * 3 + 2]).unwrap();
             assert!((reference - recovered.value).abs() < 1E-9);
         }
     }
@@ -2429,7 +2438,9 @@ mod tests {
     fn io_uncompressed_arrays() {
         let mut bytes: Vec<u8> = vec![];
 
-        let bools = vec![true, false, true, true, false, false, false, false, true, false, true, true, true];
+        let bools = vec![
+            true, false, true, true, false, false, false, false, true, false, true, true, true,
+        ];
         let n: usize = 13;
         assert_eq!(bools.len(), n);
 
@@ -2446,8 +2457,8 @@ mod tests {
 
         let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
         let read_bools = UncompressedBoolArray::from_reader(&mut r, n as u32)
-                .unwrap()
-                .a;
+            .unwrap()
+            .a;
         assert_eq!(bools, read_bools);
     }
 
