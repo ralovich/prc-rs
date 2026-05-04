@@ -351,7 +351,7 @@ pub enum PrcTesselationFlags {
     PRC_FACETESSDATA_TriangleFanTextured = 0x0400,
     PRC_FACETESSDATA_TriangleStripTextured = 0x0800,
     PRC_FACETESSDATA_PolyfaceOneNormalTextured = 0x1000,
-    PRC_FACETESSDATA_TriangleOneNormalTextued = 0x2000,
+    PRC_FACETESSDATA_TriangleOneNormalTextured = 0x2000,
     PRC_FACETESSDATA_TriangleFanOneNormalTextured = 0x4000,
     PRC_FACETESSDATA_TriangleStripeOneNormalTextured = 0x8000,
     PRC_FACETESSDATA_NORMAL_Single = 0x40000000,

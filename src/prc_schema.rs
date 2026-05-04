@@ -932,7 +932,7 @@ mod tests {
         se.stored_version = PRCVersion;
         se.ops_per_type = ops_per_type;
 
-        let type_id = 303 as u32;
+        let type_id = 303u32;
         let vars = se.eval(&mut r, type_id, false, 0).unwrap();
         assert_eq!(vars.len(), 1usize);
         assert_eq!(VariableKind::Double(0.0), vars[0]);

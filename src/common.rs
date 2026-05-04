@@ -36,7 +36,7 @@ macro_rules! function {
     }};
 }
 
-#[derive(Serialize, Deserialize, Clone, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
 pub struct ParsedPrcFileStructure {
     pub uuid0: u32,
     pub uuid1: u32,
@@ -51,7 +51,7 @@ pub struct ParsedPrcFileStructure {
 }
 
 /// All information from a parsed PRC. Can be (de-)serialized into e.g. JSON.
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, PartialEq)]
 pub struct ParsedPrc {
     pub verread: u32,
     pub verauth: u32,
@@ -223,10 +223,10 @@ pub struct PrcParsingContext {
     // The flag curve_is_not_already_stored indicates if the trim curve has already been stored in the
     // compressed brep data. If the curve has already been stored, the index of the curve is stored in the file;
     // otherwise, a compressed version of the trim curve is stored.
-    pub AnaFaceTrimLoop_curves: Vec<CompressedCurve>,
     /// the current loop
-    pub AnaFaceTrimLoop_loops: Vec<Vec<CompressedCurve>>,
+    pub AnaFaceTrimLoop_curves: Vec<CompressedCurve>,
     /// accumulator of loops
+    pub AnaFaceTrimLoop_loops: Vec<Vec<CompressedCurve>>,
 
     /// Whether the parser is progressing within a PRC_TYPE_TESS_3D_Wire struct?
     TESS_3D_Wire_inside: bool,
@@ -380,9 +380,11 @@ impl PrcParsingContext {
         // TODO
 
         let mut num_colors_per_triangle = 0u32;
-        if used_entities_flag != PrcTesselationFlags::PRC_FACETESSDATA_Triangle as u32 {
+        if used_entities_flag != PrcTesselationFlags::PRC_FACETESSDATA_Triangle as u32
+            && used_entities_flag != PrcTesselationFlags::PRC_FACETESSDATA_TriangleTextured as u32
+        {
             warn!(
-                "Only PRC_FACETESSDATA_Triangle is implemented! VertexColors_number_of_colors will be off!"
+                "Only PRC_FACETESSDATA_Triangle and PRC_FACETESSDATA_TriangleTextured are implemented! VertexColors_number_of_colors will be off!"
             );
         }
         num_colors_per_triangle = 3;
@@ -914,7 +916,7 @@ mod tests {
         let mut f = File::open(&filename).expect("no file found");
         let metadata = std::fs::metadata(&filename).expect("unable to read metadata");
         let mut buffer = vec![0; metadata.len() as usize];
-        f.read(&mut buffer).expect("buffer overflow");
+        f.read_exact(&mut buffer).expect("buffer overflow");
 
         buffer
     }

@@ -1836,7 +1836,7 @@
                         "data_type": "UnsignedInteger",
                         "NOexpected_value": ["PrcType", "PRC_TYPE_TOPO_Face"],
                         "comment": "342 and 344 failed above assert",
-                        "on_set": "assert!(PRC_TYPE_TOPO_Face==PrcType::try_from(type_of_entity.value).unwrap() || PRC_TYPE_TOPO_Edge==PrcType::try_from(type_of_entity.value).unwrap())",
+                        "on_set": "assert!(PRC_TYPE_TOPO_Face==PrcType::try_from(type_of_entity.value).unwrap() || PRC_TYPE_TOPO_Edge==PrcType::try_from(type_of_entity.value).unwrap() || PRC_TYPE_TOPO_UniqueVertex==PrcType::try_from(type_of_entity.value).unwrap())",
                         "SPECBUG": "has also seen PRC_TYPE_TOPO_Edge in e.g. -342, -344"
                     },
                     {
@@ -2295,10 +2295,6 @@
                         "data_type": "UnsignedInteger"
                     },
                     {
-                        "name": "biased_emissive_index",
-                        "data_type": "UnsignedInteger"
-                    },
-                    {
                         "name": "biased_specular_index",
                         "data_type": "UnsignedInteger"
                     }
@@ -2322,10 +2318,6 @@
                     },
                     {
                         "name": "biased_diffuse_index",
-                        "data_type": "UnsignedInteger"
-                    },
-                    {
-                        "name": "biased_emissive_index",
                         "data_type": "UnsignedInteger"
                     },
                     {
@@ -2368,11 +2360,9 @@
                     },
                     {
                         "name": "biased_diffuse_index",
-                        "data_type": "UnsignedInteger"
-                    },
-                    {
-                        "name": "biased_emissive_index",
-                        "data_type": "UnsignedInteger"
+                        "data_type": "UnsignedInteger",
+                        "SPECBUG": true,
+                        "comment": "no biased_emissive_index field present (matching sdk9)"
                     },
                     {
                         "name": "biased_specular_index",
@@ -2385,8 +2375,9 @@
                     {
                         "name": "intensity",
                         "data_type": "Double",
-                        "condition": "_ctx.ver_authoring >= 8137",
-                        "condition_rust": "_ctx.ver_authoring >= 8137"
+                        "condition": "_ctx.ver_authoring >= 8030",
+                        "condition_rust": "_ctx.ver_authoring >= 8030",
+                        "comment": "https://github.com/pdf-association/pdf-issues/issues/745#issuecomment-4372655906"
                     }
                 ]
             },
@@ -2408,10 +2399,6 @@
                     },
                     {
                         "name": "biased_diffuse_index",
-                        "data_type": "UnsignedInteger"
-                    },
-                    {
-                        "name": "biased_emissive_index",
                         "data_type": "UnsignedInteger"
                     },
                     {
@@ -3261,7 +3248,8 @@
                         "condition": "ctx.ver_authoring >= 7047",
                         "condition_rust": "_ctx.ver_authoring >= 7047",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/705",
-                        "SPECBUG": "missing OPTIONAL in spec"
+                        "SPECBUG": "missing OPTIONAL in spec",
+                        "comment": "see also must_recalculate_normals"
                     },
                     {
                         "name": "normal_recalculation_flags",
@@ -3523,7 +3511,8 @@
                         "name": "must_recalculate_normals",
                         "data_type": "Boolean",
                         "debug": true,
-                        "on_set": "_ctx.t3dc.get_points(&point_array.a, tolerance.value, &point_is_reference_array.a, &point_reference_array.a, &edge_status_array.a, &triangle_face_array.a)"
+                        "on_set": "_ctx.t3dc.get_points(&point_array.a, tolerance.value, &point_is_reference_array.a, &point_reference_array.a, &edge_status_array.a, &triangle_face_array.a)",
+                        "comment": "see also must_calculate_normals"
                     },
                     {
                         "name": "normal_is_reversed",
@@ -3541,7 +3530,8 @@
                         "data_type": "Double",
                         "condition": "!!must_recalculate_normals",
                         "condition_rust": "!!self.must_recalculate_normals",
-                        "debug": true
+                        "debug": true,
+                        "comment": "definition similar than VRML"
                     },
                     {
                         "name": "normal_recalculation_flags",

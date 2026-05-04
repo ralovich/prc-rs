@@ -10,13 +10,14 @@
 
 #[cfg(test)]
 mod tests {
+    use std::fs::File;
     //use super::*;
-    use crate::common::PrcParsingContext;
+    use crate::common::{ParsedPrc, PrcParsingContext};
     use crate::prc_builtin;
     use crate::prc_builtin::UnsignedInteger;
     use crate::prc_gen::*;
     use bitstream_io::{BigEndian, BitReader, BitWrite, BitWriter};
-    use std::io::Cursor;
+    use std::io::{Cursor, Read};
 
     /// fill partial byte at the end
     fn fill_partial_byte_at_end<W: BitWrite + ?Sized>(w: &mut W) -> std::io::Result<()> {
@@ -25,6 +26,17 @@ mod tests {
         }
         Ok(())
     }
+
+    /// Read whole file into memory.
+    fn get_file_as_byte_vec(filename: &std::string::String) -> Vec<u8> {
+        let mut f = File::open(&filename).expect("no file found");
+        let metadata = std::fs::metadata(&filename).expect("unable to read metadata");
+        let mut buffer = vec![0; metadata.len() as usize];
+        f.read_exact(&mut buffer).expect("buffer overflow");
+
+        buffer
+    }
+
     /*
         #[test]
         fn io_globals() {
@@ -110,4 +122,34 @@ mod tests {
             assert_eq!(reference, recovered);
         }
     */
+
+    #[test]
+    fn io_round_trip_prc_json() {
+        let path = std::env::current_dir().unwrap();
+        println!(
+            "[io_round_trip_prc_json] The current directory is {}",
+            path.display()
+        );
+        let bytes_external =
+            get_file_as_byte_vec(&std::string::String::from("testdata/yellowtri2.json"));
+        assert_eq!(bytes_external.len(), 11911usize);
+
+        let mut parsed_prc: ParsedPrc = serde_json::from_slice(bytes_external.as_slice()).unwrap();
+        assert_eq!(parsed_prc.verread, 7094);
+        assert_eq!(parsed_prc.fsi.len(), 1);
+        assert_eq!(parsed_prc.uncompr_files.len(), 0);
+
+        parsed_prc.verread = 7095;
+        let ser = serde_json::to_string(&parsed_prc).unwrap();
+        let bytes = ser.as_bytes();
+        assert_eq!(bytes_external.len(), 11911usize);
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        let first_name = json.get("verread").unwrap();
+        assert_eq!(first_name.as_i64().unwrap(), 7095);
+
+        let mut parsed_prc2: ParsedPrc = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(parsed_prc, parsed_prc2);
+
+        // TODO: roundtrip binary .prc
+    }
 }

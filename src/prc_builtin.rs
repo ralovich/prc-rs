@@ -431,7 +431,16 @@ impl<'de> Deserialize<'de> for UnsignedInteger {
             where
                 E: serde::de::Error,
             {
-                Ok(crate::prc_builtin::UnsignedInteger { value })
+                Ok(UnsignedInteger { value })
+            }
+
+            fn visit_u64<E>(self, value: u64) -> Result<UnsignedInteger, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(UnsignedInteger {
+                    value: value as u32,
+                })
             }
         }
         deserializer.deserialize_u32(U32Visitor)
@@ -1043,6 +1052,22 @@ impl CharacterArray {
         Ok(())
     }
 }
+fn vec_i8_into_u8(v: Vec<i8>) -> Vec<u8> {
+    // ideally we'd use Vec::into_raw_parts, but it's unstable,
+    // so we have to do it manually:
+
+    // first, make sure v's destructor doesn't free the data
+    // it thinks it owns when it goes out of scope
+    let mut v = std::mem::ManuallyDrop::new(v);
+
+    // then, pick apart the existing Vec
+    let p = v.as_mut_ptr();
+    let len = v.len();
+    let cap = v.capacity();
+
+    // finally, adopt the data into a new Vec
+    unsafe { Vec::from_raw_parts(p as *mut u8, len, cap) }
+}
 impl fmt::Debug for CharacterArray {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let min_value = self.a.iter().min();
@@ -1056,6 +1081,19 @@ impl fmt::Debug for CharacterArray {
                 max
             ),
             (_, _) => write!(f, "CharacterArray {} elements", self.a.len()),
+        }?;
+        let a_us = vec_i8_into_u8(self.a.clone());
+        let min_value = a_us.iter().min();
+        let max_value = a_us.iter().max();
+        match (min_value, max_value) {
+            (Some(min), Some(max)) => write!(
+                f,
+                "\n\t\tCharacterArray U8 {} elements, range: [{}, {}]",
+                self.a.len(),
+                min,
+                max
+            ),
+            (_, _) => write!(f, ""),
         }
     }
 }
@@ -1782,7 +1820,7 @@ mod tests {
         let mut f = File::open(&filename).expect("no file found");
         let metadata = std::fs::metadata(&filename).expect("unable to read metadata");
         let mut buffer = vec![0; metadata.len() as usize];
-        f.read(&mut buffer).expect("buffer overflow");
+        f.read_exact(&mut buffer).expect("buffer overflow");
 
         buffer
     }

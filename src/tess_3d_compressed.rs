@@ -204,7 +204,7 @@ impl Tess3dCompressed {
             }
         }
         num_normals = triangle_face_array.len() as u32 * 3;
-        println!("sum tris: {}", sum_triangles);
+        debug!("sum tris: {}", sum_triangles);
         return num_normals;
     }
     /// see PRC_TYPE_TESS_3D_Compressed.is_face_planar
