@@ -26,7 +26,6 @@ def is_vbr_2param(f):
     return 'vbr' in f and 'data_type' in f and f['data_type'] in vbr_2param
 
 def codegen_rust(rs, d):
-
     print(d['version'])
 
     global builtins
@@ -369,3 +368,8 @@ cwd = os.getcwd()
 dir_output_path = os.path.dirname(os.path.realpath(output_module))
 rs_output_path = os.path.basename(os.path.realpath(output_module))
 subprocess.run(["rustfmt", "-v", rs_output_path], cwd = dir_output_path)
+
+# Local Variables:
+# mode: python
+# coding: utf-8-unix
+# End:

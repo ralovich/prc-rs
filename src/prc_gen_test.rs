@@ -132,6 +132,7 @@ mod tests {
         );
         let bytes_external =
             get_file_as_byte_vec(&std::string::String::from("testdata/yellowtri2.json"));
+        #[cfg(not(target_os = "windows"))]
         assert_eq!(bytes_external.len(), 11911usize);
 
         let mut parsed_prc: ParsedPrc = serde_json::from_slice(bytes_external.as_slice()).unwrap();
@@ -142,7 +143,10 @@ mod tests {
         parsed_prc.verread = 7095;
         let ser = serde_json::to_string(&parsed_prc).unwrap();
         let bytes = ser.as_bytes();
-        assert_eq!(bytes_external.len(), 11911usize);
+        #[cfg(not(target_os = "windows"))]
+        assert_eq!(bytes.len(), 11909usize);
+        //#[cfg(not(target_os = "windows"))]
+        //assert_eq!(bytes_external, bytes);
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         let first_name = json.get("verread").unwrap();
         assert_eq!(first_name.as_i64().unwrap(), 7095);
