@@ -11,17 +11,43 @@ env:
 
 jobs:
   build_and_test:
+    strategy:
+      matrix:
+        # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+        os:
+          - macos-latest
+          - ubuntu-latest
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v5
+    - name: Build system ID
+      run: |
+        echo ${{ runner.arch }}
+        uname -a
+
+    - name: Install APT build-deps
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y lz4 ugrep colordiff python3-tqdm
+
+    - name: Install Homebrew build-deps
+      if: runner.os == 'macOS'
+      run: |
+        brew install lz4 ugrep colordiff
+        pip3 install --break-system-packages --user tqdm
+    
+    - name: Checkout sources
+      uses: actions/checkout@v5
+      
     - name: Lint
       run: |
         ./src/generate_rust src/prc.json src/prc_gen.rs # cargo fmt bails if prc_gen.rs is missing
         cargo fmt --all -- --check # cargo clippy --all-targets
-    - name: Install Dependencies
-      run: sudo apt update && sudo apt install lz4 ugrep colordiff python3-tqdm
+#    - name: Install Dependencies
+#      run: sudo apt update && sudo apt install lz4 ugrep colordiff python3-tqdm
+
     - name: Build
       run: |
         cargo build --verbose --profile=reldeb --all
