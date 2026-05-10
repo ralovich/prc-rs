@@ -8704,7 +8704,7 @@ impl PRC_TYPE_TESS_3D_Compressed {
         is_point_color = Boolean::from_reader(rdr)?;
         trace!("{}is_point_color: {:?}", indent::get(), &is_point_color);
         warn!("PRC_TYPE_TESS_3D_Compressed.is_point_color_on_face field contains FIXME!");
-        let is_point_color_on_face_cond = !is_point_color;
+        let is_point_color_on_face_cond = !!is_point_color;
         let mut is_point_color_on_face: UncompressedBoolArray = Default::default();
         if is_point_color_on_face_cond {
             is_point_color_on_face = UncompressedBoolArray::from_reader(
@@ -8718,7 +8718,7 @@ impl PRC_TYPE_TESS_3D_Compressed {
             indent::get(),
             format(&is_point_color_on_face.a)
         );
-        let point_color_array_cond = !is_point_color;
+        let point_color_array_cond = !!is_point_color;
         let mut point_color_array: CharacterArray = Default::default();
         if point_color_array_cond {
             point_color_array = CharacterArray::from_reader(rdr, 8)?;
@@ -8990,7 +8990,7 @@ impl PRC_TYPE_TESS_3D_Compressed {
         }
         let is_point_color = self.is_point_color.clone();
         is_point_color.to_writer(_w)?;
-        let is_point_color_on_face_cond = !is_point_color;
+        let is_point_color_on_face_cond = !!is_point_color;
         let is_point_color_on_face = self.is_point_color_on_face.as_ref().unwrap();
         if is_point_color_on_face_cond {
             is_point_color_on_face.to_writer(
@@ -8999,7 +8999,7 @@ impl PRC_TYPE_TESS_3D_Compressed {
                     .number_of_faces_stored_in_mesh(&triangle_face_array.a),
             )?;
         }
-        let point_color_array_cond = !is_point_color;
+        let point_color_array_cond = !!is_point_color;
         let point_color_array = self.point_color_array.as_ref().unwrap();
         if point_color_array_cond {
             point_color_array.to_writer(_w, 8)?;

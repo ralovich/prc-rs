@@ -3598,7 +3598,7 @@
                         "FIXME": true,
                         "vbr": "_ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a)",
                         "condition": "!!is_point_color",
-                        "condition_rust": "!self.is_point_color",
+                        "condition_rust": "!!self.is_point_color",
                         "on_set": "debug!(\"{}is_point_color_on_face: {}\", indent::get(), format(&is_point_color_on_face.a))"
                     },
                     {
@@ -3606,7 +3606,7 @@
                         "data_type": "CharacterArray",
                         "vbr": "8",
                         "condition": "!!is_point_color",
-                        "condition_rust": "!self.is_point_color",
+                        "condition_rust": "!!self.is_point_color",
                         "debug": true
                     },
                     {
