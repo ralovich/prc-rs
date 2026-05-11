@@ -5,18 +5,19 @@
 // SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026. All rights reserved.
 //
 
-#![allow(unreachable_code)]
-#![allow(unused)]
+//#![allow(unreachable_code)]
+//#![allow(unused)]
 
 #[cfg(test)]
 mod tests {
-    use std::fs::File;
-    //use super::*;
     use crate::common::{ParsedPrc, PrcParsingContext};
+    use crate::constants::PrcType;
     use crate::prc_builtin;
+    use crate::prc_builtin::Boolean;
     use crate::prc_builtin::UnsignedInteger;
     use crate::prc_gen::*;
     use bitstream_io::{BigEndian, BitReader, BitWrite, BitWriter};
+    use std::fs::File;
     use std::io::{Cursor, Read};
 
     /// fill partial byte at the end
@@ -37,91 +38,158 @@ mod tests {
         buffer
     }
 
-    /*
-        #[test]
-        fn io_globals() {
-            let mut ctx: PrcParsingContext = Default::default();
-            let mut bytes: Vec<u8> = vec![];
-            let mut reference: PRC_TYPE_ASM_FileStructureGlobals = Default::default();
-            reference.id = UnsignedInteger {
-                value: prc_builtin::PRCType::PRC_TYPE_ASM_FileStructureGlobals as u32,
-            };
-            {
-                let mut w = BitWriter::endian(Cursor::new(&mut bytes), bitstream_io::BigEndian);
-                let _ = reference.to_writer(&mut w, &mut ctx);
-                fill_partial_byte_at_end(&mut w).expect("failed to fill partial byte at end");
-            }
-            assert_eq!(bytes.len(), 5usize);
-
-            let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
-            let recovered =
-                PRC_TYPE_ASM_FileStructureGlobals::from_reader(&mut r, &mut ctx).unwrap();
-            assert_eq!(reference, recovered);
+    #[test]
+    fn io_globals() {
+        let mut ctx: PrcParsingContext = Default::default();
+        let mut bytes: Vec<u8> = vec![];
+        let mut reference: PRC_TYPE_ASM_FileStructureGlobals = Default::default();
+        reference.id.value = PrcType::PRC_TYPE_ASM_FileStructureGlobals as u32;
+        reference.base.entity_name.name = Some(prc_builtin::String {
+            value: "dummy1".to_owned(),
+        });
+        {
+            let mut w = BitWriter::endian(Cursor::new(&mut bytes), bitstream_io::BigEndian);
+            let _ = reference.to_writer(&mut w, &mut ctx);
+            fill_partial_byte_at_end(&mut w).expect("failed to fill partial byte at end");
         }
+        assert_eq!(bytes.len(), 12usize);
 
-        #[test]
-        fn io_tree() {
-            let mut ctx: PrcParsingContext = Default::default();
-            let mut bytes: Vec<u8> = vec![];
-            let mut reference: PRC_TYPE_ASM_FileStructureTree = Default::default();
-            reference.id.value = prc_builtin::PRCType::PRC_TYPE_ASM_FileStructureTree as u32;
-            reference.internal_data.id.value = prc_builtin::PRCType::PRC_TYPE_ASM_FileStructure as u32;
-            {
-                let mut w = BitWriter::endian(Cursor::new(&mut bytes), bitstream_io::BigEndian);
-                let _ = reference.to_writer(&mut w, &mut ctx);
-                fill_partial_byte_at_end(&mut w).expect("failed to fill partial byte at end");
-            }
-            assert_eq!(bytes.len(), 7usize);
+        let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+        let recovered = PRC_TYPE_ASM_FileStructureGlobals::from_reader(&mut r, &mut ctx).unwrap();
+        assert_eq!(reference, recovered);
+    }
 
-            let mut ctx: PrcParsingContext = Default::default();
-            let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
-            let recovered = PRC_TYPE_ASM_FileStructureTree::from_reader(&mut r, &mut ctx).unwrap();
-            assert_eq!(reference, recovered);
+    #[test]
+    fn io_tree() {
+        let mut ctx: PrcParsingContext = Default::default();
+        let mut bytes: Vec<u8> = vec![];
+        let mut reference: PRC_TYPE_ASM_FileStructureTree = Default::default();
+        reference.id.value = PrcType::PRC_TYPE_ASM_FileStructureTree as u32;
+        reference.base.entity_name.name = Some(prc_builtin::String {
+            value: "dummy1".to_owned(),
+        });
+        reference.internal_data.id.value = PrcType::PRC_TYPE_ASM_FileStructure as u32;
+        reference.internal_data.base.entity_name.name = Some(prc_builtin::String {
+            value: "dummy2".to_owned(),
+        });
+        {
+            let mut w = BitWriter::endian(Cursor::new(&mut bytes), bitstream_io::BigEndian);
+            let _ = reference.to_writer(&mut w, &mut ctx);
+            fill_partial_byte_at_end(&mut w).expect("failed to fill partial byte at end");
         }
+        assert_eq!(bytes.len(), 21usize);
 
-        #[test]
-        fn io_extgeom() {
-            let mut ctx: PrcParsingContext = Default::default();
-            let mut bytes: Vec<u8> = vec![];
-            let mut reference: PRC_TYPE_ASM_FileStructureExtraGeometry = Default::default();
-            reference.id = UnsignedInteger {
-                value: prc_builtin::PRCType::PRC_TYPE_ASM_FileStructureExtraGeometry as u32,
-            };
-            {
-                let mut w = BitWriter::endian(Cursor::new(&mut bytes), bitstream_io::BigEndian);
-                let _ = reference.to_writer(&mut w, &mut ctx);
-                fill_partial_byte_at_end(&mut w).expect("failed to fill partial byte at end");
-            }
-            assert_eq!(bytes.len(), 3usize);
+        let mut ctx: PrcParsingContext = Default::default();
+        let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+        let recovered = PRC_TYPE_ASM_FileStructureTree::from_reader(&mut r, &mut ctx).unwrap();
+        assert_eq!(reference, recovered);
+    }
 
-            let mut ctx: PrcParsingContext = Default::default();
-            let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
-            let recovered =
-                PRC_TYPE_ASM_FileStructureExtraGeometry::from_reader(&mut r, &mut ctx).unwrap();
-            assert_eq!(reference, recovered);
+    #[test]
+    fn io_tess() {
+        let mut ctx: PrcParsingContext = Default::default();
+        let mut bytes: Vec<u8> = vec![];
+        let mut reference: PRC_TYPE_ASM_FileStructureTessellation = Default::default();
+        reference.id.value = PrcType::PRC_TYPE_ASM_FileStructureTessellation as u32;
+        reference.base.entity_name.name = Some(prc_builtin::String {
+            value: "dummy1".to_owned(),
+        });
+        {
+            let mut w = BitWriter::endian(Cursor::new(&mut bytes), bitstream_io::BigEndian);
+            let _ = reference.to_writer(&mut w, &mut ctx);
+            fill_partial_byte_at_end(&mut w).expect("failed to fill partial byte at end");
         }
+        assert_eq!(bytes.len(), 11usize);
 
-        #[test]
-        fn io_mf() {
-            let mut ctx: PrcParsingContext = Default::default();
-            let mut bytes: Vec<u8> = vec![];
-            let mut reference: PRC_TYPE_ASM_ModelFile = Default::default();
-            reference.id = UnsignedInteger {
-                value: prc_builtin::PRCType::PRC_TYPE_ASM_ModelFile as u32,
-            };
-            {
-                let mut w = BitWriter::endian(Cursor::new(&mut bytes), bitstream_io::BigEndian);
-                let _ = reference.to_writer(&mut w, &mut ctx);
-                fill_partial_byte_at_end(&mut w).expect("failed to fill partial byte at end");
-            }
-            assert_eq!(bytes.len(), 4usize);
+        let mut ctx: PrcParsingContext = Default::default();
+        let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+        let recovered =
+            PRC_TYPE_ASM_FileStructureTessellation::from_reader(&mut r, &mut ctx).unwrap();
+        assert_eq!(reference, recovered);
+    }
 
-            let mut ctx: PrcParsingContext = Default::default();
-            let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
-            let recovered = PRC_TYPE_ASM_ModelFile::from_reader(&mut r, &mut ctx).unwrap();
-            assert_eq!(reference, recovered);
+    #[test]
+    fn io_geom() {
+        let mut ctx: PrcParsingContext = Default::default();
+        let mut bytes: Vec<u8> = vec![];
+        let mut reference: PRC_TYPE_ASM_FileStructureGeometry = Default::default();
+        reference.id.value = PrcType::PRC_TYPE_ASM_FileStructureGeometry as u32;
+        reference.base.entity_name.name = Some(prc_builtin::String {
+            value: "dummy1".to_owned(),
+        });
+        {
+            let mut w = BitWriter::endian(Cursor::new(&mut bytes), bitstream_io::BigEndian);
+            let _ = reference.to_writer(&mut w, &mut ctx);
+            fill_partial_byte_at_end(&mut w).expect("failed to fill partial byte at end");
         }
-    */
+        assert_eq!(bytes.len(), 11usize);
+
+        let mut ctx: PrcParsingContext = Default::default();
+        let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+        let recovered = PRC_TYPE_ASM_FileStructureGeometry::from_reader(&mut r, &mut ctx).unwrap();
+        assert_eq!(reference, recovered);
+    }
+
+    #[test]
+    fn io_extgeom() {
+        let mut ctx: PrcParsingContext = Default::default();
+        let mut bytes: Vec<u8> = vec![];
+        let mut reference: PRC_TYPE_ASM_FileStructureExtraGeometry = Default::default();
+        reference.id.value = PrcType::PRC_TYPE_ASM_FileStructureExtraGeometry as u32;
+        reference.base.entity_name.name = Some(prc_builtin::String {
+            value: "dummy1".to_owned(),
+        });
+        {
+            let mut w = BitWriter::endian(Cursor::new(&mut bytes), bitstream_io::BigEndian);
+            let _ = reference.to_writer(&mut w, &mut ctx);
+            fill_partial_byte_at_end(&mut w).expect("failed to fill partial byte at end");
+        }
+        assert_eq!(bytes.len(), 11usize);
+
+        let mut ctx: PrcParsingContext = Default::default();
+        let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+        let recovered =
+            PRC_TYPE_ASM_FileStructureExtraGeometry::from_reader(&mut r, &mut ctx).unwrap();
+        assert_eq!(reference, recovered);
+    }
+
+    #[test]
+    fn io_mf() {
+        let mut ctx: PrcParsingContext = Default::default();
+        let mut bytes: Vec<u8> = vec![];
+        let mut reference: PRC_TYPE_ASM_ModelFile = Default::default();
+        reference.id.value = PrcType::PRC_TYPE_ASM_ModelFile as u32;
+        reference.base.entity_name.name = Some(prc_builtin::String {
+            value: "dummy1".to_owned(),
+        });
+        reference.units_from_cad_file.value = true;
+        reference.units_in_mm.value = 0.01;
+        reference
+            .product_occurrences
+            .push(ProductOccurrenceReference {
+                unique_id: UniqueId {
+                    unique_id0: prc_builtin::UnsignedInteger { value: 0 },
+                    unique_id1: prc_builtin::UnsignedInteger { value: 1 },
+                    unique_id2: prc_builtin::UnsignedInteger { value: 2 },
+                    unique_id3: prc_builtin::UnsignedInteger { value: 3 },
+                },
+                root_index: UnsignedInteger { value: 9 },
+                product_occurrence_is_active: Boolean { value: true },
+            });
+        reference.number_of_root_product_occurrences.value =
+            reference.product_occurrences.len() as u32;
+        {
+            let mut w = BitWriter::endian(Cursor::new(&mut bytes), bitstream_io::BigEndian);
+            let _ = reference.to_writer(&mut w, &mut ctx);
+            fill_partial_byte_at_end(&mut w).expect("failed to fill partial byte at end");
+        }
+        assert_eq!(bytes.len(), 26usize);
+
+        let mut ctx: PrcParsingContext = Default::default();
+        let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+        let recovered = PRC_TYPE_ASM_ModelFile::from_reader(&mut r, &mut ctx).unwrap();
+        assert_eq!(reference, recovered);
+    }
 
     #[test]
     fn io_round_trip_prc_json() {
@@ -151,7 +219,7 @@ mod tests {
         let first_name = json.get("verread").unwrap();
         assert_eq!(first_name.as_i64().unwrap(), 7095);
 
-        let mut parsed_prc2: ParsedPrc = serde_json::from_slice(&bytes).unwrap();
+        let parsed_prc2: ParsedPrc = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(parsed_prc, parsed_prc2);
 
         // TODO: roundtrip binary .prc
