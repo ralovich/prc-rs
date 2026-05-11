@@ -11,7 +11,7 @@ env:
   BUILD_TYPE: Release
 
 jobs:
-  build:
+  build_capi:
     strategy:
       matrix:
         # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
