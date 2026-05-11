@@ -28,7 +28,7 @@ ExternalProject_Add(
     CONFIGURE_COMMAND ""
     BUILD_COMMAND "" cargo build "$<IF:$<CONFIG:Release>,--release,>"
     BUILD_BYPRODUCTS     ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/target/$<IF:$<CONFIG:Release>,release,debug>/${LIB_NAME}
-                         ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/src/prc.h
+                         ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/include/prc.h
     #BINARY_DIR "${PROJECT_SOURCE_DIR}/${RUST_DIR}"
     #INSTALL_COMMAND "Get-ChildItem -Force -Path ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/target/release" COMMAND "Get-ChildItem -Force -Path ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/target/debug"
     INSTALL_COMMAND ""
@@ -54,7 +54,7 @@ target_link_libraries(prc2json
   optimized ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/target/release/${LIB_NAME}
   ${ADDITIONAL_LIBS}
 )
-target_include_directories(prc2json PRIVATE ../../src)
+target_include_directories(prc2json PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/include)
 
 add_test(NAME test_prc2json
     COMMAND prc2json ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/testdata/pmi_sample.stream-23.prc
