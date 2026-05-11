@@ -80,4 +80,5 @@ jobs:
           prc-db/prcs/tess_rs
           prc-db/prcs/geom_rs
           prc-db/prcs/ext_rs
+          prc-db/prcs/mf_rs
           prc-db/prcs/review_summary.txt
