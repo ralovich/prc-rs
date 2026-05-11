@@ -73,7 +73,7 @@ jobs:
     - name: Archive testing logs
       uses: actions/upload-artifact@v7
       with:
-        name: testing-logs
+        name: testing-logs-${runner.os}
         path: |
           prc-db/prcs/globals_rs
           prc-db/prcs/tree_rs
