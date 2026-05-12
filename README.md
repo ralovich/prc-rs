@@ -17,6 +17,7 @@
 - [x] parsing VertexColors
 - [x] parsing PRC_TYPE_SURF_Blend03
 - [x] C API for parsing/reading
+- [ ] B-rep tessellation
 - [ ] PRC write/output
 
 ## PRC Test Data
