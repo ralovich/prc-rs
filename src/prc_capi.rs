@@ -1,7 +1,7 @@
 use crate::common::prc_describe;
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn prc_parse(
+pub unsafe extern "C" fn prc_parse_to_json(
     src_len: u64,
     src: *const i8,
     dst_size: u64,

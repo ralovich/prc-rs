@@ -28,11 +28,11 @@ int main(int argc, char** argv)
   //std::cout << bytes.size() << std::endl;
   std::vector<char> json(1024*1024*32);
   uint64_t json_returned_bytes = 0;
-  int rv = prc_parse(bytes.size(),
-                     bytes.data(),
-                     json.size(),
-                     &json[0],
-                     &json_returned_bytes);
+  int rv = prc_parse_to_json(bytes.size(),
+                             bytes.data(),
+                             json.size(),
+                             &json[0],
+                             &json_returned_bytes);
   //std::cout << json_returned_bytes << std::endl;
   //printf("%d %s\n", rv, ((rv==0)?"prc-rs returned SUCCESS":"FAIL"));
   if (rv !=  0) {

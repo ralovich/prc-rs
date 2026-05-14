@@ -22,11 +22,11 @@ extern "C" {
   //! \param[out] dst Pointer to data being returned.
   //! \param[out] dst_actual_size Number of bytes used in \c dst.
   //! \returns 0 on success.
-  extern int32_t prc_parse(const uint64_t src_len,
-                           const char *const src,
-                           const uint64_t dst_size,
-                           char* dst,
-                           uint64_t* dst_actual_size);
+  extern int32_t prc_parse_to_json(const uint64_t src_len,
+                                   const char *const src,
+                                   const uint64_t dst_size,
+                                   char* dst,
+                                   uint64_t* dst_actual_size);
 
 #ifdef __cplusplus
 }
