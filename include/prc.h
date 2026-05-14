@@ -13,6 +13,10 @@
 extern "C" {
 #endif
 
+#define PRC_LIBPRC_VER_MAJOR 0
+#define PRC_LIBPRC_VER_MINOR 1
+#define PRC_LIBPRC_VER_PATCH 0
+
   //! Return textual representation of a parsed PRC. \c dst is caller allocated
   //! and needs to be large enough to hold the parsed representation.
   //!
