@@ -8,20 +8,20 @@
 
 #![allow(dead_code, unused_imports, unused)]
 
-use crate::common::CurrentFaceType;
 use crate::common::PrcParsingContext;
 use crate::constants::PrcCompressedCurveType::*;
 use crate::constants::PrcCompressedFaceType::*;
 use crate::constants::PrcTransformation::*;
 use crate::constants::PrcType::*;
-use crate::constants::*;
-use crate::indent;
 use crate::prc_builtin::*;
 use crate::prc_builtin_ana::*;
 use bitstream_io::{BitReader, BitWrite};
 use log::{debug, trace, warn};
 use serde::{Deserialize, Serialize};
 use std::io;
+//use crate::common::CurrentFaceType;
+use crate::constants::*;
+use crate::indent;
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
@@ -744,6 +744,7 @@ impl ExtraGeometry {
     }
 }
 
+/// Extra geometry: geometry summary data, which allow for partial loading of the file structure without loading the entire geometry.
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_ASM_FileStructureExtraGeometry {
@@ -1138,6 +1139,7 @@ impl RgbColor {
     }
 }
 
+/// https://github.com/pdf-association/pdf-issues/issues/411
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_Picture {
@@ -1860,6 +1862,7 @@ impl ContentPRCRefBase {
     }
 }
 
+/// https://github.com/pdf-association/pdf-issues/issues/485
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_TextureDefinition {
@@ -1902,12 +1905,6 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
             indent::get()
         );
         let _ig = indent::IndentGuard::new();
-        UnsignedInteger::search_and_seek_back(
-            rdr,
-            PRC_TYPE_GRAPH_TextureDefinition as u32,
-            9999,
-            5,
-        );
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -2423,7 +2420,7 @@ impl Material {
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: Material_idConcrete = Material_idConcrete::Invalid(id_type_id);
-        id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
+        id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
         let id_tid: PrcType = PrcType::try_from(id_type_id).unwrap();
         id_concrete = match id_tid {
             PrcType::PRC_TYPE_GRAPH_Material => {
@@ -2539,6 +2536,7 @@ impl PRC_TYPE_GRAPH_LinePattern {
     }
 }
 
+/// https://github.com/pdf-association/pdf-issues/issues/738
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_Style {
@@ -3107,6 +3105,7 @@ impl PRC_TYPE_TESS_Markup {
     }
 }
 
+/// Vectorized picture pattern
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_VPicturePattern {
@@ -3192,7 +3191,7 @@ impl PRC_TYPE_GRAPH_FillPattern {
         let mut data_type_id: u32 = 0;
         let mut data_concrete: PRC_TYPE_GRAPH_FillPattern_dataConcrete =
             PRC_TYPE_GRAPH_FillPattern_dataConcrete::Invalid(data_type_id);
-        data_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
+        data_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
         let data_tid: PrcType = PrcType::try_from(data_type_id).unwrap();
         data_concrete = match data_tid {
             PrcType::PRC_TYPE_GRAPH_DottingPattern => PRC_TYPE_GRAPH_FillPattern_dataConcrete::dp(
@@ -3433,7 +3432,7 @@ impl PRC_TYPE_RI_CoordinateSystem {
         let mut transform_type_id: u32 = 0;
         let mut transform_concrete: PRC_TYPE_RI_CoordinateSystem_transformConcrete =
             PRC_TYPE_RI_CoordinateSystem_transformConcrete::Invalid(transform_type_id);
-        transform_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
+        transform_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
         let transform_tid: PrcType = PrcType::try_from(transform_type_id).unwrap();
         transform_concrete = match transform_tid {
             PrcType::PRC_TYPE_MISC_GeneralTransformation => {
@@ -3686,6 +3685,7 @@ impl FileStructureInternalGlobalData {
     }
 }
 
+/// Globals: referenced file structures and colors, line styles, and coordinate systems for each tree entity of the file structure.
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_ASM_FileStructureGlobals {
@@ -3805,15 +3805,18 @@ impl ProductOccurrenceReference {
     }
 }
 
+/// A model file is typically created by importing a CAD file. A PRC file always handles a single ModelFile, which can be considered a document that contains all of the CAD file's objects. The model file contains product occurrences, which are split into different file structures.
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_ASM_ModelFile {
     pub id: UnsignedInteger,
     pub base: ContentPRCBase,
     pub units_from_cad_file: Boolean,
+    /// https://github.com/pdf-association/pdf-issues/issues/740
     pub units_in_mm: Double,
     pub number_of_root_product_occurrences: UnsignedInteger,
     pub product_occurrences: Vec<ProductOccurrenceReference>,
+    /// https://github.com/pdf-association/pdf-issues/issues/724
     pub file_structure_index_in_model_file: Vec<UnsignedInteger>,
     pub user_data: UserData,
 }
@@ -3843,8 +3846,8 @@ impl PRC_TYPE_ASM_ModelFile {
             product_occurrences.push(element);
         }
         let mut file_structure_index_in_model_file: Vec<UnsignedInteger> =
-            Vec::with_capacity((_ctx.filestructure_count) as usize);
-        for _i in 0..(_ctx.filestructure_count) {
+            Vec::with_capacity((_ctx.prc_parsed.fsi.len() as u32) as usize);
+        for _i in 0..(_ctx.prc_parsed.fsi.len() as u32) {
             let element = UnsignedInteger::from_reader(rdr)?;
             file_structure_index_in_model_file.push(element);
         }
@@ -4498,7 +4501,7 @@ impl PRC_TYPE_RI_RepresentationItem {
         let mut data_type_id: u32 = 0;
         let mut data_concrete: PRC_TYPE_RI_RepresentationItem_dataConcrete =
             PRC_TYPE_RI_RepresentationItem_dataConcrete::Invalid(data_type_id);
-        data_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
+        data_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
         let data_tid: PrcType = PrcType::try_from(data_type_id).unwrap();
         data_concrete = match data_tid {
             PrcType::PRC_TYPE_RI_BrepModel => PRC_TYPE_RI_RepresentationItem_dataConcrete::bm(
@@ -4665,6 +4668,7 @@ impl AdditionalTargetData {
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MISC_ReferenceOnTopology {
     pub id: UnsignedInteger,
+    /// 342 and 344 failed above assert
     pub type_of_entity: UnsignedInteger,
     pub flag: Boolean,
     pub data: Option<AdditionalTargetData>,
@@ -4691,6 +4695,7 @@ impl PRC_TYPE_MISC_ReferenceOnTopology {
         assert!(
             PRC_TYPE_TOPO_Face == PrcType::try_from(type_of_entity.value).unwrap()
                 || PRC_TYPE_TOPO_Edge == PrcType::try_from(type_of_entity.value).unwrap()
+                || PRC_TYPE_TOPO_CoEdge == PrcType::try_from(type_of_entity.value).unwrap()
                 || PRC_TYPE_TOPO_UniqueVertex == PrcType::try_from(type_of_entity.value).unwrap()
         );
         let mut flag: Boolean = Default::default();
@@ -4822,7 +4827,7 @@ impl ReferenceData {
         let mut data_type_id: u32 = 0;
         let mut data_concrete: ReferenceData_dataConcrete =
             ReferenceData_dataConcrete::Invalid(data_type_id);
-        data_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
+        data_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
         let data_tid: PrcType = PrcType::try_from(data_type_id).unwrap();
         data_concrete = match data_tid {
             PrcType::PRC_TYPE_MISC_ReferenceOnTopology => {
@@ -5064,6 +5069,7 @@ impl PRC_TYPE_MISC_MarkupLinkedItem {
     }
 }
 
+/// https://github.com/pdf-association/pdf-issues/issues/698
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MKP_Leader {
@@ -5472,7 +5478,7 @@ impl AnnotationEntity {
         let mut data_type_id: u32 = 0;
         let mut data_concrete: AnnotationEntity_dataConcrete =
             AnnotationEntity_dataConcrete::Invalid(data_type_id);
-        data_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
+        data_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
         let data_tid: PrcType = PrcType::try_from(data_type_id).unwrap();
         data_concrete = match data_tid {
             PrcType::PRC_TYPE_MKP_AnnotationItem => AnnotationEntity_dataConcrete::ai(
@@ -5626,6 +5632,7 @@ pub struct ContentSurface {
     pub attribute_data: Option<AttributeData>,
     pub name: Option<Name>,
     pub id: Option<UnsignedInteger>,
+    /// Indicates how the surface is extended; see EPRCExtendType
     pub extend_type: UnsignedInteger,
 }
 impl ContentSurface {
@@ -5735,6 +5742,7 @@ impl Domain {
 pub struct PRC_TYPE_SURF_Plane {
     pub id: UnsignedInteger,
     pub curve_data: ContentSurface,
+    /// there is no has_transform bit: https://github.com/pdf-association/pdf-issues/issues/658#issuecomment-3587432040
     pub transform: Transformation3D,
     pub parameterization: Domain,
     pub u_parameter_coeff_a: Double,
@@ -5805,6 +5813,7 @@ impl PRC_TYPE_SURF_Plane {
     }
 }
 
+/// TODO: according to adobe sdk 9, there is UserData in the tail
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_AmbientLight {
@@ -5870,6 +5879,7 @@ impl PRC_TYPE_GRAPH_AmbientLight {
     }
 }
 
+/// TODO: according to adobe sdk 9, there is UserData in the tail
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_PointLight {
@@ -5956,15 +5966,18 @@ impl PRC_TYPE_GRAPH_PointLight {
     }
 }
 
+/// TODO: according to adobe sdk 9, there is UserData in the tail
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_DirectionalLight {
     pub id: UnsignedInteger,
     pub base: ContentPRCRefBase,
     pub biased_ambient_index: UnsignedInteger,
+    /// no biased_emissive_index field present (matching sdk9)
     pub biased_diffuse_index: UnsignedInteger,
     pub biased_specular_index: UnsignedInteger,
     pub direction: Vector3D,
+    /// https://github.com/pdf-association/pdf-issues/issues/745#issuecomment-4372655906
     pub intensity: Option<Double>,
 }
 impl PRC_TYPE_GRAPH_DirectionalLight {
@@ -6043,6 +6056,7 @@ impl PRC_TYPE_GRAPH_DirectionalLight {
     }
 }
 
+/// TODO: according to adobe sdk 9, there is UserData in the tail
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_SpotLight {
@@ -6160,7 +6174,7 @@ impl Light {
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: Light_idConcrete = Light_idConcrete::Invalid(id_type_id);
-        id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
+        id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
         let id_tid: PrcType = PrcType::try_from(id_type_id).unwrap();
         id_concrete = match id_tid {
             PrcType::PRC_TYPE_GRAPH_AmbientLight => {
@@ -7259,7 +7273,7 @@ impl PRC_TYPE_ASM_ProductOccurrence {
         let mut location_concrete: PRC_TYPE_ASM_ProductOccurrence_locationConcrete =
             PRC_TYPE_ASM_ProductOccurrence_locationConcrete::Invalid(location_type_id);
         if !!has_transformation {
-            location_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
+            location_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
             let location_tid: PrcType = PrcType::try_from(location_type_id).unwrap();
             location_concrete = match location_tid {
                 PrcType::PRC_TYPE_MISC_CartesianTransformation => {
@@ -7483,6 +7497,7 @@ impl PRC_TYPE_ASM_FileStructure {
     }
 }
 
+/// Tree: a description of the tree of items (product occurrences, part definitions, representation items, and markup).
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_ASM_FileStructureTree {
@@ -7730,10 +7745,14 @@ impl ColorDataRemainderRGBA {
     }
 }
 
+/// The number_of_colors stored in the color_data must be calculated from the number of point indices
+/// - found in the wire_indexes array in the case of a PRC_TYPE_TESS_3D_Wire
+/// - found in the sizes_triangulated in the case of a PRC_TYPE_TESS_Face
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct VertexColors {
     pub is_rgba: Boolean,
+    /// asy does not write this field
     pub is_segment_color: Option<Boolean>,
     pub b_optimized: Boolean,
     pub color_data_rgb_first_vertex: Option<ColorRGB>,
@@ -7752,7 +7771,7 @@ impl VertexColors {
         debug!(
             "{}_ctx.VertexColors_number_of_colors: {}",
             indent::get(),
-            _ctx.VertexColors_number_of_colors
+            _ctx.VertexColors_get_number_of_colors()
         );
         let mut is_rgba: Boolean = Default::default();
         is_rgba = Boolean::from_reader(rdr)?;
@@ -7760,7 +7779,9 @@ impl VertexColors {
         let mut is_segment_color: Boolean = Default::default();
         if is_segment_color_cond {
             is_segment_color = Boolean::from_reader(rdr)?;
+            trace!("{}is_segment_color: {:?}", indent::get(), &is_segment_color);
         }
+        _ctx.t3dw.set1(is_segment_color.value);
         let mut b_optimized: Boolean = Default::default();
         b_optimized = Boolean::from_reader(rdr)?;
         let color_data_rgb_first_vertex_cond = !b_optimized && !is_rgba;
@@ -7770,9 +7791,9 @@ impl VertexColors {
         }
         let color_data_rgb_remaining_vertices_cond = !b_optimized && !is_rgba;
         let mut color_data_rgb_remaining_vertices: Vec<ColorDataRemainderRGB> =
-            Vec::with_capacity((_ctx.VertexColors_number_of_colors - 1) as usize);
+            Vec::with_capacity((_ctx.VertexColors_get_number_of_colors() - 1) as usize);
         if color_data_rgb_remaining_vertices_cond {
-            for _i in 0..(_ctx.VertexColors_number_of_colors - 1) {
+            for _i in 0..(_ctx.VertexColors_get_number_of_colors() - 1) {
                 let element = ColorDataRemainderRGB::from_reader(rdr, _ctx)?;
                 color_data_rgb_remaining_vertices.push(element);
             }
@@ -7784,9 +7805,9 @@ impl VertexColors {
         }
         let color_data_rgba_remaining_vertices_cond = !b_optimized && !!is_rgba;
         let mut color_data_rgba_remaining_vertices: Vec<ColorDataRemainderRGBA> =
-            Vec::with_capacity((_ctx.VertexColors_number_of_colors - 1) as usize);
+            Vec::with_capacity((_ctx.VertexColors_get_number_of_colors() - 1) as usize);
         if color_data_rgba_remaining_vertices_cond {
-            for _i in 0..(_ctx.VertexColors_number_of_colors - 1) {
+            for _i in 0..(_ctx.VertexColors_get_number_of_colors() - 1) {
                 let element = ColorDataRemainderRGBA::from_reader(rdr, _ctx)?;
                 color_data_rgba_remaining_vertices.push(element);
             }
@@ -8040,9 +8061,14 @@ pub struct PRC_TYPE_TESS_3D {
     pub id: UnsignedInteger,
     pub tessellation_coordinates: ContentBaseTessData,
     pub has_faces: Boolean,
+    /// https://github.com/pdf-association/pdf-issues/issues/705
     pub has_loops: Option<Boolean>,
+    /// see also must_recalculate_normals
+    /// https://github.com/pdf-association/pdf-issues/issues/705
     pub must_calculate_normals: Option<Boolean>,
+    /// https://github.com/pdf-association/pdf-issues/issues/705
     pub normal_recalculation_flags: Option<Character>,
+    /// https://github.com/pdf-association/pdf-issues/issues/705
     pub crease_angle: Option<Double>,
     pub number_of_normal_coordinates: UnsignedInteger,
     pub normal_coordinates: Vec<Double>,
@@ -8277,22 +8303,22 @@ impl PRC_TYPE_TESS_3D_Wire {
         tessellation_coordinates = ContentBaseTessData::from_reader(rdr, _ctx)?;
         let mut number_of_wire_indexes: UnsignedInteger = Default::default();
         number_of_wire_indexes = UnsignedInteger::from_reader(rdr)?;
-        _ctx.VertexColors_number_of_colors = number_of_wire_indexes.value;
-        debug!(
-            "{}_ctx.VertexColors_number_of_colors: {}",
-            indent::get(),
-            _ctx.VertexColors_number_of_colors
-        );
-        if number_of_wire_indexes.value != 0 { /*assert_eq!(number_of_wire_indexes.value%3, 1);*/ };
         let mut wire_indexes: Vec<Integer> =
             Vec::with_capacity((number_of_wire_indexes.value) as usize);
         for _i in 0..(number_of_wire_indexes.value) {
             let element = Integer::from_reader(rdr)?;
             wire_indexes.push(element);
         }
-        _ctx.set_num_vertex_colors_from_tess_3d_wire(&wire_indexes);
+        /*_ctx.set_num_vertex_colors_from_tess_3d_wire(&tessellation_coordinates.coordinates, &wire_indexes);*/
+        _ctx.t3dw
+            .set0(&tessellation_coordinates.coordinates, &wire_indexes);
         let mut has_vertex_colors: Boolean = Default::default();
         has_vertex_colors = Boolean::from_reader(rdr)?;
+        trace!(
+            "{}has_vertex_colors: {:?}",
+            indent::get(),
+            &has_vertex_colors
+        );
         let vertex_color_data_cond = !!has_vertex_colors;
         let mut vertex_color_data: VertexColors = Default::default();
         if vertex_color_data_cond {
@@ -8398,6 +8424,7 @@ impl BinaryTextureData {
 pub struct CompressedTextureParameter {
     pub binary_texture_data: BinaryTextureData,
     pub reference_array_size: UnsignedInteger,
+    /// https://github.com/pdf-association/pdf-issues/issues/729
     pub reference_array: Vec<NumberOfBitsThenUnsignedInteger>,
     pub texture_parameters_tolerance: Double,
     pub texture_parameters_size: UnsignedInteger,
@@ -8466,6 +8493,7 @@ impl CompressedTextureParameter {
     }
 }
 
+/// https://github.com/pdf-association/pdf-issues/issues/727
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TESS_3D_Compressed {
@@ -8473,31 +8501,46 @@ pub struct PRC_TYPE_TESS_3D_Compressed {
     pub is_calculated: Boolean,
     pub has_faces: Boolean,
     pub tolerance: Double,
+    /// https://github.com/pdf-association/pdf-issues/issues/705
     pub origin_array: Option<[FloatAsBytes; 3]>,
     pub point_array: CompressedIntegerArray,
+    /// for each triangle, used to describe the triangles neighbors
     pub edge_status_array: CharacterArray,
+    /// represents, for each triangle, the index of the face to which it belongs.
     pub triangle_face_array: CompressedIndiceArray,
     pub reference_array_size: UnsignedInteger,
+    /// indicates whether a point is a reference
     pub point_is_reference_array: UncompressedBoolArray,
+    /// in this case, the boolean value which indicates whether the character array is compressed is not stored. Its value is implicit and set to number_of_reference_points > 3
+    /// https://github.com/pdf-association/pdf-issues/issues/427
     pub point_reference_array: CompressedIndiceArrayWithoutBit,
+    /// see also must_calculate_normals
     pub must_recalculate_normals: Boolean,
+    /// SIZE is missing!
     pub normal_is_reversed: Option<UncompressedBoolArray>,
+    /// definition similar than VRML
     pub crease_angle: Option<Double>,
+    /// Normal recalculation flags (not used; should be zero)
     pub normal_recalculation_flags: Option<Character>,
     pub normal_angle_number_of_bits: Option<Character>,
     pub normal_binary_data_size: Option<UnsignedInteger>,
+    /// https://github.com/pdf-association/pdf-issues/issues/436
     pub normal_binary_data: Option<UncompressedBoolArray>,
     pub normal_angle_array: Option<ShortArray>,
+    /// above size if wrong, SPECBUG not in spec
     pub is_face_planar: Option<UncompressedBoolArray>,
     pub is_point_color: Boolean,
+    /// above size if wrong, SPECBUG not in spec
     pub is_point_color_on_face: Option<UncompressedBoolArray>,
     pub point_color_array: Option<CharacterArray>,
     pub is_multiple_line_attribute: Boolean,
+    /// above size if wrong, SPECBUG not in spec
     pub is_multiple_line_attribute_on_face: Option<UncompressedBoolArray>,
     pub line_attribute_array: ShortArray,
     pub no_texture: Boolean,
     pub texture_data: Option<CompressedTextureParameter>,
     pub all_faces_have_texture: Option<Boolean>,
+    /// FIXME: above array size is guesswork
     pub face_has_texture: Option<UncompressedBoolArray>,
     pub has_behaviors: Boolean,
     pub behaviors_array: Option<CharacterArray>,
@@ -8606,6 +8649,7 @@ impl PRC_TYPE_TESS_3D_Compressed {
             &must_recalculate_normals
         );
         _ctx.t3dc.get_points(
+            &origin_array,
             &point_array.a,
             tolerance.value,
             &point_is_reference_array.a,
@@ -8622,11 +8666,13 @@ impl PRC_TYPE_TESS_3D_Compressed {
                 _ctx.t3dc.number_of_normals(&triangle_face_array.a),
             )?;
         }
-        debug!(
-            "{}normal_is_reversed: {}",
-            indent::get(),
-            format(&normal_is_reversed.a)
-        );
+        if !!must_recalculate_normals {
+            debug!(
+                "{}normal_is_reversed: {}",
+                indent::get(),
+                format(&normal_is_reversed.a)
+            );
+        };
         let crease_angle_cond = !!must_recalculate_normals;
         let mut crease_angle: Double = Default::default();
         if crease_angle_cond {
@@ -8669,11 +8715,13 @@ impl PRC_TYPE_TESS_3D_Compressed {
             normal_binary_data =
                 UncompressedBoolArray::from_reader(rdr, normal_binary_data_size.value)?;
         }
-        debug!(
-            "{}normal_binary_data: {}",
-            indent::get(),
-            format(&normal_binary_data.a)
-        );
+        if !must_recalculate_normals {
+            debug!(
+                "{}normal_binary_data: {}",
+                indent::get(),
+                format(&normal_binary_data.a)
+            );
+        };
         let normal_angle_array_cond = !must_recalculate_normals;
         let mut normal_angle_array: ShortArray = Default::default();
         if normal_angle_array_cond {
@@ -8695,11 +8743,13 @@ impl PRC_TYPE_TESS_3D_Compressed {
                     .number_of_faces_stored_in_mesh(&triangle_face_array.a),
             )?;
         }
-        debug!(
-            "{}is_face_planar: {}",
-            indent::get(),
-            format(&is_face_planar.a)
-        );
+        if !must_recalculate_normals {
+            debug!(
+                "{}is_face_planar: {}",
+                indent::get(),
+                format(&is_face_planar.a)
+            );
+        };
         let mut is_point_color: Boolean = Default::default();
         is_point_color = Boolean::from_reader(rdr)?;
         trace!("{}is_point_color: {:?}", indent::get(), &is_point_color);
@@ -8713,11 +8763,13 @@ impl PRC_TYPE_TESS_3D_Compressed {
                     .number_of_faces_stored_in_mesh(&triangle_face_array.a),
             )?;
         }
-        debug!(
-            "{}is_point_color_on_face: {}",
-            indent::get(),
-            format(&is_point_color_on_face.a)
-        );
+        if !!is_point_color {
+            debug!(
+                "{}is_point_color_on_face: {}",
+                indent::get(),
+                format(&is_point_color_on_face.a)
+            );
+        };
         let point_color_array_cond = !!is_point_color;
         let mut point_color_array: CharacterArray = Default::default();
         if point_color_array_cond {
@@ -8778,7 +8830,7 @@ impl PRC_TYPE_TESS_3D_Compressed {
                 &all_faces_have_texture
             );
         }
-        let face_has_texture_cond = !no_texture;
+        let face_has_texture_cond = !no_texture && !all_faces_have_texture.value;
         let mut face_has_texture: UncompressedBoolArray = Default::default();
         if face_has_texture_cond {
             face_has_texture = UncompressedBoolArray::from_reader(
@@ -9030,7 +9082,7 @@ impl PRC_TYPE_TESS_3D_Compressed {
         if all_faces_have_texture_cond {
             all_faces_have_texture.to_writer(_w)?;
         }
-        let face_has_texture_cond = !no_texture;
+        let face_has_texture_cond = !no_texture && !all_faces_have_texture.value;
         let face_has_texture = self.face_has_texture.as_ref().unwrap();
         if face_has_texture_cond {
             face_has_texture.to_writer(
@@ -9063,14 +9115,10 @@ impl PRC_TYPE_TESS {
     ) -> io::Result<Self> {
         trace!("{}PRC_TYPE_TESS::from_reader()", indent::get());
         let _ig = indent::IndentGuard::new();
-        UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D as u32, 9999, 5);
-        UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D_Wire as u32, 9999, 5);
-        UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_Markup as u32, 9999, 5);
-        UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D_Compressed as u32, 9999, 5);
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_TESS_idConcrete =
             PRC_TYPE_TESS_idConcrete::Invalid(id_type_id);
-        id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
+        id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
         let id_tid: PrcType = PrcType::try_from(id_type_id).unwrap();
         id_concrete = match id_tid {
             PrcType::PRC_TYPE_TESS_3D => {
@@ -9126,6 +9174,7 @@ impl Default for PRC_TYPE_TESS_idConcrete {
     }
 }
 
+/// Tessellation: all tessellated (triangulated) data in the leaf entities of the tree (representation items and markups).
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_ASM_FileStructureTessellation {
@@ -9287,7 +9336,8 @@ impl ContentBody {
         let mut bounding_box_behavior: Character = Default::default();
         bounding_box_behavior = Character::from_reader(rdr)?;
         debug!(
-            "bounding_box_behavior: {:?}",
+            "{}bounding_box_behavior: {:?}",
+            indent::get(),
             PrcBodyBoundingBoxBehaviorBitField::from_bytes(
                 bounding_box_behavior.value.to_le_bytes()
             )
@@ -10792,7 +10842,7 @@ impl PRC_TYPE_MATH_FCT_1D {
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_MATH_FCT_1D_idConcrete =
             PRC_TYPE_MATH_FCT_1D_idConcrete::Invalid(id_type_id);
-        id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
+        id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
         let id_tid: PrcType = PrcType::try_from(id_type_id).unwrap();
         id_concrete = match id_tid {
             PrcType::PRC_TYPE_MATH_FCT_1D_Polynom => PRC_TYPE_MATH_FCT_1D_idConcrete::poly(
@@ -11005,7 +11055,7 @@ impl PRC_TYPE_MATH_FCT_3D {
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_MATH_FCT_3D_idConcrete =
             PRC_TYPE_MATH_FCT_3D_idConcrete::Invalid(id_type_id);
-        id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
+        id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
         let id_tid: PrcType = PrcType::try_from(id_type_id).unwrap();
         id_concrete = match id_tid {
             PrcType::PRC_TYPE_MATH_FCT_3D_Linear => PRC_TYPE_MATH_FCT_3D_idConcrete::lin(
@@ -12260,7 +12310,7 @@ impl PRC_TYPE_CRV {
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_CRV_idConcrete = PRC_TYPE_CRV_idConcrete::Invalid(id_type_id);
-        id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
+        id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
         let id_tid: PrcType = PrcType::try_from(id_type_id).unwrap();
         id_concrete = match id_tid {
             PrcType::PRC_TYPE_ROOT => {
@@ -12435,6 +12485,7 @@ impl PtrCurve {
     }
 }
 
+/// proe neu
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_Blend01 {
@@ -12504,6 +12555,7 @@ impl PRC_TYPE_SURF_Blend01 {
     }
 }
 
+/// xt
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_Blend02 {
@@ -12633,6 +12685,8 @@ impl PRC_TYPE_SURF_Blend02 {
     }
 }
 
+/// Catia fillet surface defined by three curves. points, tangents, and second_derivatives arrays should be declared as Array<Vector3d>[number_of_elements * 3] size.
+/// https://github.com/pdf-association/pdf-issues/issues/651
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_Blend03 {
@@ -12640,6 +12694,7 @@ pub struct PRC_TYPE_SURF_Blend03 {
     pub curve_data: ContentSurface,
     pub transform: Transformation3DWithBit,
     pub parameterization: UVParameterization,
+    /// https://github.com/pdf-association/pdf-issues/issues/654
     pub number_of_elements: UnsignedInteger,
     pub parameters: Vec<Double>,
     pub multiplicities: Vec<Integer>,
@@ -12654,6 +12709,7 @@ pub struct PRC_TYPE_SURF_Blend03 {
     pub trim_v_max: Double,
     pub reserved_int: [Integer; 6],
     pub reserved_char: [Character; 3],
+    /// https://github.com/pdf-association/pdf-issues/issues/654
     pub number_of_supplimental_doubles: UnsignedInteger,
     pub supplimental_doubles: Vec<Double>,
 }
@@ -13915,7 +13971,7 @@ impl PRC_TYPE_SURF {
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_SURF_idConcrete =
             PRC_TYPE_SURF_idConcrete::Invalid(id_type_id);
-        id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
+        id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
         let id_tid: PrcType = PrcType::try_from(id_type_id).unwrap();
         id_concrete = match id_tid {
             PrcType::PRC_TYPE_ROOT => {
@@ -14746,7 +14802,7 @@ impl PRC_TYPE_TOPO {
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_TOPO_idConcrete =
             PRC_TYPE_TOPO_idConcrete::Invalid(id_type_id);
-        id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
+        id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
         let id_tid: PrcType = PrcType::try_from(id_type_id).unwrap();
         id_concrete = match id_tid {
             PrcType::PRC_TYPE_ROOT => {
@@ -14951,6 +15007,7 @@ pub struct PRC_TYPE_TOPO_BrepData {
     pub base: ContentBody,
     pub number_of_connex: UnsignedInteger,
     pub connex: Vec<PtrTopology>,
+    /// https://github.com/pdf-association/pdf-issues/issues/715
     pub bounding_box: Option<BoundingBox>,
 }
 impl PRC_TYPE_TOPO_BrepData {
@@ -15092,6 +15149,7 @@ impl CompressedVertex {
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, Copy)]
 #[allow(non_camel_case_types)]
 pub struct ParticularCircle {
+    /// adobe sdk 9 says: start_point == end_point
     pub full_circle: Boolean,
     pub start_end_data: Option<StartEndData>,
     pub center: Option<CompressedPoint>,
@@ -15108,7 +15166,7 @@ impl ParticularCircle {
         let _ig = indent::IndentGuard::new();
         let mut full_circle: Boolean = Default::default();
         full_circle = Boolean::from_reader(rdr)?;
-        let start_end_data_cond = !_ctx.compressed_iso_spline;
+        let start_end_data_cond = !_ctx.is_compressed_iso_spline();
         let mut start_end_data: StartEndData = Default::default();
         if start_end_data_cond {
             start_end_data = StartEndData::from_reader(rdr, _ctx)?;
@@ -15155,7 +15213,7 @@ impl ParticularCircle {
     ) -> std::io::Result<()> {
         let full_circle = self.full_circle.clone();
         full_circle.to_writer(_w)?;
-        let start_end_data_cond = !_ctx.compressed_iso_spline;
+        let start_end_data_cond = !_ctx.is_compressed_iso_spline();
         let start_end_data = self.start_end_data.as_ref().unwrap();
         if start_end_data_cond {
             start_end_data.to_writer(_w, _ctx)?;
@@ -15184,6 +15242,7 @@ impl ParticularCircle {
 pub struct GeneralCircle {
     pub start_end_data: StartEndData,
     pub center: CompressedPoint,
+    /// adobe sdk 9 says: circle_angle > PI
     pub circle_angle: Boolean,
 }
 impl GeneralCircle {
@@ -15238,23 +15297,23 @@ impl StartEndData {
     ) -> io::Result<Self> {
         trace!("{}StartEndData::from_reader()", indent::get());
         let _ig = indent::IndentGuard::new();
-        let start_vertex_cond = !!_ctx.curve_trimming_face;
+        let start_vertex_cond = !!_ctx.is_curve_trimming_face();
         let mut start_vertex: CompressedVertex = Default::default();
         if start_vertex_cond {
             start_vertex = CompressedVertex::from_reader(rdr, _ctx)?;
         }
-        let end_vertex_cond = !!_ctx.curve_trimming_face;
+        let end_vertex_cond = !!_ctx.is_curve_trimming_face();
         let mut end_vertex: CompressedVertex = Default::default();
         if end_vertex_cond {
             end_vertex = CompressedVertex::from_reader(rdr, _ctx)?;
         }
-        let start_point_cond = !_ctx.curve_trimming_face;
+        let start_point_cond = !_ctx.is_curve_trimming_face();
         let mut start_point: CompressedPoint = Default::default();
         if start_point_cond {
             start_point =
                 CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
-        let end_point_cond = !_ctx.curve_trimming_face;
+        let end_point_cond = !_ctx.is_curve_trimming_face();
         let mut end_point: CompressedPoint = Default::default();
         if end_point_cond {
             end_point =
@@ -15289,22 +15348,22 @@ impl StartEndData {
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> std::io::Result<()> {
-        let start_vertex_cond = !!_ctx.curve_trimming_face;
+        let start_vertex_cond = !!_ctx.is_curve_trimming_face();
         let start_vertex = self.start_vertex.as_ref().unwrap();
         if start_vertex_cond {
             start_vertex.to_writer(_w, _ctx)?;
         }
-        let end_vertex_cond = !!_ctx.curve_trimming_face;
+        let end_vertex_cond = !!_ctx.is_curve_trimming_face();
         let end_vertex = self.end_vertex.as_ref().unwrap();
         if end_vertex_cond {
             end_vertex.to_writer(_w, _ctx)?;
         }
-        let start_point_cond = !_ctx.curve_trimming_face;
+        let start_point_cond = !_ctx.is_curve_trimming_face();
         let start_point = self.start_point.as_ref().unwrap();
         if start_point_cond {
             start_point.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
-        let end_point_cond = !_ctx.curve_trimming_face;
+        let end_point_cond = !_ctx.is_curve_trimming_face();
         let end_point = self.end_point.as_ref().unwrap();
         if end_point_cond {
             end_point.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
@@ -15333,7 +15392,7 @@ impl PRC_HCG_Line {
             PRC_HCG_Line,
             PrcCompressedCurveType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id.value);
+        _ctx.push_face_type(id);
         let mut start_end_data: StartEndData = Default::default();
         start_end_data = StartEndData::from_reader(rdr, _ctx)?;
         _ctx.pop_face_type();
@@ -15353,10 +15412,12 @@ impl PRC_HCG_Line {
     }
 }
 
+/// called CompressedCircle inside IsoNurbsTrimCrv
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, Copy)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_Circle {
-    pub id: CompressedEntityType,
+    /// this field is OPTIONAL
+    pub id: Option<CompressedEntityType>,
     pub is_particular_circle: Boolean,
     pub particular_circle: Option<ParticularCircle>,
     pub general_circle: Option<GeneralCircle>,
@@ -15370,13 +15431,16 @@ impl PRC_HCG_Circle {
         trace!("{}PRC_HCG_Circle::from_reader()", indent::get());
         let _ig = indent::IndentGuard::new();
         warn!("PRC_HCG_Circle.id field contains FIXME!");
+        let id_cond = !_ctx.is_compressed_iso_spline();
         let mut id: CompressedEntityType = Default::default();
-        id = CompressedEntityType::from_reader(rdr)?;
-        assert_eq!(
-            PRC_HCG_Circle,
-            PrcCompressedCurveType::try_from(id.value).unwrap()
-        );
-        _ctx.push_face_type(id.value);
+        if id_cond {
+            id = CompressedEntityType::from_reader(rdr)?;
+            assert_eq!(
+                PRC_HCG_Circle,
+                PrcCompressedCurveType::try_from(id.value).unwrap()
+            );
+        }
+        _ctx.push_face_type(id);
         let mut is_particular_circle: Boolean = Default::default();
         is_particular_circle = Boolean::from_reader(rdr)?;
         let particular_circle_cond = is_particular_circle.value;
@@ -15391,7 +15455,7 @@ impl PRC_HCG_Circle {
         }
         _ctx.pop_face_type();
         let rv = Self {
-            id,
+            id: if id_cond { Some(id) } else { None },
             is_particular_circle,
             particular_circle: if particular_circle_cond {
                 Some(particular_circle)
@@ -15411,8 +15475,11 @@ impl PRC_HCG_Circle {
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> std::io::Result<()> {
-        let id = self.id.clone();
-        id.to_writer(_w)?;
+        let id_cond = !_ctx.is_compressed_iso_spline();
+        let id = self.id.as_ref().unwrap();
+        if id_cond {
+            id.to_writer(_w)?;
+        }
         let is_particular_circle = self.is_particular_circle.clone();
         is_particular_circle.to_writer(_w)?;
         let particular_circle_cond = is_particular_circle.value;
@@ -15460,7 +15527,7 @@ impl PRC_HCG_BSplineHermiteCurve {
             PRC_HCG_BSplineHermiteCurve,
             PrcCompressedCurveType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id.value);
+        _ctx.push_face_type(id);
         let mut start_end_data: StartEndData = Default::default();
         start_end_data = StartEndData::from_reader(rdr, _ctx)?;
         let mut number_bits: UnsignedIntegerWithVariableBitNumber = Default::default();
@@ -15592,7 +15659,8 @@ impl PRC_HCG_BSplineHermiteCurve {
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_CompositeCurve {
-    pub id: CompressedEntityType,
+    /// this field is OPTIONAL
+    pub id: Option<CompressedEntityType>,
     pub start_end_data: StartEndData,
     pub dimension: UnsignedInteger,
     pub is_closed: Boolean,
@@ -15608,13 +15676,16 @@ impl PRC_HCG_CompositeCurve {
         trace!("{}PRC_HCG_CompositeCurve::from_reader()", indent::get());
         let _ig = indent::IndentGuard::new();
         warn!("PRC_HCG_CompositeCurve.id field contains FIXME!");
+        let id_cond = !_ctx.is_compressed_iso_spline();
         let mut id: CompressedEntityType = Default::default();
-        id = CompressedEntityType::from_reader(rdr)?;
-        assert_eq!(
-            PRC_HCG_CompositeCurve,
-            PrcCompressedCurveType::try_from(id.value).unwrap()
-        );
-        _ctx.push_face_type(id.value);
+        if id_cond {
+            id = CompressedEntityType::from_reader(rdr)?;
+            assert_eq!(
+                PRC_HCG_CompositeCurve,
+                PrcCompressedCurveType::try_from(id.value).unwrap()
+            );
+        }
+        _ctx.push_face_type(id);
         let mut start_end_data: StartEndData = Default::default();
         start_end_data = StartEndData::from_reader(rdr, _ctx)?;
         let mut dimension: UnsignedInteger = Default::default();
@@ -15631,7 +15702,7 @@ impl PRC_HCG_CompositeCurve {
         }
         _ctx.pop_face_type();
         let rv = Self {
-            id,
+            id: if id_cond { Some(id) } else { None },
             start_end_data,
             dimension,
             is_closed,
@@ -15645,8 +15716,11 @@ impl PRC_HCG_CompositeCurve {
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> std::io::Result<()> {
-        let id = self.id.clone();
-        id.to_writer(_w)?;
+        let id_cond = !_ctx.is_compressed_iso_spline();
+        let id = self.id.as_ref().unwrap();
+        if id_cond {
+            id.to_writer(_w)?;
+        }
         let start_end_data = self.start_end_data.clone();
         start_end_data.to_writer(_w, _ctx)?;
         let dimension = self.dimension.clone();
@@ -15683,7 +15757,7 @@ impl PRC_HCG_Ellipse {
             PRC_HCG_Ellipse,
             PrcCompressedCurveType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id.value);
+        _ctx.push_face_type(id);
         _ctx.pop_face_type();
         let rv = Self { id };
         Ok(rv)
@@ -15702,6 +15776,7 @@ impl PRC_HCG_Ellipse {
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct CompressedCurve {
+    /// PRC_HCG_Line, PRC_HCG_Circle, PRC_HCG_BSplineHermiteCurve or PRC_HCG_CompositeCurve. The curve type PRC_HCG_Ellipse is reserved for future use.
     pub id_concrete: CompressedCurve_idConcrete,
 }
 impl CompressedCurve {
@@ -15715,7 +15790,7 @@ impl CompressedCurve {
         let mut id_type_id: u32 = 0;
         let mut id_concrete: CompressedCurve_idConcrete =
             CompressedCurve_idConcrete::Invalid(id_type_id);
-        id_type_id = CompressedEntityType::from_reader_and_seek_back(rdr)?.value;
+        id_type_id = CompressedEntityType::from_reader_and_seek_back(rdr)?.value as u32;
         let id_tid: PrcCompressedCurveType = PrcCompressedCurveType::try_from(id_type_id).unwrap();
         id_concrete = match id_tid {
             PrcCompressedCurveType::PRC_HCG_Line => {
@@ -16018,18 +16093,19 @@ impl ContentCompressedAnaFace {
         let _ig = indent::IndentGuard::new();
         let mut is_trimmed: Boolean = Default::default();
         is_trimmed = Boolean::from_reader(rdr)?;
+        trace!("{}is_trimmed: {:?}", indent::get(), &is_trimmed);
         let trim_loop_cond = !!is_trimmed.value;
         let mut trim_loop: AnaFaceTrimLoop = Default::default();
         if trim_loop_cond {
             trim_loop = AnaFaceTrimLoop::from_reader(rdr, _ctx)?;
         }
-        let point_on_torus_cond = all_loops_are_vertex_loops()
-            && _ctx.get_surface_type().unwrap() == PRC_HCG_AnaTorus as u32
-            && is_trimmed.value;
+        let point_on_torus_cond =
+            _ctx.ContentCompressedAnaFace_has_point_on_torus(is_trimmed.value);
         let mut point_on_torus: CompressedPoint = Default::default();
         if point_on_torus_cond {
             point_on_torus =
                 CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
+            trace!("{}point_on_torus: {:?}", indent::get(), &point_on_torus);
         }
         let rv = Self {
             is_trimmed,
@@ -16058,9 +16134,8 @@ impl ContentCompressedAnaFace {
         if trim_loop_cond {
             trim_loop.to_writer(_w, _ctx)?;
         }
-        let point_on_torus_cond = all_loops_are_vertex_loops()
-            && _ctx.get_surface_type().unwrap() == PRC_HCG_AnaTorus as u32
-            && is_trimmed.value;
+        let point_on_torus_cond =
+            _ctx.ContentCompressedAnaFace_has_point_on_torus(is_trimmed.value);
         let point_on_torus = self.point_on_torus.as_ref().unwrap();
         if point_on_torus_cond {
             point_on_torus.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
@@ -16069,6 +16144,7 @@ impl ContentCompressedAnaFace {
     }
 }
 
+/// https://github.com/pdf-association/pdf-issues/issues/705
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct ContentCompressedFace {
@@ -16086,12 +16162,12 @@ impl ContentCompressedFace {
         let _ig = indent::IndentGuard::new();
         let mut orientation_surface_with_shell: Boolean = Default::default();
         orientation_surface_with_shell = Boolean::from_reader(rdr)?;
-        let iso_face_cond = is_an_iso_face(_ctx.get_surface_type().unwrap());
+        let iso_face_cond = _ctx.is_an_iso_face(_ctx.get_surface_type().unwrap());
         let mut iso_face: ContentCompressedIsoFace = Default::default();
         if iso_face_cond {
             iso_face = ContentCompressedIsoFace::from_reader(rdr, _ctx)?;
         }
-        let ana_face_cond = !is_an_iso_face(_ctx.get_surface_type().unwrap());
+        let ana_face_cond = !_ctx.is_an_iso_face(_ctx.get_surface_type().unwrap());
         let mut ana_face: ContentCompressedAnaFace = Default::default();
         if ana_face_cond {
             ana_face = ContentCompressedAnaFace::from_reader(rdr, _ctx)?;
@@ -16110,12 +16186,12 @@ impl ContentCompressedFace {
     ) -> std::io::Result<()> {
         let orientation_surface_with_shell = self.orientation_surface_with_shell.clone();
         orientation_surface_with_shell.to_writer(_w)?;
-        let iso_face_cond = is_an_iso_face(_ctx.get_surface_type().unwrap());
+        let iso_face_cond = _ctx.is_an_iso_face(_ctx.get_surface_type().unwrap());
         let iso_face = self.iso_face.as_ref().unwrap();
         if iso_face_cond {
             iso_face.to_writer(_w, _ctx)?;
         }
-        let ana_face_cond = !is_an_iso_face(_ctx.get_surface_type().unwrap());
+        let ana_face_cond = !_ctx.is_an_iso_face(_ctx.get_surface_type().unwrap());
         let ana_face = self.ana_face.as_ref().unwrap();
         if ana_face_cond {
             ana_face.to_writer(_w, _ctx)?;
@@ -16137,13 +16213,13 @@ impl PRC_HCG_NewLoop {
     ) -> io::Result<Self> {
         trace!("{}PRC_HCG_NewLoop::from_reader()", indent::get());
         let _ig = indent::IndentGuard::new();
+        panic!("PRC_HCG_NewLoop should only be encountered inside an AnaFaceTrimLoop!");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
             PRC_HCG_NewLoop,
             PrcCompressedFaceType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id.value);
         _ctx.pop_face_type();
         let rv = Self { id };
         Ok(rv)
@@ -16172,13 +16248,13 @@ impl PRC_HCG_EndLoop {
     ) -> io::Result<Self> {
         trace!("{}PRC_HCG_EndLoop::from_reader()", indent::get());
         let _ig = indent::IndentGuard::new();
+        panic!("PRC_HCG_EndLoop should only be encountered inside an AnaFaceTrimLoop!");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
             PRC_HCG_EndLoop,
             PrcCompressedFaceType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id.value);
         _ctx.pop_face_type();
         let rv = Self { id };
         Ok(rv)
@@ -16217,7 +16293,7 @@ impl PRC_HCG_IsoPlane {
             PRC_HCG_IsoPlane,
             PrcCompressedFaceType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id.value);
+        _ctx.push_face_type(id);
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
         let mut y: Double = Default::default();
@@ -16275,7 +16351,7 @@ impl PRC_HCG_IsoCylinder {
             PRC_HCG_IsoCylinder,
             PrcCompressedFaceType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id.value);
+        _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         _ctx.pop_face_type();
@@ -16316,7 +16392,7 @@ impl PRC_HCG_IsoTorus {
             PRC_HCG_IsoTorus,
             PrcCompressedFaceType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id.value);
+        _ctx.push_face_type(id);
         let mut is_major_radius: Boolean = Default::default();
         is_major_radius = Boolean::from_reader(rdr)?;
         let mut face: ContentCompressedFace = Default::default();
@@ -16364,7 +16440,7 @@ impl PRC_HCG_IsoSphere {
             PRC_HCG_IsoSphere,
             PrcCompressedFaceType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id.value);
+        _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         _ctx.pop_face_type();
@@ -16404,7 +16480,7 @@ impl PRC_HCG_IsoCone {
             PRC_HCG_IsoCone,
             PrcCompressedFaceType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id.value);
+        _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         _ctx.pop_face_type();
@@ -16447,7 +16523,7 @@ impl PRC_HCG_AnaPlane {
             PRC_HCG_AnaPlane,
             PrcCompressedFaceType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id.value);
+        _ctx.push_face_type(id);
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
         let mut y: Double = Default::default();
@@ -16507,7 +16583,7 @@ impl PRC_HCG_AnaCylinder {
             PRC_HCG_AnaCylinder,
             PrcCompressedFaceType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id.value);
+        _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         let mut point: CompressedPoint = Default::default();
@@ -16563,7 +16639,7 @@ impl PRC_HCG_AnaTorus {
             PRC_HCG_AnaTorus,
             PrcCompressedFaceType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id.value);
+        _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         let mut center: CompressedPoint = Default::default();
@@ -16625,7 +16701,7 @@ impl PRC_HCG_AnaSphere {
             PRC_HCG_AnaSphere,
             PrcCompressedFaceType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id.value);
+        _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         let mut sphere_center: CompressedPoint = Default::default();
@@ -16676,7 +16752,7 @@ impl PRC_HCG_AnaCone {
             PRC_HCG_AnaCone,
             PrcCompressedFaceType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id.value);
+        _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         let mut axis_point: CompressedPoint = Default::default();
@@ -16732,7 +16808,7 @@ impl PRC_HCG_AnaNurbs {
             PRC_HCG_AnaNurbs,
             PrcCompressedFaceType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id.value);
+        _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         let mut compressed_surface: CompressedNurbs = Default::default();
@@ -16781,7 +16857,7 @@ impl PRC_HCG_AnaGenericFace {
             PRC_HCG_AnaGenericFace,
             PrcCompressedFaceType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id.value);
+        _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         let mut surface_definition: PRC_TYPE_SURF = Default::default();
@@ -16813,6 +16889,7 @@ impl PRC_HCG_AnaGenericFace {
 #[allow(non_camel_case_types)]
 pub struct CompressedMultiplicitiesU {
     pub multiplicity_is_stored: Boolean,
+    /// number_bits is either number_bits_u or number_bits_v from CompressedNurbs
     pub multiplicity: Option<UnsignedIntegerWithVariableBitNumber>,
 }
 impl CompressedMultiplicitiesU {
@@ -16863,6 +16940,7 @@ impl CompressedMultiplicitiesU {
 #[allow(non_camel_case_types)]
 pub struct CompressedMultiplicitiesV {
     pub multiplicity_is_stored: Boolean,
+    /// number_bits is either number_bits_u or number_bits_v from CompressedNurbs
     pub multiplicity: Option<UnsignedIntegerWithVariableBitNumber>,
 }
 impl CompressedMultiplicitiesV {
@@ -17212,6 +17290,7 @@ impl CompressedKnot {
 pub struct CompressedKnotsU {
     pub is_unknown_form: Boolean,
     pub is_pseudo_uniform: Option<Boolean>,
+    /// https://github.com/pdf-association/pdf-issues/issues/692#issuecomment-3874233557
     pub number_bit_parameter: UnsignedIntegerWithVariableBitNumber,
     pub compressed_knots: Vec<CompressedKnot>,
 }
@@ -17278,6 +17357,7 @@ impl CompressedKnotsU {
 pub struct CompressedKnotsV {
     pub is_unknown_form: Boolean,
     pub is_pseudo_uniform: Option<Boolean>,
+    /// https://github.com/pdf-association/pdf-issues/issues/692#issuecomment-3874233557
     pub number_bit_parameter: UnsignedIntegerWithVariableBitNumber,
     pub compressed_knots: Vec<CompressedKnot>,
 }
@@ -17339,6 +17419,7 @@ impl CompressedKnotsV {
     }
 }
 
+/// https://github.com/pdf-association/pdf-issues/issues/692#issuecomment-3590921789
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct CompressedKnotVectorU {
@@ -17382,6 +17463,7 @@ impl CompressedKnotVectorU {
     }
 }
 
+/// https://github.com/pdf-association/pdf-issues/issues/692#issuecomment-3590921789
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct CompressedKnotVectorV {
@@ -17528,8 +17610,10 @@ pub struct CompressedNurbs {
     pub degree_in_u: UnsignedIntegerWithVariableBitNumber,
     pub degree_in_v: UnsignedIntegerWithVariableBitNumber,
     pub number_stored_knots_in_u: UnsignedIntegerWithVariableBitNumber,
+    /// https://github.com/pdf-association/pdf-issues/issues/663#issuecomment-3590926462
     pub mult_u: Vec<CompressedMultiplicitiesU>,
     pub number_stored_knots_in_v: UnsignedIntegerWithVariableBitNumber,
+    /// https://github.com/pdf-association/pdf-issues/issues/663#issuecomment-3590926462
     pub mult_v: Vec<CompressedMultiplicitiesV>,
     pub is_closed_in_u: Boolean,
     pub is_closed_in_v: Boolean,
@@ -17672,6 +17756,7 @@ impl CompressedNurbs {
     }
 }
 
+/// https://github.com/pdf-association/pdf-issues/issues/666
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, Copy)]
 #[allow(non_camel_case_types)]
 pub struct IsoNurbsTrimCrv {
@@ -17700,6 +17785,7 @@ impl IsoNurbsTrimCrv {
         if compressed_circle_cond {
             compressed_circle = PRC_HCG_Circle::from_reader(rdr, _ctx)?;
         }
+        warn!("IsoNurbsTrimCrv.compressed_line field contains FIXME!");
         let compressed_line_cond = !iso_boundary.value && !is_a_circle.value;
         let mut compressed_line: PRC_HCG_Line = Default::default();
         if compressed_line_cond {
@@ -17840,14 +17926,14 @@ impl PRC_HCG_IsoNurbs {
     ) -> io::Result<Self> {
         trace!("{}PRC_HCG_IsoNurbs::from_reader()", indent::get());
         let _ig = indent::IndentGuard::new();
-        _ctx.compressed_iso_spline = true;
+        _ctx.set_compressed_iso_spline(true);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         assert_eq!(
             PRC_HCG_IsoNurbs,
             PrcCompressedFaceType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id.value);
+        _ctx.push_face_type(id);
         let mut orientation_surface_with_shell: Boolean = Default::default();
         orientation_surface_with_shell = Boolean::from_reader(rdr)?;
         let mut orientation_loop_with_surface: Boolean = Default::default();
@@ -17882,7 +17968,7 @@ impl PRC_HCG_IsoNurbs {
         if loop_vertex3_cond {
             loop_vertex3 = CompressedVertex::from_reader(rdr, _ctx)?;
         }
-        _ctx.compressed_iso_spline = false;
+        _ctx.set_compressed_iso_spline(false);
         _ctx.pop_face_type();
         let rv = Self {
             id,
@@ -17975,15 +18061,9 @@ impl CompressedFace {
         let mut id_type_id: u32 = 0;
         let mut id_concrete: CompressedFace_idConcrete =
             CompressedFace_idConcrete::Invalid(id_type_id);
-        id_type_id = CompressedEntityType::from_reader_and_seek_back(rdr)?.value;
+        id_type_id = CompressedEntityType::from_reader_and_seek_back(rdr)?.value as u32;
         let id_tid: PrcCompressedFaceType = PrcCompressedFaceType::try_from(id_type_id).unwrap();
         id_concrete = match id_tid {
-            PrcCompressedFaceType::PRC_HCG_NewLoop => {
-                CompressedFace_idConcrete::nl(PRC_HCG_NewLoop::from_reader(rdr, _ctx)?)
-            }
-            PrcCompressedFaceType::PRC_HCG_EndLoop => {
-                CompressedFace_idConcrete::el(PRC_HCG_EndLoop::from_reader(rdr, _ctx)?)
-            }
             PrcCompressedFaceType::PRC_HCG_IsoPlane => {
                 CompressedFace_idConcrete::ip(PRC_HCG_IsoPlane::from_reader(rdr, _ctx)?)
             }
@@ -18037,8 +18117,6 @@ impl CompressedFace {
         _ctx: &mut PrcParsingContext,
     ) -> std::io::Result<()> {
         match &self.id_concrete {
-            CompressedFace_idConcrete::nl(x) => &x.to_writer(_w, _ctx)?,
-            CompressedFace_idConcrete::el(x) => &x.to_writer(_w, _ctx)?,
             CompressedFace_idConcrete::ip(x) => &x.to_writer(_w, _ctx)?,
             CompressedFace_idConcrete::icy(x) => &x.to_writer(_w, _ctx)?,
             CompressedFace_idConcrete::it(x) => &x.to_writer(_w, _ctx)?,
@@ -18063,8 +18141,6 @@ impl CompressedFace {
 #[allow(non_camel_case_types)]
 pub enum CompressedFace_idConcrete {
     Invalid(u32),
-    nl(PRC_HCG_NewLoop),
-    el(PRC_HCG_EndLoop),
     ip(PRC_HCG_IsoPlane),
     icy(PRC_HCG_IsoCylinder),
     it(PRC_HCG_IsoTorus),
@@ -18108,7 +18184,7 @@ impl CompressedShell {
         if number_of_faces_cond {
             number_of_faces = NumberOfBitsThenUnsignedInteger::from_reader(rdr)?;
         }
-        _ctx.BrepDataCompress_sum_num_faces += (if !!single_face {
+        _ctx.BrepDataCompress_register_faces(if !!single_face {
             1
         } else {
             number_of_faces.value
@@ -18270,6 +18346,7 @@ impl MultipleCompressedConnex {
 pub struct PRC_TYPE_TOPO_SingleWireBodyCompress {
     pub id: UnsignedInteger,
     pub base: ContentBody,
+    /// guesswork, have not found this assignment documented anywhere, but number_of_bits_to_store_reference is still not set
     pub curve_tolerance: Double,
     pub compressed_curve: CompressedCurve,
 }
@@ -18284,7 +18361,7 @@ impl PRC_TYPE_TOPO_SingleWireBodyCompress {
             indent::get()
         );
         let _ig = indent::IndentGuard::new();
-        _ctx.curve_trimming_face = false;
+        _ctx.set_curve_trimming_face(false);
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         assert_eq!(
@@ -18293,10 +18370,15 @@ impl PRC_TYPE_TOPO_SingleWireBodyCompress {
         );
         let mut base: ContentBody = Default::default();
         base = ContentBody::from_reader(rdr, _ctx)?;
+        warn!("PRC_TYPE_TOPO_SingleWireBodyCompress.curve_tolerance field contains FIXME!");
         let mut curve_tolerance: Double = Default::default();
         curve_tolerance = Double::from_reader(rdr)?;
+        trace!("{}curve_tolerance: {:?}", indent::get(), &curve_tolerance);
+        _ctx.brep_data_compressed_tolerance = curve_tolerance.value;
+        _ctx.nurbs_tolerance = _ctx.brep_data_compressed_tolerance / 5.0;
         let mut compressed_curve: CompressedCurve = Default::default();
         compressed_curve = CompressedCurve::from_reader(rdr, _ctx)?;
+        UnsignedInteger::search_and_seek_back(rdr, PrcType::PRC_TYPE_TOPO_Context as u32, 9999, 5);
         let _ = _ctx
             .se
             .eval(rdr, PRC_TYPE_TOPO_SingleWireBodyCompress as u32, false, 0);
@@ -18338,6 +18420,9 @@ pub struct PRC_TYPE_TOPO_BrepDataCompress {
     pub single: Option<CompressedShell>,
     pub multi: Option<MultipleCompressedConnex>,
     pub base_topology_data: Vec<BaseTopology>,
+    /// this field is made-up and should be removed...
+    /// https://github.com/pdf-association/pdf-issues/issues/752
+    pub placeholder5b: Option<[Boolean; 5]>,
 }
 impl PRC_TYPE_TOPO_BrepDataCompress {
     #[allow(unused_assignments)]
@@ -18350,8 +18435,6 @@ impl PRC_TYPE_TOPO_BrepDataCompress {
             indent::get()
         );
         let _ig = indent::IndentGuard::new();
-        _ctx.curve_trimming_face = true;
-        _ctx.BrepDataCompress_sum_num_faces = 0;
         _ctx.BrepDataCompress_enter();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
@@ -18393,10 +18476,18 @@ impl PRC_TYPE_TOPO_BrepDataCompress {
             multi = MultipleCompressedConnex::from_reader(rdr, _ctx)?;
         }
         let mut base_topology_data: Vec<BaseTopology> =
-            Vec::with_capacity((_ctx.BrepDataCompress_sum_num_faces) as usize);
-        for _i in 0..(_ctx.BrepDataCompress_sum_num_faces) {
+            Vec::with_capacity((_ctx.BrepDataCompress_get_sum_num_faces()) as usize);
+        for _i in 0..(_ctx.BrepDataCompress_get_sum_num_faces()) {
             let element = BaseTopology::from_reader(rdr, _ctx)?;
             base_topology_data.push(element);
+        }
+        warn!("PRC_TYPE_TOPO_BrepDataCompress.placeholder5b field contains FIXME!");
+        let placeholder5b_cond = _ctx.BrepDataCompress_get_sum_num_faces() == 0;
+        let mut placeholder5b: [Boolean; 5] = [Default::default(); 5];
+        if placeholder5b_cond {
+            for i in 0..5 {
+                placeholder5b[i as usize] = Boolean::from_reader(rdr)?;
+            }
         }
         let _ = _ctx
             .se
@@ -18413,6 +18504,11 @@ impl PRC_TYPE_TOPO_BrepDataCompress {
             single: if single_cond { Some(single) } else { None },
             multi: if multi_cond { Some(multi) } else { None },
             base_topology_data,
+            placeholder5b: if placeholder5b_cond {
+                Some(placeholder5b)
+            } else {
+                None
+            },
         };
         Ok(rv)
     }
@@ -18449,6 +18545,12 @@ impl PRC_TYPE_TOPO_BrepDataCompress {
         for i in &self.base_topology_data {
             i.to_writer(_w, _ctx)?;
         }
+        let placeholder5b = self.placeholder5b.clone();
+        if _ctx.BrepDataCompress_get_sum_num_faces() == 0 {
+            for i in self.placeholder5b.as_ref().unwrap() {
+                i.to_writer(_w)?;
+            }
+        }
         Ok(())
     }
 }
@@ -18469,7 +18571,7 @@ impl PRC_TYPE_TOPO_Body {
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_TOPO_Body_idConcrete =
             PRC_TYPE_TOPO_Body_idConcrete::Invalid(id_type_id);
-        id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value;
+        id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
         let id_tid: PrcType = PrcType::try_from(id_type_id).unwrap();
         id_concrete = match id_tid {
             PrcType::PRC_TYPE_TOPO_SingleWireBody => PRC_TYPE_TOPO_Body_idConcrete::topo_swb(
@@ -18527,6 +18629,7 @@ impl Default for PRC_TYPE_TOPO_Body_idConcrete {
     }
 }
 
+/// https://github.com/pdf-association/pdf-issues/issues/532
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_Context {
@@ -18646,6 +18749,7 @@ impl PRC_TYPE_TOPO_Context {
 #[allow(non_camel_case_types)]
 pub struct FileStructureExactGeometry {
     pub topo_context_count: UnsignedInteger,
+    /// https://github.com/pdf-association/pdf-issues/issues/532
     pub topo_contexts: Vec<PRC_TYPE_TOPO_Context>,
 }
 impl FileStructureExactGeometry {
@@ -18658,12 +18762,6 @@ impl FileStructureExactGeometry {
         let _ig = indent::IndentGuard::new();
         let mut topo_context_count: UnsignedInteger = Default::default();
         topo_context_count = UnsignedInteger::from_reader(rdr)?;
-        UnsignedInteger::search_and_seek_back(
-            rdr,
-            PrcType::PRC_TYPE_TOPO_Context as u32,
-            9999,
-            topo_context_count.value,
-        );
         let mut topo_contexts: Vec<PRC_TYPE_TOPO_Context> =
             Vec::with_capacity((topo_context_count.value) as usize);
         for _i in 0..(topo_context_count.value) {
@@ -18691,6 +18789,7 @@ impl FileStructureExactGeometry {
     }
 }
 
+/// Geometry: all exact geometry and topology data of the leaf entities of the tree (representation items).
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_ASM_FileStructureGeometry {

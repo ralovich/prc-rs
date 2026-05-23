@@ -9,7 +9,7 @@
 #![allow(unused)]
 
 use crate::constants::*;
-use crate::prc_double;
+use crate::{indent, prc_double};
 use crate::prc_gen::*;
 use bitstream_io::{BitRead, BitReader, BitWrite};
 use byteorder::{LittleEndian, ReadBytesExt};
@@ -21,7 +21,7 @@ use crate::constants;
 use crate::constants::PrcCompressedFaceType::PRC_HCG_NewLoop;
 use crate::decompress::decompress;
 use crate::function;
-use crate::prc_builtin::CompressedEntityTypeKind::{ComprCurv, ComprFace};
+//use crate::prc_builtin::CompressedEntityTypeKind::{ComprCurv, ComprFace};
 use crate::prc_builtin::{Boolean, CompressedEntityType, UnsignedIntegerWithVariableBitNumber};
 use crate::prc_gen::{AnaFaceTrimLoop, CompressedMultiplicitiesU, CompressedMultiplicitiesV};
 use log::{debug, info, trace, warn};
@@ -38,15 +38,19 @@ impl AnaFaceTrimLoop {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("AnaFaceTrimLoop::from_reader_while_loop()");
+        trace!("{}AnaFaceTrimLoop::from_reader_while_loop()", indent::get());
+        let _ig = indent::IndentGuard::new();
         let mut loop_surface_orientation: Boolean = Default::default();
-        let mut curve_type: u32 = PrcCompressedFaceType::PRC_HCG_NewLoop as u32;
+        let mut curve_type: u8 = PrcCompressedFaceType::PRC_HCG_NewLoop as u8;
         let mut curves: Vec<RefOrCompressedCurve> = Vec::new();
 
+        // TODO: compute: number_of_loop, number_of_curves
+
         // TODO: is this enough, or it should be curve_type_tmp.is_PRC_HCG_NewLoop()?
-        while curve_type == PrcCompressedFaceType::PRC_HCG_NewLoop as u32 {
+        while curve_type == PrcCompressedFaceType::PRC_HCG_NewLoop as u8 {
             _ctx.AnaFaceTrimLoop_start_new_loop();
             loop_surface_orientation = Boolean::from_reader(rdr)?;
+            debug!("{}loop_surface_orientation: {:?}", indent::get(), loop_surface_orientation.value);
             loop {
                 //let element = RefOrCompressedCurve::from_reader(rdr, _ctx)?;
                 // open coding RefOrCompressedCurve::from_reader()...
@@ -55,7 +59,7 @@ impl AnaFaceTrimLoop {
                 if curve.curve_is_not_already_stored.value {
                     let curve_type_tmp = CompressedEntityType::from_reader_and_seek_back(rdr)?;
                     //curve_type = CompressedEntityType::from_reader_and_seek_back(rdr)?.value;
-                    trace!("{:?}", curve_type_tmp);
+                    trace!("{}{:?}", indent::get(), curve_type_tmp);
                     //if (curve_type == PrcCompressedFaceType::PRC_HCG_NewLoop as u32) || (curve_type == PrcCompressedFaceType::PRC_HCG_EndLoop as u32) {
                     if curve_type_tmp.is_PRC_HCG_NewLoop() || curve_type_tmp.is_PRC_HCG_EndLoop() {
                         curve_type = CompressedEntityType::from_reader(rdr)?.value;

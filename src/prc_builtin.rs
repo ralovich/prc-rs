@@ -5,6 +5,7 @@
 // SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026.
 // All rights reserved.
 
+#![debugger_visualizer(gdb_script_file = "gdb_debugger_visualizer_prc.py")]
 #![allow(unreachable_code)]
 #![allow(unused)]
 
@@ -19,73 +20,23 @@ use crate::constants;
 use crate::decompress::decompress;
 use crate::function;
 use crate::indent;
-use crate::prc_builtin::CompressedEntityTypeKind::{ComprCurv, ComprFace};
+//use crate::prc_builtin::CompressedEntityTypeKind::{ComprCurv, ComprFace};
 use crate::prc_gen::{CompressedMultiplicitiesU, CompressedMultiplicitiesV};
-use log::{debug, info, trace, warn};
+use log::{debug, error, info, trace, warn};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::io;
-use std::io::{/*Cursor,*/ Read, Seek, SeekFrom};
+use std::io::{Cursor, Read, Seek, SeekFrom};
 
 pub fn have_bbox(bounding_box_behavior: i8) -> bool {
     let bf = PrcBodyBoundingBoxBehaviorBitField::from_bytes([bounding_box_behavior as u8]);
     bf.PRC_BODY_BBOX_Evaluation() || bf.PRC_BODY_BBOX_Precise()
 }
 
-/// https://github.com/pdf-association/pdf-issues/issues/705#issuecomment-3680110465
-pub fn is_an_iso_face(type_id: u32) -> bool {
-    use PrcCompressedFaceType::*;
-    match type_id.try_into() {
-        Ok(PRC_HCG_IsoPlane) => true,
-        Ok(PRC_HCG_IsoCylinder) => true,
-        Ok(PRC_HCG_IsoTorus) => true,
-        Ok(PRC_HCG_IsoSphere) => true,
-        Ok(PRC_HCG_IsoCone) => true,
-        Ok(PRC_HCG_IsoNurbs) => true,
-        Ok(PRC_HCG_NewLoop)
-        | Ok(PRC_HCG_EndLoop)
-        | Ok(PRC_HCG_AnaPlane)
-        | Ok(PRC_HCG_AnaCylinder)
-        | Ok(PRC_HCG_AnaTorus)
-        | Ok(PRC_HCG_AnaSphere)
-        | Ok(PRC_HCG_AnaCone)
-        | Ok(PRC_HCG_AnaNurbs)
-        | Ok(PRC_HCG_AnaGenericFace) => false,
-        _ => panic!("Cannot tell if ISO face? (type_id: {})", type_id),
-    }
-    // match type_id {
-    //     #[allow(non_upper_case_globals)]
-    //     ((PRC_HCG_IsoPlane as u32)..(PRC_HCG_IsoNurbs as u32)) | PrcCompressedFaceType::PRC_HCG_IsoCylinder | PrcCompressedFaceType::PRC_HCG_IsoTorus | PrcCompressedFaceType::PRC_HCG_IsoSphere | PRC_HCG_IsoCone | PRC_HCG_IsoNurbs => true,
-    //     #[allow(non_upper_case_globals)]
-    //     PRC_HCG_AnaPlane | PRC_HCG_AnaCylinder | PRC_HCG_AnaTorus | PRC_HCG_AnaSphere | PRC_HCG_AnaCone | PRC_HCG_AnaNurbs | PRC_HCG_AnaGenericFace => false,
-    //     _ => panic!("Cannot tell if ISO face?")
-    // }
-}
 
 fn max(i: i32, j: i32, k: i32) -> i32 {
     std::cmp::max(std::cmp::max(i, j), k)
-}
-
-/// See ContentCompressedFace in spec.
-///
-/// Vertex loops are used to represent a loop consisting of a single
-/// vertex, such as might exist on the apex of a cone, or a sphere
-/// touching a plane. They are represented by a degenerate line which
-/// has identical start and end vertices.
-pub fn all_loops_are_vertex_loops() -> bool {
-    // TODO
-    warn!("FIXME: all_loops_are_vertex_loops: not implemented yet");
-
-    // from https://github.com/pdf-association/pdf-issues/issues/696#issuecomment-3599474152
-    // Which means that ALL the loops in this array of loops are degenerate lines (a line with two
-    // points that are the same with precision/tolerance), the surface type is PRC_HCG_AnaTorus and
-    // is_trimmed is TRUE.
-
-    // if (start-end).len() < tol {
-    //     return true;
-    // }
-    return false;
 }
 
 /// Print info about a Vec<T> without printing all elements.
@@ -762,11 +713,16 @@ struct IntegerWithVariableBitNumber {
 }
 impl IntegerWithVariableBitNumber {
     pub fn from_reader<R: BitRead>(r: &mut R, num_bits: u32) -> io::Result<Self> {
-        assert!(num_bits > 1);
+        assert!(num_bits >= 1);
         assert!(num_bits < 31);
 
         let is_neg = r.read_bit()?;
-        let ui = UnsignedIntegerWithVariableBitNumber::from_reader(r, num_bits - 1)?.value;
+        let ui;
+        if num_bits == 1 {
+            ui = 0;
+        } else {
+            ui = UnsignedIntegerWithVariableBitNumber::from_reader(r, num_bits - 1)?.value;
+        }
         let value = if !is_neg { ui as i32 } else { -(ui as i32) };
 
         Ok(Self { value })
@@ -812,30 +768,30 @@ impl fmt::Debug for NumberOfBitsThenUnsignedInteger {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq /*, TryFromPrimitive*/)]
-#[allow(non_camel_case_types)]
-//#[repr(u32)]
-pub enum CompressedEntityTypeKind {
-    Invalid(u32),
-    ComprCurv(PrcCompressedCurveType),
-    ComprFace(PrcCompressedFaceType),
-}
-impl Default for CompressedEntityTypeKind {
-    fn default() -> Self {
-        CompressedEntityTypeKind::Invalid(u32::MAX)
-    }
-}
-impl fmt::Display for CompressedEntityTypeKind {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
+// #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq /*, TryFromPrimitive*/)]
+// #[allow(non_camel_case_types)]
+// //#[repr(u32)]
+// pub enum CompressedEntityTypeKind {
+//     Invalid(u32),
+//     ComprCurv(PrcCompressedCurveType),
+//     ComprFace(PrcCompressedFaceType),
+// }
+// impl Default for CompressedEntityTypeKind {
+//     fn default() -> Self {
+//         CompressedEntityTypeKind::Invalid(u32::MAX)
+//     }
+// }
+// impl fmt::Display for CompressedEntityTypeKind {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         write!(f, "{:?}", self)
+//     }
+// }
 
 #[derive(Serialize, Deserialize, Default, Clone, Copy, PartialEq, Eq)]
 pub struct CompressedEntityType {
-    pub value: u32,
+    pub value: u8,
     pub is_a_curve: bool,
-    pub aid: CompressedEntityTypeKind, // NOT serialized
+    //pub aid: CompressedEntityTypeKind, // NOT serialized
 }
 impl CompressedEntityType {
     pub fn from_reader_and_seek_back<
@@ -853,54 +809,64 @@ impl CompressedEntityType {
     pub fn from_reader<R: BitRead>(rdr: &mut R) -> io::Result<Self> {
         trace!("{}CompressedEntityType::from_reader()", indent::get());
         let is_a_curve = rdr.read_bit()?;
-        let typev: u32;
-        let e: CompressedEntityTypeKind;
+        let typev;
+        //let e: CompressedEntityTypeKind;
         if is_a_curve {
-            match UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 2)?.value {
+            let x2 = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 2)?.value;
+            match x2 {
                 0 => {
-                    typev = PrcCompressedCurveType::PRC_HCG_Line as u32;
-                    e = ComprCurv(PrcCompressedCurveType::PRC_HCG_Line)
+                    typev = PrcCompressedCurveType::PRC_HCG_Line as u8;
+                    //e = ComprCurv(PrcCompressedCurveType::PRC_HCG_Line)
                 }
                 1 => {
-                    typev = PrcCompressedCurveType::PRC_HCG_Circle as u32;
-                    e = ComprCurv(PrcCompressedCurveType::PRC_HCG_Circle)
+                    typev = PrcCompressedCurveType::PRC_HCG_Circle as u8;
+                    //e = ComprCurv(PrcCompressedCurveType::PRC_HCG_Circle)
                 }
                 2 => {
-                    typev = PrcCompressedCurveType::PRC_HCG_BSplineHermiteCurve as u32;
-                    e = ComprCurv(PrcCompressedCurveType::PRC_HCG_BSplineHermiteCurve)
+                    typev = PrcCompressedCurveType::PRC_HCG_BSplineHermiteCurve as u8;
+                    //e = ComprCurv(PrcCompressedCurveType::PRC_HCG_BSplineHermiteCurve)
                 }
-                3 => match UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 2)?.value {
-                    0 => {
-                        typev = PrcCompressedCurveType::PRC_HCG_Ellipse as u32;
-                        e = ComprCurv(PrcCompressedCurveType::PRC_HCG_Ellipse)
+                3 => {
+                    let x4 = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 2)?.value;
+                    match x4 {
+                        0 => {
+                            typev = PrcCompressedCurveType::PRC_HCG_Ellipse as u8;
+                            //e = ComprCurv(PrcCompressedCurveType::PRC_HCG_Ellipse)
+                        }
+                        1 => {
+                            typev = PrcCompressedCurveType::PRC_HCG_CompositeCurve as u8;
+                            //e = ComprCurv(PrcCompressedCurveType::PRC_HCG_CompositeCurve)
+                        }
+                        _ => {
+                            return Err(std::io::Error::new(
+                                std::io::ErrorKind::Other,
+                                format!(
+                                    "CompressedEntityType: unknown 4-bit curve pattern ({})!",
+                                    x2*4+x4
+                                ),
+                            ));
+                        }
                     }
-                    1 => {
-                        typev = PrcCompressedCurveType::PRC_HCG_CompositeCurve as u32;
-                        e = ComprCurv(PrcCompressedCurveType::PRC_HCG_CompositeCurve)
-                    }
-                    _ => {
-                        return Err(std::io::Error::new(
-                            std::io::ErrorKind::Other,
-                            "CompressedEntityType: unknown B pattern!",
-                        ));
-                    }
-                },
+                }
                 _ => {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::Other,
-                        "CompressedEntityType: unknown A pattern!",
+                        format!(
+                            "CompressedEntityType: unknown 2-bit curve pattern ({})!",
+                            x2
+                        ),
                     ));
                 }
             };
         } else {
-            typev = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 4)?.value;
-            e = ComprFace(PrcCompressedFaceType::try_from(typev).unwrap());
+            typev = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 4)?.value as u8;
+            //e = ComprFace(PrcCompressedFaceType::try_from(typev).unwrap());
         }
         //dbg!(&e);
         let rv = CompressedEntityType {
             value: typev,
             is_a_curve,
-            aid: e,
+            //aid: e,
         };
         //dbg!(rv);
         Ok(rv)
@@ -910,17 +876,17 @@ impl CompressedEntityType {
         if self.is_a_curve {
             panic!("not implemented yet")
         } else {
-            UnsignedIntegerWithVariableBitNumber { value: self.value }.to_writer(w, 4)?;
+            UnsignedIntegerWithVariableBitNumber { value: self.value as u32 }.to_writer(w, 4)?;
         }
         Ok(())
     }
     #[allow(non_snake_case)]
     pub fn is_PRC_HCG_NewLoop(&self) -> bool {
-        !self.is_a_curve && self.value == PrcCompressedFaceType::PRC_HCG_NewLoop as u32
+        !self.is_a_curve && self.value == PrcCompressedFaceType::PRC_HCG_NewLoop as u8
     }
     #[allow(non_snake_case)]
     pub fn is_PRC_HCG_EndLoop(&self) -> bool {
-        !self.is_a_curve && self.value == PrcCompressedFaceType::PRC_HCG_EndLoop as u32
+        !self.is_a_curve && self.value == PrcCompressedFaceType::PRC_HCG_EndLoop as u8
     }
 }
 impl fmt::Debug for CompressedEntityType {
@@ -929,15 +895,15 @@ impl fmt::Debug for CompressedEntityType {
             let e = PrcCompressedFaceType::try_from(self.value).unwrap();
             write!(
                 f,
-                "CompressedEntityType(value: {} ({}), is_a_curve: {}, {})",
-                e, e as u32, self.is_a_curve, self.aid
+                "CompressedEntityType(value: {} ({}), is_a_curve: {})",
+                e, e as u32, self.is_a_curve, //self.aid
             )
         } else {
             let e = PrcCompressedCurveType::try_from(self.value).unwrap();
             write!(
                 f,
-                "CompressedEntityType(value: {} ({}), is_a_curve: {}, {})",
-                e, e as u32, self.is_a_curve, self.aid
+                "CompressedEntityType(value: {} ({}), is_a_curve: {})",
+                e, e as u32, self.is_a_curve, //self.aid
             )
         }
     }
@@ -1228,18 +1194,18 @@ impl CompressedIndiceArray {
         let mut c_bit_count = pc_array[0];
         let mut pi_array: Vec<i32> = Vec::with_capacity(num_elements);
         pi_array.push(
-            IntegerWithVariableBitNumber::from_reader(r, c_bit_count as u32)
-                .unwrap()
+            IntegerWithVariableBitNumber::from_reader(r, c_bit_count as u32)?
                 .value,
         );
         for i in 1..diff_num_bits_used_to_store_ints.len() {
             pc_array.push(diff_num_bits_used_to_store_ints[i] as i8);
 
             c_bit_count += pc_array[i];
-            let ival = IntegerWithVariableBitNumber::from_reader(r, c_bit_count as u32)
-                .unwrap()
+            let ival = IntegerWithVariableBitNumber::from_reader(r, c_bit_count as u32)?
                 .value;
-            pi_array.push(ival + pi_array[i - 1]);
+            let index = ival + pi_array[i - 1];
+            assert!(index >= 0);
+            pi_array.push(index);
         }
 
         if false {
@@ -1339,6 +1305,7 @@ impl DoubleWithVariableBitNumber {
         num_bits: u32,
         tolerance: f64,
     ) -> io::Result<Self> {
+        assert!(num_bits > 0);
         let neg = _rdr.read_bit()?;
 
         let mut u_temp_value = 0;
@@ -1414,6 +1381,7 @@ impl Point3DWithVariableBitNumber {
         num_bits: u32,
         tolerance: f64,
     ) -> io::Result<Self> {
+        trace!("{}Point3DWithVariableBitNumber::from_reader()", indent::get());
         assert!(num_bits > 1);
         assert!(num_bits <= 30);
         //assert!(tolerance > 0.00000001);
@@ -1480,6 +1448,7 @@ impl CompressedPoint {
         //num_bits: u32,
         tolerance: f64,
     ) -> io::Result<Self> {
+        trace!("{}CompressedPoint::from_reader()", indent::get());
         //assert!(num_bits > 1);
         //assert!(tolerance > 0.00000001);
         assert!(tolerance > 0.0);
@@ -1580,8 +1549,9 @@ impl fmt::Debug for UncompressedBoolArray {
     }
 }
 
+/// TODO: consider auto-generating this struct
 #[derive(Debug, PartialEq, Eq)]
-pub struct PRCHeader {
+pub struct FileHeader {
     pub verread: u32,
     pub verauth: u32,
     pub uuid0: u32,
@@ -1592,13 +1562,12 @@ pub struct PRCHeader {
     pub uuida1: u32,
     pub uuida2: u32,
     pub uuida3: u32,
-    pub num_file_struts: u32,
-    pub fsi: Vec<PRCFileStructureInformation>,
+    pub fsi: Vec<FileStructureDescription>,
     pub mf: Vec<u8>,
     pub uncompr_files: Vec<Vec<u8>>,
 }
 
-impl PRCHeader {
+impl FileHeader {
     pub fn from_reader(mut rdr: impl Read + Seek, file_size_bytes: usize) -> io::Result<Self> {
         debug_time!("{:?}", "PRCHeader::from_reader");
         let mut magic: [u8; 3] = [0; 3];
@@ -1617,23 +1586,21 @@ impl PRCHeader {
         let uuida1 = rdr.read_u32::<LittleEndian>()?;
         let uuida2 = rdr.read_u32::<LittleEndian>()?;
         let uuida3 = rdr.read_u32::<LittleEndian>()?;
-        let num_file_struts = rdr.read_u32::<LittleEndian>()?;
+        let num_file_structs = rdr.read_u32::<LittleEndian>()?;
 
         info!("Version for reading: {}", verread);
         info!("Authoring version: {}", verauth);
-        info!("Number of file sections: {}", num_file_struts);
+        info!("Number of file sections: {}", num_file_structs);
 
-        let mut fsi = Vec::new();
-        for i in 0..num_file_struts {
-            let fsii = PRCFileStructureInformation::from_reader(&mut rdr);
-            let b = fsii.as_ref();
-            debug!("fsi {}: {}", i, b.unwrap().offsets.len());
-            assert_eq!(
-                fsii.as_ref().unwrap().offsets.len(),
-                PrcSectionKind::ExtraGeometry as usize + 2
-            );
-            fsi.push(fsii?);
+        let mut fsi = Vec::with_capacity(num_file_structs as usize);
+        let mut sum_files = 0;
+        for i in 0..num_file_structs {
+            let fsii = FileStructureDescription::from_reader(&mut rdr)?;
+            trace!("fsi {}: files: {}", i, fsii.header.files.len());
+            sum_files += fsii.header.files.len();
+            fsi.push(fsii);
         }
+        debug!("sum files: {}", sum_files);
 
         let mf_start_offset = rdr.read_u32::<LittleEndian>()?;
         let mf_end_offset = rdr.read_u32::<LittleEndian>()?;
@@ -1641,7 +1608,7 @@ impl PRCHeader {
 
         //let file_size = rdr.stream_len();
         let mf_size = mf_end_offset - mf_start_offset;
-        debug!(
+        trace!(
             "mf compressed offset: [{},{}], size: {}",
             mf_start_offset, mf_end_offset, mf_size
         );
@@ -1649,7 +1616,7 @@ impl PRCHeader {
         let mut uncompr_files: Vec<Vec<u8>> = Vec::with_capacity(num_uncompr_files as usize);
         for i in 0..num_uncompr_files {
             let num_bytes = rdr.read_u32::<LittleEndian>()?;
-            debug!("uncompressed file {}: {}", i, num_bytes);
+            trace!("uncompressed file {}: {} bytes", i, num_bytes);
             let mut bytes: Vec<u8> = vec![0; num_bytes as usize];
             rdr.read_exact(&mut bytes)?;
             uncompr_files.push(bytes);
@@ -1660,25 +1627,22 @@ impl PRCHeader {
         rdr.read_exact(&mut mf_compr)?;
         //let mf0 = inflate_bytes(&mf_compr);
         let mf = decompress(&mf_compr).unwrap();
-        debug!("mf uncompressed {} -> {}", mf_compr.len(), mf.len());
+        trace!("mf uncompressed {} -> {}", mf_compr.len(), mf.len());
 
         let mut compressed_sections: Vec<Vec<Vec<u8>>> =
-            Vec::with_capacity(num_file_struts as usize);
+            Vec::with_capacity(num_file_structs as usize);
         compressed_sections.resize(
-            num_file_struts as usize,
+            num_file_structs as usize,
             Vec::with_capacity(PrcSectionKind::ExtraGeometry as usize + 1),
         );
-        for i in 0..num_file_struts as usize {
-            fsi[i]
-                .sections
-                .resize(PrcSectionKind::ExtraGeometry as usize + 1, Vec::new());
+        for i in 0..num_file_structs as usize {
             compressed_sections[i].resize(PrcSectionKind::ExtraGeometry as usize + 1, Vec::new());
             for j in 1..fsi[i as usize].offsets.len() {
                 let start_offset = fsi[i as usize].offsets[j];
                 let end_offset;
                 if (j + 1) < fsi[i as usize].offsets.len() {
                     end_offset = fsi[i as usize].offsets[j + 1];
-                } else if (i + 1) < num_file_struts as usize {
+                } else if (i + 1) < num_file_structs as usize {
                     end_offset = fsi[i as usize + 1].offsets[0];
                 } else {
                     end_offset = std::cmp::min(mf_start_offset, file_size_bytes as u32);
@@ -1701,10 +1665,10 @@ impl PRCHeader {
             for (i, file_sections) in compressed_sections.iter().enumerate() {
                 for (j, section_compressed) in file_sections.iter().enumerate() {
                     let section = decompress(&section_compressed).unwrap();
-                    debug!(
-                        "{}/{}: section uncompressed {} -> {}",
+                    trace!(
+                        "{}/{:?}: section uncompressed {} -> {}",
                         i,
-                        j,
+                        PrcSectionKind::try_from(j as u8).unwrap(),
                         section_compressed.len(),
                         section.len()
                     );
@@ -1737,7 +1701,7 @@ impl PRCHeader {
             elapsed.as_micros() as f64 / 1000.0
         );
 
-        Ok(PRCHeader {
+        Ok(FileHeader {
             verread,
             verauth,
             uuid0,
@@ -1748,7 +1712,6 @@ impl PRCHeader {
             uuida1,
             uuida2,
             uuida3,
-            num_file_struts,
             fsi,
             mf,
             uncompr_files,
@@ -1756,42 +1719,120 @@ impl PRCHeader {
     }
 }
 
+/// TODO: consider auto-generating this struct
 #[derive(Debug, PartialEq, Eq)]
-pub struct PRCFileStructureInformation {
+pub struct FileStructureDescription {
     pub uuid0: u32,
     pub uuid1: u32,
     pub uuid2: u32,
     pub uuid3: u32,
-
-    pub reserved: u32,
     pub offsets: Vec<u32>,
+    pub header: FileStructureHeader,
     pub sections: Vec<Vec<u8>>,
 }
 
-impl PRCFileStructureInformation {
-    fn from_reader(mut rdr: impl Read) -> io::Result<Self> {
+impl FileStructureDescription {
+    fn from_reader(mut rdr: impl Read + Seek) -> io::Result<Self> {
         let uuid0 = rdr.read_u32::<LittleEndian>()?;
         let uuid1 = rdr.read_u32::<LittleEndian>()?;
         let uuid2 = rdr.read_u32::<LittleEndian>()?;
         let uuid3 = rdr.read_u32::<LittleEndian>()?;
-        let reserved = rdr.read_u32::<LittleEndian>()?;
+        let _reserved = rdr.read_u32::<LittleEndian>()?;
         let num_offsets = rdr.read_u32::<LittleEndian>()?;
         let mut offsets = Vec::new();
         for _n in 0..num_offsets {
             let tmp = rdr.read_u32::<LittleEndian>()?;
             offsets.push(tmp);
         }
-        let sections = Vec::new();
+        if offsets.len() != PrcSectionKind::ExtraGeometry as usize + 2 {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, format!("{} sections are required", PrcSectionKind::ExtraGeometry as usize + 2)));
+        }
 
-        Ok(PRCFileStructureInformation {
+        // parse uncompressed fsi header
+        let header_start_offset = offsets[0];
+        let header_end_offset = offsets[1];
+        let size = header_end_offset - header_start_offset;
+        //debug!("{} {} [{},{}] {}", i, j, start_offset, end_offset, size);
+        let mut header_bytes: Vec<u8> = vec![0; size as usize];
+        let pos = rdr.stream_position();
+        rdr.seek(std::io::SeekFrom::Start(offsets[0] as u64))?;
+        rdr.read_exact(&mut header_bytes)?;
+        rdr.seek(std::io::SeekFrom::Start(pos?))?;
+        let mut mem_reader: Cursor<Vec<u8>> = Cursor::new(header_bytes);
+        let header = FileStructureHeader::from_reader(&mut mem_reader)?;
+
+        let mut sections = Vec::with_capacity(PrcSectionKind::ExtraGeometry as usize + 1);
+        sections.resize(PrcSectionKind::ExtraGeometry as usize + 1, Vec::new());
+
+        Ok(FileStructureDescription {
             uuid0,
             uuid1,
             uuid2,
             uuid3,
-            reserved,
             offsets,
+            header,
             sections,
         })
+    }
+}
+
+/// TODO: consider auto-generating this struct
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq)]
+pub struct FileStructureHeader {
+    pub verread: u32,
+    pub verauth: u32,
+    pub uuid0: u32,
+    pub uuid1: u32,
+    pub uuid2: u32,
+    pub uuid3: u32,
+    pub uuida0: u32,
+    pub uuida1: u32,
+    pub uuida2: u32,
+    pub uuida3: u32,
+    pub files: Vec<Vec<u8>>,
+}
+impl FileStructureHeader {
+    fn from_reader(mut rdr: impl Read) -> io::Result<Self> {
+        let mut magic: [u8; 3] = [0; 3];
+        rdr.read_exact(&mut magic)?;
+        if magic[0] != b'P' || magic[1] != b'R' || magic[2] != b'C' {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "invalid magic"));
+        }
+        let verread = rdr.read_u32::<LittleEndian>()?;
+        let verauth = rdr.read_u32::<LittleEndian>()?;
+        let uuid0 = rdr.read_u32::<LittleEndian>()?;
+        let uuid1 = rdr.read_u32::<LittleEndian>()?;
+        let uuid2 = rdr.read_u32::<LittleEndian>()?;
+        let uuid3 = rdr.read_u32::<LittleEndian>()?;
+        let uuida0 = rdr.read_u32::<LittleEndian>()?;
+        let uuida1 = rdr.read_u32::<LittleEndian>()?;
+        let uuida2 = rdr.read_u32::<LittleEndian>()?;
+        let uuida3 = rdr.read_u32::<LittleEndian>()?;
+        let num_files = rdr.read_u32::<LittleEndian>()?;
+        let mut files = Vec::with_capacity(num_files as usize);
+        files.resize(num_files as usize, Vec::new());
+        for i in 0..num_files {
+            let file = UncompressedFile::from_reader(&mut rdr)?;
+            files[i as usize] = file.bytes.clone();
+        }
+        //trace!("{}files: {}", indent::get(), files.len());
+
+        Ok(Self{verread,verauth,uuid0,uuid1,uuid2,uuid3,uuida0,uuida1,uuida2,uuida3,files})
+    }
+}
+
+/// TODO: consider auto-generating this struct
+#[derive(Debug, PartialEq, Eq)]
+pub struct UncompressedFile {
+    pub num_bytes: u32, // UncompressedUnsignedInteger
+    pub bytes: Vec<u8>,
+}
+impl UncompressedFile {
+    fn from_reader(mut rdr: impl Read) -> io::Result<Self> {
+        let num_bytes = rdr.read_u32::<LittleEndian>()?;
+        let mut bytes = vec![0; num_bytes as usize];
+        rdr.read_exact(&mut bytes)?;
+        Ok(Self { num_bytes, bytes })
     }
 }
 

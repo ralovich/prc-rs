@@ -31,6 +31,7 @@ impl Tess3dCompressed {
     /// reconstruct vertices
     pub fn get_points(
         &self,
+        origin_array: &[FloatAsBytes; 3],
         point_array: &Vec<i32>,
         tolerance: f64,
         point_is_reference_array: &Vec<bool>,
@@ -40,17 +41,24 @@ impl Tess3dCompressed {
     ) {
         debug_time!("Tess3dCompress::get_points");
         assert_eq!(point_array.len() % 3, 0);
+        let orig = [origin_array[0].value, origin_array[1].value, origin_array[2].value];
         let mut raw_verts: Vec<[f64; 3]> = Vec::with_capacity(point_array.len() / 3);
         for i in 0..point_array.len() / 3 {
-            let x: f64 = point_array[i * 3 + 0] as f64 * tolerance;
-            let y: f64 = point_array[i * 3 + 1] as f64 * tolerance;
-            let z: f64 = point_array[i * 3 + 2] as f64 * tolerance;
+            let x: f64 = point_array[i * 3 + 0] as f64 * tolerance + orig[0] as f64;
+            let y: f64 = point_array[i * 3 + 1] as f64 * tolerance + orig[1] as f64;
+            let z: f64 = point_array[i * 3 + 2] as f64 * tolerance + orig[2] as f64;
             let vert: [f64; 3] = [x, y, z];
             //dbg!(v0);
             raw_verts.push(vert);
         }
         assert_eq!(raw_verts.len() * 3, point_array.len());
 
+        // Treatment index is a temporary local set of indexes assisting the progressive 3D
+        // compressed mesh traversal, not stored within the PRC file data structure. Treatment
+        // index is an array of three unsigned integers storing offset indexes. The default
+        // undefined value is -1. The values are updated during mesh traversal to record when the
+        // three vertices of a triangle have been created, decoded or otherwise processed to
+        // determine position, connectivity and attributes.
         struct Triangle {
             vertex_ids: [u32; 3],
         }
@@ -62,6 +70,9 @@ impl Tess3dCompressed {
             warn!("t3dc: case A");
         } else if edge_status_array.len() == 3 * triangle_face_array.len() {
             warn!("t3dc: case B");
+        } else {
+            warn!("t3dc: case unknown!");
+            assert!(false);
         }
 
         // for i in 0..point_array.len()/3 {
@@ -116,6 +127,9 @@ impl Tess3dCompressed {
                 num += 1;
             }
         }
+        if num <= 3 {
+            warn!("Tess3dCompressed::number_of_reference_points {} <= 3, taking UNCOMPRESSED PATH", num);
+        }
         num
     }
     pub fn number_of_triangles(&self, triangle_face_array: &Vec<i32>) -> u32 {
@@ -124,9 +138,11 @@ impl Tess3dCompressed {
     pub fn number_of_faces(&mut self, triangle_face_array: &Vec<i32>) -> u32 {
         debug_time!("Tess3dCompress::number_of_faces");
         if self.num_faces != 0 {
+            debug!("Tess3dCompress::number_of_faces: {}", self.num_faces);
             return self.num_faces as u32;
         }
         if triangle_face_array.is_empty() {
+            debug!("Tess3dCompress::number_of_faces: {}", 0);
             return 0;
         }
         let min_id = triangle_face_array.into_iter().min().unwrap();
@@ -136,6 +152,7 @@ impl Tess3dCompressed {
             min_id, max_id
         );
         self.num_faces = *max_id as u32 + 1;
+        debug!("Tess3dCompress::number_of_faces: {}", self.num_faces);
         self.num_faces
     }
     /// triangle_face_array represents, for each triangle, the index of the face to which it belongs
@@ -204,7 +221,7 @@ impl Tess3dCompressed {
             }
         }
         num_normals = triangle_face_array.len() as u32 * 3;
-        debug!("sum tris: {}", sum_triangles);
+        debug!("sum tris: {}, num_normals: {}", sum_triangles, num_normals);
         return num_normals;
     }
     /// see PRC_TYPE_TESS_3D_Compressed.is_face_planar

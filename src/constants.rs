@@ -15,7 +15,10 @@ use std::mem;
 
 extern crate static_assertions as sa;
 
+#[derive(Debug, TryFromPrimitive)]
+#[repr(u8)]
 pub enum PrcSectionKind {
+    //Header,
     Global,
     Tree,
     Tessellation,
@@ -287,7 +290,7 @@ pub struct PrcBodyBoundingBoxBehaviorBitField {
     unused: modular_bitfield::specifiers::B5,
 }
 
-#[repr(u32)]
+#[repr(u8)]
 #[allow(non_camel_case_types)]
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, Hash, PartialEq, Eq, TryFromPrimitive)]
 pub enum PrcCompressedFaceType {
@@ -314,8 +317,15 @@ impl fmt::Display for PrcCompressedFaceType {
         // fmt::Debug::fmt(self, f)
     }
 }
+impl TryFrom<u32> for PrcCompressedFaceType {
+    type Error = num_enum::TryFromPrimitiveError<Self>;
 
-#[repr(u32)]
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        Self::try_from(value as u8)
+    }
+}
+
+#[repr(u8)]
 #[allow(non_camel_case_types)]
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, Hash, PartialEq, Eq, TryFromPrimitive)]
 pub enum PrcCompressedCurveType {
@@ -330,6 +340,13 @@ impl fmt::Display for PrcCompressedCurveType {
         write!(f, "{:?}", self)
         // or, alternatively:
         // fmt::Debug::fmt(self, f)
+    }
+}
+impl TryFrom<u32> for PrcCompressedCurveType {
+    type Error = num_enum::TryFromPrimitiveError<Self>;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        Self::try_from(value as u8)
     }
 }
 

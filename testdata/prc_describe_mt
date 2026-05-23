@@ -67,6 +67,7 @@ def describe_one_section(_case):
     ver_read = '0'
     ver_auth = '0'
     num_fs = '0'
+    num_uncompr_files = '0'
 
     if sec_id == 0:
         rv = subprocess.run(["ugrep", "-z", 'Version for reading', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
@@ -75,10 +76,14 @@ def describe_one_section(_case):
         ver_auth = rv.stdout.decode('UTF-8').strip().split()[5]
         rv = subprocess.run(["ugrep", "-z", 'Number of file sections', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
         num_fs = rv.stdout.decode('UTF-8').strip().split()[7]
+        rv = subprocess.run(["ugrep", "-z", 'num_uncompr_files', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
+        num_uncompr_files = str(int(num_uncompr_files) + int(rv.stdout.decode('UTF-8').strip().split()[4]))
+        rv = subprocess.run(["ugrep", "-z", 'sum files', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
+        num_uncompr_files = str(int(num_uncompr_files) + int(rv.stdout.decode('UTF-8').strip().split()[5]))
 
     #print('*', end = '', flush = True)
 
-    return (file_path, sec_id, run_time, cmd_rv, ver_read, ver_auth, num_fs)
+    return (file_path, sec_id, run_time, cmd_rv, ver_read, ver_auth, num_fs, num_uncompr_files)
 
 if __name__ == '__main__':
     with open(INPUT, 'r') as file:
@@ -122,27 +127,27 @@ if __name__ == '__main__':
             p.join()
         print('')
 
-        with open('review_summary.txt', 'a') as rs:
+        with open('review_summary.txt', 'w') as rs:
             now = str(datetime.datetime.now())
-            #rs.write(f'\n\n\n\n\n{now}\n')
+            rs.write(f'{now}\n')
             empty = " "
-            print(f"{empty:64}\tverr\tvera\tn_fs\tgl\ttr\tte\tge\tex\tmf\tgl_ms\ttr_ms\tte_ms\tge_ms\tex_ms\tmf_ms")
+            print(f"{empty:64}\tverr\tvera\tn_fs\tn_unc\tgl\ttr\tte\tge\tex\tmf\tgl_ms\ttr_ms\tte_ms\tge_ms\tex_ms\tmf_ms")
             print(now)
             ncases = len(lines)
             stats = {}
             for prc in lines:
                 collected_result = {}
                 for result in results:
-                    (file_path, sec_id, run_time, cmd_rv, ver_read, ver_auth, num_fs) = result
+                    (file_path, sec_id, run_time, cmd_rv, ver_read, ver_auth, num_fs, num_uncompr_files) = result
                     if prc != file_path:
                         continue
                     if not sec_id in stats:
                         stats[sec_id] = 0
                     if cmd_rv == 0:
                         stats[sec_id] += 1
-                    collected_result[sec_id] = (run_time, cmd_rv, ver_read, ver_auth, num_fs)
+                    collected_result[sec_id] = (run_time, cmd_rv, ver_read, ver_auth, num_fs, num_uncompr_files)
                 rs.write(f'{prc:64}\t{collected_result[0][2]}\t{collected_result[0][3]}')
-                print(f'{prc:64}\t{collected_result[0][2]}\t{collected_result[0][3]}\t{collected_result[0][4]}', end='')
+                print(f'{prc:64}\t{collected_result[0][2]}\t{collected_result[0][3]}\t{collected_result[0][4]}\t{collected_result[0][5]}', end='')
                 for i in range(N):
                     #print(f'{collected_result[i][0]:.0f}\t{collected_result[i][1]}\t',end='')
                     print(f'\t{collected_result[i][1]}',end='')

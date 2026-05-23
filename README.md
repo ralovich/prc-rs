@@ -13,7 +13,7 @@
 - [ ] parsing PRC_TYPE_TESS_3D_Compressed: normals (https://github.com/pdf-association/pdf-issues/issues/436, https://github.com/pdf-association/pdf-issues/issues/540)
 - [ ] parsing PRC_TYPE_TESS_3D_Compressed: color data
 - [ ] parsing compressed NURBS
-- [ ] parsing AnaFaceTrimLoop
+- [x] parsing AnaFaceTrimLoop
 - [x] parsing VertexColors
 - [x] parsing PRC_TYPE_SURF_Blend03
 - [x] C API for parsing/reading

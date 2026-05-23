@@ -14,7 +14,7 @@ use crate::prc_gen::*;
 use crate::prc_schema::SchemaEvaluator;
 use crate::tess_3d_compressed::Tess3dCompressed;
 use bitstream_io::BitReader;
-use log::{debug, info, warn};
+use log::{debug, error, info, warn};
 use std::fs::File;
 use std::io;
 use std::io::{Cursor, Seek};
@@ -22,6 +22,8 @@ use std::path::Path;
 //use std::rc::Rc;
 use measure_time::debug_time;
 use serde::{Deserialize, Serialize};
+use crate::constants::PrcCompressedFaceType::{PRC_HCG_AnaCone, PRC_HCG_AnaCylinder, PRC_HCG_AnaGenericFace, PRC_HCG_AnaNurbs, PRC_HCG_AnaPlane, PRC_HCG_AnaSphere, PRC_HCG_AnaTorus, PRC_HCG_EndLoop, PRC_HCG_IsoCone, PRC_HCG_IsoCylinder, PRC_HCG_IsoNurbs, PRC_HCG_IsoPlane, PRC_HCG_IsoSphere, PRC_HCG_IsoTorus, PRC_HCG_NewLoop};
+use crate::indent;
 //use bson::{bson, Bson};
 
 #[macro_export]
@@ -42,6 +44,7 @@ pub struct ParsedPrcFileStructure {
     pub uuid1: u32,
     pub uuid2: u32,
     pub uuid3: u32,
+    pub header: FileStructureHeader,
     pub schema: Schema,
     pub globals: PRC_TYPE_ASM_FileStructureGlobals,
     pub tree: PRC_TYPE_ASM_FileStructureTree,
@@ -51,6 +54,7 @@ pub struct ParsedPrcFileStructure {
 }
 
 /// All information from a parsed PRC. Can be (de-)serialized into e.g. JSON.
+/// TODO: merge with PrcHeader?
 #[derive(Serialize, Deserialize, Debug, Default, PartialEq)]
 pub struct ParsedPrc {
     pub verread: u32,
@@ -68,92 +72,98 @@ pub struct ParsedPrc {
     pub mf: PRC_TYPE_ASM_ModelFile,
     pub uncompr_files: Vec<Vec<u8>>,
 }
-impl ParsedPrc {
-    /*
-    pub fn encode_into(&self) -> Vec<u8> {
-        debug_time!("ParsedPrc::encode_into()");
-        let mut strings: Vec<std::string::String> = Vec::with_capacity(self.fsi.len()*6+2);
-        for i in 0..self.fsi.len() {
-            let serialized = serde_json::to_string(&self.fsi[i].schema).unwrap();
-            strings.push(serialized);
-            let serialized = serde_json::to_string(&self.fsi[i].globals).unwrap();
-            strings.push(serialized);
-            let serialized = serde_json::to_string(&self.fsi[i].tree).unwrap();
-            strings.push(serialized);
-            let serialized = serde_json::to_string(&self.fsi[i].tess).unwrap();
-            strings.push(serialized);
-            let serialized = serde_json::to_string(&self.fsi[i].geom).unwrap();
-            strings.push(serialized);
-            let serialized = serde_json::to_string(&self.fsi[i].ext).unwrap();
-            strings.push(serialized);
-        }
-        let serialized = serde_json::to_string(&self.mf_schema).unwrap();
-        strings.push(serialized);
-        let serialized = serde_json::to_string(&self.mf).unwrap();
-        strings.push(serialized);
 
-        if false {
-            let mut bsons: Vec<Bson> = Vec::with_capacity(self.fsi.len()*6+2);
-            for i in 0..self.fsi.len() {
-                bsons.push(bson::serialize_to_bson(&self.fsi[i].schema).unwrap());
-                bsons.push(bson::serialize_to_bson(&self.fsi[i].globals).unwrap());
-                bsons.push(bson::serialize_to_bson(&self.fsi[i].tree).unwrap());
-                bsons.push(bson::serialize_to_bson(&self.fsi[i].tess).unwrap());
-                bsons.push(bson::serialize_to_bson(&self.fsi[i].geom).unwrap());
-                bsons.push(bson::serialize_to_bson(&self.fsi[i].ext).unwrap());
-            }
-            bsons.push(bson::serialize_to_bson(&self.mf_schema).unwrap());
-            bsons.push(bson::serialize_to_bson(&self.mf).unwrap());
-            //for i in 0..bsons.len() {
-            //    debug!("bsons[{}] = {:?}", i, bsons[i]));
-            //}
-        }
-        if false {
-            let mut num_bytes = 0usize;
-            let mut dst = Vec::with_capacity(self.fsi.len()*6+2);
-            for i in 0..self.fsi.len() {
-                dst.push(bson::serialize_to_vec(&self.fsi[i].schema).unwrap());
-                num_bytes += dst.last().unwrap().len();
-                dst.push(bson::serialize_to_vec(&self.fsi[i].globals).unwrap());
-                num_bytes += dst.last().unwrap().len();
-                dst.push(bson::serialize_to_vec(&self.fsi[i].tree).unwrap());
-                num_bytes += dst.last().unwrap().len();
-                dst.push(bson::serialize_to_vec(&self.fsi[i].tess).unwrap());
-                num_bytes += dst.last().unwrap().len();
-                dst.push(bson::serialize_to_vec(&self.fsi[i].geom).unwrap());
-                num_bytes += dst.last().unwrap().len();
-                dst.push(bson::serialize_to_vec(&self.fsi[i].ext).unwrap());
-                num_bytes += dst.last().unwrap().len();
-            }
-            dst.push(bson::serialize_to_vec(&self.mf_schema).unwrap());
-            num_bytes += dst.last().unwrap().len();
-            dst.push(bson::serialize_to_vec(&self.mf).unwrap());
-            num_bytes += dst.last().unwrap().len();
-        }
-
-        let mut dst = Vec::new();
-        dst.push(b'[');
-        for s in strings {
-            dst.append(s.as_bytes().to_vec().as_mut());
-            dst.push(b',');
-            dst.push(b'\n');
-        }
-        dst.push(b'{');
-        dst.push(b'}');
-        dst.push(b'\n');
-        dst.push(b']');
-        dst
+/// See also [prc_rs::prc_gen::PRC_TYPE_TESS_3D_Wire]
+#[derive(Default)]
+pub struct Tess3dWire {
+    coordinates: Vec<Double>,
+    wire_indexes: Vec<Integer>,
+    is_segment_color: bool,
+    VertexColors_number_of_colors: u32,
+}
+impl Tess3dWire {
+    pub fn set0(&mut self, coordinates: &Vec<Double>, wire_indexes: &Vec<Integer>) {
+        self.coordinates = coordinates.clone();
+        self.wire_indexes = wire_indexes.clone();
     }
-     */
+    pub fn set1(&mut self, is_segment_color: bool) {
+        self.is_segment_color = is_segment_color;
+    }
+    /// group___tf3_d_wire_tess_data_____serialize_content2.html
+    /// Note that the number of colors is deduced from the number of point indices as calculated from wire_indexes * 3 or 4 (RGB or RGBA).
+    /// It is important to remember that implicit points must also have a color (see Special flags for 3DWireTessData tessellation).
+    pub fn get_num_vertex_colors(&mut self) -> u32 {
+        // TODO
+        let mut wires: Vec<Vec<u32>> = vec![];
+
+        if self.wire_indexes.is_empty() {
+            // If number_of_wire_indexes is zero, the tessellation is given as a single wire edge containing an array of points as described in SerializeContentBaseTessData.
+        }
+        else {
+
+        }
+
+        // if self.TESS_3D_Wire_inside {
+        //
+        // }
+
+        let mut i = 0;
+        while i < self.wire_indexes.len() {
+            if self.wire_indexes[i].value as u32
+                & Prc3DWireTessFlags::PRC_3DWIRETESSDATA_IsContinuous as u32
+                != 0
+            {
+                warn!("PRC_3DWIRETESSDATA_IsContinuous not implemented!");
+            }
+            if self.wire_indexes[i].value as u32
+                & Prc3DWireTessFlags::PRC_3DWIRETESSDATA_IsClosing as u32
+                != 0
+            {
+                warn!("PRC_3DWIRETESSDATA_IsClosing not implemented!");
+            }
+            // The flag is the leftmost 4 bits and is interpreted using 3D Wire Tess Flags to indicate
+            let number_of_indices_per_wire_edge = self.wire_indexes[i].value as u32 & 0x7FFFFFFF;
+            debug!("number of indices_per_wire_edge: {}", number_of_indices_per_wire_edge);
+            wires.push(vec![]);
+
+            let start = i + 1;
+            for j in 0..number_of_indices_per_wire_edge {
+                let id = start + j as usize;
+                wires
+                    .last_mut()
+                    .unwrap()
+                    .push(self.wire_indexes[id].value as u32);
+                i += 1;
+            }
+
+            i += 1;
+        }
+
+        self.VertexColors_number_of_colors = 0;
+        for w in wires {
+            if !self.is_segment_color {
+                self.VertexColors_number_of_colors += w.len() as u32;
+            }
+            else {
+                self.VertexColors_number_of_colors += w.len() as u32 - 1;
+            }
+        }
+        // if self.VertexColors_number_of_colors == 62 {
+        //     self.VertexColors_number_of_colors = 60;
+        // }
+        // if self.VertexColors_number_of_colors == 8 {
+        //     self.VertexColors_number_of_colors = 6;
+        // }
+
+        debug!("VertexColors_number_of_colors: {}", self.VertexColors_number_of_colors);
+        return self.VertexColors_number_of_colors;
+    }
 }
 
 #[derive(Default)]
 pub struct PrcParsingContext {
     pub ver_for_reading: u32,
     pub ver_authoring: u32,
-
-    /// https://github.com/pdf-association/pdf-issues/issues/724
-    pub filestructure_count: u32,
 
     pub current_name: std::string::String,
     pub layer_index: u32,
@@ -162,6 +172,7 @@ pub struct PrcParsingContext {
     pub se: SchemaEvaluator,
 
     //pub is_an_iso_face: bool, // ContentCompressedFace
+
     /// number_vertex_references  is just a portion of the referenced vertices. Technically,
     /// it is a number of referenced iso-vertices, i.e. vertices referenced from iso faces.
     /// In simple words, imagine there are two caches for compressed vertices - one for
@@ -182,21 +193,21 @@ pub struct PrcParsingContext {
     /// Acrobat SDK 9: group___tf_x_k_circle_____serialize.html
     /// curve_trimming_face indicates that this function is called by the Serialize ContentCompressedFace function.
     ///
-    pub curve_trimming_face: bool,
+    curve_trimming_face: bool,
 
     /// ISO 2014: is TRUE if the circle is being used as the trim boundary of an PRC_HCG_IsoNurbs; otherwise it is FALSE
     /// Acrobat SDK 9: group___tf_x_k_circle_____serialize.html
     /// compressed_iso_spline_serialization is true if this function is called from SerializeCompressedIsoNurbs.
-    pub compressed_iso_spline: bool,
+    compressed_iso_spline: bool,
     //surface_type: u32, // PRC_HCG_...
-    current_face_type: Vec<u32>,               // stack of PRC_HCG_...
+    current_face_type: Vec<CompressedEntityType>,               // stack of PRC_HCG_...
     pub CompressedNurbs_number_ccpt_in_u: u32, // Number_ccpt_in_u = sumOf(mult_u) - degree_in_u - 1
     //Number_ccpt_in_v = sumOf(mult_v) - degree_in_v - 1
     pub CompressedNurbs_number_ccpt_in_v: u32, // CompressedControlPoints https://github.com/pdf-association/pdf-issues/issues/663
 
     pub CompressedKnots_number_bit_parameter: u32, // the number of bits used to store knots
 
-    pub BrepDataCompress_sum_num_faces: u32,
+    BrepDataCompress_sum_num_faces: u32,
     #[allow(non_snake_case)]
     pub BrepDataCompress_number_of_bits_to_store_reference: u32,
 
@@ -212,6 +223,7 @@ pub struct PrcParsingContext {
     pub CompressedNurbs_number_of_bits_for_rest: u32, // number of bits to store the remainder of the control points
 
     pub VertexColors_number_of_colors: u32,
+    pub VertexColors_is_segment_color: bool,
 
     /// 8.9.21.10 CompressedVertex
     /// Each compressed brep data serialization maintains an array of previously written
@@ -224,43 +236,122 @@ pub struct PrcParsingContext {
     // compressed brep data. If the curve has already been stored, the index of the curve is stored in the file;
     // otherwise, a compressed version of the trim curve is stored.
     /// the current loop
-    pub AnaFaceTrimLoop_curves: Vec<CompressedCurve>,
+    pub AnaFaceTrimLoop_curves: Vec<RefOrCompressedCurve>,
     /// accumulator of loops
-    pub AnaFaceTrimLoop_loops: Vec<Vec<CompressedCurve>>,
+    pub AnaFaceTrimLoop_loops: Vec<Vec<RefOrCompressedCurve>>,
 
     /// Whether the parser is progressing within a PRC_TYPE_TESS_3D_Wire struct?
     TESS_3D_Wire_inside: bool,
+    pub t3dw: Tess3dWire,
     pub t3dc: Tess3dCompressed,
 
     pub prc_parsed: ParsedPrc,
 }
 impl PrcParsingContext {
-    pub fn push_face_type(&mut self, id: u32) {
-        //println!("Pushing face {}", id);
-        self.current_face_type.push(id);
+    /// See ContentCompressedFace in spec.
+    ///
+    /// Vertex loops are used to represent a loop consisting of a single
+    /// vertex, such as might exist on the apex of a cone, or a sphere
+    /// touching a plane. They are represented by a degenerate line which
+    /// has identical start and end vertices.
+    pub fn ContentCompressedFace_all_loops_are_vertex_loops(& self) -> bool {
+        // TODO
+        warn!("FIXME: all_loops_are_vertex_loops: not implemented yet");
+
+        // from https://github.com/pdf-association/pdf-issues/issues/696#issuecomment-3599474152
+        // Which means that ALL the loops in this array of loops are degenerate lines (a line with two
+        // points that are the same with precision/tolerance), the surface type is PRC_HCG_AnaTorus and
+        // is_trimmed is TRUE.
+
+        // if (start-end).len() < tol {
+        //     return true;
+        // }
+        return false;
+    }
+
+    pub fn ContentCompressedAnaFace_has_point_on_torus(&self, is_trimmed: bool) -> bool {
+        let all_loops_are_vertex_loops =  self.ContentCompressedFace_all_loops_are_vertex_loops();
+
+        let st = self.get_surface_type();
+        if st.is_some() && st.unwrap().value == PrcCompressedFaceType::PRC_HCG_AnaTorus as u8 {
+            let surface_type = st.unwrap();
+            error!("surface_type: {:?}, is_trimmed: {} -> all_loops_are_vertex_loops should probably return TRUE", surface_type, is_trimmed);
+        }
+
+        let has = all_loops_are_vertex_loops
+            && self.get_surface_type().unwrap().value == PrcCompressedFaceType::PRC_HCG_AnaTorus as u8
+            && is_trimmed;
+        return has;
+    }
+
+    pub fn push_face_type(&mut self, cet: CompressedEntityType) {
+        let id = cet.value;
+        self.current_face_type.push(cet);
+        warn!("Pushing face {:?} [{}]", cet, self.current_face_type.len());
     }
     pub fn pop_face_type(&mut self) {
-        // println!(
-        //     "Popping face {}",
-        //     self.current_face_type[self.current_face_type.len() - 1]
-        // );
+        assert!(!self.current_face_type.is_empty());
+        let face = self.current_face_type[self.current_face_type.len() - 1];
         self.current_face_type.pop();
+        if self.current_face_type.is_empty() {
+            warn!("Popping face {:?}, NO new top! [0]", face);
+        }
+        else {
+            let new_top = self.current_face_type[self.current_face_type.len() - 1];
+            warn!("Popping face {:?}, new top is {:?} [{}]", face, new_top, self.current_face_type.len());
+        }
     }
-    pub fn get_surface_type(&mut self) -> Option<u32> {
+    pub fn get_surface_type(&self) -> Option<CompressedEntityType> {
         if self.current_face_type.is_empty() {
             return None;
         }
         Some(self.current_face_type[self.current_face_type.len() - 1])
     }
-    pub fn on_brep_data_compress(&mut self, _bdc: &PRC_TYPE_TOPO_BrepDataCompress) {
-        self.nurbs_tolerance = self.brep_data_compressed_tolerance / 5.0;
-        //self.number_stored_knots_in_u = bdc.number_of_knots_in_u ‐ 2;
-        panic!("Not implemented!");
+    /// https://github.com/pdf-association/pdf-issues/issues/705#issuecomment-3680110465
+    pub fn is_an_iso_face(&self, cet: CompressedEntityType) -> bool {
+        use PrcCompressedFaceType::*;
+        assert!(!cet.is_a_curve);
+        let type_id = cet.value;
+        let rv = match type_id.try_into() {
+            Ok(PRC_HCG_IsoPlane) => true,
+            Ok(PRC_HCG_IsoCylinder) => true,
+            Ok(PRC_HCG_IsoTorus) => true,
+            Ok(PRC_HCG_IsoSphere) => true,
+            Ok(PRC_HCG_IsoCone) => true,
+            Ok(PRC_HCG_IsoNurbs) => true,
+            Ok(PRC_HCG_AnaPlane)
+            | Ok(PRC_HCG_AnaCylinder)
+            | Ok(PRC_HCG_AnaTorus)
+            | Ok(PRC_HCG_AnaSphere)
+            | Ok(PRC_HCG_AnaCone)
+            | Ok(PRC_HCG_AnaNurbs)
+            | Ok(PRC_HCG_AnaGenericFace) => false,
+            Ok(PRC_HCG_NewLoop)
+            | Ok(PRC_HCG_EndLoop)
+            | _ => panic!("Cannot tell if ISO face? (type_id: {})", type_id),
+        };
+        error!("is_an_iso_face({}({})): {}", TryInto::<PrcCompressedFaceType>::try_into(type_id).unwrap(), type_id, rv);
+        // match type_id {
+        //     #[allow(non_upper_case_globals)]
+        //     ((PRC_HCG_IsoPlane as u32)..(PRC_HCG_IsoNurbs as u32)) | PrcCompressedFaceType::PRC_HCG_IsoCylinder | PrcCompressedFaceType::PRC_HCG_IsoTorus | PrcCompressedFaceType::PRC_HCG_IsoSphere | PRC_HCG_IsoCone | PRC_HCG_IsoNurbs => true,
+        //     #[allow(non_upper_case_globals)]
+        //     PRC_HCG_AnaPlane | PRC_HCG_AnaCylinder | PRC_HCG_AnaTorus | PRC_HCG_AnaSphere | PRC_HCG_AnaCone | PRC_HCG_AnaNurbs | PRC_HCG_AnaGenericFace => false,
+        //     _ => panic!("Cannot tell if ISO face?")
+        // }
+        rv
     }
+
+    //pub fn on_brep_data_compress(&mut self, _bdc: &PRC_TYPE_TOPO_BrepDataCompress) {
+    //    self.nurbs_tolerance = self.brep_data_compressed_tolerance / 5.0;
+    //    //self.number_stored_knots_in_u = bdc.number_of_knots_in_u ‐ 2;
+    //    panic!("Not implemented!");
+    //}
 
     pub fn BrepDataCompress_enter(&mut self) {
         self.BrepDataCompress_CompressedVertex_array
             .push(Vec::new());
+        self.set_curve_trimming_face(true);
+        self.BrepDataCompress_sum_num_faces = 0;
     }
     pub fn BrepDataCompress_leave(&mut self) {
         assert!(!self.BrepDataCompress_CompressedVertex_array.is_empty());
@@ -269,6 +360,15 @@ impl PrcParsingContext {
             "BrepDataCompress_leave: {} vertices",
             self.BrepDataCompress_CompressedVertex_array[last_idx].len()
         );
+        self.set_curve_trimming_face(false);
+    }
+    pub fn BrepDataCompress_register_faces(&mut self, num_faces: u32) {
+        let prev = self.BrepDataCompress_sum_num_faces;
+        self.BrepDataCompress_sum_num_faces += num_faces;
+        warn!("{}BrepDataCompress_sum_num_faces: {} -> {}", indent::get(), prev, self.BrepDataCompress_sum_num_faces);
+    }
+    pub fn BrepDataCompress_get_sum_num_faces(&self) -> u32 {
+        self.BrepDataCompress_sum_num_faces
     }
     pub fn BrepDataCompress_CompressedVertex_add(&mut self, pt: [f64; 3]) {
         if self.BrepDataCompress_CompressedVertex_array.is_empty() {
@@ -289,7 +389,7 @@ impl PrcParsingContext {
             return;
         }
         let pt = self.BrepDataCompress_CompressedVertex_array[last_idx][point_index as usize];
-        debug!("ref vtx: {} -> {:?}", point_index, pt);
+        //debug!("{}ref vtx: {} -> {:?}", indent::get(), point_index, pt);
     }
 
     pub fn set_curve_trimming_face(&mut self, on: bool) {
@@ -319,9 +419,20 @@ impl PrcParsingContext {
     /// group___tf3_d_wire_tess_data_____serialize_content2.html
     /// Note that the number of colors is deduced from the number of point indices as calculated from wire_indexes * 3 or 4 (RGB or RGBA).
     /// It is important to remember that implicit points must also have a color (see Special flags for 3DWireTessData tessellation).
-    pub fn set_num_vertex_colors_from_tess_3d_wire(&mut self, wire_indexes: &Vec<Integer>) {
+    pub fn set_num_vertex_colors_from_tess_3d_wire(&mut self, coordinates: &Vec<Double>, wire_indexes: &Vec<Integer>, /*is_segment_color: bool*/) {
         // TODO
         let mut wires: Vec<Vec<u32>> = vec![];
+
+        if wire_indexes.is_empty() {
+            // If number_of_wire_indexes is zero, the tessellation is given as a single wire edge containing an array of points as described in SerializeContentBaseTessData.
+        }
+        else {
+
+        }
+
+        if self.TESS_3D_Wire_inside {
+
+        }
 
         let mut i = 0;
         while i < wire_indexes.len() {
@@ -337,8 +448,9 @@ impl PrcParsingContext {
             {
                 warn!("PRC_3DWIRETESSDATA_IsClosing not implemented!");
             }
-            let number_of_indices_per_wire_edge = wire_indexes[i].value as u32 & 0x0FFFFFFF;
-            //debug!("number of indices_per_wire_edge: {}", number_of_indices_per_wire_edge);
+            // The flag is the leftmost 4 bits and is interpreted using 3D Wire Tess Flags to indicate
+            let number_of_indices_per_wire_edge = wire_indexes[i].value as u32 & 0x7FFFFFFF;
+            debug!("number of indices_per_wire_edge: {}", number_of_indices_per_wire_edge);
             wires.push(vec![]);
 
             let start = i + 1;
@@ -356,12 +468,32 @@ impl PrcParsingContext {
 
         self.VertexColors_number_of_colors = 0;
         for w in wires {
-            self.VertexColors_number_of_colors += w.len() as u32;
+            if false /*is_segment_color*/ {
+                self.VertexColors_number_of_colors += w.len() as u32;
+            }
+            else {
+                self.VertexColors_number_of_colors += w.len() as u32 - 1;
+            }
         }
+        // if self.VertexColors_number_of_colors == 62 {
+        //     self.VertexColors_number_of_colors = 60;
+        // }
+        // if self.VertexColors_number_of_colors == 8 {
+        //     self.VertexColors_number_of_colors = 6;
+        // }
+    }
+
+    pub fn VertexColors_get_number_of_colors(&mut self) -> u32 {
+        if self.TESS_3D_Wire_inside {
+            return self.t3dw.get_num_vertex_colors();
+        }
+        self.VertexColors_number_of_colors
     }
 
     pub fn TESS_3D_Wire__enter(&mut self) {
         self.TESS_3D_Wire_inside = true;
+        self.VertexColors_number_of_colors = 0;
+        self.VertexColors_is_segment_color = false;
     }
     pub fn TESS_3D_Wire__leave(&mut self) {
         self.TESS_3D_Wire_inside = false;
@@ -405,11 +537,9 @@ impl PrcParsingContext {
     pub fn AnaFaceTrimLoop_add_curve_to_loop(&mut self, ref_or_cc: RefOrCompressedCurve) {
         if ref_or_cc.curve_is_not_already_stored.value {
             debug!(
-                "CURVE TO LOOP: ADDING: {:?}",
+                "CURVE TO LOOP: ADDING CURVE: {:?}",
                 ref_or_cc.compressed_curve.as_ref().unwrap().id_concrete
             );
-            self.AnaFaceTrimLoop_curves
-                .push(ref_or_cc.compressed_curve.unwrap());
         } else {
             // TODO look up referenced curve
             let index = ref_or_cc.index_compressed_curve.as_ref().unwrap().value;
@@ -419,8 +549,9 @@ impl PrcParsingContext {
             } else {
                 index_str = "invalid".to_string();
             }
-            debug!("CURVE TO LOOP: -> CURVE REF: {} ({})", index, index_str);
+            debug!("CURVE TO LOOP: ADDING REF: {} ({})", index, index_str);
         }
+        self.AnaFaceTrimLoop_curves.push(ref_or_cc);
     }
     //    pub fn AnaFaceTrimLoop_add_curve_to_loop1(&mut self, crv: CompressedCurve) {
     //        self.AnaFaceTrimLoop_curves.push(crv);
@@ -435,25 +566,25 @@ impl PrcParsingContext {
     //}
 }
 
-pub struct CurrentFaceType {
-    pub value: u32,
-    ctx: std::rc::Rc<PrcParsingContext>,
-}
-impl CurrentFaceType {
-    pub fn new(value: u32, mut ctx: std::rc::Rc<PrcParsingContext>) -> CurrentFaceType {
-        //let a = std::rc::Rc::downgrade(&ctx);
-        std::rc::Rc::get_mut(&mut ctx)
-            .unwrap()
-            .push_face_type(value);
-        //ctx.push_face_type(value);
-        CurrentFaceType { value, ctx }
-    }
-}
-impl Drop for CurrentFaceType {
-    fn drop(&mut self) {
-        std::rc::Rc::get_mut(&mut self.ctx).unwrap().pop_face_type();
-    }
-}
+// pub struct CurrentFaceType {
+//     pub value: u32,
+//     ctx: std::rc::Rc<PrcParsingContext>,
+// }
+// impl CurrentFaceType {
+//     pub fn new(value: u32, mut ctx: std::rc::Rc<PrcParsingContext>) -> CurrentFaceType {
+//         //let a = std::rc::Rc::downgrade(&ctx);
+//         std::rc::Rc::get_mut(&mut ctx)
+//             .unwrap()
+//             .push_face_type(value);
+//         //ctx.push_face_type(value);
+//         CurrentFaceType { value, ctx }
+//     }
+// }
+// impl Drop for CurrentFaceType {
+//     fn drop(&mut self) {
+//         std::rc::Rc::get_mut(&mut self.ctx).unwrap().pop_face_type();
+//     }
+// }
 
 fn prc_parse_globals(
     bytes: &Vec<u8>,
@@ -503,7 +634,9 @@ fn prc_parse_globals(
         bytes.len(),
         now.elapsed().as_millis()
     );
-
+    if remaining_bits > 7 {
+        warn!("--glob many uninterpreted tailing bits! --");
+    }
     ()
 }
 
@@ -537,6 +670,9 @@ fn prc_parse_tree(bytes: &Vec<u8>, i: usize, ctx: &mut PrcParsingContext, verbos
         bytes.len(),
         now.elapsed().as_millis()
     );
+    if remaining_bits > 7 {
+        warn!("--tree many uninterpreted tailing bits! --");
+    }
     ()
 }
 
@@ -572,6 +708,9 @@ fn prc_parse_tess(bytes: &Vec<u8>, i: usize, ctx: &mut PrcParsingContext, verbos
         bytes.len(),
         now.elapsed().as_millis()
     );
+    if remaining_bits > 7 {
+        warn!("--tess many uninterpreted tailing bits! --");
+    }
     ()
 }
 
@@ -605,6 +744,9 @@ fn prc_parse_geom(bytes: &Vec<u8>, i: usize, ctx: &mut PrcParsingContext, verbos
         bytes.len(),
         now.elapsed().as_millis()
     );
+    if remaining_bits > 7 {
+        warn!("--geom many uninterpreted tailing bits! --");
+    }
     ()
 }
 
@@ -638,6 +780,9 @@ fn prc_parse_extgeom(bytes: &Vec<u8>, i: usize, ctx: &mut PrcParsingContext, ver
         bytes.len(),
         now.elapsed().as_millis()
     );
+    if remaining_bits > 7 {
+        warn!("--extgeom many uninterpreted tailing bits! --");
+    }
     ()
 }
 
@@ -677,6 +822,9 @@ fn prc_parse_modfile(bytes: &Vec<u8>, ctx: &mut PrcParsingContext, verbose: bool
         bytes.len(),
         now.elapsed().as_millis()
     );
+    if remaining_bits > 7 {
+        warn!("--modfile many uninterpreted tailing bits! --");
+    }
     ()
 }
 
@@ -709,14 +857,12 @@ pub fn prc_describe(
     debug!("given {} bytes", file_size_bytes);
     let mut mem_reader: Cursor<Vec<u8>> = Cursor::new(bytes);
 
-    let config = PRCHeader::from_reader(&mut mem_reader, file_size_bytes);
-    let header = &config?;
+    let header = FileHeader::from_reader(&mut mem_reader, file_size_bytes)?;
 
     let mut ctx: PrcParsingContext = Default::default();
     ctx.ver_for_reading = header.verread;
     ctx.ver_authoring = header.verauth;
 
-    ctx.filestructure_count = header.fsi.len() as u32;
     ctx.prc_parsed.verread = header.verread;
     ctx.prc_parsed.verauth = header.verauth;
     ctx.prc_parsed.uuid0 = header.uuid0;
@@ -732,6 +878,8 @@ pub fn prc_describe(
         .fsi
         .resize(header.fsi.len(), Default::default());
 
+    ctx.prc_parsed.uncompr_files = header.uncompr_files.clone();
+
     // parse uncompressed files
     // TODO: could be processed concurrently
     // TODO: is it possible to use multiple,cloned contexts and merge them later?
@@ -741,6 +889,7 @@ pub fn prc_describe(
         ctx.prc_parsed.fsi[i].uuid1 = header.fsi[i].uuid1;
         ctx.prc_parsed.fsi[i].uuid2 = header.fsi[i].uuid2;
         ctx.prc_parsed.fsi[i].uuid3 = header.fsi[i].uuid3;
+
         prc_parse_globals(
             &header.fsi[i].sections[PrcSectionKind::Global as usize],
             i,
@@ -807,7 +956,7 @@ pub fn prc_describe_file(
     _schema: bool,
     modelfile: bool,
 ) -> io::Result<()> {
-    debug_time!("prc_describe_file");
+    debug_time!("prc_describe_file \"{}\"", fname);
 
     // Create a path to the desired file
     let path = Path::new(fname);
@@ -859,8 +1008,7 @@ pub fn prc_explode(fname: &std::string::String) -> io::Result<()> {
     let mut mem_reader: Cursor<Vec<u8>> = Cursor::new(bytes);
 
     // Result<PRCHeader, std::io::Error>
-    let config = PRCHeader::from_reader(&mut mem_reader, file_size_bytes);
-    let a = &config?;
+    let header = FileHeader::from_reader(&mut mem_reader, file_size_bytes)?;
 
     let base_name = path
         .file_name()
@@ -868,29 +1016,33 @@ pub fn prc_explode(fname: &std::string::String) -> io::Result<()> {
         .to_os_string()
         .into_string()
         .unwrap();
-    for i in 0..a.fsi.len() {
+    for i in 0..header.fsi.len() {
+        for j in 0..header.fsi[i].header.files.len() {
+            let base = base_name.replace(".prc", format!("_{i}_{j}_file.bin").as_str());
+            let _ = prc_dump(&base, &header.fsi[i].header.files[j]);
+        }
         let base = base_name.replace(".prc", format!("_{i}_glob.bin").as_str());
-        let _ = prc_dump(&base, &a.fsi[i].sections[PrcSectionKind::Global as usize]);
+        let _ = prc_dump(&base, &header.fsi[i].sections[PrcSectionKind::Global as usize]);
         let base = base_name.replace(".prc", format!("_{i}_tree.bin").as_str());
-        let _ = prc_dump(&base, &a.fsi[i].sections[PrcSectionKind::Tree as usize]);
+        let _ = prc_dump(&base, &header.fsi[i].sections[PrcSectionKind::Tree as usize]);
         let base = base_name.replace(".prc", format!("_{i}_tess.bin").as_str());
         let _ = prc_dump(
             &base,
-            &a.fsi[i].sections[PrcSectionKind::Tessellation as usize],
+            &header.fsi[i].sections[PrcSectionKind::Tessellation as usize],
         );
         let base = base_name.replace(".prc", format!("_{i}_geom.bin").as_str());
-        let _ = prc_dump(&base, &a.fsi[i].sections[PrcSectionKind::Geometry as usize]);
+        let _ = prc_dump(&base, &header.fsi[i].sections[PrcSectionKind::Geometry as usize]);
         let base = base_name.replace(".prc", format!("_{i}_extg.bin").as_str());
         let _ = prc_dump(
             &base,
-            &a.fsi[i].sections[PrcSectionKind::ExtraGeometry as usize],
+            &header.fsi[i].sections[PrcSectionKind::ExtraGeometry as usize],
         );
     }
     let base = base_name.replace(".prc", format!("_mf.bin").as_str());
-    let _ = prc_dump(&base, &a.mf);
-    for i in 0..a.uncompr_files.len() {
+    let _ = prc_dump(&base, &header.mf);
+    for i in 0..header.uncompr_files.len() {
         let base = base_name.replace(".prc", format!("_ucmp_{i}.bin").as_str());
-        let _ = prc_dump(&base, &a.uncompr_files[i]);
+        let _ = prc_dump(&base, &header.uncompr_files[i]);
     }
 
     Ok(())

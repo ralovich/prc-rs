@@ -19,6 +19,10 @@ def rust_condition_to_writer_condition(cond):
     #print('REPLACE: \"%s\" -> \"%s\"' % (cond, rcond))
     return rcond
 
+def str_with_newlines_to_rust_comment(s):
+    sr = s.replace('\n', '\n/// ')
+    return sr
+
 def is_vbr_1param(f):
     return 'vbr' in f and 'data_type' in f and f['data_type'] in vbr_1param
 
@@ -57,7 +61,7 @@ use crate::constants::PrcTransformation::*;
 use crate::constants::PrcCompressedFaceType::*;
 use crate::constants::PrcCompressedCurveType::*;
 use crate::common::PrcParsingContext;
-use crate::common::CurrentFaceType;
+//use crate::common::CurrentFaceType;
 use crate::constants::*;
 use crate::indent;
 
@@ -78,8 +82,6 @@ use crate::indent;
     for structs in d['structures']:
         si = 0
         for struct_name in structs:
-            if struct_name == "Template":
-                continue
             vswitch = {}
             debug_fields = False
             if 'debug' in d['structures'][0][struct_name] and d['structures'][0][struct_name]['debug']:
@@ -87,6 +89,10 @@ use crate::indent;
             #
             # STRUCTURE DECLARATION
             #
+            if 'comment' in d['structures'][0][struct_name]:
+                rs.write(f'/// {str_with_newlines_to_rust_comment(d['structures'][0][struct_name]['comment'])}\n')
+            if 'bug' in d['structures'][0][struct_name]:
+                rs.write(f'/// {str_with_newlines_to_rust_comment(d['structures'][0][struct_name]['bug'])}\n')
             rs.write('#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]\n')
             if 'rust_traits' in d['structures'][0][struct_name]:
                 for rt in d['structures'][0][struct_name]['rust_traits']:
@@ -94,6 +100,10 @@ use crate::indent;
             rs.write('#[allow(non_camel_case_types)]\n')
             rs.write('pub struct %s {\n' % struct_name )
             for f in d['structures'][0][struct_name]['fields']:
+                if 'comment' in f:
+                    rs.write(f'/// {str_with_newlines_to_rust_comment(f['comment'])}\n')
+                if 'bug' in f:
+                    rs.write(f'/// {str_with_newlines_to_rust_comment(f['bug'])}\n')
                 is_virtual_type_switch = 'eligible_type_ids' in f
                 if is_virtual_type_switch:
                     vswitch[f['name']] = f['eligible_type_ids']
@@ -164,7 +174,7 @@ use crate::indent;
                     rs.write('  let mut %s_concrete: %s_%sConcrete = %s_%sConcrete::Invalid(%s_type_id);\n' % (f['name'], struct_name, f['name'], struct_name, f['name'], f['name']) )
                     if is_conditional:
                         rs.write('  if %s {\n' % rust_condition_to_reader_condition(f['condition_rust']) )
-                    rs.write('  %s_type_id = %s::from_reader_and_seek_back(rdr)?.value;\n' % (f['name'], f['data_type']) )
+                    rs.write('  %s_type_id = %s::from_reader_and_seek_back(rdr)?.value as u32;\n' % (f['name'], f['data_type']) )
                     if do_debug:
                         rs.write(f'  trace!("{{}}{f['name']}_type_id: {{:?}}", indent::get(), &{f['name']}_type_id);\n')
                     rs.write('  let %s_tid: %s = %s::try_from(%s_type_id).unwrap();\n' % (f['name'], f['eligible_type_kind'], f['eligible_type_kind'], f['name']) )

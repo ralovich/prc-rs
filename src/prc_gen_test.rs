@@ -176,8 +176,7 @@ mod tests {
                 root_index: UnsignedInteger { value: 9 },
                 product_occurrence_is_active: Boolean { value: true },
             });
-        reference.number_of_root_product_occurrences.value =
-            reference.product_occurrences.len() as u32;
+        reference.number_of_root_product_occurrences.value = reference.product_occurrences.len() as u32;
         {
             let mut w = BitWriter::endian(Cursor::new(&mut bytes), bitstream_io::BigEndian);
             let _ = reference.to_writer(&mut w, &mut ctx);
@@ -201,7 +200,7 @@ mod tests {
         let bytes_external =
             get_file_as_byte_vec(&std::string::String::from("testdata/yellowtri2.json"));
         #[cfg(not(target_os = "windows"))]
-        assert_eq!(bytes_external.len(), 11911usize);
+        assert_eq!(bytes_external.len(), 28346usize);
 
         let mut parsed_prc: ParsedPrc = serde_json::from_slice(bytes_external.as_slice()).unwrap();
         assert_eq!(parsed_prc.verread, 7094);
@@ -212,7 +211,7 @@ mod tests {
         let ser = serde_json::to_string(&parsed_prc).unwrap();
         let bytes = ser.as_bytes();
         #[cfg(not(target_os = "windows"))]
-        assert_eq!(bytes.len(), 11909usize);
+        assert_eq!(bytes.len(), 12037usize);
         //#[cfg(not(target_os = "windows"))]
         //assert_eq!(bytes_external, bytes);
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();

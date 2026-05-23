@@ -290,6 +290,7 @@
                 ]
             },
             "PRC_TYPE_ASM_FileStructureExtraGeometry": {
+                "comment": "Extra geometry: geometry summary data, which allow for partial loading of the file structure without loading the entire geometry.",
                 "fields": [
                     {
                         "name": "id",
@@ -701,7 +702,7 @@
             "PRC_TYPE_GRAPH_TextureDefinition": {
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/412",
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/485",
-                "on_enter": "UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_GRAPH_TextureDefinition as u32, 9999, 5);",
+                "UNUSEDon_enter": "UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_GRAPH_TextureDefinition as u32, 9999, 5);",
                 "fields": [
                     {
                         "name": "id",
@@ -1437,6 +1438,7 @@
                 ]
             },
             "PRC_TYPE_ASM_FileStructureGlobals": {
+                "comment": "Globals: referenced file structures and colors, line styles, and coordinate systems for each tree entity of the file structure.",
                 "fields": [
                     {
                         "name": "id",
@@ -1486,6 +1488,7 @@
                 ]
             },
             "PRC_TYPE_ASM_ModelFile": {
+                "comment": "A model file is typically created by importing a CAD file. A PRC file always handles a single ModelFile, which can be considered a document that contains all of the CAD file's objects. The model file contains product occurrences, which are split into different file structures.",
                 "fields": [
                     {
                         "name": "id",
@@ -1520,7 +1523,7 @@
                         "name": "file_structure_index_in_model_file",
                         "data_type": "UnsignedInteger",
                         "is_vec": true,
-                        "size": "_ctx.filestructure_count",
+                        "size": "_ctx.prc_parsed.fsi.len() as u32",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/724",
                         "SPECBUG": true
                     },
@@ -1835,7 +1838,7 @@
                         "data_type": "UnsignedInteger",
                         "NOexpected_value": ["PrcType", "PRC_TYPE_TOPO_Face"],
                         "comment": "342 and 344 failed above assert",
-                        "on_set": "assert!(PRC_TYPE_TOPO_Face==PrcType::try_from(type_of_entity.value).unwrap() || PRC_TYPE_TOPO_Edge==PrcType::try_from(type_of_entity.value).unwrap() || PRC_TYPE_TOPO_UniqueVertex==PrcType::try_from(type_of_entity.value).unwrap())",
+                        "on_set": "assert!(PRC_TYPE_TOPO_Face==PrcType::try_from(type_of_entity.value).unwrap() || PRC_TYPE_TOPO_Edge==PrcType::try_from(type_of_entity.value).unwrap() || PRC_TYPE_TOPO_CoEdge==PrcType::try_from(type_of_entity.value).unwrap() || PRC_TYPE_TOPO_UniqueVertex==PrcType::try_from(type_of_entity.value).unwrap())",
                         "SPECBUG": "has also seen PRC_TYPE_TOPO_Edge in e.g. -342, -344"
                     },
                     {
@@ -2992,6 +2995,7 @@
                 ]
             },
             "PRC_TYPE_ASM_FileStructureTree": {
+                "comment": "Tree: a description of the tree of items (product occurrences, part definitions, representation items, and markup).",
                 "fields": [
                     {
                         "name": "id",
@@ -3084,7 +3088,7 @@
                 "comment": "The number_of_colors stored in the color_data must be calculated from the number of point indices\n- found in the wire_indexes array in the case of a PRC_TYPE_TESS_3D_Wire\n- found in the sizes_triangulated in the case of a PRC_TYPE_TESS_Face",
                 "BACKUP": [
                 ],
-                "on_enter": "debug!(\"{}_ctx.VertexColors_number_of_colors: {}\", indent::get(), _ctx.VertexColors_number_of_colors)",
+                "on_enter": "debug!(\"{}_ctx.VertexColors_number_of_colors: {}\", indent::get(), _ctx.VertexColors_get_number_of_colors())",
                 "fields": [
                     {
                         "name": "is_rgba",
@@ -3094,11 +3098,12 @@
                     {
                         "name": "is_segment_color",
                         "data_type": "Boolean",
-                        "debug": false,
+                        "debug": true,
                         "comment": "asy does not write this field",
                         "comment1": "according to acrobat sdk 9, this field is there if written from 3DWireTess, but missing if written from TessFace",
                         "condition": "_ctx.TESS_3D_Wire__is_inside()",
-                        "condition_rust": "_ctx.TESS_3D_Wire__is_inside()"
+                        "condition_rust": "_ctx.TESS_3D_Wire__is_inside()",
+                        "on_set": "_ctx.t3dw.set1(is_segment_color.value)"
                     },
                     {
                         "name": "b_optimized",
@@ -3116,7 +3121,7 @@
                         "name": "color_data_rgb_remaining_vertices",
                         "data_type": "ColorDataRemainderRGB",
                         "is_vec": false,
-                        "size": "_ctx.VertexColors_number_of_colors - 1",
+                        "size": "_ctx.VertexColors_get_number_of_colors() - 1",
                         "condition": "!self.b_optimized && !is_rgba",
                         "condition_rust": "!self.b_optimized && !self.is_rgba"
                     },
@@ -3130,7 +3135,7 @@
                         "name": "color_data_rgba_remaining_vertices",
                         "data_type": "ColorDataRemainderRGBA",
                         "is_vec": false,
-                        "size": "_ctx.VertexColors_number_of_colors - 1",
+                        "size": "_ctx.VertexColors_get_number_of_colors() - 1",
                         "condition": "!self.b_optimized && !!is_rgba",
                         "condition_rust": "!self.b_optimized && !!self.is_rgba"
                     }
@@ -3337,37 +3342,26 @@
                     {
                         "name": "number_of_wire_indexes",
                         "data_type": "UnsignedInteger",
-                        "on_set": "_ctx.VertexColors_number_of_colors = number_of_wire_indexes.value;\ndebug!(\"{}_ctx.VertexColors_number_of_colors: {}\", indent::get(), _ctx.VertexColors_number_of_colors);\nif number_of_wire_indexes.value != 0 { /*assert_eq!(number_of_wire_indexes.value%3, 1);*/ }"
+                        "UNUSEDon_set": "_ctx.VertexColors_number_of_colors = number_of_wire_indexes.value;\ndebug!(\"{}_ctx.VertexColors_number_of_colors: {}\", indent::get(), _ctx.VertexColors_number_of_colors);\nif number_of_wire_indexes.value != 0 { /*assert_eq!(number_of_wire_indexes.value%3, 1);*/ }"
                     },
                     {
                         "name": "wire_indexes",
                         "data_type": "Integer",
                         "is_vec": true,
                         "size": "number_of_wire_indexes.value",
-                        "on_set": "_ctx.set_num_vertex_colors_from_tess_3d_wire(&wire_indexes)"
+                        "on_set": "/*_ctx.set_num_vertex_colors_from_tess_3d_wire(&tessellation_coordinates.coordinates, &wire_indexes);*/ _ctx.t3dw.set0(&tessellation_coordinates.coordinates, &wire_indexes)"
                     },
                     {
                         "name": "has_vertex_colors",
-                        "data_type": "Boolean"
+                        "data_type": "Boolean",
+                        "debug": true,
+                        "UNUSEDon_set": "debug!(\"{}\", indent::get());"
                     },
                     {
                         "name": "vertex_color_data",
                         "data_type": "VertexColors",
                         "condition": "!!has_vertex_colors",
                         "condition_rust": "!!self.has_vertex_colors"
-                    }
-                ]
-            },
-            "Template": {
-                "fields": [
-                    {
-                        "name": "id",
-                        "data_type": "UnsignedInteger",
-                        "expected_value": ["PrcType", "Template"]
-                    },
-                    {
-                        "name": "is_calculated",
-                        "data_type": "Boolean"
                     }
                 ]
             },
@@ -3510,7 +3504,7 @@
                         "name": "must_recalculate_normals",
                         "data_type": "Boolean",
                         "debug": true,
-                        "on_set": "_ctx.t3dc.get_points(&point_array.a, tolerance.value, &point_is_reference_array.a, &point_reference_array.a, &edge_status_array.a, &triangle_face_array.a)",
+                        "on_set": "_ctx.t3dc.get_points(&origin_array, &point_array.a, tolerance.value, &point_is_reference_array.a, &point_reference_array.a, &edge_status_array.a, &triangle_face_array.a)",
                         "comment": "see also must_calculate_normals"
                     },
                     {
@@ -3522,7 +3516,7 @@
                         "vbr": "_ctx.t3dc.number_of_normals(&triangle_face_array.a)",
                         "condition": "!!must_recalculate_normals",
                         "condition_rust": "!!self.must_recalculate_normals",
-                        "on_set": "debug!(\"{}normal_is_reversed: {}\", indent::get(), format(&normal_is_reversed.a))"
+                        "on_set": "if !!must_recalculate_normals { debug!(\"{}normal_is_reversed: {}\", indent::get(), format(&normal_is_reversed.a)); }"
                     },
                     {
                         "name": "crease_angle",
@@ -3562,7 +3556,7 @@
                         "condition": "!must_recalculate_normals",
                         "condition_rust": "!self.must_recalculate_normals",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/436",
-                        "on_set": "debug!(\"{}normal_binary_data: {}\", indent::get(), format(&normal_binary_data.a))"
+                        "on_set": "if !must_recalculate_normals { debug!(\"{}normal_binary_data: {}\", indent::get(), format(&normal_binary_data.a)); }"
                     },
                     {
                         "name": "normal_angle_array",
@@ -3583,7 +3577,7 @@
                         "vbr": "_ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a)",
                         "condition": "!must_recalculate_normals",
                         "condition_rust": "!self.must_recalculate_normals",
-                        "on_set": "debug!(\"{}is_face_planar: {}\", indent::get(), format(&is_face_planar.a))"
+                        "on_set": "if !must_recalculate_normals { debug!(\"{}is_face_planar: {}\", indent::get(), format(&is_face_planar.a)); }"
                     },
                     {
                         "name": "is_point_color",
@@ -3599,7 +3593,7 @@
                         "vbr": "_ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a)",
                         "condition": "!!is_point_color",
                         "condition_rust": "!!self.is_point_color",
-                        "on_set": "debug!(\"{}is_point_color_on_face: {}\", indent::get(), format(&is_point_color_on_face.a))"
+                        "on_set": "if !!is_point_color { debug!(\"{}is_point_color_on_face: {}\", indent::get(), format(&is_point_color_on_face.a)); }"
                     },
                     {
                         "name": "point_color_array",
@@ -3658,8 +3652,8 @@
                         "size1": "normal_binary_data_size.value",
                         "comment": "above size if wrong, SPECBUG not in spec",
                         "comment": "FIXME: above array size is guesswork",
-                        "condition": "!no_texture",
-                        "condition_rust": "!self.no_texture",
+                        "condition": "!no_texture && !all_faces_have_texture",
+                        "condition_rust": "!self.no_texture && !self.all_faces_have_texture.value",
                         "on_set": "debug!(\"{}face_has_texture: {}\", indent::get(), format(&face_has_texture.a))"
                     },
                     {
@@ -3678,7 +3672,7 @@
                 ]
             },
             "PRC_TYPE_TESS": {
-                "on_enter": "UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D as u32, 9999, 5); UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D_Wire as u32, 9999, 5); UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_Markup as u32, 9999, 5); UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D_Compressed as u32, 9999, 5);",
+                "UNUSEDon_enter": "UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D as u32, 99999, 5); UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D_Wire as u32, 99999, 5); UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_Markup as u32, 99999, 5); UnsignedInteger::search_and_seek_back(rdr, PRC_TYPE_TESS_3D_Compressed as u32, 99999, 5);",
                 "fields": [
                     {
                         "name": "id",
@@ -3695,6 +3689,7 @@
                 ]
             },
             "PRC_TYPE_ASM_FileStructureTessellation": {
+                "comment": "Tessellation: all tessellated (triangulated) data in the leaf entities of the tree (representation items and markups).",
                 "fields": [
                     {
                         "name": "id",
@@ -3760,7 +3755,7 @@
                     {
                         "name": "bounding_box_behavior",
                         "data_type": "Character",
-                        "on_set": "debug!(\"bounding_box_behavior: {:?}\", PrcBodyBoundingBoxBehaviorBitField::from_bytes(bounding_box_behavior.value.to_le_bytes()));"
+                        "on_set": "debug!(\"{}bounding_box_behavior: {:?}\", indent::get(), PrcBodyBoundingBoxBehaviorBitField::from_bytes(bounding_box_behavior.value.to_le_bytes()));"
                     }
                 ]
             },
@@ -5086,6 +5081,7 @@
                 ]
             },
             "PRC_TYPE_SURF_Blend01": {
+                "comment": "proe neu",
                 "fields": [
                     {
                         "name": "id",
@@ -5119,6 +5115,7 @@
                 ]
             },
             "PRC_TYPE_SURF_Blend02": {
+                "comment": "xt",
                 "debug": false,
                 "fields": [
                     {
@@ -5195,7 +5192,7 @@
             "PRC_TYPE_SURF_Blend03": {
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/651",
                 "bug1": "https://github.com/pdf-association/pdf-issues/issues/715#issuecomment-3770493916",
-                "comment": "points, tangents, and second_derivatives arrays should be declared as Array<Vector3d>[number_of_elements * 3] size.",
+                "comment": "Catia fillet surface defined by three curves. points, tangents, and second_derivatives arrays should be declared as Array<Vector3d>[number_of_elements * 3] size.",
                 "fields": [
                     {
                         "name": "id",
@@ -6217,7 +6214,7 @@
                         "name": "start_end_data",
                         "data_type": "StartEndData",
                         "condition": "!_ctx.compressed_iso_spline",
-                        "condition_rust": "!_ctx.compressed_iso_spline"
+                        "condition_rust": "!_ctx.is_compressed_iso_spline()"
                     },
                     {
                         "name": "center",
@@ -6268,27 +6265,27 @@
                         "name": "start_vertex",
                         "data_type": "CompressedVertex",
                         "condition": "!!_ctx.curve_trimming_face",
-                        "condition_rust": "!!_ctx.curve_trimming_face"
+                        "condition_rust": "!!_ctx.is_curve_trimming_face()"
                     },
                     {
                         "name": "end_vertex",
                         "data_type": "CompressedVertex",
                         "condition": "!!_ctx.curve_trimming_face",
-                        "condition_rust": "!!_ctx.curve_trimming_face"
+                        "condition_rust": "!!_ctx.is_curve_trimming_face()"
                     },
                     {
                         "name": "start_point",
                         "data_type": "CompressedPoint",
                         "vbr": "_ctx.brep_data_compressed_tolerance / 100.0",
                         "condition": "!_ctx.curve_trimming_face",
-                        "condition_rust": "!_ctx.curve_trimming_face"
+                        "condition_rust": "!_ctx.is_curve_trimming_face()"
                     },
                     {
                         "name": "end_point",
                         "data_type": "CompressedPoint",
                         "vbr": "_ctx.brep_data_compressed_tolerance / 100.0",
                         "condition": "!_ctx.curve_trimming_face",
-                        "condition_rust": "!_ctx.curve_trimming_face"
+                        "condition_rust": "!_ctx.is_curve_trimming_face()"
                     }
                 ]
             },
@@ -6302,7 +6299,7 @@
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedCurveType", "PRC_HCG_Line"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "on_set": "_ctx.push_face_type(id)"
                     },
                     {
                         "name": "start_end_data",
@@ -6312,7 +6309,10 @@
             },
             "PRC_HCG_Circle": {
                 "debug": false,
+                "comment": "called CompressedCircle inside IsoNurbsTrimCrv",
                 "rust_traits": [ "Copy" ],
+                "sdk9_1": "Acrobat9_HTMLHelp/Acrobat9_1_HTMLHelp/API_References/PRCReference/PRC_Format_Specification/group___tf_x_k_circle_____serialize.html",
+                "UNUSEDon_enter": "assert!(!_ctx.is_compressed_iso_spline());",
                 "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
@@ -6320,11 +6320,11 @@
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedCurveType", "PRC_HCG_Circle"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)",
+                        "on_set": "_ctx.push_face_type(id)",
                         "FIXME": true,
                         "comment": "this field is OPTIONAL",
-                        "condition1": "!_ctx.compressed_iso_spline",
-                        "condition_rust1": "!_ctx.compressed_iso_spline"
+                        "condition": "!_ctx.compressed_iso_spline",
+                        "condition_rust": "!_ctx.is_compressed_iso_spline()"
                     },
                     {
                         "name": "is_particular_circle",
@@ -6353,7 +6353,7 @@
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedCurveType", "PRC_HCG_BSplineHermiteCurve"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "on_set": "_ctx.push_face_type(id)"
                     },
                     {
                         "name": "start_end_data",
@@ -6418,6 +6418,7 @@
                 ]
             },
             "PRC_HCG_CompositeCurve": {
+                "UNUSEDon_enter": "assert!(!_ctx.is_compressed_iso_spline());",
                 "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
@@ -6425,11 +6426,11 @@
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedCurveType", "PRC_HCG_CompositeCurve"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)",
+                        "on_set": "_ctx.push_face_type(id)",
                         "FIXME": true,
                         "comment": "this field is OPTIONAL",
-                        "condition1": "!_ctx.compressed_iso_spline",
-                        "condition_rust1": "!_ctx.compressed_iso_spline"
+                        "condition": "!_ctx.compressed_iso_spline",
+                        "condition_rust": "!_ctx.is_compressed_iso_spline()"
                     },
                     {
                         "name": "start_end_data",
@@ -6464,7 +6465,7 @@
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedCurveType", "PRC_HCG_Ellipse"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "on_set": "_ctx.push_face_type(id)"
                     }
                 ]
             },
@@ -6583,7 +6584,8 @@
                 "fields": [
                     {
                         "name": "is_trimmed",
-                        "data_type": "Boolean"
+                        "data_type": "Boolean",
+                        "debug": true
                     },
                     {
                         "name": "trim_loop",
@@ -6595,8 +6597,9 @@
                         "name": "point_on_torus",
                         "data_type": "CompressedPoint",
                         "vbr": "_ctx.brep_data_compressed_tolerance / 100.0",
-                        "condition": "all_loops_are_vertex_loops() && ctx.get_surface_type() == PRC_HCG_AnaTorus as u32 && is_trimmed.value",
-                        "condition_rust": "all_loops_are_vertex_loops() && _ctx.get_surface_type().unwrap() == PRC_HCG_AnaTorus as u32 && self.is_trimmed.value"
+                        "condition": "_ctx.all_loops_are_vertex_loops() && ctx.get_surface_type().value == PRC_HCG_AnaTorus as u8 && is_trimmed.value",
+                        "condition_rust": "_ctx.ContentCompressedAnaFace_has_point_on_torus(is_trimmed.value)",
+                        "debug": true
                     }
                 ]
             },
@@ -6611,38 +6614,40 @@
                     {
                         "name": "iso_face",
                         "data_type": "ContentCompressedIsoFace",
-                        "condition": "is_an_iso_face()",
-                        "condition_rust": "is_an_iso_face(_ctx.get_surface_type().unwrap())"
+                        "condition": "_ctx.is_an_iso_face()",
+                        "condition_rust": "_ctx.is_an_iso_face(_ctx.get_surface_type().unwrap())"
                     },
                     {
                         "name": "ana_face",
                         "data_type": "ContentCompressedAnaFace",
-                        "condition": "!is_an_iso_face()",
-                        "condition_rust": "!is_an_iso_face(_ctx.get_surface_type().unwrap())"
+                        "condition": "!_ctx.is_an_iso_face()",
+                        "condition_rust": "!_ctx.is_an_iso_face(_ctx.get_surface_type().unwrap())"
                     }
                 ]
             },
             "PRC_HCG_NewLoop": {
                 "debug": false,
+                "on_enter": "panic!(\"PRC_HCG_NewLoop should only be encountered inside an AnaFaceTrimLoop!\")",
                 "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedFaceType", "PRC_HCG_NewLoop"],
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "UNUSEDon_set": "_ctx.push_face_type(id)"
                     }
                 ]
             },
             "PRC_HCG_EndLoop": {
                 "debug": false,
+                "on_enter": "panic!(\"PRC_HCG_EndLoop should only be encountered inside an AnaFaceTrimLoop!\")",
                 "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedFaceType", "PRC_HCG_EndLoop"],
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "UNUSEDon_set": "_ctx.push_face_type(id)"
                     }
                 ]
             },
@@ -6654,7 +6659,7 @@
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedFaceType", "PRC_HCG_IsoPlane"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "on_set": "_ctx.push_face_type(id)"
                     },
                     {
                         "name": "x",
@@ -6682,7 +6687,7 @@
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedFaceType", "PRC_HCG_IsoCylinder"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "on_set": "_ctx.push_face_type(id)"
                     },
                     {
                         "name": "face",
@@ -6698,7 +6703,7 @@
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedFaceType", "PRC_HCG_IsoTorus"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "on_set": "_ctx.push_face_type(id)"
                     },
                     {
                         "name": "is_major_radius",
@@ -6718,7 +6723,7 @@
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedFaceType", "PRC_HCG_IsoSphere"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "on_set": "_ctx.push_face_type(id)"
                     },
                     {
                         "name": "face",
@@ -6734,7 +6739,7 @@
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedFaceType", "PRC_HCG_IsoCone"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "on_set": "_ctx.push_face_type(id)"
                     },
                     {
                         "name": "face",
@@ -6750,7 +6755,7 @@
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedFaceType", "PRC_HCG_AnaPlane"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "on_set": "_ctx.push_face_type(id)"
                     },
                     {
                         "name": "x",
@@ -6778,7 +6783,7 @@
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedFaceType", "PRC_HCG_AnaCylinder"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "on_set": "_ctx.push_face_type(id)"
                     },
                     {
                         "name": "face",
@@ -6804,7 +6809,7 @@
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedFaceType", "PRC_HCG_AnaTorus"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "on_set": "_ctx.push_face_type(id)"
                     },
                     {
                         "name": "face",
@@ -6840,7 +6845,7 @@
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedFaceType", "PRC_HCG_AnaSphere"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "on_set": "_ctx.push_face_type(id)"
                     },
                     {
                         "name": "face",
@@ -6861,7 +6866,7 @@
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedFaceType", "PRC_HCG_AnaCone"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "on_set": "_ctx.push_face_type(id)"
                     },
                     {
                         "name": "face",
@@ -6888,7 +6893,7 @@
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedFaceType", "PRC_HCG_AnaNurbs"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "on_set": "_ctx.push_face_type(id)"
                     },
                     {
                         "name": "face",
@@ -6908,7 +6913,7 @@
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedFaceType", "PRC_HCG_AnaGenericFace"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "on_set": "_ctx.push_face_type(id)"
                     },
                     {
                         "name": "face",
@@ -7195,6 +7200,8 @@
                 ]
             },
             "CompressedNurbs": {
+                "sdk9": "Acrobat9_1_HTMLHelp/API_References/PRCReference/PRC_Format_Specification/group___tf_x_k_b_spline_surface_____serialize.html",
+                "sdk10": "Acrobat10_SDK_HTMLHelp/API_References/PRCReference/PRC_Format_Specification/group___tf_x_k_b_spline_surface_____serialize.html",
                 "debug": false,
                 "fields": [
                     {
@@ -7307,7 +7314,9 @@
                         "name": "compressed_line",
                         "data_type": "PRC_HCG_Line",
                         "condition": "!iso_boundary.value && !is_a_circle.value",
-                        "condition_rust": "!iso_boundary.value && !self.is_a_circle.value"
+                        "condition_rust": "!iso_boundary.value && !self.is_a_circle.value",
+                        "UNUSEDmultiplicity": 0,
+                        "FIXME": true
                     }
                 ]
             },
@@ -7334,15 +7343,15 @@
                 ]
             },
             "PRC_HCG_IsoNurbs": {
-                "on_enter": "_ctx.compressed_iso_spline = true",
-                "on_leave": "_ctx.compressed_iso_spline = false;\n_ctx.pop_face_type()",
+                "on_enter": "_ctx.set_compressed_iso_spline(true)",
+                "on_leave": "_ctx.set_compressed_iso_spline(false);\n_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedFaceType", "PRC_HCG_IsoNurbs"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "on_set": "_ctx.push_face_type(id.value)"
+                        "on_set": "_ctx.push_face_type(id)"
                     },
                     {
                         "name": "orientation_surface_with_shell",
@@ -7399,8 +7408,6 @@
                         "data_type": "CompressedEntityType",
                         "eligible_type_kind": "PrcCompressedFaceType",
                         "eligible_type_ids": [
-                            ["PRC_HCG_NewLoop", "nl"],
-                            ["PRC_HCG_EndLoop", "el"],
                             ["PRC_HCG_IsoPlane", "ip"],
                             ["PRC_HCG_IsoCylinder", "icy"],
                             ["PRC_HCG_IsoTorus", "it"],
@@ -7430,8 +7437,7 @@
                         "data_type": "NumberOfBitsThenUnsignedInteger",
                         "condition": "!single_face",
                         "condition_rust": "!self.single_face",
-                        "on_set1": "_ctx.BrepDataCompress_sum_num_faces += number_of_faces.value",
-                        "on_set": "_ctx.BrepDataCompress_sum_num_faces += (if !!single_face {1} else {number_of_faces.value})"
+                        "on_set": "_ctx.BrepDataCompress_register_faces(if !!single_face {1} else {number_of_faces.value})"
                     },
                     {
                         "name": "faces",
@@ -7478,7 +7484,7 @@
                 ]
             },
             "PRC_TYPE_TOPO_SingleWireBodyCompress": {
-                "on_enter": "_ctx.curve_trimming_face = false;",
+                "on_enter": "_ctx.set_curve_trimming_face(false);",
                 "fields": [
                     {
                         "name": "id",
@@ -7491,16 +7497,21 @@
                     },
                     {
                         "name": "curve_tolerance",
-                        "data_type": "Double"
+                        "data_type": "Double",
+                        "on_set": "_ctx.brep_data_compressed_tolerance = curve_tolerance.value;\n_ctx.nurbs_tolerance = _ctx.brep_data_compressed_tolerance / 5.0",
+                        "comment": "guesswork, have not found this assignment documented anywhere, but number_of_bits_to_store_reference is still not set",
+                        "FIXME": true,
+                        "debug": true
                     },
                     {
                         "name": "compressed_curve",
-                        "data_type": "CompressedCurve"
+                        "data_type": "CompressedCurve",
+                        "on_set": "UnsignedInteger::search_and_seek_back(rdr, PrcType::PRC_TYPE_TOPO_Context as u32, 9999, 5)"
                     }
                 ]
             },
             "PRC_TYPE_TOPO_BrepDataCompress": {
-                "on_enter": "_ctx.curve_trimming_face = true;\n_ctx.BrepDataCompress_sum_num_faces = 0;\n_ctx.BrepDataCompress_enter()",
+                "on_enter": "_ctx.BrepDataCompress_enter()",
                 "on_leave": "_ctx.BrepDataCompress_leave()",
                 "fields": [
                     {
@@ -7540,8 +7551,7 @@
                         "name": "single",
                         "data_type": "CompressedShell",
                         "condition": "!!single_connex",
-                        "condition_rust": "!!self.single_connex",
-                        "NOon_set": "_ctx.BrepDataCompress_sum_num_faces = 1"
+                        "condition_rust": "!!self.single_connex"
                     },
                     {
                         "name": "multi",
@@ -7553,7 +7563,17 @@
                         "name": "base_topology_data",
                         "data_type": "BaseTopology",
                         "is_vec": true,
-                        "size": "_ctx.BrepDataCompress_sum_num_faces"
+                        "size": "_ctx.BrepDataCompress_get_sum_num_faces()"
+                    },
+                    {
+                        "name": "placeholder5b",
+                        "data_type": "Boolean",
+                        "multiplicity": 5,
+                        "condition": "_ctx.BrepDataCompress_get_sum_num_faces() == 0",
+                        "condition_rust": "_ctx.BrepDataCompress_get_sum_num_faces() == 0",
+                        "bug": "https://github.com/pdf-association/pdf-issues/issues/752",
+                        "comment": "this field is made-up and should be removed...",
+                        "FIXME": true
                     }
                 ]
             },
@@ -7636,7 +7656,7 @@
                     {
                         "name": "topo_context_count",
                         "data_type": "UnsignedInteger",
-                        "on_set": "UnsignedInteger::search_and_seek_back(rdr, PrcType::PRC_TYPE_TOPO_Context as u32, 9999, topo_context_count.value)"
+                        "UNUSEDon_set": "UnsignedInteger::search_and_seek_back(rdr, PrcType::PRC_TYPE_TOPO_Context as u32, 9999, topo_context_count.value)"
                     },
                     {
                         "SPECBUG": true,
@@ -7649,6 +7669,7 @@
                 ]
             },
             "PRC_TYPE_ASM_FileStructureGeometry": {
+                "comment": "Geometry: all exact geometry and topology data of the leaf entities of the tree (representation items).",
                 "debug": false,
                 "fields": [
                     {
