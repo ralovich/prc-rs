@@ -34,7 +34,6 @@ pub fn have_bbox(bounding_box_behavior: i8) -> bool {
     bf.PRC_BODY_BBOX_Evaluation() || bf.PRC_BODY_BBOX_Precise()
 }
 
-
 fn max(i: i32, j: i32, k: i32) -> i32 {
     std::cmp::max(std::cmp::max(i, j), k)
 }
@@ -842,7 +841,7 @@ impl CompressedEntityType {
                                 std::io::ErrorKind::Other,
                                 format!(
                                     "CompressedEntityType: unknown 4-bit curve pattern ({})!",
-                                    x2*4+x4
+                                    x2 * 4 + x4
                                 ),
                             ));
                         }
@@ -876,7 +875,10 @@ impl CompressedEntityType {
         if self.is_a_curve {
             panic!("not implemented yet")
         } else {
-            UnsignedIntegerWithVariableBitNumber { value: self.value as u32 }.to_writer(w, 4)?;
+            UnsignedIntegerWithVariableBitNumber {
+                value: self.value as u32,
+            }
+            .to_writer(w, 4)?;
         }
         Ok(())
     }
@@ -896,14 +898,18 @@ impl fmt::Debug for CompressedEntityType {
             write!(
                 f,
                 "CompressedEntityType(value: {} ({}), is_a_curve: {})",
-                e, e as u32, self.is_a_curve, //self.aid
+                e,
+                e as u32,
+                self.is_a_curve, //self.aid
             )
         } else {
             let e = PrcCompressedCurveType::try_from(self.value).unwrap();
             write!(
                 f,
                 "CompressedEntityType(value: {} ({}), is_a_curve: {})",
-                e, e as u32, self.is_a_curve, //self.aid
+                e,
+                e as u32,
+                self.is_a_curve, //self.aid
             )
         }
     }
@@ -1193,16 +1199,12 @@ impl CompressedIndiceArray {
         pc_array.push(diff_num_bits_used_to_store_ints[0] as i8);
         let mut c_bit_count = pc_array[0];
         let mut pi_array: Vec<i32> = Vec::with_capacity(num_elements);
-        pi_array.push(
-            IntegerWithVariableBitNumber::from_reader(r, c_bit_count as u32)?
-                .value,
-        );
+        pi_array.push(IntegerWithVariableBitNumber::from_reader(r, c_bit_count as u32)?.value);
         for i in 1..diff_num_bits_used_to_store_ints.len() {
             pc_array.push(diff_num_bits_used_to_store_ints[i] as i8);
 
             c_bit_count += pc_array[i];
-            let ival = IntegerWithVariableBitNumber::from_reader(r, c_bit_count as u32)?
-                .value;
+            let ival = IntegerWithVariableBitNumber::from_reader(r, c_bit_count as u32)?.value;
             let index = ival + pi_array[i - 1];
             assert!(index >= 0);
             pi_array.push(index);
@@ -1381,7 +1383,10 @@ impl Point3DWithVariableBitNumber {
         num_bits: u32,
         tolerance: f64,
     ) -> io::Result<Self> {
-        trace!("{}Point3DWithVariableBitNumber::from_reader()", indent::get());
+        trace!(
+            "{}Point3DWithVariableBitNumber::from_reader()",
+            indent::get()
+        );
         assert!(num_bits > 1);
         assert!(num_bits <= 30);
         //assert!(tolerance > 0.00000001);
@@ -1745,7 +1750,13 @@ impl FileStructureDescription {
             offsets.push(tmp);
         }
         if offsets.len() != PrcSectionKind::ExtraGeometry as usize + 2 {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, format!("{} sections are required", PrcSectionKind::ExtraGeometry as usize + 2)));
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!(
+                    "{} sections are required",
+                    PrcSectionKind::ExtraGeometry as usize + 2
+                ),
+            ));
         }
 
         // parse uncompressed fsi header
@@ -1817,7 +1828,19 @@ impl FileStructureHeader {
         }
         //trace!("{}files: {}", indent::get(), files.len());
 
-        Ok(Self{verread,verauth,uuid0,uuid1,uuid2,uuid3,uuida0,uuida1,uuida2,uuida3,files})
+        Ok(Self {
+            verread,
+            verauth,
+            uuid0,
+            uuid1,
+            uuid2,
+            uuid3,
+            uuida0,
+            uuida1,
+            uuida2,
+            uuida3,
+            files,
+        })
     }
 }
 

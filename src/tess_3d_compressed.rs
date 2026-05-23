@@ -41,7 +41,11 @@ impl Tess3dCompressed {
     ) {
         debug_time!("Tess3dCompress::get_points");
         assert_eq!(point_array.len() % 3, 0);
-        let orig = [origin_array[0].value, origin_array[1].value, origin_array[2].value];
+        let orig = [
+            origin_array[0].value,
+            origin_array[1].value,
+            origin_array[2].value,
+        ];
         let mut raw_verts: Vec<[f64; 3]> = Vec::with_capacity(point_array.len() / 3);
         for i in 0..point_array.len() / 3 {
             let x: f64 = point_array[i * 3 + 0] as f64 * tolerance + orig[0] as f64;
@@ -128,7 +132,10 @@ impl Tess3dCompressed {
             }
         }
         if num <= 3 {
-            warn!("Tess3dCompressed::number_of_reference_points {} <= 3, taking UNCOMPRESSED PATH", num);
+            warn!(
+                "Tess3dCompressed::number_of_reference_points {} <= 3, taking UNCOMPRESSED PATH",
+                num
+            );
         }
         num
     }

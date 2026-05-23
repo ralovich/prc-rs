@@ -9,8 +9,8 @@
 #![allow(unused)]
 
 use crate::constants::*;
-use crate::{indent, prc_double};
 use crate::prc_gen::*;
+use crate::{indent, prc_double};
 use bitstream_io::{BitRead, BitReader, BitWrite};
 use byteorder::{LittleEndian, ReadBytesExt};
 use measure_time::debug_time;
@@ -50,7 +50,11 @@ impl AnaFaceTrimLoop {
         while curve_type == PrcCompressedFaceType::PRC_HCG_NewLoop as u8 {
             _ctx.AnaFaceTrimLoop_start_new_loop();
             loop_surface_orientation = Boolean::from_reader(rdr)?;
-            debug!("{}loop_surface_orientation: {:?}", indent::get(), loop_surface_orientation.value);
+            debug!(
+                "{}loop_surface_orientation: {:?}",
+                indent::get(),
+                loop_surface_orientation.value
+            );
             loop {
                 //let element = RefOrCompressedCurve::from_reader(rdr, _ctx)?;
                 // open coding RefOrCompressedCurve::from_reader()...

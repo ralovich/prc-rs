@@ -176,7 +176,8 @@ mod tests {
                 root_index: UnsignedInteger { value: 9 },
                 product_occurrence_is_active: Boolean { value: true },
             });
-        reference.number_of_root_product_occurrences.value = reference.product_occurrences.len() as u32;
+        reference.number_of_root_product_occurrences.value =
+            reference.product_occurrences.len() as u32;
         {
             let mut w = BitWriter::endian(Cursor::new(&mut bytes), bitstream_io::BigEndian);
             let _ = reference.to_writer(&mut w, &mut ctx);
