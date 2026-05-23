@@ -1,0 +1,449 @@
+#!.venv/bin/python
+#!/usr/bin/env python
+# -*- mode: python; coding: utf-8-unix -*-
+#
+# SPDX-License-Identifier: MIT
+#
+# SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026. All rights reserved.
+
+
+import json
+import numpy as np
+from enum import IntEnum
+import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
+
+file_name = '344.json' # 3D:OK, Wire:TODO
+#file_name = '342.json' # 3D:OK, Wire:TODO
+#file_name = '167.json'
+#file_name = 'Derek_Leinweber_QCD_PlaqLinkTopQ.stream-76_7t.json'
+#file_name = 'unit_cube_1.json' # 3D:OK, Wire:TODO
+file_name = 'tetrahedron_1.json'
+file_name = 'tetrahedron_1_compr.json'
+#file_name = 'yellowtri.json'
+#file_name = 'yellowtri_compr.json'
+
+class PrcType(IntEnum):
+    PRC_TYPE_ASM_ModelFile = 301,
+    PRC_TYPE_ASM_FileStructure = 302,
+    PRC_TYPE_ASM_FileStructureGlobals = 303,
+    PRC_TYPE_ASM_FileStructureTree = 304,
+    PRC_TYPE_ASM_FileStructureTessellation = 305,
+    PRC_TYPE_ASM_FileStructureGeometry = 306,
+    PRC_TYPE_ASM_FileStructureExtraGeometry = 307
+
+class PrcFaceTesselationFlags(IntEnum):
+    PRC_FACETESSDATA_Triangle = 0x0002,
+    PRC_FACETESSDATA_TriangleTextured = 0x0200,
+
+class PrcFaceWireTesselationFlags(IntEnum):
+    PRC_FACETESSDATA_WIRE_IsNotDrawn = 0x4000
+    PRC_FACETESSDATA_WIRE_IsClosing = 0x8000
+
+def handle_tess_3d(tess_3d):
+    # 1. tessellation data for an ordered collection of faces as well as
+    # 2. tessellation data for the wire boundaries of the faces
+    coordinates = tess_3d["tessellation_coordinates"]["coordinates"]
+    coordinates = np.asarray(coordinates)#.reshape(len(coordinates)//3, 3).T
+    del tess_3d["tessellation_coordinates"]["coordinates"]
+    print(f'\tcoordinates: {coordinates.shape} {coordinates.dtype}')
+
+    normal_coordinates = tess_3d["normal_coordinates"]
+    normal_coordinates = np.asarray(normal_coordinates)#.reshape((3, len(normal_coordinates)//3))
+    print(f'\tnormal_coordinates: {normal_coordinates.shape} {normal_coordinates.dtype}')
+    del tess_3d["normal_coordinates"]
+
+    wire_indies = np.asarray([wi for wi in tess_3d["wire_indices"]])
+    print(f'\twire_indies: {wire_indies.shape} {wire_indies.dtype}')
+    del tess_3d["wire_indices"]
+
+    triangulated_index_array = np.asarray(tess_3d["triangulated_index_array"])
+    print(f'\ttriangulated_index_array: {triangulated_index_array.shape} {triangulated_index_array.dtype} [{triangulated_index_array.min()}, {triangulated_index_array.max()}]')
+    del tess_3d["triangulated_index_array"]
+    # face_tesselation_data 174 PRC_TYPE_TESS_Face
+    print(f'\t{len(tess_3d["face_tessellation_data"])} face tesselations')
+    faces = []
+    for (f, fi) in zip(tess_3d["face_tessellation_data"], range(len(tess_3d["face_tessellation_data"]))):
+        print(f"\t\tface idx: {fi}")
+        #if fi >= 5:
+        #    break
+        
+        line_attributes = np.asarray([la for la in f["line_attributes"]])
+        del f["line_attributes"]
+        start_of_wire_data = f["start_of_wire_data"]
+        del f['start_of_wire_data']
+        sizes_wire = np.asarray([sw for sw in f["sizes_wire"]])
+        del f["sizes_wire"]
+        
+        used_entities_flag = f["used_entities_flag"]
+        del f["used_entities_flag"]
+        print(f"\t\tused_entities_flag: {used_entities_flag}")
+        start_triangulated = f["start_triangulated"]
+        del f["start_triangulated"]
+        triangulateddata = np.asarray(f["triangulateddata"])
+        del f["triangulateddata"]
+        assert(len(triangulateddata) == 1)
+        # vertex_color_data
+        #print(json.dumps(f, indent=1))
+        #print(f)
+        if used_entities_flag == int(PrcFaceTesselationFlags.PRC_FACETESSDATA_Triangle):
+            num_coords_per_triangle = 6 # indices of (normal, point, normal, point, normal, point)
+            num_triangles = triangulateddata[0]
+            print(f"\t\tface tess {fi}: {num_triangles} triangles")
+            _vertices = []
+            _triangles = []
+            for ti in range(num_triangles):
+                #_i = start_triangulated + ti
+
+                # indices into coordinates
+                ivert = [triangulated_index_array[start_triangulated + ti*6 + 1],
+                            triangulated_index_array[start_triangulated + ti*6 + 3],
+                            triangulated_index_array[start_triangulated + ti*6 + 5]]
+                # indices into normal_coordinates
+                inorm = [triangulated_index_array[start_triangulated + ti*6 + 0],
+                            triangulated_index_array[start_triangulated + ti*6 + 2],
+                            triangulated_index_array[start_triangulated + ti*6 + 4]]
+
+                for i in range(3):
+                    assert(ivert[i]>=0)
+                    assert(ivert[i]<len(coordinates))
+                    assert((ivert[i]//3)*3==ivert[i])
+                    assert(inorm[i]>=0)
+                    assert(inorm[i]<len(normal_coordinates))
+                    assert((inorm[i]//3)*3==inorm[i])
+                #     pt = [coordinates[ivert[i]+0],
+                #         coordinates[ivert[i]+1],
+                #         coordinates[ivert[i]+2]]
+                #     norm = [normal_coordinates[inorm[i]+0],
+                #         normal_coordinates[inorm[i]+1],
+                #         normal_coordinates[inorm[i]+2]]
+
+                # TODO: verify normals
+
+                tri = [ivert[0]//3, ivert[1]//3, ivert[2]//3]
+                _triangles.append(tri)
+                faces.append(tri)
+
+            if False:
+                fig = plt.figure()
+                ax = fig.add_subplot(projection='3d')
+                x=coordinates[0::3]
+                y=coordinates[1::3]
+                z=coordinates[2::3]
+                triangles=np.asarray(_triangles)
+                ax.plot_trisurf(x, y, z, triangles=triangles, linewidth=0.2, antialiased=True)
+                plt.show()
+
+            #num_wire_edges = len(sizes_wire)//2
+            #for wi in range(len(sizes_wire)):
+            #    last1 = False
+            #    we = sizes_wire[wi]
+            #    if we & int(PrcFaceWireTesselationFlags.PRC_FACETESSDATA_WIRE_IsClosing):
+            #        last1 = True
+            #        we = we & ~int(PrcFaceWireTesselationFlags.PRC_FACETESSDATA_WIRE_IsClosing)
+            #    i = start_of_wire_data + we
+            #    pass
+            #faces.append((sizes_wire, triangulateddata))
+        elif used_entities_flag == int(PrcFaceTesselationFlags.PRC_FACETESSDATA_TriangleTextured):
+            num_triangles = triangulateddata[0]
+            print(f"\t\tface tess {fi}: {num_triangles} triangles")
+            number_of_textured_coordinate_indices = f['number_of_textured_coordinate_indices']
+            del f['number_of_textured_coordinate_indices']
+            print(f"\t\tnumber_of_textured_coordinate_indices: {number_of_textured_coordinate_indices}")
+            _vertices = []
+            _triangles = []
+            for ti in range(num_triangles):
+                #_i = start_triangulated + ti
+
+                # indices into normal_coordinates
+                inorm = [triangulated_index_array[start_triangulated + ti*6 + 0],
+                         triangulated_index_array[start_triangulated + ti*6 + 3],
+                         triangulated_index_array[start_triangulated + ti*6 + 6]]
+                # indices into texcoords
+                itexc = [triangulated_index_array[start_triangulated + ti*6 + 1],
+                         triangulated_index_array[start_triangulated + ti*6 + 4],
+                         triangulated_index_array[start_triangulated + ti*6 + 7]]
+                # indices into vertex coordinates
+                ivert = [triangulated_index_array[start_triangulated + ti*6 + 2],
+                         triangulated_index_array[start_triangulated + ti*6 + 5],
+                         triangulated_index_array[start_triangulated + ti*6 + 8]]
+
+                tri = [ivert[0]//3, ivert[1]//3, ivert[2]//3]
+                _triangles.append(tri)
+                faces.append(tri)
+        else:
+            print(f"Warning: unknown used_entities_flag:{used_entities_flag}!")
+    #print(len(faces))
+    #del tess_3d["face_tessellation_data"]
+    # texture_coordinates
+    texture_coordinates = [tc for tc in tess_3d["texture_coordinates"]]
+    texture_coordinates = np.asarray(texture_coordinates)
+    #print(len(texture_coordinates))
+    del tess_3d["texture_coordinates"]
+
+    # TODO: render wires
+
+    #print(json.dumps(t, indent=1))
+    # compute renderable data for triangles, t-fans, t-strips
+    if True:
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        x=coordinates[0::3]
+        y=coordinates[1::3]
+        z=coordinates[2::3]
+        triangles=np.asarray(faces)
+        ax.plot_trisurf(x, y, z, triangles=triangles, linewidth=0.2, antialiased=True)
+        plt.show()
+    print('')
+
+def tri_from_new(point_array, origin_array, tol, i):
+    raw_vertices = []
+    raw_triangles = []
+    i = 0
+    if i < len(point_array)//3:
+        tri = []
+        v0 = [
+            float(point_array[i*3+0]) * tol + origin_array[0],
+            float(point_array[i*3+1]) * tol + origin_array[1],
+            float(point_array[i*3+2]) * tol + origin_array[2]]
+        tri.append(i)
+        i = i + 1
+        # V1: DV1 ← V1‐V0
+        v1 = [
+            v0[0] + float(point_array[i*3+0]) * tol,
+            v0[1] + float(point_array[i*3+1]) * tol,
+            v0[2] + float(point_array[i*3+2]) * tol]
+        tri.append(i)
+        i = i + 1
+        # V2 : DV2 ← V2 ‐ (V0+V1) / 2
+        v2 = [
+            (v0[0] + v1[0])/2.0 + float(point_array[i*3+0]) * tol,
+            (v0[1] + v1[1])/2.0 + float(point_array[i*3+1]) * tol,
+            (v0[2] + v1[2])/2.0 + float(point_array[i*3+2]) * tol]
+        tri.append(i)
+        raw_vertices.append([v0, v1, v2])
+        raw_triangles.append(tri)
+    pass
+
+def tri_from_edge(v0, v1, v3, point_array, tol, i):
+    # In the equation (1), V0 and V1 are taken so that V0 has a treatement index less than V1 (which
+    # means that V0 has been treated before V1). A particular case occurs if the Z axis
+    # or Y are null (length less than FLT_EPSILON). In these cases, they are computed by the function
+    # MakeOrthoRep() described in annex, using the unit axis X as input.
+    # Then V2 is expressed in this coordinate system, compressed the same way as before and updated in
+    # the working structure
+    o = (v0 + v1)/2.0
+    xax = (v1-v0)/np.linalg.norm(v1-v0)
+    ztmp = v3-o
+    zax = np.cross(ztmp, xax/np.linalg.norm(xax))
+    zax = zax/np.linalg.norm(zax)
+    yax = np.cross(zax/np.linalg.norm(zax), xax/np.linalg.norm(xax))
+
+    v2_in_xyz = [float(point_array[i*3+0]) * tol,
+                 float(point_array[i*3+1]) * tol,
+                 float(point_array[i*3+2]) * tol]
+    # TODO
+    v2 = [0,0,0]
+    pass
+
+def handle_tess_3d_compressed(t3dc):
+    #print('t3dc', t3dc.keys())
+
+    tol = t3dc["tolerance"]
+    del t3dc["tolerance"]
+    print(f'\ttol: {tol}')
+    origin_array = [t3dc["origin_array"][0]["value"], t3dc["origin_array"][1]["value"], t3dc["origin_array"][2]["value"]]
+    del t3dc["origin_array"]
+    print(f'\torigin_array: {origin_array}')
+
+    # point_array describes the vertex coordinates of each point. Coordinates are stored only if necessary, if
+    # the point has not been encountered before.
+    point_array = t3dc["point_array"]["a"]
+    point_array = np.asarray(point_array, dtype=np.int32)#.reshape(len(coordinates)//3, 3).T
+    del t3dc["point_array"]
+    print(f'\tpoint_array: {point_array.shape} {point_array.dtype} [{point_array.min()}, {point_array.max()}]')
+
+    # edge_status_array for each triangle, used to describe the triangles neighbors.
+    # Each triangle has a flag which is initialized to 0 and then set to:
+    # |= 0x1 if Triangle has a Right Neighbor
+    # |= 0x2 if Triangle has a Left Neighbor
+    edge_status_array = t3dc["edge_status_array"]["a"]
+    edge_status_array = np.asarray(edge_status_array, dtype=np.int8)
+    del t3dc["edge_status_array"]
+    print(f'\tedge_status_array: {edge_status_array.shape} {edge_status_array.dtype} [{edge_status_array.min()}, {edge_status_array.max()}]')
+    unique, counts = np.unique(edge_status_array, return_counts=True)
+    print(f'\t{dict(zip(unique, counts))}')
+    assert(len(dict(zip(unique, counts))) <= 4)
+    # NOTE: in sample data the following ranges were found:
+    #  range    |   num elems
+    #  [0, 0]       1       
+    #  [0, 1]       2
+    #  [0, 2]       3
+    #  [0, 3]       4
+    #  [-1, 1]      3
+    #  [-2, 0]      3
+    #  [-2, 1]      4
+    if edge_status_array.min() < 0:
+        print(f'{edge_status_array[0]} 0b{edge_status_array[0]:08b}')
+        print(f'{edge_status_array[1]} 0b{edge_status_array[1]:08b}')
+        print(f'{edge_status_array[2]} 0b{edge_status_array[2]:08b}')
+        print(f'{~edge_status_array.view(np.uint8)[0]}')
+
+    # triangle_face_array represents, for each triangle, the index of the face to which it belongs.
+    triangle_face_array = t3dc["triangle_face_array"]["a"]
+    triangle_face_array = np.asarray(triangle_face_array, dtype=np.int32)
+    del t3dc["triangle_face_array"]
+    print(f'\ttriangle_face_array: {triangle_face_array.shape} {triangle_face_array.dtype} [{triangle_face_array.min()}, {triangle_face_array.max()}]')
+
+    # point_is_a_reference indicates if a point has been already treated
+    point_is_reference_array = t3dc["point_is_reference_array"]["a"]
+    point_is_reference_array = np.asarray(point_is_reference_array, dtype=np.bool)
+    del t3dc["point_is_reference_array"]
+    print(f'\tpoint_is_reference_array: {point_is_reference_array.shape} {point_is_reference_array.dtype} [{point_is_reference_array.min()}, {point_is_reference_array.max()}]')
+    unique, counts = np.unique(point_is_reference_array, return_counts=True)
+    print(f'\t{dict(zip(unique, counts))}')
+
+    # point_reference_array is used to store treatment indexes of points which have been stored by
+    # processing a previous triangle.
+    point_reference_array = t3dc["point_reference_array"]["a"]
+    point_reference_array = np.asarray(point_reference_array, dtype=np.int32)
+    del t3dc["point_reference_array"]
+    if len(point_reference_array) != 0:
+        print(f'\tpoint_reference_array: {point_reference_array.shape} {point_reference_array.dtype} [{point_reference_array.min()}, {point_reference_array.max()}]')
+        assert(point_reference_array.shape[0] == counts[1])
+
+    assert(len(point_array)%3 == 0)
+    num_triangles = len(triangle_face_array)
+    print(f"\tt3dc: num_triangles: {num_triangles}")
+    num_faces = max(triangle_face_array)+1
+    print(f"\tt3dc: num_faces: {num_faces}")
+    if len(edge_status_array) == len(triangle_face_array):
+        print("\tt3dc: case A")
+        next_tri = 1
+    elif len(edge_status_array) == 3 * len(triangle_face_array):
+        print("\tt3dc: case B")
+        next_tri = 3
+    else:
+        print("\tt3dc: case C")
+
+    if edge_status_array.min() >= 0:
+        raw_vertices = []
+        raw_triangles = []
+        i = 0
+        if i < len(point_array)//3:
+            tri = []
+            v0 = [
+                float(point_array[i*3+0]) * tol + origin_array[0],
+                float(point_array[i*3+1]) * tol + origin_array[1],
+                float(point_array[i*3+2]) * tol + origin_array[2]]
+            tri.append(i)
+            i = i + 1
+            # V1: DV1 ← V1‐V0
+            v1 = [
+                v0[0] + float(point_array[i*3+0]) * tol,
+                v0[1] + float(point_array[i*3+1]) * tol,
+                v0[2] + float(point_array[i*3+2]) * tol]
+            tri.append(i)
+            i = i + 1
+            # V2 : DV2 ← V2 ‐ (V0+V1) / 2
+            v2 = [
+                (v0[0] + v1[0])/2.0 + float(point_array[i*3+0]) * tol,
+                (v0[1] + v1[1])/2.0 + float(point_array[i*3+1]) * tol,
+                (v0[2] + v1[2])/2.0 + float(point_array[i*3+2]) * tol]
+            tri.append(i)
+            raw_vertices.append([v0, v1, v2])
+            raw_triangles.append(tri)
+
+    # To traverse the mesh structure.
+    # — If the current triangle has only one neighbor, this neighbor is pushed on the stack.
+    # — If the current triangle has both a left and a right neighbor which are not treated, the left triangle is first pushed on the stack. Then the right triangle is pushed on the stack.
+    # - If the current triangle has no neighbor which are not treated, the last triangle in the stack is treated.
+    # Once done with the current triangle the stack is popped and it becomes the current triangle.
+    tris_processed = 0
+    stack = list(reversed(range(num_triangles)))
+    #stack = [0]
+    while len(stack) != 0:
+        ct = stack[-1] # current triangle id
+        stack.pop()
+        neighs = edge_status_array[tris_processed*next_tri]
+        has_right = neighs & 0x01 != 0
+        has_left = neighs & 0x02 != 0
+        # if 1 neigh, push on stack
+        # if 2 neighs, push L on stack, push R on stack
+        if has_left:
+            pass
+        if has_right:
+            pass
+
+        # TODO: case stack is empty, but tris_processed < num_triangles: how to pick next triangle to process?
+        #       OR this cannot happen within a face?
+        #       OR just go through all triangles independent which face they belong to?
+
+        # two cases are possible
+        # - new triangle from stack, in this case V0, V1, V2 are computed from scratch
+        # - entering a triangle through an existing edge [V0, V1] of a previous triangle, V2 is computed using
+        vid = 0
+        if point_is_reference_array[vid]:
+            # TODO: handle case vertex is a reference of a previous vertex
+            pass
+
+        tris_processed += 1
+        pass
+
+    assert(num_triangles == tris_processed)
+    print('')
+
+def handle_tess_3d_wire(t3dw):
+    print('t3dw', t3dw.keys())
+    coordinates = t3dw["tessellation_coordinates"]["coordinates"]
+    coordinates = np.asarray(coordinates)
+    del t3dw["tessellation_coordinates"]["coordinates"]
+    print(f'\tcoordinates: {coordinates.shape} {coordinates.dtype}')
+
+    wire_indexes = [vi["value"] for vi in t3dw["wire_indexes"]]
+    wire_indexes = np.asarray(wire_indexes)
+    del t3dw["wire_indexes"]
+    print(f'\twire_indexes: {wire_indexes.shape} {wire_indexes.dtype}')
+    
+    print('')
+
+def handle_tess_markup(tm):
+    #print('tm', tm.keys())
+    pass
+
+def load_case(file_name):
+    with open(file_name) as f:
+        d = json.load(f)
+        print(f"\"{file_name}\": {d["verread"]} {d["verauth"]}")
+        #print(d.keys())
+        print(f"num prc file structures: {len(d["fsi"])}")
+        #print(d["fsi"][0].keys())
+        for (fs, fsi) in zip(d["fsi"], range(len(d["fsi"]))):
+            print(f"fsi idx:{fsi}")
+            #print(fs.keys())
+            #print(fs["tess"].keys())
+            assert(fs["tess"]["id"] == int(PrcType.PRC_TYPE_ASM_FileStructureTessellation))
+            p = fs["tess"]
+            for (t,ti) in zip(p["tess"], range(len(p["tess"]))):
+                print(f"\ttess idx:{ti}")
+                if "d3" in t["id_concrete"]: # PRC_TYPE_TESS_3D
+                    handle_tess_3d(t["id_concrete"]["d3"])
+                if "tess_3d" in t["id_concrete"]: # PRC_TYPE_TESS_3D
+                    handle_tess_3d(t["id_concrete"]["tess_3d"])
+                if "tess_3d_compressed" in t["id_concrete"]: # PRC_TYPE_TESS_3D_Compressed
+                    handle_tess_3d_compressed(t["id_concrete"]["tess_3d_compressed"])
+                if "tess_3d_wire" in t["id_concrete"]:
+                    handle_tess_3d_wire(t["id_concrete"]["tess_3d_wire"])
+                if "tess_markup" in t["id_concrete"]:
+                    handle_tess_markup(t["id_concrete"]["tess_markup"])
+
+def main():
+    load_case(file_name)
+
+if __name__ == '__main__':
+    main()
+
+# Local Variables:
+# encoding: utf-8-unix
+# mode: python
+# End:
