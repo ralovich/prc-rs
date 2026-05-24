@@ -264,6 +264,7 @@ pub fn read_double_from_reader<R: BitRead>(rdr: &mut R) -> io::Result<f64> {
                 //println!("u64={:064b} d={}", unsafe { value.u }, unsafe { value.d } );
                 break;
             } else {
+                assert!((cbi + offset as i8) < 8);
                 unsafe {
                     value.bytes[cbi as usize] = value.bytes[cbi as usize + offset as usize];
                 }
