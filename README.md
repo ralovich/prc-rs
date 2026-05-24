@@ -9,7 +9,7 @@
 - [x] Schema evaluator
 - [x] Huffman decoding
 - [x] parsing compressed arrays
-- [ ] parsing PRC_TYPE_TESS_3D_Compressed: vertex and triangle interpretation (https://github.com/pdf-association/pdf-issues/issues/727)
+- [ ] parsing PRC_TYPE_TESS_3D_Compressed: vertex and triangle interpretation (https://patents.google.com/patent/US8207965B2/en, https://github.com/pdf-association/pdf-issues/issues/727)
 - [ ] parsing PRC_TYPE_TESS_3D_Compressed: normals (https://github.com/pdf-association/pdf-issues/issues/436, https://github.com/pdf-association/pdf-issues/issues/540)
 - [ ] parsing PRC_TYPE_TESS_3D_Compressed: color data
 - [ ] parsing compressed NURBS
@@ -37,3 +37,4 @@ The PRC file format documentation is quite scattered, incomplete sometimes contr
 - Acrobat SDK 9 for [Mac](http://download.macromedia.com/pub/developer/acrobat/sdk/9/sdk91_v2_mac.dmg) [Win](http://download.macromedia.com/pub/developer/acrobat/sdk/9/sdk91_v2_win.zip)
 - Acrobat SDK 10 for [Mac](http://download.macromedia.com/pub/developer/acrobat/sdk/10/sdk100_v1_mac.dmg) [Win](http://download.macromedia.com/pub/developer/acrobat/sdk/10/sdk100_v1_win.zip)
 - Acrobat SDK 11 for [Mac](https://download.macromedia.com/pub/developer/acrobat/sdk/11/sdk110_v1_mac.dmg) [Win](https://download.macromedia.com/pub/developer/acrobat/sdk/11/sdk110_v1_win.zip)
+- [US pat. 8.207,965](https://patents.google.com/patent/US8207965B2/en)
