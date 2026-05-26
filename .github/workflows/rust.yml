@@ -48,7 +48,6 @@ jobs:
       
     - name: Lint
       run: |
-        ./src/generate_rust src/prc.json src/prc_gen.rs # cargo fmt bails if prc_gen.rs is missing
         cargo fmt --all -- --check # cargo clippy --all-targets
 #    - name: Install Dependencies
 #      run: sudo apt update && sudo apt install lz4 ugrep colordiff python3-tqdm
