@@ -21,6 +21,7 @@ jobs:
         vcpkg install lz4
         pip3 install --break-system-packages --user tqdm
         choco install ugrep
+        ugrep
 
     - name: Checkout sources
       uses: actions/checkout@v5
