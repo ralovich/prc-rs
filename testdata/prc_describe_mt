@@ -60,6 +60,11 @@ def describe_one_section(_case):
     start_time = time.time()
     #rv = subprocess.run(["cmd", "/c", f'{cmd}'], capture_output = True, check = True)#, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
     rv = subprocess.run([f"{describe}", f"{arg}", f'{file_path}'], capture_output = True, check = False)#, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+
+    print(type(rv.stdout))
+    with open(f"{folder}/{log_path}", "wb") as binary_file:
+        binary_file.write(rv.stdout)
+
     #print(type(rv), rv)
     run_time = (time.time() - start_time)*1000
     cmd_rv = rv.returncode#int(rv.stdout.decode('UTF-8').strip())
