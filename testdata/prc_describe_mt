@@ -70,16 +70,16 @@ def describe_one_section(_case):
     num_fs = '0'
     num_uncompr_files = '0'
 
-    if sec_id == 110:
-        rv = subprocess.run(["ugrep", "-z", 'Version for reading', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
+    if sec_id == 0:
+        rv = subprocess.run(["ugrep", "-z", 'Version for reading', f'{folder}/{log_path}'], capture_output = True, check = True)
         ver_read = rv.stdout.decode('UTF-8').strip().split()[6]
-        rv = subprocess.run(["ugrep", "-z", 'Authoring version', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
+        rv = subprocess.run(["ugrep", "-z", 'Authoring version', f'{folder}/{log_path}'], capture_output = True, check = True)
         ver_auth = rv.stdout.decode('UTF-8').strip().split()[5]
-        rv = subprocess.run(["ugrep", "-z", 'Number of file sections', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
+        rv = subprocess.run(["ugrep", "-z", 'Number of file sections', f'{folder}/{log_path}'], capture_output = True, check = True)
         num_fs = rv.stdout.decode('UTF-8').strip().split()[7]
-        rv = subprocess.run(["ugrep", "-z", 'num_uncompr_files', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
+        rv = subprocess.run(["ugrep", "-z", 'num_uncompr_files', f'{folder}/{log_path}'], capture_output = True, check = True)
         num_uncompr_files = str(int(num_uncompr_files) + int(rv.stdout.decode('UTF-8').strip().split()[4]))
-        rv = subprocess.run(["ugrep", "-z", 'sum files', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
+        rv = subprocess.run(["ugrep", "-z", 'sum files', f'{folder}/{log_path}'], capture_output = True, check = True)
         num_uncompr_files = str(int(num_uncompr_files) + int(rv.stdout.decode('UTF-8').strip().split()[5]))
 
     #print('*', end = '', flush = True)
