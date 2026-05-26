@@ -19,9 +19,9 @@ jobs:
       if: runner.os == 'windows'
       run: |
         vcpkg install lz4
-        pip3 install --break-system-packages --user tqdm
+        pip3 install --break-system-packages --user tqdm lz4
         choco install ugrep
-        ugrep
+        #ugrep
 
     - name: Checkout sources
       uses: actions/checkout@v5
@@ -64,14 +64,15 @@ jobs:
         #du -d 1 -h
         #echo "colordiff -u ../../testdata/expected_all.txt review_summary.txt"
         #colordiff -u ../../testdata/expected_all.txt review_summary.txt
-    # - name: Archive testing logs
-    #   uses: actions/upload-artifact@v7
-    #   with:
-    #     name: testing-logs
-    #     path: |
-    #       prc-db/prcs/globals_rs
-    #       prc-db/prcs/tree_rs
-    #       prc-db/prcs/tess_rs
-    #       prc-db/prcs/geom_rs
-    #       prc-db/prcs/ext_rs
-    #       prc-db/prcs/review_summary.txt
+    - name: Archive testing logs
+      uses: actions/upload-artifact@v7
+      with:
+        name: testing-logs-${{runner.os}}
+        path: |
+          prc-db/prcs/globals_rs
+          prc-db/prcs/tree_rs
+          prc-db/prcs/tess_rs
+          prc-db/prcs/geom_rs
+          prc-db/prcs/ext_rs
+          prc-db/prcs/mf_rs
+          prc-db/prcs/review_summary.txt
