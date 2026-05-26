@@ -40,6 +40,11 @@ jobs:
     
     - name: Checkout sources
       uses: actions/checkout@v5
+
+    - name: Verify codegen up-to-date
+      run: |
+        ./src/generate_rust src/prc.json src/prc_gen_verify_up_to_date.rs
+        colordiff -u src/prc_gen.rs src/prc_gen_verify_up_to_date.rs
       
     - name: Lint
       run: |
