@@ -32,11 +32,11 @@ jobs:
         #python3 src\generate_rust src\prc.json src\prc_gen.rs
         cargo build --verbose --profile=reldeb --all
         cargo build --verbose --profile=reldeb --tests
-#    - name: Checkout test data
-      # uses: actions/checkout@v5
-      # with:
-      #   repository: ralovich/prc-db
-      #   path: prc-db
+    - name: Checkout test data
+      uses: actions/checkout@v5
+      with:
+        repository: ralovich/prc-db
+        path: prc-db
     - name: Run whitebox tests
       run: |
         cargo test --verbose --profile=reldeb
