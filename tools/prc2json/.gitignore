@@ -6,3 +6,5 @@ cmake_install.cmake
 prc_rs-prefix
 CTest*
 Testing
+build
+target
