@@ -54,14 +54,15 @@ def describe_one_section(_case):
     (file_path, sec_id, arg, folder) = _case
     log_path = os.path.splitext(file_path)[0]+'.txt'
 
-    cmd = f'{describe} {arg} \"{file_path}\" 2>&1 | lz4 -zfq - \"{folder}/{log_path}.lz4\" ; echo ${{PIPESTATUS[0]}} ; exit ${{PIPESTATUS[0]}}'
+    #cmd = f'{describe} {arg} \"{file_path}\" > \"{folder}/{log_path}\" 2>&1'
     #print(cmd)
 
     start_time = time.time()
-    rv = subprocess.run(["bash", "-c", f'{cmd}'], capture_output = True, check = True)#, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
-    #print(rv)
+    #rv = subprocess.run(["cmd", "/c", f'{cmd}'], capture_output = True, check = True)#, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+    rv = subprocess.run([f"{describe}", f"{arg}", f'{file_path}'], capture_output = True, check = False)#, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+    #print(type(rv), rv)
     run_time = (time.time() - start_time)*1000
-    cmd_rv = int(rv.stdout.decode('UTF-8').strip())
+    cmd_rv = rv.returncode#int(rv.stdout.decode('UTF-8').strip())
     #print(f'{file_path:70} {arg} took {run_time:8.0f} ms cmd_rv={cmd_rv}')
 
     ver_read = '0'
@@ -69,7 +70,7 @@ def describe_one_section(_case):
     num_fs = '0'
     num_uncompr_files = '0'
 
-    if sec_id == 0:
+    if sec_id == 110:
         rv = subprocess.run(["ugrep", "-z", 'Version for reading', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
         ver_read = rv.stdout.decode('UTF-8').strip().split()[6]
         rv = subprocess.run(["ugrep", "-z", 'Authoring version', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)

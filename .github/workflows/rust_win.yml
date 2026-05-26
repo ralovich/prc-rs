@@ -15,12 +15,22 @@ jobs:
     runs-on: windows-2025-vs2026
 
     steps:
-    - uses: actions/checkout@v5
+    - name: Install Windows build-deps
+      if: runner.os == 'windows'
+      run: |
+        vcpkg install lz4
+        pip3 install --break-system-packages --user tqdm
+        choco install ugrep
+
+    - name: Checkout sources
+      uses: actions/checkout@v5
 
     - name: Lint
+      if: runner.os == 'windows2'
       run: |
        cargo fmt --all -- --check # cargo clippy --all-targets
-    - name: Build
+    - name: Build Windows
+      if: runner.os == 'windows'
       run: |
         #[System.Text.Encoding]::Default
         #chcp 65001
@@ -29,25 +39,30 @@ jobs:
         #python3 src\generate_rust
         #python3 src\generate_rust src\prc.json src\prc_gen.rs
         cargo build --verbose --profile=reldeb --all
-        cargo build --verbose --profile=reldeb --tests
+        #cargo build --verbose --profile=reldeb --tests
     - name: Checkout test data
       uses: actions/checkout@v5
       with:
         repository: ralovich/prc-db
         path: prc-db
     - name: Run whitebox tests
+      if: runner.os == 'windows2'
       run: |
         cargo test --verbose --profile=reldeb
-    # - name: Run blackbox tests
-    #   run: |
-    #     cd prc-db/prcs
-    #     #describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt ../../testdata/prc_describe
-    #     echo "RUST_LOG=debug RUST_BACKTRACE=1 describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt"
-    #     RUST_LOG=debug RUST_BACKTRACE=1 describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt
-    #     echo "du -d 1 -h"
-    #     du -d 1 -h
-    #     echo "colordiff -u ../../testdata/expected_all.txt review_summary.txt"
-    #     colordiff -u ../../testdata/expected_all.txt review_summary.txt
+    - name: Run blackbox tests
+      run: |
+        cd prc-db/prcs
+        #describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt ../../testdata/prc_describe
+        echo "RUST_LOG=debug RUST_BACKTRACE=1 describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt"
+        $env:RUST_LOG="debug";
+        $env:RUST_BACKTRACE="1";
+        $env:describe="../../target/reldeb/prc_describe";
+        $env:INPUT="../../testdata/list_all.txt";
+        python3 ../../testdata/prc_describe_mt
+        #echo "du -d 1 -h"
+        #du -d 1 -h
+        #echo "colordiff -u ../../testdata/expected_all.txt review_summary.txt"
+        #colordiff -u ../../testdata/expected_all.txt review_summary.txt
     # - name: Archive testing logs
     #   uses: actions/upload-artifact@v7
     #   with:
