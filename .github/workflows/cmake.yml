@@ -123,3 +123,9 @@ jobs:
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest -C ${{env.BUILD_TYPE}} --rerun-failed --output-on-failure -j 4 --timeout 120
 
+    - name: Archive prc2json
+      uses: actions/upload-artifact@v7
+      with:
+        name: prc2json-${{runner.os}}-${{matrix.compiler.c}}
+        path: |
+          ${{github.workspace}}/build/prc2json
