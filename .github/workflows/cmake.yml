@@ -122,7 +122,7 @@ jobs:
       if: runner.os == 'Windows'
       run: |
         echo "PATH="$env:path
-        Get-ChildItem -Recurse ${{github.workspace}}/build
+        #Get-ChildItem -Recurse ${{github.workspace}}/build
       
     - name: Test
       working-directory: ${{github.workspace}}/build
@@ -133,6 +133,7 @@ jobs:
     - name: Archive prc2json
       uses: actions/upload-artifact@v7
       with:
-        name: prc2json-${{runner.os}}-${{matrix.compiler.c}}
+        name: prc2json-${{runner.os}}-${{runner.arch}}-${{matrix.compiler.c}}
         path: |
           ${{github.workspace}}/build/prc2json
+          ${{github.workspace}}/build/${{env.BUILD_TYPE}}/prc2json.exe

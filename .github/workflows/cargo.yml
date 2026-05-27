@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  BUILD_TYPE: reldeb
 
 jobs:
   build_and_test:
@@ -62,8 +63,8 @@ jobs:
 
     - name: Build
       run: |
-        cargo build --verbose --profile=reldeb --all
-        #cargo build --verbose --profile=reldeb --tests
+        cargo build --verbose --profile=${{env.BUILD_TYPE}} --all
+        #cargo build --verbose --profile=${{env.BUILD_TYPE}} --tests
 
     - name: Checkout test data
       uses: actions/checkout@v5
@@ -73,15 +74,15 @@ jobs:
 
     - name: Run whitebox tests
       run: |
-        cargo test --verbose --profile=reldeb
+        cargo test --verbose --profile=${{env.BUILD_TYPE}}
 
     - name: Run blackbox tests
       if: runner.os != 'Windows'
       run: |
         cd prc-db/prcs
-        #describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt ../../testdata/prc_describe
-        echo "RUST_LOG=debug RUST_BACKTRACE=1 describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt"
-        RUST_LOG=debug RUST_BACKTRACE=1 describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt
+        #describe=../../target/${{env.BUILD_TYPE}}/prc_describe INPUT=../../testdata/list_all.txt ../../testdata/prc_describe
+        echo "RUST_LOG=debug RUST_BACKTRACE=1 describe=../../target/${{env.BUILD_TYPE}}/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt"
+        RUST_LOG=debug RUST_BACKTRACE=1 describe=../../target/${{env.BUILD_TYPE}}/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt
         echo "du -d 1 -h"
         du -d 1 -h
         echo "colordiff -u ../../testdata/expected_all.txt review_summary.txt"
@@ -91,20 +92,24 @@ jobs:
       if: runner.os == 'Windows'
       run: |
         cd prc-db/prcs
-        echo "RUST_LOG=debug RUST_BACKTRACE=1 describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt"
+        echo "RUST_LOG=debug RUST_BACKTRACE=1 describe=../../target/${{env.BUILD_TYPE}}/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt"
         $env:RUST_LOG="debug";
         $env:RUST_BACKTRACE="1";
-        $env:describe="../../target/reldeb/prc_describe";
+        $env:describe="../../target/${{env.BUILD_TYPE}}/prc_describe";
         $env:INPUT="../../testdata/list_all.txt";
         python3 ../../testdata/prc_describe_mt
+        cd ../..
+        Get-ChildItem -Recurse target
 
     - name: Archive prc_tools
       uses: actions/upload-artifact@v7
       with:
-        name: prc_rools-${{runner.os}}
+        name: prc_rools-${{runner.arch}}-${{runner.os}}
         path: |
-          target/reldeb/prc_describe
-          target/reldeb/prc_explode
+          target/${{env.BUILD_TYPE}}/prc_describe
+          target/${{env.BUILD_TYPE}}/prc_explode
+          target/${{env.BUILD_TYPE}}/prc_describe.exe
+          target/${{env.BUILD_TYPE}}/prc_explode.exe
 
     - name: Archive testing logs
       uses: actions/upload-artifact@v7
