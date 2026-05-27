@@ -55,20 +55,15 @@ def describe_one_section(_case):
     (file_path, sec_id, arg, folder) = _case
     log_path = os.path.splitext(file_path)[0]+'.txt'
 
-    #cmd = f'{describe} {arg} \"{file_path}\" > \"{folder}/{log_path}\" 2>&1'
+    #cmd = f'{describe} {arg} \"{file_path}\" 2>&1 | lz4 -zfq - \"{folder}/{log_path}.lz4\" ; echo ${{PIPESTATUS[0]}} ; exit ${{PIPESTATUS[0]}}'
     #print(cmd)
 
     start_time = time.time()
-    #rv = subprocess.run(["cmd", "/c", f'{cmd}'], capture_output = True, check = True)#, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+    #rv = subprocess.run(["bash", "-c", f'{cmd}'], capture_output = True, check = True)#, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+    #print(rv)
     rv = subprocess.run([f"{describe}", f"{arg}", f'{file_path}'], capture_output = False, check = False, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
-
-    #print(type(rv.stdout), len(rv.stdout), f"{folder}/{log_path}")
-#    with open(f"{folder}/{log_path}", "wb") as binary_file:
-#        binary_file.write(rv.stdout)
-    #print(os.path.getsize(f"{folder}/{log_path}"))
     with lz4.frame.open(f"{folder}/{log_path}.lz4", mode='wb', compression_level=lz4.frame.COMPRESSIONLEVEL_MINHC) as fp:
         bytes_written = fp.write(rv.stdout)
-
     #print(type(rv), rv)
     run_time = (time.time() - start_time)*1000
     cmd_rv = rv.returncode#int(rv.stdout.decode('UTF-8').strip())
