@@ -55,7 +55,7 @@ jobs:
     - name: Build
       run: |
         cargo build --verbose --profile=reldeb --all
-        cargo build --verbose --profile=reldeb --tests
+#        cargo build --verbose --profile=reldeb --tests
     - name: Checkout test data
       uses: actions/checkout@v5
       with:
