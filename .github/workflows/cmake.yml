@@ -20,12 +20,18 @@ jobs:
           - ubuntu-latest
           - windows-2025-vs2026
         # https://stackoverflow.com/a/68940067
-        compiler: [ {cpp: g++, c: gcc}, {cpp: clang++, c: clang} ]
+        compiler: [ {cpp: g++, c: gcc}, {cpp: clang++, c: clang}, {cpp: msvc, c: msvc} ]
         exclude:
+          - os: ubuntu-latest
+            compiler: {cpp: msvc, c: msvc}
           - os: macos-latest
             compiler: {cpp: g++, c: gcc}
+          - os: macos-latest
+            compiler: {cpp: msvc, c: msvc}
           - os: windows-2025-vs2026
             compiler: {cpp: g++, c: gcc}
+          - os: windows-2025-vs2026
+            compiler: {cpp: clang++, c: clang}
   
     # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
     # You can convert this to a matrix build if you need cross-platform coverage.
@@ -97,7 +103,7 @@ jobs:
         CXX:  ${{ runner.os == 'macOS' && matrix.compiler.cpp == 'g++' && 'g++-14' || matrix.compiler.cpp }}
         # https://stackoverflow.com/questions/22228208/using-g-with-libc
         # g++ -std=c++0x -nostdinc++ -nodefaultlibs -lc -isystem <path_to>/include/c++/v1 -lc++ -lc++abi -lgcc_s.10.5
-        CXXFLAGS: ${{ runner.os == 'macOS' && matrix.compiler.cpp == 'g++' && '-stdlib=libc++' || '' }}
+        #CXXFLAGS: ${{ runner.os == 'macOS' && matrix.compiler.cpp == 'g++' && '-stdlib=libc++' || '' }}
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: cmake -S ${{github.workspace}}/tools/prc2json -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
@@ -116,6 +122,7 @@ jobs:
       if: runner.os == 'Windows'
       run: |
         echo "PATH="$env:path
+        #Get-ChildItem -Recurse ${{github.workspace}}/build
       
     - name: Test
       working-directory: ${{github.workspace}}/build
@@ -123,3 +130,10 @@ jobs:
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest -C ${{env.BUILD_TYPE}} --rerun-failed --output-on-failure -j 4 --timeout 120
 
+    - name: Archive prc2json
+      uses: actions/upload-artifact@v7
+      with:
+        name: prc2json-${{runner.os}}-${{runner.arch}}-${{matrix.compiler.c}}
+        path: |
+          ${{github.workspace}}/build/prc2json
+          ${{github.workspace}}/build/${{env.BUILD_TYPE}}/prc2json.exe

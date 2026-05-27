@@ -1,0 +1,125 @@
+name: Cargo
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+  BUILD_TYPE: reldeb
+
+jobs:
+  build_and_test:
+    strategy:
+      matrix:
+        # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+        os:
+          - macos-latest
+          - ubuntu-latest
+          - windows-2025-vs2026
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Build system ID
+      if: runner.os != 'Windows'
+      run: |
+        echo ${{ runner.arch }}
+        uname -a
+
+    - name: Install APT build-deps
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y lz4 ugrep colordiff python3-tqdm python3-lz4
+
+    - name: Install Homebrew build-deps
+      if: runner.os == 'macOS'
+      run: |
+        brew install lz4 ugrep colordiff
+        pip3 install --break-system-packages --user tqdm lz4
+    
+    - name: Install Windows build-deps
+      if: runner.os == 'windows'
+      run: |
+        pip3 install --break-system-packages --user tqdm lz4
+        choco install ugrep
+
+    - name: Checkout sources
+      uses: actions/checkout@v5
+
+    - name: Verify codegen up-to-date
+      if: runner.os != 'Windows'
+      run: |
+        ./src/generate_rust src/prc.json src/prc_gen_verify_up_to_date.rs
+        colordiff -u src/prc_gen.rs src/prc_gen_verify_up_to_date.rs
+      
+    - name: Lint
+      run: |
+        cargo fmt --all -- --check
+        #cargo clippy --all-targets
+
+    - name: Build
+      run: |
+        cargo build --verbose --profile=${{env.BUILD_TYPE}} --all
+        #cargo build --verbose --profile=${{env.BUILD_TYPE}} --tests
+
+    - name: Checkout test data
+      uses: actions/checkout@v5
+      with:
+        repository: ralovich/prc-db
+        path: prc-db
+
+    - name: Run whitebox tests
+      run: |
+        cargo test --verbose --profile=${{env.BUILD_TYPE}}
+
+    - name: Run blackbox tests
+      if: runner.os != 'Windows'
+      run: |
+        cd prc-db/prcs
+        #describe=../../target/${{env.BUILD_TYPE}}/prc_describe INPUT=../../testdata/list_all.txt ../../testdata/prc_describe
+        echo "RUST_LOG=debug RUST_BACKTRACE=1 describe=../../target/${{env.BUILD_TYPE}}/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt"
+        RUST_LOG=debug RUST_BACKTRACE=1 describe=../../target/${{env.BUILD_TYPE}}/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt
+        echo "du -d 1 -h"
+        du -d 1 -h
+        echo "colordiff -u ../../testdata/expected_all.txt review_summary.txt"
+        colordiff -u ../../testdata/expected_all.txt review_summary.txt || true
+
+    - name: Run blackbox tests Windows
+      if: runner.os == 'Windows'
+      run: |
+        cd prc-db/prcs
+        echo "RUST_LOG=debug RUST_BACKTRACE=1 describe=../../target/${{env.BUILD_TYPE}}/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt"
+        $env:RUST_LOG="debug";
+        $env:RUST_BACKTRACE="1";
+        $env:describe="../../target/${{env.BUILD_TYPE}}/prc_describe";
+        $env:INPUT="../../testdata/list_all.txt";
+        python3 ../../testdata/prc_describe_mt
+        cd ../..
+        Get-ChildItem -Recurse target
+
+    - name: Archive prc_tools
+      uses: actions/upload-artifact@v7
+      with:
+        name: prc_rools-${{runner.arch}}-${{runner.os}}
+        path: |
+          target/${{env.BUILD_TYPE}}/prc_describe
+          target/${{env.BUILD_TYPE}}/prc_explode
+          target/${{env.BUILD_TYPE}}/prc_describe.exe
+          target/${{env.BUILD_TYPE}}/prc_explode.exe
+
+    - name: Archive testing logs
+      uses: actions/upload-artifact@v7
+      with:
+        name: testing-logs-${{runner.os}}
+        path: |
+          prc-db/prcs/globals_rs
+          prc-db/prcs/tree_rs
+          prc-db/prcs/tess_rs
+          prc-db/prcs/geom_rs
+          prc-db/prcs/ext_rs
+          prc-db/prcs/mf_rs
+          prc-db/prcs/review_summary.txt
