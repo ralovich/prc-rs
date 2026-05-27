@@ -18,10 +18,8 @@ jobs:
     - name: Install Windows build-deps
       if: runner.os == 'windows'
       run: |
-        vcpkg install lz4
         pip3 install --break-system-packages --user tqdm lz4
         choco install ugrep
-        #ugrep
 
     - name: Checkout sources
       uses: actions/checkout@v5
@@ -33,14 +31,7 @@ jobs:
     - name: Build Windows
       if: runner.os == 'windows'
       run: |
-        #[System.Text.Encoding]::Default
-        #chcp 65001
-        #$OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = New-Object System.Text.UTF8Encoding
-        #[System.Text.Encoding]::Default
-        #python3 src\generate_rust
-        #python3 src\generate_rust src\prc.json src\prc_gen.rs
         cargo build --verbose --profile=reldeb --all
-        #cargo build --verbose --profile=reldeb --tests
     - name: Checkout test data
       uses: actions/checkout@v5
       with:
@@ -53,17 +44,12 @@ jobs:
     - name: Run blackbox tests
       run: |
         cd prc-db/prcs
-        #describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt ../../testdata/prc_describe
         echo "RUST_LOG=debug RUST_BACKTRACE=1 describe=../../target/reldeb/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt"
         $env:RUST_LOG="debug";
         $env:RUST_BACKTRACE="1";
         $env:describe="../../target/reldeb/prc_describe";
         $env:INPUT="../../testdata/list_all.txt";
         python3 ../../testdata/prc_describe_mt
-        #echo "du -d 1 -h"
-        #du -d 1 -h
-        #echo "colordiff -u ../../testdata/expected_all.txt review_summary.txt"
-        #colordiff -u ../../testdata/expected_all.txt review_summary.txt
     - name: Archive testing logs
       uses: actions/upload-artifact@v7
       with:
