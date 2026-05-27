@@ -104,7 +104,7 @@ jobs:
     - name: Archive prc_tools
       uses: actions/upload-artifact@v7
       with:
-        name: prc_rools-${{runner.arch}}-${{runner.os}}
+        name: prc_tools-${{runner.arch}}-${{runner.os}}
         path: |
           target/${{env.BUILD_TYPE}}/prc_describe
           target/${{env.BUILD_TYPE}}/prc_explode
