@@ -85,8 +85,7 @@ jobs:
         RUST_LOG=debug RUST_BACKTRACE=1 describe=../../target/${{env.BUILD_TYPE}}/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt
         #echo "du -d 1 -h"
         #du -d 1 -h
-        echo "colordiff -u ../../testdata/expected_all.txt review_summary.txt"
-        colordiff -u ../../testdata/expected_all.txt review_summary.txt || true
+        cd ../..
 
     - name: Run blackbox tests Windows
       if: runner.os == 'Windows'
@@ -100,6 +99,12 @@ jobs:
         python3 ../../testdata/prc_describe_mt
         cd ../..
         #Get-ChildItem -Recurse target
+
+    - name: No bb t regressions
+      if: runner.os != 'Windows'
+      run: |
+        echo "colordiff -u testdata/expected_all.txt prc-db/prcs/review_summary.txt"
+        colordiff -u testdata/expected_all.txt prc-db/prcs/review_summary.txt || true
 
     - name: Archive prc_tools
       uses: actions/upload-artifact@v7
