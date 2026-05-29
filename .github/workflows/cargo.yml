@@ -99,7 +99,7 @@ jobs:
         $env:INPUT="../../testdata/list_all.txt";
         python3 ../../testdata/prc_describe_mt
         cd ../..
-        Get-ChildItem -Recurse target
+        #Get-ChildItem -Recurse target
 
     - name: Archive prc_tools
       uses: actions/upload-artifact@v7
