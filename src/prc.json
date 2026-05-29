@@ -7459,7 +7459,7 @@
                 "fields": [
                     {
                         "name": "number_of_shells",
-                        "data_type": "UnsignedInteger"
+                        "data_type": "NumberOfBitsThenUnsignedInteger"
                     },
                     {
                         "name": "shells",
@@ -7473,7 +7473,7 @@
                 "fields": [
                     {
                         "name": "number_of_connex",
-                        "data_type": "UnsignedInteger"
+                        "data_type": "NumberOfBitsThenUnsignedInteger"
                     },
                     {
                         "name": "connex",
@@ -7564,16 +7564,6 @@
                         "data_type": "BaseTopology",
                         "is_vec": true,
                         "size": "_ctx.BrepDataCompress_get_sum_num_faces()"
-                    },
-                    {
-                        "name": "placeholder5b",
-                        "data_type": "Boolean",
-                        "multiplicity": 5,
-                        "condition": "_ctx.BrepDataCompress_get_sum_num_faces() == 0",
-                        "condition_rust": "_ctx.BrepDataCompress_get_sum_num_faces() == 0",
-                        "bug": "https://github.com/pdf-association/pdf-issues/issues/752",
-                        "comment": "this field is made-up and should be removed...",
-                        "FIXME": true
                     }
                 ]
             },
