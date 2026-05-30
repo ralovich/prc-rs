@@ -18258,7 +18258,7 @@ impl CompressedShell {
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct CompressedConnex {
-    pub number_of_shells: UnsignedInteger,
+    pub number_of_shells: NumberOfBitsThenUnsignedInteger,
     pub shells: Vec<CompressedShell>,
 }
 impl CompressedConnex {
@@ -18269,8 +18269,8 @@ impl CompressedConnex {
     ) -> io::Result<Self> {
         trace!("{}CompressedConnex::from_reader()", indent::get());
         let _ig = indent::IndentGuard::new();
-        let mut number_of_shells: UnsignedInteger = Default::default();
-        number_of_shells = UnsignedInteger::from_reader(rdr)?;
+        let mut number_of_shells: NumberOfBitsThenUnsignedInteger = Default::default();
+        number_of_shells = NumberOfBitsThenUnsignedInteger::from_reader(rdr)?;
         let mut shells: Vec<CompressedShell> =
             Vec::with_capacity((number_of_shells.value) as usize);
         for _i in 0..(number_of_shells.value) {
@@ -18301,7 +18301,7 @@ impl CompressedConnex {
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct MultipleCompressedConnex {
-    pub number_of_connex: UnsignedInteger,
+    pub number_of_connex: NumberOfBitsThenUnsignedInteger,
     pub connex: Vec<CompressedConnex>,
 }
 impl MultipleCompressedConnex {
@@ -18312,8 +18312,8 @@ impl MultipleCompressedConnex {
     ) -> io::Result<Self> {
         trace!("{}MultipleCompressedConnex::from_reader()", indent::get());
         let _ig = indent::IndentGuard::new();
-        let mut number_of_connex: UnsignedInteger = Default::default();
-        number_of_connex = UnsignedInteger::from_reader(rdr)?;
+        let mut number_of_connex: NumberOfBitsThenUnsignedInteger = Default::default();
+        number_of_connex = NumberOfBitsThenUnsignedInteger::from_reader(rdr)?;
         let mut connex: Vec<CompressedConnex> =
             Vec::with_capacity((number_of_connex.value) as usize);
         for _i in 0..(number_of_connex.value) {
@@ -18420,9 +18420,6 @@ pub struct PRC_TYPE_TOPO_BrepDataCompress {
     pub single: Option<CompressedShell>,
     pub multi: Option<MultipleCompressedConnex>,
     pub base_topology_data: Vec<BaseTopology>,
-    /// this field is made-up and should be removed...
-    /// https://github.com/pdf-association/pdf-issues/issues/752
-    pub placeholder5b: Option<[Boolean; 5]>,
 }
 impl PRC_TYPE_TOPO_BrepDataCompress {
     #[allow(unused_assignments)]
@@ -18481,14 +18478,6 @@ impl PRC_TYPE_TOPO_BrepDataCompress {
             let element = BaseTopology::from_reader(rdr, _ctx)?;
             base_topology_data.push(element);
         }
-        warn!("PRC_TYPE_TOPO_BrepDataCompress.placeholder5b field contains FIXME!");
-        let placeholder5b_cond = _ctx.BrepDataCompress_get_sum_num_faces() == 0;
-        let mut placeholder5b: [Boolean; 5] = [Default::default(); 5];
-        if placeholder5b_cond {
-            for i in 0..5 {
-                placeholder5b[i as usize] = Boolean::from_reader(rdr)?;
-            }
-        }
         let _ = _ctx
             .se
             .eval(rdr, PRC_TYPE_TOPO_BrepDataCompress as u32, false, 0);
@@ -18504,11 +18493,6 @@ impl PRC_TYPE_TOPO_BrepDataCompress {
             single: if single_cond { Some(single) } else { None },
             multi: if multi_cond { Some(multi) } else { None },
             base_topology_data,
-            placeholder5b: if placeholder5b_cond {
-                Some(placeholder5b)
-            } else {
-                None
-            },
         };
         Ok(rv)
     }
@@ -18544,12 +18528,6 @@ impl PRC_TYPE_TOPO_BrepDataCompress {
         let base_topology_data = self.base_topology_data.clone();
         for i in &self.base_topology_data {
             i.to_writer(_w, _ctx)?;
-        }
-        let placeholder5b = self.placeholder5b.clone();
-        if _ctx.BrepDataCompress_get_sum_num_faces() == 0 {
-            for i in self.placeholder5b.as_ref().unwrap() {
-                i.to_writer(_w)?;
-            }
         }
         Ok(())
     }
