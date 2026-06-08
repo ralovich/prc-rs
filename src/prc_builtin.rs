@@ -2363,7 +2363,8 @@ mod tests {
     }
 
     #[allow(unused)]
-    //#[test]
+    #[test]
+    #[ignore = "slow"]
     fn generate_csv_doubles() {
         let n = 1966002;
 
@@ -2416,7 +2417,8 @@ mod tests {
     }
 
     #[allow(unused)]
-    //#[test]
+    #[test]
+    #[ignore = "slow"]
     fn verify_csv_doubles() {
         let f = std::fs::File::open("doubles_rust.csv").expect("Should be able to open file");
         let br = std::io::BufReader::new(f);
