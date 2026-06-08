@@ -1308,6 +1308,7 @@ impl DoubleWithVariableBitNumber {
         tolerance: f64,
     ) -> io::Result<Self> {
         assert!(num_bits > 0);
+        assert!(tolerance > 0.0);
         let neg = _rdr.read_bit()?;
 
         let mut u_temp_value = 0;
