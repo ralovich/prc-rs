@@ -644,11 +644,6 @@ mod tests {
     use std::io::Cursor;
 
     #[test]
-    fn dummy() {
-        assert_eq!(true, true);
-    }
-
-    #[test]
     fn schema_evaluator() {
         let mut bytes: Vec<u8> = Vec::new();
         bytes.push(0);
