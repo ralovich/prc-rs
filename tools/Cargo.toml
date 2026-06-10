@@ -10,11 +10,9 @@ prc_rs = { path = ".." }
 clap = { version = "4.5.54", features = ["derive"] }
 pretty_env_logger = "0.5"
 log = "0.4.29"
+chrono = "0.4"
 
 [[bin]]
 name = "prc_describe"
 path = "src/prc_describe.rs"
 
-[[bin]]
-name = "prc_explode"
-path = "src/prc_explode.rs"

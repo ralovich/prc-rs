@@ -4,8 +4,8 @@
 //
 // SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026. All rights reserved.
 
+use crate::builtin;
 use crate::constants::PrcType;
-use crate::prc_builtin;
 use crate::prc_gen::Entity_schema_definition;
 use bitstream_io::BitReader;
 use log::debug;
@@ -13,7 +13,6 @@ use num_enum::TryFromPrimitive;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
-//use crate::prc_schema::VariableKind::Double;
 
 #[repr(u32)]
 #[allow(non_camel_case_types)]
@@ -323,7 +322,7 @@ impl SchemaEvaluator {
                 if skip {
                     debug!("{}SKIP READB", s.i());
                 } else {
-                    let tmp = prc_builtin::Boolean::from_reader(rdr).unwrap().value;
+                    let tmp = builtin::Boolean::from_reader(rdr).unwrap().value;
                     debug!("{}READB {}", s.i(), tmp);
                     s.dstack.push(VariableKind::Boolean(tmp));
                 }
@@ -332,7 +331,7 @@ impl SchemaEvaluator {
                 if skip {
                     debug!("{}SKIP READD", s.i());
                 } else {
-                    let tmp = prc_builtin::Double::from_reader(rdr).unwrap().value;
+                    let tmp = builtin::Double::from_reader(rdr).unwrap().value;
                     debug!("{}READD {}", s.i(), tmp);
                     s.dstack.push(VariableKind::Double(tmp));
                 }
@@ -341,9 +340,7 @@ impl SchemaEvaluator {
                 if skip {
                     debug!("{}SKIP READC", s.i());
                 } else {
-                    let tmp = prc_builtin::UnsignedCharacter::from_reader(rdr)
-                        .unwrap()
-                        .value;
+                    let tmp = builtin::UnsignedCharacter::from_reader(rdr).unwrap().value;
                     debug!("{}READC {}", s.i(), tmp);
                     s.dstack.push(VariableKind::Char(tmp));
                 }
@@ -352,9 +349,7 @@ impl SchemaEvaluator {
                 if skip {
                     debug!("{}SKIP READU", s.i());
                 } else {
-                    let tmp = prc_builtin::UnsignedInteger::from_reader(rdr)
-                        .unwrap()
-                        .value;
+                    let tmp = builtin::UnsignedInteger::from_reader(rdr).unwrap().value;
                     debug!("{}READU {}", s.i(), tmp);
                     s.dstack.push(VariableKind::Unsigned(tmp));
                 }
@@ -363,7 +358,7 @@ impl SchemaEvaluator {
                 if skip {
                     debug!("{}SKIP READI", s.i());
                 } else {
-                    let tmp = prc_builtin::Integer::from_reader(rdr).unwrap().value;
+                    let tmp = builtin::Integer::from_reader(rdr).unwrap().value;
                     debug!("{}READI {}", s.i(), tmp);
                     s.dstack.push(VariableKind::Integer(tmp));
                 }
@@ -372,7 +367,7 @@ impl SchemaEvaluator {
                 if skip {
                     debug!("{}SKIP READS", s.i());
                 } else {
-                    let tmp = prc_builtin::String::from_reader(rdr).unwrap().value;
+                    let tmp = builtin::String::from_reader(rdr).unwrap().value;
                     debug!("{}READS \"{}\"", s.i(), tmp);
                     s.dstack.push(VariableKind::String(tmp));
                 }
@@ -394,8 +389,8 @@ impl SchemaEvaluator {
                     debug!("{}SKIP READV2D", s.i());
                 } else {
                     let tmp: [f64; 2] = [
-                        prc_builtin::Double::from_reader(rdr).unwrap().value,
-                        prc_builtin::Double::from_reader(rdr).unwrap().value,
+                        builtin::Double::from_reader(rdr).unwrap().value,
+                        builtin::Double::from_reader(rdr).unwrap().value,
                     ];
                     debug!("{}READV2D {:?}", s.i(), tmp);
                     s.dstack.push(VariableKind::Vector2D(tmp[0], tmp[1]));
@@ -406,9 +401,9 @@ impl SchemaEvaluator {
                     debug!("{}SKIP READV3D", s.i());
                 } else {
                     let tmp: [f64; 3] = [
-                        prc_builtin::Double::from_reader(rdr).unwrap().value,
-                        prc_builtin::Double::from_reader(rdr).unwrap().value,
-                        prc_builtin::Double::from_reader(rdr).unwrap().value,
+                        builtin::Double::from_reader(rdr).unwrap().value,
+                        builtin::Double::from_reader(rdr).unwrap().value,
+                        builtin::Double::from_reader(rdr).unwrap().value,
                     ];
                     debug!("{}READV3D {:?}", s.i(), tmp);
                     s.dstack
@@ -452,7 +447,7 @@ impl SchemaEvaluator {
                     debug!("{}SKIP SIMPLEFOR", s.i());
                     self.do_eval(rdr, s, true); // skip loop body
                 } else {
-                    let n = prc_builtin::Integer::from_reader(rdr).unwrap().value; // retrieve number of iterations
+                    let n = builtin::Integer::from_reader(rdr).unwrap().value; // retrieve number of iterations
                     debug!("{}READI {}", s.i(), n);
                     debug!("{}SIMPLEFOR {}", s.i(), n);
                     // eval next instruction or block N times in a loop
@@ -637,10 +632,11 @@ impl SchemaEvaluator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::prc_builtin::{Boolean, Double, Integer, String, UnsignedInteger};
-    use crate::prc_schema::PrcType::*;
-    use crate::prc_schema::SchemaTokens::*;
-    use bitstream_io::{BigEndian, BitWrite, BitWriter};
+    use crate::builtin::{Boolean, Double, Integer, String, UnsignedInteger};
+    use crate::schema::PrcType::*;
+    use crate::schema::SchemaTokens::*;
+    use crate::test_common::tests::fill_partial_byte_at_end;
+    use bitstream_io::{BigEndian, BitWriter};
     use std::io::Cursor;
 
     #[test]
@@ -720,10 +716,7 @@ mod tests {
             Boolean { value: true }.to_writer(&mut w).unwrap();
 
             // fill partial byte at the end
-            while !w.byte_aligned() {
-                let _ = w.write_bit(false);
-                num_trailing_pad_bits += 1;
-            }
+            num_trailing_pad_bits += fill_partial_byte_at_end(&mut w, false).unwrap();
         }
         println!("{:?}", num_trailing_pad_bits);
         assert_eq!(53usize, bytes.len());
@@ -819,10 +812,7 @@ mod tests {
             UnsignedInteger { value: 8 }.to_writer(&mut w).unwrap();
 
             // fill partial byte at the end
-            while !w.byte_aligned() {
-                let _ = w.write_bit(false);
-                num_trailing_pad_bits += 1;
-            }
+            num_trailing_pad_bits += fill_partial_byte_at_end(&mut w, false).unwrap();
         }
 
         println!("{:?}", num_trailing_pad_bits);
@@ -913,10 +903,7 @@ mod tests {
             Double { value: 8. }.to_writer(&mut w).unwrap();
 
             // fill partial byte at the end
-            while !w.byte_aligned() {
-                let _ = w.write_bit(false);
-                num_trailing_pad_bits += 1;
-            }
+            num_trailing_pad_bits += fill_partial_byte_at_end(&mut w, false).unwrap();
         }
 
         println!("{:?}", num_trailing_pad_bits);
