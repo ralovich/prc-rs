@@ -10,7 +10,7 @@
 
 use crate::constants::*;
 use crate::prc_gen::*;
-use crate::{double, indent};
+use crate::{indent, prc_double};
 use bitstream_io::{BitRead, BitReader, BitWrite};
 use byteorder::{LittleEndian, ReadBytesExt};
 use measure_time::debug_time;
@@ -22,7 +22,7 @@ use crate::constants::PrcCompressedFaceType::PRC_HCG_NewLoop;
 use crate::decompress::decompress;
 use crate::function;
 //use crate::prc_builtin::CompressedEntityTypeKind::{ComprCurv, ComprFace};
-use crate::builtin::{Boolean, CompressedEntityType, UnsignedIntegerWithVariableBitNumber};
+use crate::prc_builtin::{Boolean, CompressedEntityType, UnsignedIntegerWithVariableBitNumber};
 use crate::prc_gen::{AnaFaceTrimLoop, CompressedMultiplicitiesU, CompressedMultiplicitiesV};
 use log::{debug, info, trace, warn};
 use rayon::prelude::*;
@@ -32,30 +32,23 @@ use std::io;
 use std::io::{/*Cursor,*/ Read, Seek, SeekFrom};
 
 impl AnaFaceTrimLoop {
-    pub fn from_reader_while_loop2<
-        R: std::io::Read + std::io::Seek,
-        E: bitstream_io::Endianness,
-    >(
+    pub fn fn1() {}
+
+    pub fn from_reader_while_loop<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
-    ) -> io::Result<Vec<Self>> {
-        trace!(
-            "{}AnaFaceTrimLoop::from_reader_while_loop() bp={}",
-            indent::get(),
-            rdr.position_in_bits()?
-        );
+    ) -> io::Result<Self> {
+        trace!("{}AnaFaceTrimLoop::from_reader_while_loop()", indent::get());
         let _ig = indent::IndentGuard::new();
         let mut loop_surface_orientation: Boolean = Default::default();
         let mut curve_type: u8 = PrcCompressedFaceType::PRC_HCG_NewLoop as u8;
+        let mut curves: Vec<RefOrCompressedCurve> = Vec::new();
 
         // TODO: compute: number_of_loop, number_of_curves
-        let mut loops = vec![];
 
         // TODO: is this enough, or it should be curve_type_tmp.is_PRC_HCG_NewLoop()?
         while curve_type == PrcCompressedFaceType::PRC_HCG_NewLoop as u8 {
             _ctx.AnaFaceTrimLoop_start_new_loop();
-            let mut curves: Vec<RefOrCompressedCurve> = Vec::new();
-
             loop_surface_orientation = Boolean::from_reader(rdr)?;
             debug!(
                 "{}loop_surface_orientation: {:?}",
@@ -90,11 +83,11 @@ impl AnaFaceTrimLoop {
                 curves.push(curve);
             }
             _ctx.AnaFaceTrimLoop_store_loop();
-            loops.push(Self {
-                loop_surface_orientation,
-                curves,
-            });
         }
-        Ok(loops)
+        let rv = Self {
+            loop_surface_orientation,
+            curves,
+        };
+        Ok(rv)
     }
 }

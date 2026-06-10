@@ -7,7 +7,6 @@
 
 #![allow(unused)]
 
-use deflate::deflate_bytes_zlib;
 use inflate::inflate_bytes_zlib;
 use libdeflater::*;
 
@@ -35,8 +34,4 @@ pub fn decompress(section_compressed: &[u8]) -> Result<Vec<u8>, String> {
         };
         Ok(decompressed_data)
     }
-}
-
-pub fn compress(section_uncompressed: &[u8]) -> Result<Vec<u8>, String> {
-    Ok(deflate_bytes_zlib(section_uncompressed))
 }

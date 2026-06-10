@@ -24,9 +24,7 @@
         "DoubleWithVariableBitNumber",
         "Point3DWithVariableBitNumber",
         "CompressedPoint",
-        "UncompressedBoolArray",
-        "UncompressedUnsignedInteger",
-        "UncompressedByteArray"
+        "UncompressedBoolArray"
     ],
     "vbr_1param": [
         "UnsignedIntegerWithVariableBitNumber",
@@ -34,8 +32,7 @@
         "CharacterArray",
         "ShortArray",
         "CompressedPoint",
-        "UncompressedBoolArray",
-        "UncompressedByteArray"
+        "UncompressedBoolArray"
     ],
     "vbr_2param": [
         "Point3DWithVariableBitNumber",
@@ -1030,25 +1027,26 @@
                         "condition_rust": "!!self.is_rendering_parameters"
                     },
                     {
-                        "name": "is_rendering_parameters2",
+                        "name": "flag1",
                         "data_type": "Boolean",
-                        "comment": "https://github.com/pdf-association/pdf-issues/issues/738#issuecomment-4651979367"
+                        "NOon_set": "assert_eq!(flag1.value, false);"
                     },
                     {
-                        "name": "rendering_parameters2",
-                        "data_type": "Character",
-                        "condition": "!!is_rendering_parameters2",
-                        "condition_rust": "!!self.is_rendering_parameters2"
+                        "name": "val1",
+                        "data_type": "UnsignedCharacter",
+                        "condition": "!!flag1",
+                        "condition_rust": "!!self.flag1"
                     },
                     {
-                        "name": "is_rendering_parameters3",
-                        "data_type": "Boolean"
+                        "name": "flag2",
+                        "data_type": "Boolean",
+                        "NOon_set": "assert_eq!(flag2.value, false);"
                     },
                     {
-                        "name": "rendering_parameters3",
-                        "data_type": "Character",
-                        "condition": "!!is_rendering_parameters3",
-                        "condition_rust": "!!self.is_rendering_parameters3"
+                        "name": "val2",
+                        "data_type": "UnsignedCharacter",
+                        "condition": "!!flag2",
+                        "condition_rust": "!!self.flag2"
                     }
                 ]
             },
@@ -2365,7 +2363,8 @@
                     {
                         "name": "biased_diffuse_index",
                         "data_type": "UnsignedInteger",
-                        "comment": "no biased_emissive_index field present (matching sdk9), see https://github.com/pdf-association/pdf-issues/issues/745#issuecomment-4662174484"
+                        "SPECBUG": true,
+                        "comment": "no biased_emissive_index field present (matching sdk9)"
                     },
                     {
                         "name": "biased_specular_index",
@@ -3470,7 +3469,6 @@
                         "comment": "for each triangle, used to describe the triangles neighbors",
                         "data_type": "CharacterArray",
                         "vbr": "2",
-                        "on_set": "if !edge_status_array.a.is_empty() { assert!(*edge_status_array.a.iter().max().unwrap() >= 0i8); }",
                         "debug": true
                     },
                     {
@@ -6181,7 +6179,6 @@
             },
             "CompressedVertex": {
                 "rust_traits": [ "Copy" ],
-                "on_enter": "assert!(_ctx.is_curve_trimming_face())",
                 "fields": [
                     {
                         "name": "already_stored",
@@ -6201,7 +6198,7 @@
                         "vbr": "_ctx.brep_data_compressed_tolerance / 100.0",
                         "condition": "!!self.already_stored.value",
                         "condition_rust": "!!self.already_stored.value",
-                        "on_set": "if !!already_stored.value { _ctx.BrepDataCompress_CompressedVertex_add(point_data); }"
+                        "on_set": "if !!already_stored.value { _ctx.BrepDataCompress_CompressedVertex_add([point_data.x, point_data.y, point_data.z]); }"
                     }
                 ]
             },
@@ -6247,9 +6244,7 @@
                 "fields": [
                     {
                         "name": "start_end_data",
-                        "data_type": "StartEndData",
-                        "condition": "!_ctx.compressed_iso_spline",
-                        "condition_rust": "!_ctx.is_compressed_iso_spline()"
+                        "data_type": "StartEndData"
                     },
                     {
                         "name": "center",
@@ -6296,16 +6291,15 @@
             },
             "PRC_HCG_Line": {
                 "debug": false,
-                "comment": "called CompressedLine (in 2014 spec) inside IsoNurbsTrimCrv",
                 "rust_traits": [ "Copy" ],
-                "NOon_leave": "_ctx.pop_face_type()",
+                "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedCurveType", "PRC_HCG_Line"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "NOon_set": "_ctx.push_face_type(id)"
+                        "on_set": "_ctx.push_face_type(id)"
                     },
                     {
                         "name": "start_end_data",
@@ -6315,19 +6309,19 @@
             },
             "PRC_HCG_Circle": {
                 "debug": false,
-                "comment": "called CompressedCircle (in 2014 spec) inside IsoNurbsTrimCrv",
+                "comment": "called CompressedCircle inside IsoNurbsTrimCrv",
                 "rust_traits": [ "Copy" ],
                 "sdk9_1": "Acrobat9_HTMLHelp/Acrobat9_1_HTMLHelp/API_References/PRCReference/PRC_Format_Specification/group___tf_x_k_circle_____serialize.html",
                 "UNUSEDon_enter": "assert!(!_ctx.is_compressed_iso_spline());",
-                "NOon_leave": "_ctx.pop_face_type()",
+                "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedCurveType", "PRC_HCG_Circle"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "NOon_set": "_ctx.push_face_type(id)",
-                        "NOFIXME": true,
+                        "on_set": "_ctx.push_face_type(id)",
+                        "FIXME": true,
                         "comment": "this field is OPTIONAL",
                         "condition": "!_ctx.compressed_iso_spline",
                         "condition_rust": "!_ctx.is_compressed_iso_spline()"
@@ -6352,19 +6346,18 @@
             },
             "PRC_HCG_BSplineHermiteCurve": {
                 "debug": false,
-                "NOon_leave": "_ctx.pop_face_type()",
+                "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedCurveType", "PRC_HCG_BSplineHermiteCurve"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "NOon_set": "_ctx.push_face_type(id)"
+                        "on_set": "_ctx.push_face_type(id)"
                     },
                     {
                         "name": "start_end_data",
-                        "data_type": "StartEndData",
-                        "comment": "no conditon, always present, see https://github.com/pdf-association/pdf-issues/issues/583#issuecomment-4604792976"
+                        "data_type": "StartEndData"
                     },
                     {
                         "name": "number_bits",
@@ -6426,14 +6419,14 @@
             },
             "PRC_HCG_CompositeCurve": {
                 "UNUSEDon_enter": "assert!(!_ctx.is_compressed_iso_spline());",
-                "NOon_leave": "_ctx.pop_face_type()",
+                "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedCurveType", "PRC_HCG_CompositeCurve"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "NOon_set": "_ctx.push_face_type(id)",
+                        "on_set": "_ctx.push_face_type(id)",
                         "FIXME": true,
                         "comment": "this field is OPTIONAL",
                         "condition": "!_ctx.compressed_iso_spline",
@@ -6465,14 +6458,14 @@
             },
             "PRC_HCG_Ellipse": {
                 "on_enter": "panic!(\"PRC_HCG_Ellipse: not implemented\")",
-                "NOon_leave": "_ctx.pop_face_type()",
+                "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
                         "data_type": "CompressedEntityType",
                         "expected_value": ["PrcCompressedCurveType", "PRC_HCG_Ellipse"],
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
-                        "NOon_set": "_ctx.push_face_type(id)"
+                        "on_set": "_ctx.push_face_type(id)"
                     }
                 ]
             },
@@ -6559,7 +6552,7 @@
                 ]
             },
             "AnaFaceTrimLoop": {
-                "UNUSEDon_enter": "return AnaFaceTrimLoop::from_reader_while_loop(rdr, _ctx);",
+                "on_enter": "return AnaFaceTrimLoop::from_reader_while_loop(rdr, _ctx);",
                 "UNUSEDfields": [
                     {
                         "name": "curve_is_not_already_stored",
@@ -6581,7 +6574,8 @@
                         "name": "curves",
                         "data_type": "RefOrCompressedCurve",
                         "is_vec": true,
-                        "size": "0"
+                        "size": "999",
+                        "FIXME": "size is not known!!!"
                     }
                 ]
             },
@@ -6596,11 +6590,8 @@
                     {
                         "name": "trim_loop",
                         "data_type": "AnaFaceTrimLoop",
-                        "is_vec": true,
-                        "size": "0",
                         "condition": "!!is_trimmed.value",
-                        "condition_rust": "!!self.is_trimmed.value",
-                        "on_set": "if !!is_trimmed.value { trim_loop = AnaFaceTrimLoop::from_reader_while_loop2(rdr, _ctx)?; }"
+                        "condition_rust": "!!self.is_trimmed.value"
                     },
                     {
                         "name": "point_on_torus",
@@ -6624,19 +6615,44 @@
                         "name": "iso_face",
                         "data_type": "ContentCompressedIsoFace",
                         "condition": "_ctx.is_an_iso_face()",
-                        "condition_rust": "_ctx.ContentCompressedFace_owner_is_an_iso_face()"
+                        "condition_rust": "_ctx.is_an_iso_face(_ctx.get_surface_type().unwrap())"
                     },
                     {
                         "name": "ana_face",
                         "data_type": "ContentCompressedAnaFace",
                         "condition": "!_ctx.is_an_iso_face()",
-                        "condition_rust": "!_ctx.ContentCompressedFace_owner_is_an_iso_face()"
+                        "condition_rust": "!_ctx.is_an_iso_face(_ctx.get_surface_type().unwrap())"
+                    }
+                ]
+            },
+            "PRC_HCG_NewLoop": {
+                "debug": false,
+                "on_enter": "panic!(\"PRC_HCG_NewLoop should only be encountered inside an AnaFaceTrimLoop!\")",
+                "on_leave": "_ctx.pop_face_type()",
+                "fields": [
+                    {
+                        "name": "id",
+                        "data_type": "CompressedEntityType",
+                        "expected_value": ["PrcCompressedFaceType", "PRC_HCG_NewLoop"],
+                        "UNUSEDon_set": "_ctx.push_face_type(id)"
+                    }
+                ]
+            },
+            "PRC_HCG_EndLoop": {
+                "debug": false,
+                "on_enter": "panic!(\"PRC_HCG_EndLoop should only be encountered inside an AnaFaceTrimLoop!\")",
+                "on_leave": "_ctx.pop_face_type()",
+                "fields": [
+                    {
+                        "name": "id",
+                        "data_type": "CompressedEntityType",
+                        "expected_value": ["PrcCompressedFaceType", "PRC_HCG_EndLoop"],
+                        "UNUSEDon_set": "_ctx.push_face_type(id)"
                     }
                 ]
             },
             "PRC_HCG_IsoPlane": {
-                "on_enter": "_ctx.ContentCompressedFace_owner_enter(true)",
-                "on_leave": "_ctx.pop_face_type();\n_ctx.ContentCompressedFace_owner_leave()",
+                "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
@@ -6664,8 +6680,7 @@
                 ]
             },
             "PRC_HCG_IsoCylinder": {
-                "on_enter": "_ctx.ContentCompressedFace_owner_enter(true)",
-                "on_leave": "_ctx.pop_face_type();\n_ctx.ContentCompressedFace_owner_leave()",
+                "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
@@ -6681,8 +6696,7 @@
                 ]
             },
             "PRC_HCG_IsoTorus": {
-                "on_enter": "_ctx.ContentCompressedFace_owner_enter(true)",
-                "on_leave": "_ctx.pop_face_type();\n_ctx.ContentCompressedFace_owner_leave()",
+                "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
@@ -6702,8 +6716,7 @@
                 ]
             },
             "PRC_HCG_IsoSphere": {
-                "on_enter": "_ctx.ContentCompressedFace_owner_enter(true)",
-                "on_leave": "_ctx.pop_face_type();\n_ctx.ContentCompressedFace_owner_leave()",
+                "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
@@ -6719,8 +6732,7 @@
                 ]
             },
             "PRC_HCG_IsoCone": {
-                "on_enter": "_ctx.ContentCompressedFace_owner_enter(true)",
-                "on_leave": "_ctx.pop_face_type();\n_ctx.ContentCompressedFace_owner_leave()",
+                "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
@@ -6736,8 +6748,7 @@
                 ]
             },
             "PRC_HCG_AnaPlane": {
-                "on_enter": "_ctx.ContentCompressedFace_owner_enter(false)",
-                "on_leave": "_ctx.pop_face_type();\n_ctx.ContentCompressedFace_owner_leave()",
+                "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
@@ -6765,8 +6776,7 @@
                 ]
             },
             "PRC_HCG_AnaCylinder": {
-                "on_enter": "_ctx.ContentCompressedFace_owner_enter(false)",
-                "on_leave": "_ctx.pop_face_type();\n_ctx.ContentCompressedFace_owner_leave()",
+                "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
@@ -6792,8 +6802,7 @@
                 ]
             },
             "PRC_HCG_AnaTorus": {
-                "on_enter": "_ctx.ContentCompressedFace_owner_enter(false)",
-                "on_leave": "_ctx.pop_face_type();\n_ctx.ContentCompressedFace_owner_leave()",
+                "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
@@ -6829,8 +6838,7 @@
                 ]
             },
             "PRC_HCG_AnaSphere": {
-                "on_enter": "_ctx.ContentCompressedFace_owner_enter(false)",
-                "on_leave": "_ctx.pop_face_type();\n_ctx.ContentCompressedFace_owner_leave()",
+                "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
@@ -6851,8 +6859,7 @@
                 ]
             },
             "PRC_HCG_AnaCone": {
-                "on_enter": "_ctx.ContentCompressedFace_owner_enter(false)",
-                "on_leave": "_ctx.pop_face_type();\n_ctx.ContentCompressedFace_owner_leave()",
+                "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
@@ -6879,8 +6886,7 @@
             },
             "PRC_HCG_AnaNurbs": {
                 "debug": false,
-                "on_enter": "_ctx.ContentCompressedFace_owner_enter(false)",
-                "on_leave": "_ctx.pop_face_type();\n_ctx.ContentCompressedFace_owner_leave()",
+                "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
@@ -6900,8 +6906,7 @@
                 ]
             },
             "PRC_HCG_AnaGenericFace": {
-                "on_enter": "_ctx.ContentCompressedFace_owner_enter(false)",
-                "on_leave": "_ctx.pop_face_type();\n_ctx.ContentCompressedFace_owner_leave()",
+                "on_leave": "_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
@@ -6923,7 +6928,7 @@
             "CompressedMultiplicitiesU": {
                 "fields": [
                     {
-                        "name": "multiplicity_is_not_stored",
+                        "name": "multiplicity_is_stored",
                         "data_type": "Boolean"
                     },
                     {
@@ -6931,7 +6936,7 @@
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
                         "vbr": "_ctx.CompressedNurbs_number_bits_u",
                         "condition": "TODO",
-                        "condition_rust": "!self.multiplicity_is_not_stored",
+                        "condition_rust": "!self.multiplicity_is_stored",
                         "comment": "number_bits is either number_bits_u or number_bits_v from CompressedNurbs"
                     }
                 ]
@@ -6939,7 +6944,7 @@
             "CompressedMultiplicitiesV": {
                 "fields": [
                     {
-                        "name": "multiplicity_is_not_stored",
+                        "name": "multiplicity_is_stored",
                         "data_type": "Boolean"
                     },
                     {
@@ -6947,7 +6952,7 @@
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
                         "vbr": "_ctx.CompressedNurbs_number_bits_v",
                         "condition": "TODO",
-                        "condition_rust": "!self.multiplicity_is_not_stored",
+                        "condition_rust": "!self.multiplicity_is_stored",
                         "comment": "number_bits is either number_bits_u or number_bits_v from CompressedNurbs"
                     }
                 ]
@@ -7021,7 +7026,7 @@
                         "vbr": "_ctx.CompressedNurbs_number_of_bits_for_isomin + 1",
                         "tol": "_ctx.nurbs_tolerance",
                         "is_vec": "true",
-                        "size": "_ctx.compressed_nurbs.number_ccpt_in_v-1"
+                        "size": "_ctx.CompressedNurbs_number_ccpt_in_v-1"
                     },
                     {
                         "name": "ccpt_in_u",
@@ -7029,13 +7034,13 @@
                         "vbr": "_ctx.CompressedNurbs_number_of_bits_for_isomin + 1",
                         "tol": "_ctx.nurbs_tolerance",
                         "is_vec": "true",
-                        "size": "_ctx.compressed_nurbs.number_ccpt_in_u-1"
+                        "size": "_ctx.CompressedNurbs_number_ccpt_in_u-1"
                     },
                     {
                         "name": "ccpt_interior",
                         "data_type": "InteriorCompressedControlPoints",
                         "is_vec": "true",
-                        "size": "(_ctx.compressed_nurbs.number_ccpt_in_v-1)*(_ctx.compressed_nurbs.number_ccpt_in_u-1)"
+                        "size": "(_ctx.CompressedNurbs_number_ccpt_in_v-1)*(_ctx.CompressedNurbs_number_ccpt_in_u-1)"
                     }
                 ]
             },
@@ -7051,7 +7056,7 @@
                         "name": "knot_vbr",
                         "data_type": "DoubleWithVariableBitNumber",
                         "vbr": "_ctx.CompressedKnots_number_bit_parameter+1",
-                        "tol": "_ctx.CompressedKnots_tolerance_parameter",
+                        "tol": "_ctx.tolerance_parameter",
                         "condition": "_ctx.CompressedKnots_number_bit_parameter <= 30",
                         "condition_rust": "_ctx.CompressedKnots_number_bit_parameter <= 30"
                     }
@@ -7075,7 +7080,7 @@
                         "name": "number_bit_parameter",
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
                         "vbr": "6",
-                        "on_set": "_ctx.CompressedKnots_number_bit_parameter = number_bit_parameter.value;\n_ctx.CompressedKnots_tolerance_parameter = 1.0_f64 / 2.0_f64.powi(number_bit_parameter.value as i32 - 1);",
+                        "on_set": "_ctx.CompressedKnots_number_bit_parameter = number_bit_parameter.value",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/692#issuecomment-3874233557"
                     },
                     {
@@ -7104,7 +7109,7 @@
                         "name": "number_bit_parameter",
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
                         "vbr": "6",
-                        "on_set": "_ctx.CompressedKnots_number_bit_parameter = number_bit_parameter.value;\n_ctx.CompressedKnots_tolerance_parameter = 1.0_f64 / 2.0_f64.powi(number_bit_parameter.value as i32 - 1);",
+                        "on_set": "_ctx.CompressedKnots_number_bit_parameter = number_bit_parameter.value",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/692#issuecomment-3874233557"
                     },
                     {
@@ -7117,7 +7122,14 @@
             },
             "CompressedKnotVectorU": {
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/692#issuecomment-3590921789",
-                "sdk": "Acrobat9_HTMLHelp/Acrobat9_1_HTMLHelp/API_References/PRCReference/PRC_Format_Specification/group___tf_x_k_b_spline_surface_____serialize.html",
+                "BACKUP": [
+                    {
+                        "name": "number_bit_parameter",
+                        "data_type": "UnsignedIntegerWithVariableBitNumber",
+                        "vbr": "6",
+                        "on_set": "_ctx.CompressedKnots_number_bit_parameter = number_bit_parameter.value"
+                    }
+                ],
                 "fields": [
                     {
                         "name": "is_uniform",
@@ -7133,7 +7145,14 @@
             },
             "CompressedKnotVectorV": {
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/692#issuecomment-3590921789",
-                "sdk": "Acrobat9_HTMLHelp/Acrobat9_1_HTMLHelp/API_References/PRCReference/PRC_Format_Specification/group___tf_x_k_b_spline_surface_____serialize.html",
+                "BACKUP": [
+                    {
+                        "name": "number_bit_parameter",
+                        "data_type": "UnsignedIntegerWithVariableBitNumber",
+                        "vbr": "6",
+                        "on_set": "_ctx.CompressedKnots_number_bit_parameter = number_bit_parameter.value"
+                    }
+                ],
                 "fields": [
                     {
                         "name": "is_uniform",
@@ -7158,7 +7177,7 @@
                         "name": "weights",
                         "data_type": "Double",
                         "is_vec": true,
-                        "size": "_ctx.compressed_nurbs.number_ccpt_in_u * _ctx.compressed_nurbs.number_ccpt_in_v",
+                        "size": "_ctx.CompressedNurbs_number_ccpt_in_u * _ctx.CompressedNurbs_number_ccpt_in_v",
                         "condition": "number_bit_weight > 30",
                         "condition_rust": "number_bit_weight.value > 30"
                     },
@@ -7174,7 +7193,7 @@
                         "vbr": "number_bit_weight.value + 1",
                         "tol": "weight_tolerance.value",
                         "is_vec": true,
-                        "size": "_ctx.compressed_nurbs.number_ccpt_in_u * _ctx.compressed_nurbs.number_ccpt_in_v",
+                        "size": "_ctx.CompressedNurbs_number_ccpt_in_u * _ctx.CompressedNurbs_number_ccpt_in_v",
                         "condition": "number_bit_weight <= 30",
                         "condition_rust": "number_bit_weight.value <= 30"
                     }
@@ -7203,7 +7222,7 @@
                         "name": "number_stored_knots_in_u",
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
                         "vbr": "16",
-                        "on_set": "_ctx.compressed_nurbs.set0(degree_in_u.value, degree_in_v.value, number_stored_knots_in_u.value);\n_ctx.CompressedNurbs_number_stored_knots_in_u = number_stored_knots_in_u.value"
+                        "on_set": "_ctx.CompressedNurbs_number_stored_knots_in_u = number_stored_knots_in_u.value"
                     },
                     {
                         "name": "mult_u",
@@ -7211,14 +7230,13 @@
                         "is_vec": true,
                         "size": "number_stored_knots_in_u.value",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/663#issuecomment-3590926462",
-                        "1on_set": "_ctx.CompressedNurbs_number_ccpt_in_u = sum_up_u(&mult_u) - degree_in_u.value - 1",
-                        "debug": true
+                        "on_set": "_ctx.CompressedNurbs_number_ccpt_in_u = sum_up_u(&mult_u) - degree_in_u.value - 1"
                     },
                     {
                         "name": "number_stored_knots_in_v",
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
                         "vbr": "16",
-                        "on_set": "_ctx.compressed_nurbs.set1(&mult_u, number_stored_knots_in_v.value);\n_ctx.CompressedNurbs_number_stored_knots_in_v = number_stored_knots_in_v.value"
+                        "on_set": "_ctx.CompressedNurbs_number_stored_knots_in_v = number_stored_knots_in_v.value"
                     },
                     {
                         "name": "mult_v",
@@ -7226,8 +7244,7 @@
                         "is_vec": true,
                         "size": "number_stored_knots_in_v.value",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/663#issuecomment-3590926462",
-                        "on_set": "_ctx.compressed_nurbs.set2(&mult_v);\n/*_ctx.CompressedNurbs_number_ccpt_in_v = sum_up_v(&mult_v) - degree_in_v.value - 1*/",
-                        "debug": true
+                        "on_set": "_ctx.CompressedNurbs_number_ccpt_in_v = sum_up_v(&mult_v) - degree_in_v.value - 1"
                     },
                     {
                         "name": "is_closed_in_u",
@@ -7247,17 +7264,15 @@
                         "name": "number_of_bits_for_rest",
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
                         "vbr": "20",
-                        "on_set": "_ctx.compressed_nurbs.set3(is_closed_in_u.value, is_closed_in_v.value, number_of_bits_for_isomin.value, number_of_bits_for_rest.value);\n_ctx.CompressedNurbs_number_of_bits_for_rest = number_of_bits_for_rest.value"
+                        "on_set": "_ctx.CompressedNurbs_number_of_bits_for_rest = number_of_bits_for_rest.value"
                     },
                     {
                         "name": "compressed_control_points",
-                        "data_type": "CompressedControlPoints",
-                        "on_set": "_ctx.compressed_nurbs.set4(&compressed_control_points)"
+                        "data_type": "CompressedControlPoints"
                     },
                     {
                         "name": "knot_vector_u",
-                        "data_type": "CompressedKnotVectorU",
-                        "on_set": "_ctx.compressed_nurbs.set5(&knot_vector_u)"
+                        "data_type": "CompressedKnotVectorU"
                     },
                     {
                         "name": "knot_vector_v",
@@ -7277,34 +7292,36 @@
             },
             "IsoNurbsTrimCrv": {
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/666",
-                "bug2": "https://github.com/pdf-association/pdf-issues/issues/582",
+                "rust_traits": [ "Copy" ],
                 "fields": [
                     {
                         "name": "iso_boundary",
                         "data_type": "Boolean"
                     },
                     {
-                        "name": "hermite",
-                        "data_type": "PRC_HCG_BSplineHermiteCurve",
-                        "condition": "iso_boundary.value",
-                        "condition_rust": "self.iso_boundary.value"
-                    },
-                    {
                         "name": "is_a_circle",
                         "data_type": "Boolean",
                         "condition": "!iso_boundary.value",
-                        "condition_rust": "!self.iso_boundary.value",
-                        "on_set": "if !iso_boundary.value && !is_a_circle.value { error!(\"No PRC_HCG_Line stored! TODO: ends are to be calculated based on LoopVertexN.\"); }"
+                        "condition_rust": "!self.iso_boundary.value"
                     },
                     {
                         "name": "compressed_circle",
                         "data_type": "PRC_HCG_Circle",
                         "condition": "!iso_boundary.value && is_a_circle.value",
                         "condition_rust": "!iso_boundary.value && self.is_a_circle.value"
+                    },
+                    {
+                        "name": "compressed_line",
+                        "data_type": "PRC_HCG_Line",
+                        "condition": "!iso_boundary.value && !is_a_circle.value",
+                        "condition_rust": "!iso_boundary.value && !self.is_a_circle.value",
+                        "UNUSEDmultiplicity": 0,
+                        "FIXME": true
                     }
                 ]
             },
             "IsoNurbsTrimCurve": {
+                "rust_traits": [ "Copy" ],
                 "fields": [
                     {
                         "name": "is_referenced",
@@ -7326,8 +7343,8 @@
                 ]
             },
             "PRC_HCG_IsoNurbs": {
-                "on_enter": "_ctx.set_compressed_iso_spline(true);\n_ctx.ContentCompressedFace_owner_enter(true)",
-                "on_leave": "_ctx.set_compressed_iso_spline(false);\n_ctx.pop_face_type();\n_ctx.ContentCompressedFace_owner_leave()",
+                "on_enter": "_ctx.set_compressed_iso_spline(true)",
+                "on_leave": "_ctx.set_compressed_iso_spline(false);\n_ctx.pop_face_type()",
                 "fields": [
                     {
                         "name": "id",
@@ -7354,60 +7371,33 @@
                         "data_type": "CompressedNurbs"
                     },
                     {
-                        "name": "curve0",
+                        "name": "curves",
                         "data_type": "IsoNurbsTrimCurve",
-                        "debug": true
-                    },
-                    {
-                        "name": "curve1",
-                        "data_type": "IsoNurbsTrimCurve",
-                        "debug": true
-                    },
-                    {
-                        "name": "curve2",
-                        "data_type": "IsoNurbsTrimCurve",
-                        "debug": true
-                    },
-                    {
-                        "name": "curve3",
-                        "data_type": "IsoNurbsTrimCurve",
-                        "debug": true
+                        "multiplicity": 4
                     },
                     {
                         "name": "loop_vertex0",
                         "data_type": "CompressedVertex",
-                        "condition": "self.curve0.is_referenced.value && self.curve1.is_referenced.value",
-                        "1condition_rust": "true||self.curve0.is_referenced.value && self.curve1.is_referenced.value",
-                        "2condition_rust": "(!self.curve0.trim_curve.as_ref().unwrap().iso_boundary.value && !self.curve0.trim_curve.as_ref().unwrap().is_a_circle.unwrap().value) || (!self.curve1.trim_curve.as_ref().unwrap().iso_boundary.value && !self.curve1.trim_curve.as_ref().unwrap().is_a_circle.unwrap().value)",
-                        "condition_rust": "!self.curve0.trim_curve.as_ref().unwrap().iso_boundary.value || !self.curve1.trim_curve.as_ref().unwrap().iso_boundary.value",
-                        "debug": true
+                        "condition": "self.curves[0].is_referenced.value && self.curves[1].is_referenced.value",
+                        "condition_rust": "self.curves[0].is_referenced.value && self.curves[1].is_referenced.value"
                     },
                     {
                         "name": "loop_vertex1",
                         "data_type": "CompressedVertex",
-                        "condition": "self.curve1.is_referenced.value && self.curve2.is_referenced.value",
-                        "1condition_rust": "true||self.curve1.is_referenced.value && self.curve2.is_referenced.value",
-                        "2condition_rust": "(!self.curve1.trim_curve.as_ref().unwrap().iso_boundary.value && !self.curve1.trim_curve.as_ref().unwrap().is_a_circle.unwrap().value) || (!self.curve2.trim_curve.as_ref().unwrap().iso_boundary.value && !self.curve2.trim_curve.as_ref().unwrap().is_a_circle.unwrap().value)",
-                        "condition_rust": "!self.curve1.trim_curve.as_ref().unwrap().iso_boundary.value || !self.curve2.trim_curve.as_ref().unwrap().iso_boundary.value",
-                        "debug": true
+                        "condition": "self.curves[1].is_referenced.value && self.curves[2].is_referenced.value",
+                        "condition_rust": "self.curves[1].is_referenced.value && self.curves[2].is_referenced.value"
                     },
                     {
                         "name": "loop_vertex2",
                         "data_type": "CompressedVertex",
-                        "condition": "self.curve2.is_referenced.value && self.curve3.is_referenced.value",
-                        "1condition_rust": "true||self.curve2.is_referenced.value && self.curve3.is_referenced.value",
-                        "2condition_rust": "(!self.curve2.trim_curve.as_ref().unwrap().iso_boundary.value && !self.curve2.trim_curve.as_ref().unwrap().is_a_circle.unwrap().value) || (!self.curve3.trim_curve.as_ref().unwrap().iso_boundary.value && !self.curve3.trim_curve.as_ref().unwrap().is_a_circle.unwrap().value)",
-                        "condition_rust": "!self.curve2.trim_curve.as_ref().unwrap().iso_boundary.value || !self.curve3.trim_curve.as_ref().unwrap().iso_boundary.value",
-                        "debug": true
+                        "condition": "self.curves[2].is_referenced.value && self.curves[3].is_referenced.value",
+                        "condition_rust": "self.curves[2].is_referenced.value && self.curves[3].is_referenced.value"
                     },
                     {
                         "name": "loop_vertex3",
                         "data_type": "CompressedVertex",
-                        "condition": "self.curve3.is_referenced.value && self.curve0.is_referenced.value",
-                        "1condition_rust": "true||self.curve3.is_referenced.value && self.curve0.is_referenced.value",
-                        "2condition_rust": "(!self.curve3.trim_curve.as_ref().unwrap().iso_boundary.value && !self.curve3.trim_curve.as_ref().unwrap().is_a_circle.unwrap().value) || (!self.curve0.trim_curve.as_ref().unwrap().iso_boundary.value && !self.curve0.trim_curve.as_ref().unwrap().is_a_circle.unwrap().value)",
-                        "condition_rust": "!self.curve3.trim_curve.as_ref().unwrap().iso_boundary.value || !self.curve0.trim_curve.as_ref().unwrap().iso_boundary.value",
-                        "debug": true
+                        "condition": "self.curves[3].is_referenced.value && self.curves[0].is_referenced.value",
+                        "condition_rust": "self.curves[3].is_referenced.value && self.curves[0].is_referenced.value"
                     }
                 ]
             },
@@ -7461,9 +7451,7 @@
                         "data_type": "Boolean",
                         "is_vec": true,
                         "size_cxx": "((!!single_face) ? (1) : (number_of_faces))",
-                        "size": "if !!single_face {1} else {number_of_faces.value}",
-                        "on_set": "_ctx.CompressedShell_reorder_faces()",
-                        "comment": "https://github.com/pdf-association/pdf-issues/issues/752#issuecomment-4572953990"
+                        "size": "if !!single_face {1} else {number_of_faces.value}"
                     }
                 ]
             },
@@ -7496,7 +7484,6 @@
                 ]
             },
             "PRC_TYPE_TOPO_SingleWireBodyCompress": {
-                "bug": "https://github.com/pdf-association/pdf-issues/issues/753",
                 "on_enter": "_ctx.set_curve_trimming_face(false);",
                 "fields": [
                     {
@@ -7506,27 +7493,20 @@
                     },
                     {
                         "name": "base",
-                        "data_type": "ContentBody",
-                        "debug": true,
-                        "on_set": "error!(\"bp={}\", rdr.position_in_bits()?)"
+                        "data_type": "ContentBody"
                     },
                     {
                         "name": "curve_tolerance",
                         "data_type": "Double",
                         "on_set": "_ctx.brep_data_compressed_tolerance = curve_tolerance.value;\n_ctx.nurbs_tolerance = _ctx.brep_data_compressed_tolerance / 5.0",
-                        "comment": "this assignment is confirmed by https://github.com/pdf-association/pdf-issues/issues/753",
-                        "debug": true
-                    },
-                    {
-                        "name": "dummy",
-                        "data_type": "Boolean",
-                        "multiplicity": 1,
+                        "comment": "guesswork, have not found this assignment documented anywhere, but number_of_bits_to_store_reference is still not set",
+                        "FIXME": true,
                         "debug": true
                     },
                     {
                         "name": "compressed_curve",
                         "data_type": "CompressedCurve",
-                        "debug": true
+                        "on_set": "UnsignedInteger::search_and_seek_back(rdr, PrcType::PRC_TYPE_TOPO_Context as u32, 9999, 5)"
                     }
                 ]
             },
@@ -7674,8 +7654,7 @@
                         "name": "topo_contexts",
                         "data_type": "PRC_TYPE_TOPO_Context",
                         "is_vec": true,
-                        "size": "topo_context_count.value",
-                        "debug": true
+                        "size": "topo_context_count.value"
                     }
                 ]
             },
@@ -7699,166 +7678,6 @@
                     {
                         "name": "user_data",
                         "data_type": "UserData"
-                    }
-                ]
-            },
-            "UncompressedUniqueId": {
-                "byte_aligned": true,
-                "debug": false,
-                "fields": [
-                    {
-                        "name": "unique_id",
-                        "data_type": "UncompressedUnsignedInteger",
-                        "multiplicity": 4
-                    }
-                ]
-            },
-            "UncompressedBlock": {
-                "byte_aligned": true,
-                "fields": [
-                    {
-                        "name": "block_size",
-                        "data_type": "UncompressedUnsignedInteger"
-                    },
-                    {
-                        "name": "block",
-                        "data_type": "UncompressedByteArray",
-                        "vbr": "block_size.value"
-                    }
-                ]
-            },
-            "UncompressedFileStructureHeader": {
-                "byte_aligned": true,
-                "fields": [
-                    {
-                        "name": "magic",
-                        "data_type": "UncompressedByteArray",
-                        "vbr": "3",
-                        "on_set": "assert_eq!(b\"PRC\", magic.a.as_slice())"
-                    },
-                    {
-                        "name": "minimal_version_for_read",
-                        "data_type": "UncompressedUnsignedInteger"
-                    },
-                    {
-                        "name": "authoring_version",
-                        "data_type": "UncompressedUnsignedInteger"
-                    },
-                    {
-                        "name": "unique_id_file",
-                        "data_type": "UncompressedUniqueId"
-                    },
-                    {
-                        "name": "unique_id_application",
-                        "data_type": "UncompressedUniqueId"
-                    },
-                    {
-                        "name": "file_count",
-                        "data_type": "UncompressedUnsignedInteger"
-                    },
-                    {
-                        "name": "files",
-                        "data_type": "UncompressedBlock",
-                        "is_vec": true,
-                        "size": "file_count.value"
-                    }
-                ]
-            },
-            "UncompressedFileStructureDescription": {
-                "byte_aligned": true,
-                "fields": [
-                    {
-                        "name": "unique_id",
-                        "data_type": "UncompressedUniqueId"
-                    },
-                    {
-                        "name": "reserved",
-                        "data_type": "UncompressedUnsignedInteger"
-                    },
-                    {
-                        "name": "section_count",
-                        "data_type": "UncompressedUnsignedInteger",
-                        "TODOexpected_value": "6",
-                        "on_set": "assert_eq!(section_count.value, 6)"
-                    },
-                    {
-                        "name": "header_start_offset",
-                        "data_type": "UncompressedUnsignedInteger"
-                    },
-                    {
-                        "name": "glob_start_offset",
-                        "data_type": "UncompressedUnsignedInteger"
-                    },
-                    {
-                        "name": "tree_start_offset",
-                        "data_type": "UncompressedUnsignedInteger"
-                    },
-                    {
-                        "name": "tess_start_offset",
-                        "data_type": "UncompressedUnsignedInteger"
-                    },
-                    {
-                        "name": "geom_start_offset",
-                        "data_type": "UncompressedUnsignedInteger"
-                    },
-                    {
-                        "name": "extg_start_offset",
-                        "data_type": "UncompressedUnsignedInteger"
-                    }
-                ]
-            },
-            "UncompressedFileHeader": {
-                "byte_aligned": true,
-                "fields": [
-                    {
-                        "name": "magic",
-                        "data_type": "UncompressedByteArray",
-                        "vbr": "3",
-                        "on_set": "assert_eq!(b\"PRC\", magic.a.as_slice())"
-                    },
-                    {
-                        "name": "minimal_version_for_read",
-                        "data_type": "UncompressedUnsignedInteger"
-                    },
-                    {
-                        "name": "authoring_version",
-                        "data_type": "UncompressedUnsignedInteger"
-                    },
-                    {
-                        "name": "unique_id_file",
-                        "data_type": "UncompressedUniqueId"
-                    },
-                    {
-                        "name": "unique_id_application",
-                        "data_type": "UncompressedUniqueId"
-                    },
-                    {
-                        "name": "num_file_structs",
-                        "data_type": "UncompressedUnsignedInteger"
-                    },
-                    {
-                        "name": "fsi",
-                        "data_type": "UncompressedFileStructureDescription",
-                        "is_vec": true,
-                        "size": "num_file_structs.value"
-                    },
-                    {
-                        "name": "mf_start_offset",
-                        "data_type": "UncompressedUnsignedInteger"
-                    },
-                    {
-                        "name": "mf_end_offset",
-                        "data_type": "UncompressedUnsignedInteger"
-                    },
-                    {
-                        "name": "num_uncompr_files",
-                        "data_type": "UncompressedUnsignedInteger"
-                    },
-                    {
-                        "name": "uncompressed_files",
-                        "data_type": "UncompressedBlock",
-                        "is_vec": true,
-                        "size": "num_uncompr_files.value"
                     }
                 ]
             }
