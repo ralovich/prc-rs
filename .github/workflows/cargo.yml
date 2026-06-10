@@ -99,6 +99,7 @@ jobs:
         python3 ../../testdata/prc_describe_mt
         cd ../..
         #Get-ChildItem -Recurse target
+        Get-ChildItem .
 
     - name: No bb t regressions
       if: runner.os != 'Windows'
