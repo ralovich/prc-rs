@@ -867,11 +867,6 @@ pub fn prc_describe_file(
     info!("--parsing \"{}\"--", display);
 
     let now = std::time::Instant::now();
-    // Open the path in read-only mode, returns `io::Result<File>`
-    let mut _file = match File::open(&path) {
-        Err(why) => return Err(why),
-        Ok(file) => file,
-    };
 
     let bytes: Vec<u8> = std::fs::read(fname)?;
     debug!("read {} bytes", bytes.len());
