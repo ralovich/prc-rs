@@ -8,14 +8,14 @@
 #![allow(non_snake_case)]
 #![allow(unused)]
 
+use crate::builtin::Boolean;
+use crate::builtin::*;
 use crate::constants::*;
 use crate::function;
-use crate::prc_builtin::Boolean;
-use crate::prc_builtin::*;
 use log::{debug, warn};
 use measure_time::debug_time;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Tess3dCompressed {
     /// number of faces
     num_faces: u32,
@@ -70,6 +70,9 @@ impl Tess3dCompressed {
 
         let mut verts: Vec<[f64; 3]> = Vec::with_capacity(point_array.len() / 3);
 
+        if !edge_status_array.is_empty() {
+            assert!(*edge_status_array.iter().max().unwrap() >= 0i8);
+        }
         if edge_status_array.len() == triangle_face_array.len() {
             warn!("t3dc: case A");
         } else if edge_status_array.len() == 3 * triangle_face_array.len() {

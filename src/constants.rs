@@ -7,6 +7,7 @@
 
 #![allow(unused, nonstandard_style)]
 
+use crate::builtin::CompressedEntityType;
 use modular_bitfield::bitfield;
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
@@ -15,10 +16,10 @@ use std::mem;
 
 extern crate static_assertions as sa;
 
-#[derive(Debug, TryFromPrimitive)]
+#[derive(Debug, TryFromPrimitive, Clone, Copy)]
 #[repr(u8)]
 pub enum PrcSectionKind {
-    //Header,
+    Header,
     Global,
     Tree,
     Tessellation,
@@ -325,6 +326,17 @@ impl TryFrom<u32> for PrcCompressedFaceType {
     }
 }
 
+impl TryFrom<CompressedEntityType> for PrcCompressedFaceType {
+    type Error = num_enum::TryFromPrimitiveError<Self>;
+
+    fn try_from(cet: CompressedEntityType) -> Result<Self, Self::Error> {
+        if cet.is_a_curve {
+            return Err(num_enum::TryFromPrimitiveError::new(0));
+        }
+        Self::try_from(cet.value as u8)
+    }
+}
+
 #[repr(u8)]
 #[allow(non_camel_case_types)]
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, Hash, PartialEq, Eq, TryFromPrimitive)]
@@ -347,6 +359,16 @@ impl TryFrom<u32> for PrcCompressedCurveType {
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         Self::try_from(value as u8)
+    }
+}
+impl TryFrom<CompressedEntityType> for PrcCompressedCurveType {
+    type Error = num_enum::TryFromPrimitiveError<Self>;
+
+    fn try_from(cet: CompressedEntityType) -> Result<Self, Self::Error> {
+        if !cet.is_a_curve {
+            return Err(num_enum::TryFromPrimitiveError::new(0));
+        }
+        Self::try_from(cet.value as u8)
     }
 }
 
