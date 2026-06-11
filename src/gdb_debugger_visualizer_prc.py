@@ -79,7 +79,9 @@ def lookup_function(val):
         return MyClassPrinterString(val)
     if str(val.type) == "prc_rs::prc_builtin::Integer":
         return MyClassPrinterInteger(val)
-    if str(val.type) == "prc_rs::prc_builtin::UnsignedInteger":
+    if (str(val.type) == "prc_rs::prc_builtin::UnsignedInteger"
+        or str(val.type) == "prc_rs::prc_builtin::UnsignedIntegerWithVariableBitNumber"
+        or str(val.type) == "prc_rs::prc_builtin::NumberOfBitsThenUnsignedInteger"):
         return MyClassPrinterUnsignedInteger(val)
     return None
 

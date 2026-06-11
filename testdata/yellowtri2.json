@@ -1,31 +1,18 @@
 {
   "verread": 7094,
   "verauth": 8137,
-  "uuid0": 0,
-  "uuid1": 0,
-  "uuid2": 0,
-  "uuid3": 0,
-  "uuida0": 0,
-  "uuida1": 0,
-  "uuida2": 0,
-  "uuida3": 0,
+  "uuid_file": [0,0,0,0],
+  "uuid_application": [0,0,0,0],
   "fsi": [
     {
-      "uuid0": 0,
-      "uuid1": 0,
-      "uuid2": 0,
-      "uuid3": 0,
+      "uuid": [0,0,0,0],
       "header": {
-        "verread": 0,
-        "verauth": 0,
-        "uuid0": 0,
-        "uuid1": 0,
-        "uuid2": 0,
-        "uuid3": 0,
-        "uuida0": 0,
-        "uuida1": 0,
-        "uuida2": 0,
-        "uuida3": 0,
+        "magic": {"a": [80,82,67]},
+        "minimal_version_for_read": {"value":0},
+        "authoring_version": {"value":0},
+        "unique_id_file":{"unique_id":[{"value":0},{"value":0},{"value":0},{"value":0}]},
+        "unique_id_application":{"unique_id":[{"value":0},{"value":0},{"value":0},{"value":0}]},
+        "file_count": {"value":0},
         "files": []
       },
       "schema": {
@@ -96,7 +83,7 @@
           }
         ]
       },
-      "globals": {
+      "glob": {
         "id": 303,
         "base": {
           "attribute_data": {
@@ -270,12 +257,12 @@
               "transparency": null,
               "is_rendering_parameters": false,
               "rendering_parameters": null,
-              "flag1": true,
-              "val1": {
+              "is_rendering_parameters2": true,
+              "rendering_parameters2": {
                 "value": 1
               },
-              "flag2": false,
-              "val2": null
+              "is_rendering_parameters3": false,
+              "rendering_parameters3": null
             }
           ],
           "fill_count": 0,
@@ -880,7 +867,7 @@
         },
         "user_data": {}
       },
-      "ext": {
+      "extg": {
         "id": 307,
         "base": {
           "attribute_data": {

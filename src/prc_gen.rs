@@ -8,17 +8,19 @@
 
 #![allow(dead_code, unused_imports, unused)]
 
+use crate::builtin::*;
+use crate::builtin_ana::*;
+use crate::builtin_byte_aligned::*;
 use crate::common::PrcParsingContext;
 use crate::constants::PrcCompressedCurveType::*;
 use crate::constants::PrcCompressedFaceType::*;
 use crate::constants::PrcTransformation::*;
 use crate::constants::PrcType::*;
-use crate::prc_builtin::*;
-use crate::prc_builtin_ana::*;
 use bitstream_io::{BitReader, BitWrite};
-use log::{debug, trace, warn};
+use log::{debug, error, trace, warn};
 use serde::{Deserialize, Serialize};
 use std::io;
+use std::io::{Read, Seek, Write};
 //use crate::common::CurrentFaceType;
 use crate::constants::*;
 use crate::indent;
@@ -35,7 +37,11 @@ impl Name {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}Name::from_reader()", indent::get());
+        trace!(
+            "{}Name::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut same_name: Boolean = Default::default();
         same_name = Boolean::from_reader(rdr)?;
@@ -59,8 +65,9 @@ impl Name {
         let same_name = self.same_name.clone();
         same_name.to_writer(_w)?;
         let name_cond = !same_name;
-        let name = self.name.as_ref().unwrap();
+        let mut name: &String = &Default::default();
         if name_cond {
+            name = self.name.as_ref().unwrap();
             name.to_writer(_w)?;
         }
         Ok(())
@@ -80,7 +87,11 @@ impl AttributeEntry {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}AttributeEntry::from_reader()", indent::get());
+        trace!(
+            "{}AttributeEntry::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut flag: Boolean = Default::default();
         flag = Boolean::from_reader(rdr)?;
@@ -117,13 +128,15 @@ impl AttributeEntry {
         let flag = self.flag.clone();
         flag.to_writer(_w)?;
         let integer_title_cond = !!flag;
-        let integer_title = self.integer_title.as_ref().unwrap();
+        let mut integer_title: &UnsignedInteger = &Default::default();
         if integer_title_cond {
+            integer_title = self.integer_title.as_ref().unwrap();
             integer_title.to_writer(_w)?;
         }
         let string_title_cond = !flag;
-        let string_title = self.string_title.as_ref().unwrap();
+        let mut string_title: &String = &Default::default();
         if string_title_cond {
+            string_title = self.string_title.as_ref().unwrap();
             string_title.to_writer(_w)?;
         }
         Ok(())
@@ -148,7 +161,11 @@ impl AttributeKeyValue {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}AttributeKeyValue::from_reader()", indent::get());
+        trace!(
+            "{}AttributeKeyValue::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut title: AttributeEntry = Default::default();
         title = AttributeEntry::from_reader(rdr, _ctx)?;
@@ -214,33 +231,39 @@ impl AttributeKeyValue {
         let type_ = self.type_.clone();
         type_.to_writer(_w)?;
         let valuei_cond = type_.value == 1;
-        let valuei = self.valuei.as_ref().unwrap();
+        let mut valuei: &Integer = &Default::default();
         if valuei_cond {
+            valuei = self.valuei.as_ref().unwrap();
             valuei.to_writer(_w)?;
         }
         let valued_cond = type_.value == 2;
-        let valued = self.valued.as_ref().unwrap();
+        let mut valued: &Double = &Default::default();
         if valued_cond {
+            valued = self.valued.as_ref().unwrap();
             valued.to_writer(_w)?;
         }
         let valuet_cond = type_.value == 3;
-        let valuet = self.valuet.as_ref().unwrap();
+        let mut valuet: &Integer = &Default::default();
         if valuet_cond {
+            valuet = self.valuet.as_ref().unwrap();
             valuet.to_writer(_w)?;
         }
         let values_cond = type_.value == 4;
-        let values = self.values.as_ref().unwrap();
+        let mut values: &String = &Default::default();
         if values_cond {
+            values = self.values.as_ref().unwrap();
             values.to_writer(_w)?;
         }
         let value_msp_cond = type_.value == 5;
-        let value_msp = self.value_msp.as_ref().unwrap();
+        let mut value_msp: &Integer = &Default::default();
         if value_msp_cond {
+            value_msp = self.value_msp.as_ref().unwrap();
             value_msp.to_writer(_w)?;
         }
         let value_lsp_cond = type_.value == 5;
-        let value_lsp = self.value_lsp.as_ref().unwrap();
+        let mut value_lsp: &UnsignedInteger = &Default::default();
         if value_lsp_cond {
+            value_lsp = self.value_lsp.as_ref().unwrap();
             value_lsp.to_writer(_w)?;
         }
         Ok(())
@@ -261,10 +284,17 @@ impl PRC_TYPE_MISC_Attribute {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_MISC_Attribute::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_MISC_Attribute::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MISC_Attribute) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_MISC_Attribute,
             PrcType::try_from(id.value).unwrap()
@@ -319,7 +349,11 @@ impl AttributeData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}AttributeData::from_reader()", indent::get());
+        trace!(
+            "{}AttributeData::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut attribute_count: UnsignedInteger = Default::default();
         attribute_count = UnsignedInteger::from_reader(rdr)?;
@@ -362,7 +396,11 @@ impl ContentPRCBase {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ContentPRCBase::from_reader()", indent::get());
+        trace!(
+            "{}ContentPRCBase::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut attribute_data: AttributeData = Default::default();
         attribute_data = AttributeData::from_reader(rdr, _ctx)?;
@@ -401,7 +439,11 @@ impl ElementGraphicsBehavior {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ElementGraphicsBehavior::from_reader()", indent::get());
+        trace!(
+            "{}ElementGraphicsBehavior::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut use_context: Boolean = Default::default();
         use_context = Boolean::from_reader(rdr)?;
@@ -456,18 +498,21 @@ impl ElementGraphicsBehavior {
         let use_context = self.use_context.clone();
         use_context.to_writer(_w)?;
         let biased_layer_index_cond = !use_context;
-        let biased_layer_index = self.biased_layer_index.as_ref().unwrap();
+        let mut biased_layer_index: &UnsignedInteger = &Default::default();
         if biased_layer_index_cond {
+            biased_layer_index = self.biased_layer_index.as_ref().unwrap();
             biased_layer_index.to_writer(_w)?;
         }
         let biased_index_of_line_style_cond = !use_context;
-        let biased_index_of_line_style = self.biased_index_of_line_style.as_ref().unwrap();
+        let mut biased_index_of_line_style: &UnsignedInteger = &Default::default();
         if biased_index_of_line_style_cond {
+            biased_index_of_line_style = self.biased_index_of_line_style.as_ref().unwrap();
             biased_index_of_line_style.to_writer(_w)?;
         }
         let behavior_bit_field_cond = !use_context;
-        let behavior_bit_field = self.behavior_bit_field.as_ref().unwrap();
+        let mut behavior_bit_field: &UnsignedShort = &Default::default();
         if behavior_bit_field_cond {
+            behavior_bit_field = self.behavior_bit_field.as_ref().unwrap();
             behavior_bit_field.to_writer(_w)?;
         }
         Ok(())
@@ -486,7 +531,11 @@ impl GeometrySummary {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}GeometrySummary::from_reader()", indent::get());
+        trace!(
+            "{}GeometrySummary::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut number_of_bodies: UnsignedInteger = Default::default();
         number_of_bodies = UnsignedInteger::from_reader(rdr)?;
@@ -529,7 +578,11 @@ impl BodyInformation {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}BodyInformation::from_reader()", indent::get());
+        trace!(
+            "{}BodyInformation::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut body_serial_type: UnsignedInteger = Default::default();
         body_serial_type = UnsignedInteger::from_reader(rdr)?;
@@ -560,8 +613,9 @@ impl BodyInformation {
         let tolerance_cond = body_serial_type.value == PRC_TYPE_TOPO_BrepDataCompress as u32
             || body_serial_type.value == PRC_TYPE_TOPO_SingleWireBodyCompress as u32
             || body_serial_type.value == PRC_TYPE_TESS_3D_Compressed as u32;
-        let tolerance = self.tolerance.as_ref().unwrap();
+        let mut tolerance: &Double = &Default::default();
         if tolerance_cond {
+            tolerance = self.tolerance.as_ref().unwrap();
             tolerance.to_writer(_w)?;
         }
         Ok(())
@@ -580,7 +634,11 @@ impl ContextGraphics {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ContextGraphics::from_reader()", indent::get());
+        trace!(
+            "{}ContextGraphics::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut number_of_treat_type: UnsignedInteger = Default::default();
         number_of_treat_type = UnsignedInteger::from_reader(rdr)?;
@@ -624,7 +682,11 @@ impl GraphicsInformation {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}GraphicsInformation::from_reader()", indent::get());
+        trace!(
+            "{}GraphicsInformation::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut element_type: UnsignedInteger = Default::default();
         element_type = UnsignedInteger::from_reader(rdr)?;
@@ -672,7 +734,11 @@ impl ElementInformation {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ElementInformation::from_reader()", indent::get());
+        trace!(
+            "{}ElementInformation::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut has_graphics: Boolean = Default::default();
         has_graphics = Boolean::from_reader(rdr)?;
@@ -699,8 +765,9 @@ impl ElementInformation {
         let has_graphics = self.has_graphics.clone();
         has_graphics.to_writer(_w)?;
         let graphic_behavior_cond = !!has_graphics;
-        let graphic_behavior = self.graphic_behavior.as_ref().unwrap();
+        let mut graphic_behavior: &ElementGraphicsBehavior = &Default::default();
         if graphic_behavior_cond {
+            graphic_behavior = self.graphic_behavior.as_ref().unwrap();
             graphic_behavior.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -719,7 +786,11 @@ impl ExtraGeometry {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ExtraGeometry::from_reader()", indent::get());
+        trace!(
+            "{}ExtraGeometry::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut summary: GeometrySummary = Default::default();
         summary = GeometrySummary::from_reader(rdr, _ctx)?;
@@ -761,12 +832,16 @@ impl PRC_TYPE_ASM_FileStructureExtraGeometry {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_ASM_FileStructureExtraGeometry::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_ASM_FileStructureExtraGeometry::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_ASM_FileStructureExtraGeometry) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_ASM_FileStructureExtraGeometry,
             PrcType::try_from(id.value).unwrap()
@@ -832,7 +907,11 @@ impl Entity_schema_definition {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}Entity_schema_definition::from_reader()", indent::get());
+        trace!(
+            "{}Entity_schema_definition::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut entity_type: UnsignedInteger = Default::default();
         entity_type = UnsignedInteger::from_reader(rdr)?;
@@ -880,7 +959,11 @@ impl Schema {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}Schema::from_reader()", indent::get());
+        trace!(
+            "{}Schema::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut schema_count: UnsignedInteger = Default::default();
         schema_count = UnsignedInteger::from_reader(rdr)?;
@@ -925,7 +1008,11 @@ impl UniqueId {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}UniqueId::from_reader()", indent::get());
+        trace!(
+            "{}UniqueId::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut unique_id0: UnsignedInteger = Default::default();
         unique_id0 = UnsignedInteger::from_reader(rdr)?;
@@ -972,7 +1059,11 @@ impl FontKey {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}FontKey::from_reader()", indent::get());
+        trace!(
+            "{}FontKey::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut font_size: UnsignedInteger = Default::default();
         font_size = UnsignedInteger::from_reader(rdr)?;
@@ -1011,7 +1102,11 @@ impl FontKeysSameFont {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}FontKeysSameFont::from_reader()", indent::get());
+        trace!(
+            "{}FontKeysSameFont::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut font_name: String = Default::default();
         font_name = String::from_reader(rdr)?;
@@ -1064,7 +1159,11 @@ impl MarkupSerializationHelper {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}MarkupSerializationHelper::from_reader()", indent::get());
+        trace!(
+            "{}MarkupSerializationHelper::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut default_font_family_name: String = Default::default();
         default_font_family_name = String::from_reader(rdr)?;
@@ -1113,7 +1212,11 @@ impl RgbColor {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}RgbColor::from_reader()", indent::get());
+        trace!(
+            "{}RgbColor::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut red: Double = Default::default();
         red = Double::from_reader(rdr)?;
@@ -1156,10 +1259,17 @@ impl PRC_TYPE_GRAPH_Picture {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_GRAPH_Picture::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_GRAPH_Picture::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_GRAPH_Picture) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_GRAPH_Picture, PrcType::try_from(id.value).unwrap());
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
@@ -1215,7 +1325,11 @@ impl Vector2D {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}Vector2D::from_reader()", indent::get());
+        trace!(
+            "{}Vector2D::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
@@ -1250,7 +1364,11 @@ impl Vector3D {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}Vector3D::from_reader()", indent::get());
+        trace!(
+            "{}Vector3D::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
@@ -1293,7 +1411,11 @@ impl Transformation2D {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}Transformation2D::from_reader()", indent::get());
+        trace!(
+            "{}Transformation2D::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut behavior: Character = Default::default();
         behavior = Character::from_reader(rdr)?;
@@ -1373,8 +1495,9 @@ impl Transformation2D {
         let behavior = self.behavior.clone();
         behavior.to_writer(_w)?;
         let translation_cond = (behavior.value & PRC_TRANSFORMATION_Translate as i8) != 0;
-        let translation = self.translation.as_ref().unwrap();
+        let mut translation: &Vector2D = &Default::default();
         if translation_cond {
+            translation = self.translation.as_ref().unwrap();
             translation.to_writer(_w, _ctx)?;
         }
         let non_ortho_matrix = self.non_ortho_matrix.clone();
@@ -1385,19 +1508,22 @@ impl Transformation2D {
         }
         let rotation_cond = ((behavior.value & PRC_TRANSFORMATION_Rotate as i8) != 0)
             && ((behavior.value & PRC_TRANSFORMATION_NonOrtho as i8) == 0);
-        let rotation = self.rotation.as_ref().unwrap();
+        let mut rotation: &Vector2D = &Default::default();
         if rotation_cond {
+            rotation = self.rotation.as_ref().unwrap();
             rotation.to_writer(_w, _ctx)?;
         }
         let non_uniform_scale_cond =
             (behavior.value & PRC_TRANSFORMATION_NonUniformScale as i8) != 0;
-        let non_uniform_scale = self.non_uniform_scale.as_ref().unwrap();
+        let mut non_uniform_scale: &Vector2D = &Default::default();
         if non_uniform_scale_cond {
+            non_uniform_scale = self.non_uniform_scale.as_ref().unwrap();
             non_uniform_scale.to_writer(_w, _ctx)?;
         }
         let scale_cond = (behavior.value & PRC_TRANSFORMATION_Scale as i8) != 0;
-        let scale = self.scale.as_ref().unwrap();
+        let mut scale: &Double = &Default::default();
         if scale_cond {
+            scale = self.scale.as_ref().unwrap();
             scale.to_writer(_w)?;
         }
         let homogeneous = self.homogeneous.clone();
@@ -1422,7 +1548,11 @@ impl Transformation2DWithBit {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}Transformation2DWithBit::from_reader()", indent::get());
+        trace!(
+            "{}Transformation2DWithBit::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut has_transformation: Boolean = Default::default();
         has_transformation = Boolean::from_reader(rdr)?;
@@ -1449,8 +1579,9 @@ impl Transformation2DWithBit {
         let has_transformation = self.has_transformation.clone();
         has_transformation.to_writer(_w)?;
         let transformation_cond = !!has_transformation;
-        let transformation = self.transformation.as_ref().unwrap();
+        let mut transformation: &Transformation2D = &Default::default();
         if transformation_cond {
+            transformation = self.transformation.as_ref().unwrap();
             transformation.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -1474,7 +1605,11 @@ impl Transformation3D {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}Transformation3D::from_reader()", indent::get());
+        trace!(
+            "{}Transformation3D::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut behavior: Character = Default::default();
         behavior = Character::from_reader(rdr)?;
@@ -1556,8 +1691,9 @@ impl Transformation3D {
         let behavior = self.behavior.clone();
         behavior.to_writer(_w)?;
         let translation_cond = (behavior.value as u8 & PRC_TRANSFORMATION_Translate as u8) != 0;
-        let translation = self.translation.as_ref().unwrap();
+        let mut translation: &Vector3D = &Default::default();
         if translation_cond {
+            translation = self.translation.as_ref().unwrap();
             translation.to_writer(_w, _ctx)?;
         }
         let non_ortho_matrix = self.non_ortho_matrix.clone();
@@ -1576,13 +1712,15 @@ impl Transformation3D {
         }
         let non_uniform_scale_cond =
             (behavior.value as u8 & PRC_TRANSFORMATION_NonUniformScale as u8) != 0;
-        let non_uniform_scale = self.non_uniform_scale.as_ref().unwrap();
+        let mut non_uniform_scale: &Vector3D = &Default::default();
         if non_uniform_scale_cond {
+            non_uniform_scale = self.non_uniform_scale.as_ref().unwrap();
             non_uniform_scale.to_writer(_w, _ctx)?;
         }
         let scale_cond = (behavior.value as u8 & PRC_TRANSFORMATION_Scale as u8) != 0;
-        let scale = self.scale.as_ref().unwrap();
+        let mut scale: &Double = &Default::default();
         if scale_cond {
+            scale = self.scale.as_ref().unwrap();
             scale.to_writer(_w)?;
         }
         let homogeneous = self.homogeneous.clone();
@@ -1607,7 +1745,11 @@ impl Transformation3DWithBit {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}Transformation3DWithBit::from_reader()", indent::get());
+        trace!(
+            "{}Transformation3DWithBit::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut has_transformation: Boolean = Default::default();
         has_transformation = Boolean::from_reader(rdr)?;
@@ -1634,8 +1776,9 @@ impl Transformation3DWithBit {
         let has_transformation = self.has_transformation.clone();
         has_transformation.to_writer(_w)?;
         let transformation_cond = !!has_transformation;
-        let transformation = self.transformation.as_ref().unwrap();
+        let mut transformation: &Transformation3D = &Default::default();
         if transformation_cond {
+            transformation = self.transformation.as_ref().unwrap();
             transformation.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -1655,12 +1798,16 @@ impl PRC_TYPE_MISC_CartesianTransformation {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_MISC_CartesianTransformation::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_MISC_CartesianTransformation::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MISC_CartesianTransformation) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_MISC_CartesianTransformation,
             PrcType::try_from(id.value).unwrap()
@@ -1699,12 +1846,16 @@ impl PRC_TYPE_MISC_GeneralTransformation {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_MISC_GeneralTransformation::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_MISC_GeneralTransformation::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MISC_GeneralTransformation) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_MISC_GeneralTransformation,
             PrcType::try_from(id.value).unwrap()
@@ -1753,12 +1904,16 @@ impl PRC_TYPE_GRAPH_TextureTransformation {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_GRAPH_TextureTransformation::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_GRAPH_TextureTransformation::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_GRAPH_TextureTransformation) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_GRAPH_TextureTransformation,
             PrcType::try_from(id.value).unwrap()
@@ -1805,8 +1960,9 @@ impl PRC_TYPE_GRAPH_TextureTransformation {
         let transform_2d = self.transform_2d.clone();
         transform_2d.to_writer(_w)?;
         let transform_cond = !!transform_2d;
-        let transform = self.transform.as_ref().unwrap();
+        let mut transform: &Transformation2D = &Default::default();
         if transform_cond {
+            transform = self.transform.as_ref().unwrap();
             transform.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -1827,7 +1983,11 @@ impl ContentPRCRefBase {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ContentPRCRefBase::from_reader()", indent::get());
+        trace!(
+            "{}ContentPRCRefBase::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
@@ -1901,12 +2061,16 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_GRAPH_TextureDefinition::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_GRAPH_TextureDefinition::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_GRAPH_TextureDefinition) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_GRAPH_TextureDefinition,
             PrcType::try_from(id.value).unwrap()
@@ -2136,20 +2300,23 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         texture_mapping_type.to_writer(_w)?;
         let texture_mapping_operator_cond =
             texture_mapping_type.value as i32 == TextureMappingType::Operator as i32;
-        let texture_mapping_operator = self.texture_mapping_operator.as_ref().unwrap();
+        let mut texture_mapping_operator: &Integer = &Default::default();
         if texture_mapping_operator_cond {
+            texture_mapping_operator = self.texture_mapping_operator.as_ref().unwrap();
             texture_mapping_operator.to_writer(_w)?;
         }
         let has_transformation_cond =
             texture_mapping_type.value == TextureMappingType::Operator as i32;
-        let has_transformation = self.has_transformation.as_ref().unwrap();
+        let mut has_transformation: &Boolean = &Default::default();
         if has_transformation_cond {
+            has_transformation = self.has_transformation.as_ref().unwrap();
             has_transformation.to_writer(_w)?;
         }
         let transformation_cond = texture_mapping_type.value == TextureMappingType::Operator as i32
             && !!has_transformation.value;
-        let transformation = self.transformation.as_ref().unwrap();
+        let mut transformation: &PRC_TYPE_MISC_CartesianTransformation = &Default::default();
         if transformation_cond {
+            transformation = self.transformation.as_ref().unwrap();
             transformation.to_writer(_w, _ctx)?;
         }
         let texture_mapping_attributes = self.texture_mapping_attributes.clone();
@@ -2190,48 +2357,55 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         let blend_src_rgb = self.blend_src_rgb.clone();
         blend_src_rgb.to_writer(_w)?;
         let blend_dst_rgb_cond = blend_src_rgb.value != 0 as i32;
-        let blend_dst_rgb = self.blend_dst_rgb.as_ref().unwrap();
+        let mut blend_dst_rgb: &Integer = &Default::default();
         if blend_dst_rgb_cond {
+            blend_dst_rgb = self.blend_dst_rgb.as_ref().unwrap();
             blend_dst_rgb.to_writer(_w)?;
         }
         let blend_src_alpha = self.blend_src_alpha.clone();
         blend_src_alpha.to_writer(_w)?;
         let blend_dst_alpha_cond = blend_src_alpha.value != 0 as i32;
-        let blend_dst_alpha = self.blend_dst_alpha.as_ref().unwrap();
+        let mut blend_dst_alpha: &Integer = &Default::default();
         if blend_dst_alpha_cond {
+            blend_dst_alpha = self.blend_dst_alpha.as_ref().unwrap();
             blend_dst_alpha.to_writer(_w)?;
         }
         let texture_application_mode = self.texture_application_mode.clone();
         texture_application_mode.to_writer(_w)?;
         let alpha_test_cond =
             (texture_application_mode.value as u16 & TextureApplicationMode::AlphaTest as u16) != 0;
-        let alpha_test = self.alpha_test.as_ref().unwrap();
+        let mut alpha_test: &Integer = &Default::default();
         if alpha_test_cond {
+            alpha_test = self.alpha_test.as_ref().unwrap();
             alpha_test.to_writer(_w)?;
         }
         let alpha_test_reference_cond =
             (texture_application_mode.value as u16 & TextureApplicationMode::AlphaTest as u16) != 0;
-        let alpha_test_reference = self.alpha_test_reference.as_ref().unwrap();
+        let mut alpha_test_reference: &Double = &Default::default();
         if alpha_test_reference_cond {
+            alpha_test_reference = self.alpha_test_reference.as_ref().unwrap();
             alpha_test_reference.to_writer(_w)?;
         }
         let texture_wrapping_mode_s = self.texture_wrapping_mode_s.clone();
         texture_wrapping_mode_s.to_writer(_w)?;
         let texture_wrapping_mode_t_cond = texture_dimension.value > 1;
-        let texture_wrapping_mode_t = self.texture_wrapping_mode_t.as_ref().unwrap();
+        let mut texture_wrapping_mode_t: &Integer = &Default::default();
         if texture_wrapping_mode_t_cond {
+            texture_wrapping_mode_t = self.texture_wrapping_mode_t.as_ref().unwrap();
             texture_wrapping_mode_t.to_writer(_w)?;
         }
         let texture_wrapping_mode_r_cond = texture_dimension.value > 2;
-        let texture_wrapping_mode_r = self.texture_wrapping_mode_r.as_ref().unwrap();
+        let mut texture_wrapping_mode_r: &Integer = &Default::default();
         if texture_wrapping_mode_r_cond {
+            texture_wrapping_mode_r = self.texture_wrapping_mode_r.as_ref().unwrap();
             texture_wrapping_mode_r.to_writer(_w)?;
         }
         let has_texture_transformation = self.has_texture_transformation.clone();
         has_texture_transformation.to_writer(_w)?;
         let texture_transformation_cond = !!has_texture_transformation;
-        let texture_transformation = self.texture_transformation.as_ref().unwrap();
+        let mut texture_transformation: &PRC_TYPE_GRAPH_TextureTransformation = &Default::default();
         if texture_transformation_cond {
+            texture_transformation = self.texture_transformation.as_ref().unwrap();
             texture_transformation.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -2259,10 +2433,17 @@ impl PRC_TYPE_GRAPH_Material {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_GRAPH_Material::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_GRAPH_Material::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_GRAPH_Material) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_GRAPH_Material,
             PrcType::try_from(id.value).unwrap()
@@ -2351,12 +2532,16 @@ impl PRC_TYPE_GRAPH_TextureApplication {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_GRAPH_TextureApplication::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_GRAPH_TextureApplication::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_GRAPH_TextureApplication) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_GRAPH_TextureApplication,
             PrcType::try_from(id.value).unwrap()
@@ -2416,7 +2601,11 @@ impl Material {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}Material::from_reader()", indent::get());
+        trace!(
+            "{}Material::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: Material_idConcrete = Material_idConcrete::Invalid(id_type_id);
@@ -2430,8 +2619,9 @@ impl Material {
                 Material_idConcrete::ta(PRC_TYPE_GRAPH_TextureApplication::from_reader(rdr, _ctx)?)
             }
             _ => panic!(
-                "Material: Unrecognized subtype: {}!",
-                id_type_id.to_string()
+                "Material: Unrecognized subtype: {}! bp={}",
+                id_type_id.to_string(),
+                rdr.position_in_bits()?
             ),
         };
         let rv = Self { id_concrete };
@@ -2479,10 +2669,17 @@ impl PRC_TYPE_GRAPH_LinePattern {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_GRAPH_LinePattern::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_GRAPH_LinePattern::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_GRAPH_LinePattern) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_GRAPH_LinePattern,
             PrcType::try_from(id.value).unwrap()
@@ -2551,10 +2748,11 @@ pub struct PRC_TYPE_GRAPH_Style {
     pub transparency: Option<Character>,
     pub is_rendering_parameters: Boolean,
     pub rendering_parameters: Option<Character>,
-    pub flag1: Boolean,
-    pub val1: Option<UnsignedCharacter>,
-    pub flag2: Boolean,
-    pub val2: Option<UnsignedCharacter>,
+    /// https://github.com/pdf-association/pdf-issues/issues/738#issuecomment-4651979367
+    pub is_rendering_parameters2: Boolean,
+    pub rendering_parameters2: Option<Character>,
+    pub is_rendering_parameters3: Boolean,
+    pub rendering_parameters3: Option<Character>,
 }
 impl PRC_TYPE_GRAPH_Style {
     #[allow(unused_assignments)]
@@ -2562,10 +2760,17 @@ impl PRC_TYPE_GRAPH_Style {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_GRAPH_Style::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_GRAPH_Style::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_GRAPH_Style) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_GRAPH_Style, PrcType::try_from(id.value).unwrap());
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
@@ -2593,19 +2798,19 @@ impl PRC_TYPE_GRAPH_Style {
         if rendering_parameters_cond {
             rendering_parameters = Character::from_reader(rdr)?;
         }
-        let mut flag1: Boolean = Default::default();
-        flag1 = Boolean::from_reader(rdr)?;
-        let val1_cond = !!flag1;
-        let mut val1: UnsignedCharacter = Default::default();
-        if val1_cond {
-            val1 = UnsignedCharacter::from_reader(rdr)?;
+        let mut is_rendering_parameters2: Boolean = Default::default();
+        is_rendering_parameters2 = Boolean::from_reader(rdr)?;
+        let rendering_parameters2_cond = !!is_rendering_parameters2;
+        let mut rendering_parameters2: Character = Default::default();
+        if rendering_parameters2_cond {
+            rendering_parameters2 = Character::from_reader(rdr)?;
         }
-        let mut flag2: Boolean = Default::default();
-        flag2 = Boolean::from_reader(rdr)?;
-        let val2_cond = !!flag2;
-        let mut val2: UnsignedCharacter = Default::default();
-        if val2_cond {
-            val2 = UnsignedCharacter::from_reader(rdr)?;
+        let mut is_rendering_parameters3: Boolean = Default::default();
+        is_rendering_parameters3 = Boolean::from_reader(rdr)?;
+        let rendering_parameters3_cond = !!is_rendering_parameters3;
+        let mut rendering_parameters3: Character = Default::default();
+        if rendering_parameters3_cond {
+            rendering_parameters3 = Character::from_reader(rdr)?;
         }
         let _ = _ctx.se.eval(rdr, PRC_TYPE_GRAPH_Style as u32, false, 0);
         let rv = Self {
@@ -2628,10 +2833,18 @@ impl PRC_TYPE_GRAPH_Style {
             } else {
                 None
             },
-            flag1,
-            val1: if val1_cond { Some(val1) } else { None },
-            flag2,
-            val2: if val2_cond { Some(val2) } else { None },
+            is_rendering_parameters2,
+            rendering_parameters2: if rendering_parameters2_cond {
+                Some(rendering_parameters2)
+            } else {
+                None
+            },
+            is_rendering_parameters3,
+            rendering_parameters3: if rendering_parameters3_cond {
+                Some(rendering_parameters3)
+            } else {
+                None
+            },
         };
         Ok(rv)
     }
@@ -2657,30 +2870,34 @@ impl PRC_TYPE_GRAPH_Style {
         let is_transparency = self.is_transparency.clone();
         is_transparency.to_writer(_w)?;
         let transparency_cond = !!is_transparency;
-        let transparency = self.transparency.as_ref().unwrap();
+        let mut transparency: &Character = &Default::default();
         if transparency_cond {
+            transparency = self.transparency.as_ref().unwrap();
             transparency.to_writer(_w)?;
         }
         let is_rendering_parameters = self.is_rendering_parameters.clone();
         is_rendering_parameters.to_writer(_w)?;
         let rendering_parameters_cond = !!is_rendering_parameters;
-        let rendering_parameters = self.rendering_parameters.as_ref().unwrap();
+        let mut rendering_parameters: &Character = &Default::default();
         if rendering_parameters_cond {
+            rendering_parameters = self.rendering_parameters.as_ref().unwrap();
             rendering_parameters.to_writer(_w)?;
         }
-        let flag1 = self.flag1.clone();
-        flag1.to_writer(_w)?;
-        let val1_cond = !!flag1;
-        let val1 = self.val1.as_ref().unwrap();
-        if val1_cond {
-            val1.to_writer(_w)?;
+        let is_rendering_parameters2 = self.is_rendering_parameters2.clone();
+        is_rendering_parameters2.to_writer(_w)?;
+        let rendering_parameters2_cond = !!is_rendering_parameters2;
+        let mut rendering_parameters2: &Character = &Default::default();
+        if rendering_parameters2_cond {
+            rendering_parameters2 = self.rendering_parameters2.as_ref().unwrap();
+            rendering_parameters2.to_writer(_w)?;
         }
-        let flag2 = self.flag2.clone();
-        flag2.to_writer(_w)?;
-        let val2_cond = !!flag2;
-        let val2 = self.val2.as_ref().unwrap();
-        if val2_cond {
-            val2.to_writer(_w)?;
+        let is_rendering_parameters3 = self.is_rendering_parameters3.clone();
+        is_rendering_parameters3.to_writer(_w)?;
+        let rendering_parameters3_cond = !!is_rendering_parameters3;
+        let mut rendering_parameters3: &Character = &Default::default();
+        if rendering_parameters3_cond {
+            rendering_parameters3 = self.rendering_parameters3.as_ref().unwrap();
+            rendering_parameters3.to_writer(_w)?;
         }
         Ok(())
     }
@@ -2703,12 +2920,16 @@ impl PRC_TYPE_GRAPH_DottingPattern {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_GRAPH_DottingPattern::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_GRAPH_DottingPattern::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_GRAPH_DottingPattern) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_GRAPH_DottingPattern,
             PrcType::try_from(id.value).unwrap()
@@ -2771,7 +2992,11 @@ impl HatchingLine {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}HatchingLine::from_reader()", indent::get());
+        trace!(
+            "{}HatchingLine::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut start_point: Vector2D = Default::default();
         start_point = Vector2D::from_reader(rdr, _ctx)?;
@@ -2822,12 +3047,16 @@ impl PRC_TYPE_GRAPH_HatchingPattern {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_GRAPH_HatchingPattern::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_GRAPH_HatchingPattern::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_GRAPH_HatchingPattern) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_GRAPH_HatchingPattern,
             PrcType::try_from(id.value).unwrap()
@@ -2894,12 +3123,16 @@ impl PRC_TYPE_GRAPH_SolidPattern {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_GRAPH_SolidPattern::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_GRAPH_SolidPattern::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_GRAPH_SolidPattern) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_GRAPH_SolidPattern,
             PrcType::try_from(id.value).unwrap()
@@ -2955,13 +3188,15 @@ impl PRC_TYPE_GRAPH_SolidPattern {
         let is_material = self.is_material.clone();
         is_material.to_writer(_w)?;
         let biased_material_index_cond = !!is_material;
-        let biased_material_index = self.biased_material_index.as_ref().unwrap();
+        let mut biased_material_index: &UnsignedInteger = &Default::default();
         if biased_material_index_cond {
+            biased_material_index = self.biased_material_index.as_ref().unwrap();
             biased_material_index.to_writer(_w)?;
         }
         let biased_color_index_cond = !is_material;
-        let biased_color_index = self.biased_color_index.as_ref().unwrap();
+        let mut biased_color_index: &UnsignedInteger = &Default::default();
         if biased_color_index_cond {
+            biased_color_index = self.biased_color_index.as_ref().unwrap();
             biased_color_index.to_writer(_w)?;
         }
         Ok(())
@@ -2981,7 +3216,11 @@ impl ContentBaseTessData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ContentBaseTessData::from_reader()", indent::get());
+        trace!(
+            "{}ContentBaseTessData::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut is_calculated: Boolean = Default::default();
         is_calculated = Boolean::from_reader(rdr)?;
@@ -3036,10 +3275,17 @@ impl PRC_TYPE_TESS_Markup {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_TESS_Markup::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_TESS_Markup::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_TESS_Markup) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_TESS_Markup, PrcType::try_from(id.value).unwrap());
         let mut tessellation_coordinates: ContentBaseTessData = Default::default();
         tessellation_coordinates = ContentBaseTessData::from_reader(rdr, _ctx)?;
@@ -3122,12 +3368,16 @@ impl PRC_TYPE_GRAPH_VPicturePattern {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_GRAPH_VPicturePattern::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_GRAPH_VPicturePattern::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_GRAPH_VPicturePattern) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_GRAPH_VPicturePattern,
             PrcType::try_from(id.value).unwrap()
@@ -3186,7 +3436,11 @@ impl PRC_TYPE_GRAPH_FillPattern {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_GRAPH_FillPattern::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_GRAPH_FillPattern::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut data_type_id: u32 = 0;
         let mut data_concrete: PRC_TYPE_GRAPH_FillPattern_dataConcrete =
@@ -3209,8 +3463,9 @@ impl PRC_TYPE_GRAPH_FillPattern {
                 )
             }
             _ => panic!(
-                "PRC_TYPE_GRAPH_FillPattern: Unrecognized subtype: {}!",
-                data_type_id.to_string()
+                "PRC_TYPE_GRAPH_FillPattern: Unrecognized subtype: {}! bp={}",
+                data_type_id.to_string(),
+                rdr.position_in_bits()?
             ),
         };
         let _ = _ctx
@@ -3264,7 +3519,11 @@ impl GraphicsContent {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}GraphicsContent::from_reader()", indent::get());
+        trace!(
+            "{}GraphicsContent::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut biased_layer_index: UnsignedInteger = Default::default();
         biased_layer_index = UnsignedInteger::from_reader(rdr)?;
@@ -3313,8 +3572,9 @@ impl PRC_TYPE_ROOT_PRCBaseWithGraphics {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut base: ContentPRCRefBase = Default::default();
@@ -3350,8 +3610,9 @@ impl PRC_TYPE_ROOT_PRCBaseWithGraphics {
         let same_graphics = self.same_graphics.clone();
         same_graphics.to_writer(_w)?;
         let graphics_content_cond = !same_graphics;
-        let graphics_content = self.graphics_content.as_ref().unwrap();
+        let mut graphics_content: &GraphicsContent = &Default::default();
         if graphics_content_cond {
+            graphics_content = self.graphics_content.as_ref().unwrap();
             graphics_content.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -3371,7 +3632,11 @@ impl RepresentationItemContent {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}RepresentationItemContent::from_reader()", indent::get());
+        trace!(
+            "{}RepresentationItemContent::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
@@ -3417,12 +3682,16 @@ impl PRC_TYPE_RI_CoordinateSystem {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_RI_CoordinateSystem::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_RI_CoordinateSystem::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_RI_CoordinateSystem) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_RI_CoordinateSystem,
             PrcType::try_from(id.value).unwrap()
@@ -3446,8 +3715,9 @@ impl PRC_TYPE_RI_CoordinateSystem {
                 )
             }
             _ => panic!(
-                "PRC_TYPE_RI_CoordinateSystem: Unrecognized subtype: {}!",
-                transform_type_id.to_string()
+                "PRC_TYPE_RI_CoordinateSystem: Unrecognized subtype: {}! bp={}",
+                transform_type_id.to_string(),
+                rdr.position_in_bits()?
             ),
         };
         let _ = _ctx
@@ -3527,8 +3797,9 @@ impl FileStructureInternalGlobalData {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}FileStructureInternalGlobalData::from_reader()",
-            indent::get()
+            "{}FileStructureInternalGlobalData::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut tess_chord: Double = Default::default();
@@ -3703,12 +3974,16 @@ impl PRC_TYPE_ASM_FileStructureGlobals {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_ASM_FileStructureGlobals::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_ASM_FileStructureGlobals::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_ASM_FileStructureGlobals) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_ASM_FileStructureGlobals,
             PrcType::try_from(id.value).unwrap()
@@ -3775,7 +4050,11 @@ impl ProductOccurrenceReference {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ProductOccurrenceReference::from_reader()", indent::get());
+        trace!(
+            "{}ProductOccurrenceReference::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut unique_id: UniqueId = Default::default();
         unique_id = UniqueId::from_reader(rdr, _ctx)?;
@@ -3826,10 +4105,17 @@ impl PRC_TYPE_ASM_ModelFile {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_ASM_ModelFile::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_ASM_ModelFile::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_ASM_ModelFile) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_ASM_ModelFile, PrcType::try_from(id.value).unwrap());
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
@@ -3907,7 +4193,11 @@ impl BoundingBox {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}BoundingBox::from_reader()", indent::get());
+        trace!(
+            "{}BoundingBox::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut minimum_corner: Vector3D = Default::default();
         minimum_corner = Vector3D::from_reader(rdr, _ctx)?;
@@ -3949,10 +4239,17 @@ impl PRC_TYPE_RI_BrepModel {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_RI_BrepModel::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_RI_BrepModel::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_RI_BrepModel) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_RI_BrepModel, PrcType::try_from(id.value).unwrap());
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
@@ -4004,13 +4301,15 @@ impl PRC_TYPE_RI_BrepModel {
         let exact_geometry = self.exact_geometry.clone();
         exact_geometry.to_writer(_w)?;
         let index_topological_context_cond = !!exact_geometry;
-        let index_topological_context = self.index_topological_context.as_ref().unwrap();
+        let mut index_topological_context: &UnsignedInteger = &Default::default();
         if index_topological_context_cond {
+            index_topological_context = self.index_topological_context.as_ref().unwrap();
             index_topological_context.to_writer(_w)?;
         }
         let index_body_cond = !!exact_geometry;
-        let index_body = self.index_body.as_ref().unwrap();
+        let mut index_body: &UnsignedInteger = &Default::default();
         if index_body_cond {
+            index_body = self.index_body.as_ref().unwrap();
             index_body.to_writer(_w)?;
         }
         let is_closed = self.is_closed.clone();
@@ -4037,10 +4336,17 @@ impl PRC_TYPE_RI_Curve {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_RI_Curve::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_RI_Curve::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_RI_Curve) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_RI_Curve, PrcType::try_from(id.value).unwrap());
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
@@ -4089,13 +4395,15 @@ impl PRC_TYPE_RI_Curve {
         let exact_geometry = self.exact_geometry.clone();
         exact_geometry.to_writer(_w)?;
         let index_topological_context_cond = !!exact_geometry;
-        let index_topological_context = self.index_topological_context.as_ref().unwrap();
+        let mut index_topological_context: &UnsignedInteger = &Default::default();
         if index_topological_context_cond {
+            index_topological_context = self.index_topological_context.as_ref().unwrap();
             index_topological_context.to_writer(_w)?;
         }
         let index_body_cond = !!exact_geometry;
-        let index_body = self.index_body.as_ref().unwrap();
+        let mut index_body: &UnsignedInteger = &Default::default();
         if index_body_cond {
+            index_body = self.index_body.as_ref().unwrap();
             index_body.to_writer(_w)?;
         }
         let user_data = self.user_data.clone();
@@ -4120,10 +4428,17 @@ impl PRC_TYPE_RI_Direction {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_RI_Direction::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_RI_Direction::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_RI_Direction) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_RI_Direction, PrcType::try_from(id.value).unwrap());
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
@@ -4161,8 +4476,9 @@ impl PRC_TYPE_RI_Direction {
         let has_orgin = self.has_orgin.clone();
         has_orgin.to_writer(_w)?;
         let origin_cond = !!has_orgin;
-        let origin = self.origin.as_ref().unwrap();
+        let mut origin: &Vector3D = &Default::default();
         if origin_cond {
+            origin = self.origin.as_ref().unwrap();
             origin.to_writer(_w, _ctx)?;
         }
         let direction = self.direction.clone();
@@ -4189,10 +4505,17 @@ impl PRC_TYPE_RI_Plane {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_RI_Plane::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_RI_Plane::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_RI_Plane) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_RI_Plane, PrcType::try_from(id.value).unwrap());
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
@@ -4241,13 +4564,15 @@ impl PRC_TYPE_RI_Plane {
         let exact_geometry = self.exact_geometry.clone();
         exact_geometry.to_writer(_w)?;
         let index_topological_context_cond = !!exact_geometry;
-        let index_topological_context = self.index_topological_context.as_ref().unwrap();
+        let mut index_topological_context: &UnsignedInteger = &Default::default();
         if index_topological_context_cond {
+            index_topological_context = self.index_topological_context.as_ref().unwrap();
             index_topological_context.to_writer(_w)?;
         }
         let index_body_cond = !!exact_geometry;
-        let index_body = self.index_body.as_ref().unwrap();
+        let mut index_body: &UnsignedInteger = &Default::default();
         if index_body_cond {
+            index_body = self.index_body.as_ref().unwrap();
             index_body.to_writer(_w)?;
         }
         let user_data = self.user_data.clone();
@@ -4271,10 +4596,17 @@ impl PRC_TYPE_RI_PointSet {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_RI_PointSet::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_RI_PointSet::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_RI_PointSet) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_RI_PointSet, PrcType::try_from(id.value).unwrap());
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
@@ -4332,10 +4664,17 @@ impl PRC_TYPE_RI_PolyBrepModel {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_RI_PolyBrepModel::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_RI_PolyBrepModel::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_RI_PolyBrepModel) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_RI_PolyBrepModel,
             PrcType::try_from(id.value).unwrap()
@@ -4387,10 +4726,17 @@ impl PRC_TYPE_RI_PolyWire {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_RI_PolyWire::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_RI_PolyWire::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_RI_PolyWire) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_RI_PolyWire, PrcType::try_from(id.value).unwrap());
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
@@ -4434,10 +4780,17 @@ impl PRC_TYPE_RI_Set {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_RI_Set::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_RI_Set::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_RI_Set) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_RI_Set, PrcType::try_from(id.value).unwrap());
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
@@ -4494,8 +4847,9 @@ impl PRC_TYPE_RI_RepresentationItem {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_RI_RepresentationItem::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_RI_RepresentationItem::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut data_type_id: u32 = 0;
@@ -4534,8 +4888,9 @@ impl PRC_TYPE_RI_RepresentationItem {
                 )
             }
             _ => panic!(
-                "PRC_TYPE_RI_RepresentationItem: Unrecognized subtype: {}!",
-                data_type_id.to_string()
+                "PRC_TYPE_RI_RepresentationItem: Unrecognized subtype: {}! bp={}",
+                data_type_id.to_string(),
+                rdr.position_in_bits()?
             ),
         };
         let _ = _ctx
@@ -4603,7 +4958,11 @@ impl AdditionalTargetData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}AdditionalTargetData::from_reader()", indent::get());
+        trace!(
+            "{}AdditionalTargetData::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut flag: Boolean = Default::default();
         flag = Boolean::from_reader(rdr)?;
@@ -4646,8 +5005,9 @@ impl AdditionalTargetData {
         let flag = self.flag.clone();
         flag.to_writer(_w)?;
         let unique_id_cond = !flag;
-        let unique_id = self.unique_id.as_ref().unwrap();
+        let mut unique_id: &UniqueId = &Default::default();
         if unique_id_cond {
+            unique_id = self.unique_id.as_ref().unwrap();
             unique_id.to_writer(_w, _ctx)?;
         }
         let index_of_topological_index = self.index_of_topological_index.clone();
@@ -4680,12 +5040,16 @@ impl PRC_TYPE_MISC_ReferenceOnTopology {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_MISC_ReferenceOnTopology::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_MISC_ReferenceOnTopology::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MISC_ReferenceOnTopology) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_MISC_ReferenceOnTopology,
             PrcType::try_from(id.value).unwrap()
@@ -4728,8 +5092,9 @@ impl PRC_TYPE_MISC_ReferenceOnTopology {
         let flag = self.flag.clone();
         flag.to_writer(_w)?;
         let data_cond = !!flag;
-        let data = self.data.as_ref().unwrap();
+        let mut data: &AdditionalTargetData = &Default::default();
         if data_cond {
+            data = self.data.as_ref().unwrap();
             data.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -4752,12 +5117,16 @@ impl PRC_TYPE_MISC_ReferenceOnPRCBase {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_MISC_ReferenceOnPRCBase::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_MISC_ReferenceOnPRCBase::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MISC_ReferenceOnPRCBase) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_MISC_ReferenceOnPRCBase,
             PrcType::try_from(id.value).unwrap()
@@ -4801,8 +5170,9 @@ impl PRC_TYPE_MISC_ReferenceOnPRCBase {
         let flag = self.flag.clone();
         flag.to_writer(_w)?;
         let different_unique_id_cond = !flag;
-        let different_unique_id = self.different_unique_id.as_ref().unwrap();
+        let mut different_unique_id: &UniqueId = &Default::default();
         if different_unique_id_cond {
+            different_unique_id = self.different_unique_id.as_ref().unwrap();
             different_unique_id.to_writer(_w, _ctx)?;
         }
         let unique_id = self.unique_id.clone();
@@ -4822,7 +5192,11 @@ impl ReferenceData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ReferenceData::from_reader()", indent::get());
+        trace!(
+            "{}ReferenceData::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut data_type_id: u32 = 0;
         let mut data_concrete: ReferenceData_dataConcrete =
@@ -4841,8 +5215,9 @@ impl ReferenceData {
                 )
             }
             _ => panic!(
-                "ReferenceData: Unrecognized subtype: {}!",
-                data_type_id.to_string()
+                "ReferenceData: Unrecognized subtype: {}! bp={}",
+                data_type_id.to_string(),
+                rdr.position_in_bits()?
             ),
         };
         let rv = Self { data_concrete };
@@ -4890,7 +5265,11 @@ impl ContentEntityReference {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ContentEntityReference::from_reader()", indent::get());
+        trace!(
+            "{}ContentEntityReference::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
@@ -4927,8 +5306,9 @@ impl ContentEntityReference {
         let flag = self.flag.clone();
         flag.to_writer(_w)?;
         let reference_data_cond = !!flag;
-        let reference_data = self.reference_data.as_ref().unwrap();
+        let mut reference_data: &ReferenceData = &Default::default();
         if reference_data_cond {
+            reference_data = self.reference_data.as_ref().unwrap();
             reference_data.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -4949,8 +5329,9 @@ impl ContentExtendedEntityReference {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}ContentExtendedEntityReference::from_reader()",
-            indent::get()
+            "{}ContentExtendedEntityReference::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut content_entity_reference: ContentEntityReference = Default::default();
@@ -4983,8 +5364,9 @@ impl ContentExtendedEntityReference {
         let has_reference_data = self.has_reference_data.clone();
         has_reference_data.to_writer(_w)?;
         let reference_data_cond = !!has_reference_data;
-        let reference_data = self.reference_data.as_ref().unwrap();
+        let mut reference_data: &ReferenceData = &Default::default();
         if reference_data_cond {
+            reference_data = self.reference_data.as_ref().unwrap();
             reference_data.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -5009,12 +5391,16 @@ impl PRC_TYPE_MISC_MarkupLinkedItem {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_MISC_MarkupLinkedItem::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_MISC_MarkupLinkedItem::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MISC_MarkupLinkedItem) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_MISC_MarkupLinkedItem,
             PrcType::try_from(id.value).unwrap()
@@ -5088,10 +5474,17 @@ impl PRC_TYPE_MKP_Leader {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_MKP_Leader::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_MKP_Leader::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MKP_Leader) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_MKP_Leader, PrcType::try_from(id.value).unwrap());
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
@@ -5146,15 +5539,17 @@ impl PRC_TYPE_MKP_Leader {
         let is_first_linked_item = self.is_first_linked_item.clone();
         is_first_linked_item.to_writer(_w)?;
         let first_linked_item_cond = !!is_first_linked_item;
-        let first_linked_item = self.first_linked_item.as_ref().unwrap();
+        let mut first_linked_item: &PRC_TYPE_MISC_ReferenceOnPRCBase = &Default::default();
         if first_linked_item_cond {
+            first_linked_item = self.first_linked_item.as_ref().unwrap();
             first_linked_item.to_writer(_w, _ctx)?;
         }
         let is_second_linked_item = self.is_second_linked_item.clone();
         is_second_linked_item.to_writer(_w)?;
         let second_linked_item_cond = !!is_second_linked_item;
-        let second_linked_item = self.second_linked_item.as_ref().unwrap();
+        let mut second_linked_item: &PRC_TYPE_MISC_ReferenceOnPRCBase = &Default::default();
         if second_linked_item_cond {
+            second_linked_item = self.second_linked_item.as_ref().unwrap();
             second_linked_item.to_writer(_w, _ctx)?;
         }
         let biased_index_tesselation = self.biased_index_tesselation.clone();
@@ -5185,10 +5580,17 @@ impl PRC_TYPE_MKP_Markup {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_MKP_Markup::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_MKP_Markup::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MKP_Markup) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_MKP_Markup, PrcType::try_from(id.value).unwrap());
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
@@ -5279,12 +5681,16 @@ impl PRC_TYPE_MKP_AnnotationItem {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_MKP_AnnotationItem::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_MKP_AnnotationItem::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MKP_AnnotationItem) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_MKP_AnnotationItem,
             PrcType::try_from(id.value).unwrap()
@@ -5338,10 +5744,17 @@ impl PRC_TYPE_MKP_AnnotationSet {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_MKP_AnnotationSet::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_MKP_AnnotationSet::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MKP_AnnotationSet) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_MKP_AnnotationSet,
             PrcType::try_from(id.value).unwrap()
@@ -5407,12 +5820,16 @@ impl PRC_TYPE_MKP_AnnotationReference {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_MKP_AnnotationReference::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_MKP_AnnotationReference::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MKP_AnnotationReference) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_MKP_AnnotationReference,
             PrcType::try_from(id.value).unwrap()
@@ -5473,7 +5890,11 @@ impl AnnotationEntity {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}AnnotationEntity::from_reader()", indent::get());
+        trace!(
+            "{}AnnotationEntity::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut data_type_id: u32 = 0;
         let mut data_concrete: AnnotationEntity_dataConcrete =
@@ -5491,8 +5912,9 @@ impl AnnotationEntity {
                 PRC_TYPE_MKP_AnnotationReference::from_reader(rdr, _ctx)?,
             ),
             _ => panic!(
-                "AnnotationEntity: Unrecognized subtype: {}!",
-                data_type_id.to_string()
+                "AnnotationEntity: Unrecognized subtype: {}! bp={}",
+                data_type_id.to_string(),
+                rdr.position_in_bits()?
             ),
         };
         let rv = Self { data_concrete };
@@ -5546,7 +5968,11 @@ impl MarkupData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}MarkupData::from_reader()", indent::get());
+        trace!(
+            "{}MarkupData::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut number_of_linked_items: UnsignedInteger = Default::default();
         number_of_linked_items = UnsignedInteger::from_reader(rdr)?;
@@ -5641,7 +6067,11 @@ impl ContentSurface {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ContentSurface::from_reader()", indent::get());
+        trace!(
+            "{}ContentSurface::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut has_base_geometry: Boolean = Default::default();
         has_base_geometry = Boolean::from_reader(rdr)?;
@@ -5683,18 +6113,21 @@ impl ContentSurface {
         let has_base_geometry = self.has_base_geometry.clone();
         has_base_geometry.to_writer(_w)?;
         let attribute_data_cond = !!has_base_geometry;
-        let attribute_data = self.attribute_data.as_ref().unwrap();
+        let mut attribute_data: &AttributeData = &Default::default();
         if attribute_data_cond {
+            attribute_data = self.attribute_data.as_ref().unwrap();
             attribute_data.to_writer(_w, _ctx)?;
         }
         let name_cond = !!has_base_geometry;
-        let name = self.name.as_ref().unwrap();
+        let mut name: &Name = &Default::default();
         if name_cond {
+            name = self.name.as_ref().unwrap();
             name.to_writer(_w, _ctx)?;
         }
         let id_cond = !!has_base_geometry;
-        let id = self.id.as_ref().unwrap();
+        let mut id: &UnsignedInteger = &Default::default();
         if id_cond {
+            id = self.id.as_ref().unwrap();
             id.to_writer(_w)?;
         }
         let extend_type = self.extend_type.clone();
@@ -5715,7 +6148,11 @@ impl Domain {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}Domain::from_reader()", indent::get());
+        trace!(
+            "{}Domain::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut min_uv: Vector2D = Default::default();
         min_uv = Vector2D::from_reader(rdr, _ctx)?;
@@ -5756,10 +6193,17 @@ impl PRC_TYPE_SURF_Plane {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_SURF_Plane::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_SURF_Plane::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_SURF_Plane) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_SURF_Plane, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
@@ -5830,12 +6274,16 @@ impl PRC_TYPE_GRAPH_AmbientLight {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_GRAPH_AmbientLight::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_GRAPH_AmbientLight::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_GRAPH_AmbientLight) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_GRAPH_AmbientLight,
             PrcType::try_from(id.value).unwrap()
@@ -5899,10 +6347,17 @@ impl PRC_TYPE_GRAPH_PointLight {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_GRAPH_PointLight::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_GRAPH_PointLight::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_GRAPH_PointLight) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_GRAPH_PointLight,
             PrcType::try_from(id.value).unwrap()
@@ -5973,7 +6428,7 @@ pub struct PRC_TYPE_GRAPH_DirectionalLight {
     pub id: UnsignedInteger,
     pub base: ContentPRCRefBase,
     pub biased_ambient_index: UnsignedInteger,
-    /// no biased_emissive_index field present (matching sdk9)
+    /// no biased_emissive_index field present (matching sdk9), see https://github.com/pdf-association/pdf-issues/issues/745#issuecomment-4662174484
     pub biased_diffuse_index: UnsignedInteger,
     pub biased_specular_index: UnsignedInteger,
     pub direction: Vector3D,
@@ -5987,12 +6442,16 @@ impl PRC_TYPE_GRAPH_DirectionalLight {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_GRAPH_DirectionalLight::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_GRAPH_DirectionalLight::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_GRAPH_DirectionalLight) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_GRAPH_DirectionalLight,
             PrcType::try_from(id.value).unwrap()
@@ -6048,8 +6507,9 @@ impl PRC_TYPE_GRAPH_DirectionalLight {
         let direction = self.direction.clone();
         direction.to_writer(_w, _ctx)?;
         let intensity_cond = _ctx.ver_authoring >= 8030;
-        let intensity = self.intensity.as_ref().unwrap();
+        let mut intensity: &Double = &Default::default();
         if intensity_cond {
+            intensity = self.intensity.as_ref().unwrap();
             intensity.to_writer(_w)?;
         }
         Ok(())
@@ -6079,10 +6539,17 @@ impl PRC_TYPE_GRAPH_SpotLight {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_GRAPH_SpotLight::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_GRAPH_SpotLight::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_GRAPH_SpotLight) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_GRAPH_SpotLight,
             PrcType::try_from(id.value).unwrap()
@@ -6170,7 +6637,11 @@ impl Light {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}Light::from_reader()", indent::get());
+        trace!(
+            "{}Light::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: Light_idConcrete = Light_idConcrete::Invalid(id_type_id);
@@ -6189,7 +6660,11 @@ impl Light {
             PrcType::PRC_TYPE_GRAPH_SpotLight => {
                 Light_idConcrete::sl(PRC_TYPE_GRAPH_SpotLight::from_reader(rdr, _ctx)?)
             }
-            _ => panic!("Light: Unrecognized subtype: {}!", id_type_id.to_string()),
+            _ => panic!(
+                "Light: Unrecognized subtype: {}! bp={}",
+                id_type_id.to_string(),
+                rdr.position_in_bits()?
+            ),
         };
         let rv = Self { id_concrete };
         Ok(rv)
@@ -6246,10 +6721,17 @@ impl PRC_TYPE_GRAPH_Camera {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_GRAPH_Camera::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_GRAPH_Camera::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_GRAPH_Camera) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_GRAPH_Camera, PrcType::try_from(id.value).unwrap());
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
@@ -6350,12 +6832,16 @@ impl PRC_TYPE_GRAPH_SceneDisplayParameters {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_GRAPH_SceneDisplayParameters::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_GRAPH_SceneDisplayParameters::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_GRAPH_SceneDisplayParameters) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_GRAPH_SceneDisplayParameters,
             PrcType::try_from(id.value).unwrap()
@@ -6461,15 +6947,17 @@ impl PRC_TYPE_GRAPH_SceneDisplayParameters {
         let camera_defined = self.camera_defined.clone();
         camera_defined.to_writer(_w)?;
         let camera_cond = !!camera_defined;
-        let camera = self.camera.as_ref().unwrap();
+        let mut camera: &PRC_TYPE_GRAPH_Camera = &Default::default();
         if camera_cond {
+            camera = self.camera.as_ref().unwrap();
             camera.to_writer(_w, _ctx)?;
         }
         let rotation_center_defined = self.rotation_center_defined.clone();
         rotation_center_defined.to_writer(_w)?;
         let rotation_center_cond = !!rotation_center_defined;
-        let rotation_center = self.rotation_center.as_ref().unwrap();
+        let mut rotation_center: &Vector3D = &Default::default();
         if rotation_center_cond {
+            rotation_center = self.rotation_center.as_ref().unwrap();
             rotation_center.to_writer(_w, _ctx)?;
         }
         let number_of_clipping_planes = self.number_of_clipping_planes.clone();
@@ -6490,8 +6978,9 @@ impl PRC_TYPE_GRAPH_SceneDisplayParameters {
             i.to_writer(_w)?;
         }
         let is_absolute_cond = _ctx.ver_authoring >= 8137;
-        let is_absolute = self.is_absolute.as_ref().unwrap();
+        let mut is_absolute: &Boolean = &Default::default();
         if is_absolute_cond {
+            is_absolute = self.is_absolute.as_ref().unwrap();
             is_absolute.to_writer(_w)?;
         }
         Ok(())
@@ -6511,7 +7000,11 @@ impl ContentLayerFilterItems {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ContentLayerFilterItems::from_reader()", indent::get());
+        trace!(
+            "{}ContentLayerFilterItems::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut b_is_inclusive: Boolean = Default::default();
         b_is_inclusive = Boolean::from_reader(rdr)?;
@@ -6561,12 +7054,16 @@ impl PRC_TYPE_MISC_EntityReference {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_MISC_EntityReference::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_MISC_EntityReference::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MISC_EntityReference) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_MISC_EntityReference,
             PrcType::try_from(id.value).unwrap()
@@ -6613,7 +7110,11 @@ impl ContentEntityFilterItems {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ContentEntityFilterItems::from_reader()", indent::get());
+        trace!(
+            "{}ContentEntityFilterItems::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut b_is_inclusive: Boolean = Default::default();
         b_is_inclusive = Boolean::from_reader(rdr)?;
@@ -6665,10 +7166,17 @@ impl PRC_TYPE_ASM_Filter {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_ASM_Filter::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_ASM_Filter::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_ASM_Filter) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_ASM_Filter, PrcType::try_from(id.value).unwrap());
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
@@ -6737,10 +7245,17 @@ impl PRC_TYPE_MKP_View {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_MKP_View::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_MKP_View::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MKP_View) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_MKP_View, PrcType::try_from(id.value).unwrap());
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
@@ -6876,28 +7391,34 @@ impl PRC_TYPE_MKP_View {
         let has_parameters = self.has_parameters.clone();
         has_parameters.to_writer(_w)?;
         let scene_display_parameters_cond = !!has_parameters;
-        let scene_display_parameters = self.scene_display_parameters.as_ref().unwrap();
+        let mut scene_display_parameters: &PRC_TYPE_GRAPH_SceneDisplayParameters =
+            &Default::default();
         if scene_display_parameters_cond {
+            scene_display_parameters = self.scene_display_parameters.as_ref().unwrap();
             scene_display_parameters.to_writer(_w, _ctx)?;
         }
         let is_annotation_view_cond = _ctx.ver_authoring >= 8137;
-        let is_annotation_view = self.is_annotation_view.as_ref().unwrap();
+        let mut is_annotation_view: &Boolean = &Default::default();
         if is_annotation_view_cond {
+            is_annotation_view = self.is_annotation_view.as_ref().unwrap();
             is_annotation_view.to_writer(_w)?;
         }
         let is_default_view_cond = _ctx.ver_authoring >= 8137;
-        let is_default_view = self.is_default_view.as_ref().unwrap();
+        let mut is_default_view: &Boolean = &Default::default();
         if is_default_view_cond {
+            is_default_view = self.is_default_view.as_ref().unwrap();
             is_default_view.to_writer(_w)?;
         }
         let is_direction_cond = _ctx.ver_authoring >= 8137;
-        let is_direction = self.is_direction.as_ref().unwrap();
+        let mut is_direction: &Boolean = &Default::default();
         if is_direction_cond {
+            is_direction = self.is_direction.as_ref().unwrap();
             is_direction.to_writer(_w)?;
         }
         let number_of_linked_items_cond = _ctx.ver_authoring >= 8137;
-        let number_of_linked_items = self.number_of_linked_items.as_ref().unwrap();
+        let mut number_of_linked_items: &UnsignedInteger = &Default::default();
         if number_of_linked_items_cond {
+            number_of_linked_items = self.number_of_linked_items.as_ref().unwrap();
             number_of_linked_items.to_writer(_w)?;
         }
         let linked_items = self.linked_items.clone();
@@ -6907,8 +7428,9 @@ impl PRC_TYPE_MKP_View {
             }
         }
         let number_of_filters_cond = _ctx.ver_authoring >= 8137;
-        let number_of_filters = self.number_of_filters.as_ref().unwrap();
+        let mut number_of_filters: &UnsignedInteger = &Default::default();
         if number_of_filters_cond {
+            number_of_filters = self.number_of_filters.as_ref().unwrap();
             number_of_filters.to_writer(_w)?;
         }
         let filters = self.filters.clone();
@@ -6943,12 +7465,16 @@ impl PRC_TYPE_ASM_PartDefinition {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_ASM_PartDefinition::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_ASM_PartDefinition::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_ASM_PartDefinition) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_ASM_PartDefinition,
             PrcType::try_from(id.value).unwrap()
@@ -7036,7 +7562,11 @@ impl FileIdentifier {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}FileIdentifier::from_reader()", indent::get());
+        trace!(
+            "{}FileIdentifier::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut flag: Boolean = Default::default();
         flag = Boolean::from_reader(rdr)?;
@@ -7063,8 +7593,9 @@ impl FileIdentifier {
         let flag = self.flag.clone();
         flag.to_writer(_w)?;
         let unique_id_cond = !flag;
-        let unique_id = self.unique_id.as_ref().unwrap();
+        let mut unique_id: &UniqueId = &Default::default();
         if unique_id_cond {
+            unique_id = self.unique_id.as_ref().unwrap();
             unique_id.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -7089,8 +7620,9 @@ impl ReferencesOfProductOccurrence {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}ReferencesOfProductOccurrence::from_reader()",
-            indent::get()
+            "{}ReferencesOfProductOccurrence::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut biased_index_part: UnsignedInteger = Default::default();
@@ -7146,17 +7678,19 @@ impl ReferencesOfProductOccurrence {
         let biased_index_prototype = self.biased_index_prototype.clone();
         biased_index_prototype.to_writer(_w)?;
         let prototype_in_same_file_structure_cond = biased_index_prototype.value != 0;
-        let prototype_in_same_file_structure =
-            self.prototype_in_same_file_structure.as_ref().unwrap();
+        let mut prototype_in_same_file_structure: &FileIdentifier = &Default::default();
         if prototype_in_same_file_structure_cond {
+            prototype_in_same_file_structure =
+                self.prototype_in_same_file_structure.as_ref().unwrap();
             prototype_in_same_file_structure.to_writer(_w, _ctx)?;
         }
         let biased_index_external_data = self.biased_index_external_data.clone();
         biased_index_external_data.to_writer(_w)?;
         let external_data_in_same_file_structure_cond = biased_index_external_data.value != 0;
-        let external_data_in_same_file_structure =
-            self.external_data_in_same_file_structure.as_ref().unwrap();
+        let mut external_data_in_same_file_structure: &FileIdentifier = &Default::default();
         if external_data_in_same_file_structure_cond {
+            external_data_in_same_file_structure =
+                self.external_data_in_same_file_structure.as_ref().unwrap();
             external_data_in_same_file_structure.to_writer(_w, _ctx)?;
         }
         let number_of_child_product_occurrences = self.number_of_child_product_occurrences.clone();
@@ -7183,7 +7717,11 @@ impl ProductInformation {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ProductInformation::from_reader()", indent::get());
+        trace!(
+            "{}ProductInformation::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut unit_from_cad_file: Boolean = Default::default();
         unit_from_cad_file = Boolean::from_reader(rdr)?;
@@ -7248,12 +7786,16 @@ impl PRC_TYPE_ASM_ProductOccurrence {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_ASM_ProductOccurrence::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_ASM_ProductOccurrence::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_ASM_ProductOccurrence) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_ASM_ProductOccurrence,
             PrcType::try_from(id.value).unwrap()
@@ -7287,8 +7829,9 @@ impl PRC_TYPE_ASM_ProductOccurrence {
                     )
                 }
                 _ => panic!(
-                    "PRC_TYPE_ASM_ProductOccurrence: Unrecognized subtype: {}!",
-                    location_type_id.to_string()
+                    "PRC_TYPE_ASM_ProductOccurrence: Unrecognized subtype: {}! bp={}",
+                    location_type_id.to_string(),
+                    rdr.position_in_bits()?
                 ),
             };
         }
@@ -7382,14 +7925,16 @@ impl PRC_TYPE_ASM_ProductOccurrence {
         product_information.to_writer(_w, _ctx)?;
         let has_transformation = self.has_transformation.clone();
         has_transformation.to_writer(_w)?;
-        match &self.location_concrete {
-            PRC_TYPE_ASM_ProductOccurrence_locationConcrete::ct(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_ASM_ProductOccurrence_locationConcrete::gt(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_ASM_ProductOccurrence_locationConcrete::Invalid(x) => panic!(
-                "PRC_TYPE_ASM_ProductOccurrence: Unrecognized subtype: {}!",
-                x
-            ),
-        };
+        if !!has_transformation {
+            match &self.location_concrete {
+                PRC_TYPE_ASM_ProductOccurrence_locationConcrete::ct(x) => &x.to_writer(_w, _ctx)?,
+                PRC_TYPE_ASM_ProductOccurrence_locationConcrete::gt(x) => &x.to_writer(_w, _ctx)?,
+                PRC_TYPE_ASM_ProductOccurrence_locationConcrete::Invalid(x) => panic!(
+                    "PRC_TYPE_ASM_ProductOccurrence: Unrecognized subtype: {}!",
+                    x
+                ),
+            };
+        }
         let entity_ref_count = self.entity_ref_count.clone();
         entity_ref_count.to_writer(_w)?;
         let entity_reference = self.entity_reference.clone();
@@ -7407,8 +7952,9 @@ impl PRC_TYPE_ASM_ProductOccurrence {
         let has_filter = self.has_filter.clone();
         has_filter.to_writer(_w)?;
         let entity_filter_cond = !!has_filter;
-        let entity_filter = self.entity_filter.as_ref().unwrap();
+        let mut entity_filter: &PRC_TYPE_ASM_Filter = &Default::default();
         if entity_filter_cond {
+            entity_filter = self.entity_filter.as_ref().unwrap();
             entity_filter.to_writer(_w, _ctx)?;
         }
         let number_of_display_filters = self.number_of_display_filters.clone();
@@ -7455,10 +8001,17 @@ impl PRC_TYPE_ASM_FileStructure {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_ASM_FileStructure::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_ASM_FileStructure::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_ASM_FileStructure) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_ASM_FileStructure,
             PrcType::try_from(id.value).unwrap()
@@ -7517,12 +8070,16 @@ impl PRC_TYPE_ASM_FileStructureTree {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_ASM_FileStructureTree::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_ASM_FileStructureTree::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_ASM_FileStructureTree) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_ASM_FileStructureTree,
             PrcType::try_from(id.value).unwrap()
@@ -7604,7 +8161,11 @@ impl ColorRGB {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ColorRGB::from_reader()", indent::get());
+        trace!(
+            "{}ColorRGB::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut color: [UnsignedCharacter; 3] = [Default::default(); 3];
         for i in 0..3 {
@@ -7637,7 +8198,11 @@ impl ColorRGBA {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ColorRGBA::from_reader()", indent::get());
+        trace!(
+            "{}ColorRGBA::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut color: [UnsignedCharacter; 4] = [Default::default(); 4];
         for i in 0..4 {
@@ -7671,7 +8236,11 @@ impl ColorDataRemainderRGB {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ColorDataRemainderRGB::from_reader()", indent::get());
+        trace!(
+            "{}ColorDataRemainderRGB::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut is_same: Boolean = Default::default();
         is_same = Boolean::from_reader(rdr)?;
@@ -7694,8 +8263,9 @@ impl ColorDataRemainderRGB {
         let is_same = self.is_same.clone();
         is_same.to_writer(_w)?;
         let color_cond = !is_same;
-        let color = self.color.as_ref().unwrap();
+        let mut color: &ColorRGB = &Default::default();
         if color_cond {
+            color = self.color.as_ref().unwrap();
             color.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -7714,7 +8284,11 @@ impl ColorDataRemainderRGBA {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ColorDataRemainderRGBA::from_reader()", indent::get());
+        trace!(
+            "{}ColorDataRemainderRGBA::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut is_same: Boolean = Default::default();
         is_same = Boolean::from_reader(rdr)?;
@@ -7737,8 +8311,9 @@ impl ColorDataRemainderRGBA {
         let is_same = self.is_same.clone();
         is_same.to_writer(_w)?;
         let color_cond = !is_same;
-        let color = self.color.as_ref().unwrap();
+        let mut color: &ColorRGBA = &Default::default();
         if color_cond {
+            color = self.color.as_ref().unwrap();
             color.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -7766,7 +8341,11 @@ impl VertexColors {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}VertexColors::from_reader()", indent::get());
+        trace!(
+            "{}VertexColors::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         debug!(
             "{}_ctx.VertexColors_number_of_colors: {}",
@@ -7851,15 +8430,17 @@ impl VertexColors {
         let is_rgba = self.is_rgba.clone();
         is_rgba.to_writer(_w)?;
         let is_segment_color_cond = _ctx.TESS_3D_Wire__is_inside();
-        let is_segment_color = self.is_segment_color.as_ref().unwrap();
+        let mut is_segment_color: &Boolean = &Default::default();
         if is_segment_color_cond {
+            is_segment_color = self.is_segment_color.as_ref().unwrap();
             is_segment_color.to_writer(_w)?;
         }
         let b_optimized = self.b_optimized.clone();
         b_optimized.to_writer(_w)?;
         let color_data_rgb_first_vertex_cond = !b_optimized && !is_rgba;
-        let color_data_rgb_first_vertex = self.color_data_rgb_first_vertex.as_ref().unwrap();
+        let mut color_data_rgb_first_vertex: &ColorRGB = &Default::default();
         if color_data_rgb_first_vertex_cond {
+            color_data_rgb_first_vertex = self.color_data_rgb_first_vertex.as_ref().unwrap();
             color_data_rgb_first_vertex.to_writer(_w, _ctx)?;
         }
         let color_data_rgb_remaining_vertices = self.color_data_rgb_remaining_vertices.clone();
@@ -7869,8 +8450,9 @@ impl VertexColors {
             }
         }
         let color_data_rgba_first_vertex_cond = !b_optimized && !!is_rgba;
-        let color_data_rgba_first_vertex = self.color_data_rgba_first_vertex.as_ref().unwrap();
+        let mut color_data_rgba_first_vertex: &ColorRGBA = &Default::default();
         if color_data_rgba_first_vertex_cond {
+            color_data_rgba_first_vertex = self.color_data_rgba_first_vertex.as_ref().unwrap();
             color_data_rgba_first_vertex.to_writer(_w, _ctx)?;
         }
         let color_data_rgba_remaining_vertices = self.color_data_rgba_remaining_vertices.clone();
@@ -7907,10 +8489,17 @@ impl PRC_TYPE_TESS_Face {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_TESS_Face::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_TESS_Face::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_TESS_Face) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_TESS_Face, PrcType::try_from(id.value).unwrap());
         let mut size_of_line_attributes: UnsignedInteger = Default::default();
         size_of_line_attributes = UnsignedInteger::from_reader(rdr)?;
@@ -8042,13 +8631,15 @@ impl PRC_TYPE_TESS_Face {
         let has_vertex_colors = self.has_vertex_colors.clone();
         has_vertex_colors.to_writer(_w)?;
         let vertex_color_data_cond = !!has_vertex_colors;
-        let vertex_color_data = self.vertex_color_data.as_ref().unwrap();
+        let mut vertex_color_data: &VertexColors = &Default::default();
         if vertex_color_data_cond {
+            vertex_color_data = self.vertex_color_data.as_ref().unwrap();
             vertex_color_data.to_writer(_w, _ctx)?;
         }
         let behavior_cond = size_of_line_attributes.value > 0;
-        let behavior = self.behavior.as_ref().unwrap();
+        let mut behavior: &UnsignedInteger = &Default::default();
         if behavior_cond {
+            behavior = self.behavior.as_ref().unwrap();
             behavior.to_writer(_w)?;
         }
         Ok(())
@@ -8087,10 +8678,17 @@ impl PRC_TYPE_TESS_3D {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_TESS_3D::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_TESS_3D::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_TESS_3D) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_TESS_3D, PrcType::try_from(id.value).unwrap());
         let mut tessellation_coordinates: ContentBaseTessData = Default::default();
         tessellation_coordinates = ContentBaseTessData::from_reader(rdr, _ctx)?;
@@ -8223,24 +8821,28 @@ impl PRC_TYPE_TESS_3D {
         let has_faces = self.has_faces.clone();
         has_faces.to_writer(_w)?;
         let has_loops_cond = _ctx.ver_authoring >= 7039;
-        let has_loops = self.has_loops.as_ref().unwrap();
+        let mut has_loops: &Boolean = &Default::default();
         if has_loops_cond {
+            has_loops = self.has_loops.as_ref().unwrap();
             has_loops.to_writer(_w)?;
         }
         let must_calculate_normals_cond = _ctx.ver_authoring >= 7047;
-        let must_calculate_normals = self.must_calculate_normals.as_ref().unwrap();
+        let mut must_calculate_normals: &Boolean = &Default::default();
         if must_calculate_normals_cond {
+            must_calculate_normals = self.must_calculate_normals.as_ref().unwrap();
             must_calculate_normals.to_writer(_w)?;
         }
         let normal_recalculation_flags_cond =
             !!must_calculate_normals.value && _ctx.ver_authoring >= 7047;
-        let normal_recalculation_flags = self.normal_recalculation_flags.as_ref().unwrap();
+        let mut normal_recalculation_flags: &Character = &Default::default();
         if normal_recalculation_flags_cond {
+            normal_recalculation_flags = self.normal_recalculation_flags.as_ref().unwrap();
             normal_recalculation_flags.to_writer(_w)?;
         }
         let crease_angle_cond = !!must_calculate_normals.value && _ctx.ver_authoring >= 7047;
-        let crease_angle = self.crease_angle.as_ref().unwrap();
+        let mut crease_angle: &Double = &Default::default();
         if crease_angle_cond {
+            crease_angle = self.crease_angle.as_ref().unwrap();
             crease_angle.to_writer(_w)?;
         }
         let number_of_normal_coordinates = self.number_of_normal_coordinates.clone();
@@ -8293,11 +8895,18 @@ impl PRC_TYPE_TESS_3D_Wire {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_TESS_3D_Wire::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_TESS_3D_Wire::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         _ctx.TESS_3D_Wire__enter();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_TESS_3D_Wire) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_TESS_3D_Wire, PrcType::try_from(id.value).unwrap());
         let mut tessellation_coordinates: ContentBaseTessData = Default::default();
         tessellation_coordinates = ContentBaseTessData::from_reader(rdr, _ctx)?;
@@ -8358,8 +8967,9 @@ impl PRC_TYPE_TESS_3D_Wire {
         let has_vertex_colors = self.has_vertex_colors.clone();
         has_vertex_colors.to_writer(_w)?;
         let vertex_color_data_cond = !!has_vertex_colors;
-        let vertex_color_data = self.vertex_color_data.as_ref().unwrap();
+        let mut vertex_color_data: &VertexColors = &Default::default();
         if vertex_color_data_cond {
+            vertex_color_data = self.vertex_color_data.as_ref().unwrap();
             vertex_color_data.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -8379,7 +8989,11 @@ impl BinaryTextureData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}BinaryTextureData::from_reader()", indent::get());
+        trace!(
+            "{}BinaryTextureData::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut texture_binary_data_size: UnsignedInteger = Default::default();
         texture_binary_data_size = UnsignedInteger::from_reader(rdr)?;
@@ -8436,7 +9050,11 @@ impl CompressedTextureParameter {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}CompressedTextureParameter::from_reader()", indent::get());
+        trace!(
+            "{}CompressedTextureParameter::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut binary_texture_data: BinaryTextureData = Default::default();
         binary_texture_data = BinaryTextureData::from_reader(rdr, _ctx)?;
@@ -8552,13 +9170,17 @@ impl PRC_TYPE_TESS_3D_Compressed {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_TESS_3D_Compressed::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_TESS_3D_Compressed::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         _ctx.t3dc.enter();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_TESS_3D_Compressed) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_TESS_3D_Compressed,
             PrcType::try_from(id.value).unwrap()
@@ -8588,6 +9210,9 @@ impl PRC_TYPE_TESS_3D_Compressed {
             indent::get(),
             &edge_status_array
         );
+        if !edge_status_array.a.is_empty() {
+            assert!(*edge_status_array.a.iter().max().unwrap() >= 0i8);
+        };
         let mut triangle_face_array: CompressedIndiceArray = Default::default();
         triangle_face_array = CompressedIndiceArray::from_reader(rdr)?;
         trace!(
@@ -8996,44 +9621,52 @@ impl PRC_TYPE_TESS_3D_Compressed {
         let must_recalculate_normals = self.must_recalculate_normals.clone();
         must_recalculate_normals.to_writer(_w)?;
         let normal_is_reversed_cond = !!must_recalculate_normals;
-        let normal_is_reversed = self.normal_is_reversed.as_ref().unwrap();
+        let mut normal_is_reversed: &UncompressedBoolArray = &Default::default();
         if normal_is_reversed_cond {
+            normal_is_reversed = self.normal_is_reversed.as_ref().unwrap();
             normal_is_reversed
                 .to_writer(_w, _ctx.t3dc.number_of_normals(&triangle_face_array.a))?;
         }
         let crease_angle_cond = !!must_recalculate_normals;
-        let crease_angle = self.crease_angle.as_ref().unwrap();
+        let mut crease_angle: &Double = &Default::default();
         if crease_angle_cond {
+            crease_angle = self.crease_angle.as_ref().unwrap();
             crease_angle.to_writer(_w)?;
         }
         let normal_recalculation_flags_cond = !!must_recalculate_normals;
-        let normal_recalculation_flags = self.normal_recalculation_flags.as_ref().unwrap();
+        let mut normal_recalculation_flags: &Character = &Default::default();
         if normal_recalculation_flags_cond {
+            normal_recalculation_flags = self.normal_recalculation_flags.as_ref().unwrap();
             normal_recalculation_flags.to_writer(_w)?;
         }
         let normal_angle_number_of_bits_cond = !must_recalculate_normals;
-        let normal_angle_number_of_bits = self.normal_angle_number_of_bits.as_ref().unwrap();
+        let mut normal_angle_number_of_bits: &Character = &Default::default();
         if normal_angle_number_of_bits_cond {
+            normal_angle_number_of_bits = self.normal_angle_number_of_bits.as_ref().unwrap();
             normal_angle_number_of_bits.to_writer(_w)?;
         }
         let normal_binary_data_size_cond = !must_recalculate_normals;
-        let normal_binary_data_size = self.normal_binary_data_size.as_ref().unwrap();
+        let mut normal_binary_data_size: &UnsignedInteger = &Default::default();
         if normal_binary_data_size_cond {
+            normal_binary_data_size = self.normal_binary_data_size.as_ref().unwrap();
             normal_binary_data_size.to_writer(_w)?;
         }
         let normal_binary_data_cond = !must_recalculate_normals;
-        let normal_binary_data = self.normal_binary_data.as_ref().unwrap();
+        let mut normal_binary_data: &UncompressedBoolArray = &Default::default();
         if normal_binary_data_cond {
+            normal_binary_data = self.normal_binary_data.as_ref().unwrap();
             normal_binary_data.to_writer(_w, normal_binary_data_size.value)?;
         }
         let normal_angle_array_cond = !must_recalculate_normals;
-        let normal_angle_array = self.normal_angle_array.as_ref().unwrap();
+        let mut normal_angle_array: &ShortArray = &Default::default();
         if normal_angle_array_cond {
+            normal_angle_array = self.normal_angle_array.as_ref().unwrap();
             normal_angle_array.to_writer(_w, normal_angle_number_of_bits.value as u8)?;
         }
         let is_face_planar_cond = !must_recalculate_normals;
-        let is_face_planar = self.is_face_planar.as_ref().unwrap();
+        let mut is_face_planar: &UncompressedBoolArray = &Default::default();
         if is_face_planar_cond {
+            is_face_planar = self.is_face_planar.as_ref().unwrap();
             is_face_planar.to_writer(
                 _w,
                 _ctx.t3dc
@@ -9043,8 +9676,9 @@ impl PRC_TYPE_TESS_3D_Compressed {
         let is_point_color = self.is_point_color.clone();
         is_point_color.to_writer(_w)?;
         let is_point_color_on_face_cond = !!is_point_color;
-        let is_point_color_on_face = self.is_point_color_on_face.as_ref().unwrap();
+        let mut is_point_color_on_face: &UncompressedBoolArray = &Default::default();
         if is_point_color_on_face_cond {
+            is_point_color_on_face = self.is_point_color_on_face.as_ref().unwrap();
             is_point_color_on_face.to_writer(
                 _w,
                 _ctx.t3dc
@@ -9052,16 +9686,18 @@ impl PRC_TYPE_TESS_3D_Compressed {
             )?;
         }
         let point_color_array_cond = !!is_point_color;
-        let point_color_array = self.point_color_array.as_ref().unwrap();
+        let mut point_color_array: &CharacterArray = &Default::default();
         if point_color_array_cond {
+            point_color_array = self.point_color_array.as_ref().unwrap();
             point_color_array.to_writer(_w, 8)?;
         }
         let is_multiple_line_attribute = self.is_multiple_line_attribute.clone();
         is_multiple_line_attribute.to_writer(_w)?;
         let is_multiple_line_attribute_on_face_cond = !!is_multiple_line_attribute;
-        let is_multiple_line_attribute_on_face =
-            self.is_multiple_line_attribute_on_face.as_ref().unwrap();
+        let mut is_multiple_line_attribute_on_face: &UncompressedBoolArray = &Default::default();
         if is_multiple_line_attribute_on_face_cond {
+            is_multiple_line_attribute_on_face =
+                self.is_multiple_line_attribute_on_face.as_ref().unwrap();
             is_multiple_line_attribute_on_face.to_writer(
                 _w,
                 _ctx.t3dc
@@ -9073,18 +9709,21 @@ impl PRC_TYPE_TESS_3D_Compressed {
         let no_texture = self.no_texture.clone();
         no_texture.to_writer(_w)?;
         let texture_data_cond = !no_texture;
-        let texture_data = self.texture_data.as_ref().unwrap();
+        let mut texture_data: &CompressedTextureParameter = &Default::default();
         if texture_data_cond {
+            texture_data = self.texture_data.as_ref().unwrap();
             texture_data.to_writer(_w, _ctx)?;
         }
         let all_faces_have_texture_cond = !no_texture;
-        let all_faces_have_texture = self.all_faces_have_texture.as_ref().unwrap();
+        let mut all_faces_have_texture: &Boolean = &Default::default();
         if all_faces_have_texture_cond {
+            all_faces_have_texture = self.all_faces_have_texture.as_ref().unwrap();
             all_faces_have_texture.to_writer(_w)?;
         }
         let face_has_texture_cond = !no_texture && !all_faces_have_texture.value;
-        let face_has_texture = self.face_has_texture.as_ref().unwrap();
+        let mut face_has_texture: &UncompressedBoolArray = &Default::default();
         if face_has_texture_cond {
+            face_has_texture = self.face_has_texture.as_ref().unwrap();
             face_has_texture.to_writer(
                 _w,
                 _ctx.t3dc
@@ -9094,8 +9733,9 @@ impl PRC_TYPE_TESS_3D_Compressed {
         let has_behaviors = self.has_behaviors.clone();
         has_behaviors.to_writer(_w)?;
         let behaviors_array_cond = !!has_behaviors;
-        let behaviors_array = self.behaviors_array.as_ref().unwrap();
+        let mut behaviors_array: &CharacterArray = &Default::default();
         if behaviors_array_cond {
+            behaviors_array = self.behaviors_array.as_ref().unwrap();
             behaviors_array.to_writer(_w, 8)?;
         }
         Ok(())
@@ -9113,7 +9753,11 @@ impl PRC_TYPE_TESS {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_TESS::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_TESS::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_TESS_idConcrete =
@@ -9134,8 +9778,9 @@ impl PRC_TYPE_TESS {
                 PRC_TYPE_TESS_3D_Compressed::from_reader(rdr, _ctx)?,
             ),
             _ => panic!(
-                "PRC_TYPE_TESS: Unrecognized subtype: {}!",
-                id_type_id.to_string()
+                "PRC_TYPE_TESS: Unrecognized subtype: {}! bp={}",
+                id_type_id.to_string(),
+                rdr.position_in_bits()?
             ),
         };
         let _ = _ctx.se.eval(rdr, PRC_TYPE_TESS as u32, false, 0);
@@ -9191,12 +9836,16 @@ impl PRC_TYPE_ASM_FileStructureTessellation {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_ASM_FileStructureTessellation::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_ASM_FileStructureTessellation::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_ASM_FileStructureTessellation) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_ASM_FileStructureTessellation,
             PrcType::try_from(id.value).unwrap()
@@ -9260,7 +9909,11 @@ impl BaseTopology {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}BaseTopology::from_reader()", indent::get());
+        trace!(
+            "{}BaseTopology::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut has_base: Boolean = Default::default();
         has_base = Boolean::from_reader(rdr)?;
@@ -9299,18 +9952,21 @@ impl BaseTopology {
         let has_base = self.has_base.clone();
         has_base.to_writer(_w)?;
         let attribute_data_cond = !!has_base;
-        let attribute_data = self.attribute_data.as_ref().unwrap();
+        let mut attribute_data: &AttributeData = &Default::default();
         if attribute_data_cond {
+            attribute_data = self.attribute_data.as_ref().unwrap();
             attribute_data.to_writer(_w, _ctx)?;
         }
         let name_cond = !!has_base;
-        let name = self.name.as_ref().unwrap();
+        let mut name: &Name = &Default::default();
         if name_cond {
+            name = self.name.as_ref().unwrap();
             name.to_writer(_w, _ctx)?;
         }
         let id_cond = !!has_base;
-        let id = self.id.as_ref().unwrap();
+        let mut id: &UnsignedInteger = &Default::default();
         if id_cond {
+            id = self.id.as_ref().unwrap();
             id.to_writer(_w)?;
         }
         Ok(())
@@ -9329,7 +9985,11 @@ impl ContentBody {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ContentBody::from_reader()", indent::get());
+        trace!(
+            "{}ContentBody::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut base: BaseTopology = Default::default();
         base = BaseTopology::from_reader(rdr, _ctx)?;
@@ -9376,12 +10036,16 @@ impl PRC_TYPE_TOPO_MultipleVertex {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_TOPO_MultipleVertex::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_TOPO_MultipleVertex::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_TOPO_MultipleVertex) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_TOPO_MultipleVertex,
             PrcType::try_from(id.value).unwrap()
@@ -9440,10 +10104,17 @@ impl PRC_TYPE_TOPO_UniqueVertex {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_TOPO_UniqueVertex::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_TOPO_UniqueVertex::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_TOPO_UniqueVertex) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_TOPO_UniqueVertex,
             PrcType::try_from(id.value).unwrap()
@@ -9489,8 +10160,9 @@ impl PRC_TYPE_TOPO_UniqueVertex {
         let has_tolerance = self.has_tolerance.clone();
         has_tolerance.to_writer(_w)?;
         let tolerance_cond = !!has_tolerance;
-        let tolerance = self.tolerance.as_ref().unwrap();
+        let mut tolerance: &Double = &Default::default();
         if tolerance_cond {
+            tolerance = self.tolerance.as_ref().unwrap();
             tolerance.to_writer(_w)?;
         }
         Ok(())
@@ -9509,7 +10181,11 @@ impl Interval {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}Interval::from_reader()", indent::get());
+        trace!(
+            "{}Interval::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut min_value: Double = Default::default();
         min_value = Double::from_reader(rdr)?;
@@ -9547,7 +10223,11 @@ impl Parameterization {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}Parameterization::from_reader()", indent::get());
+        trace!(
+            "{}Parameterization::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut trim_interval: Interval = Default::default();
         trim_interval = Interval::from_reader(rdr, _ctx)?;
@@ -9593,7 +10273,11 @@ impl UVParameterization {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}UVParameterization::from_reader()", indent::get());
+        trace!(
+            "{}UVParameterization::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut swap_uv: Boolean = Default::default();
         swap_uv = Boolean::from_reader(rdr)?;
@@ -9654,7 +10338,11 @@ impl ContentCurve {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ContentCurve::from_reader()", indent::get());
+        trace!(
+            "{}ContentCurve::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut has_base_geometry: Boolean = Default::default();
         has_base_geometry = Boolean::from_reader(rdr)?;
@@ -9700,18 +10388,21 @@ impl ContentCurve {
         let has_base_geometry = self.has_base_geometry.clone();
         has_base_geometry.to_writer(_w)?;
         let attribute_data_cond = !!has_base_geometry;
-        let attribute_data = self.attribute_data.as_ref().unwrap();
+        let mut attribute_data: &AttributeData = &Default::default();
         if attribute_data_cond {
+            attribute_data = self.attribute_data.as_ref().unwrap();
             attribute_data.to_writer(_w, _ctx)?;
         }
         let name_cond = !!has_base_geometry;
-        let name = self.name.as_ref().unwrap();
+        let mut name: &Name = &Default::default();
         if name_cond {
+            name = self.name.as_ref().unwrap();
             name.to_writer(_w, _ctx)?;
         }
         let id_cond = !!has_base_geometry;
-        let id = self.id.as_ref().unwrap();
+        let mut id: &UnsignedInteger = &Default::default();
         if id_cond {
+            id = self.id.as_ref().unwrap();
             id.to_writer(_w)?;
         }
         let extend_type = self.extend_type.clone();
@@ -9754,12 +10445,16 @@ impl PRC_TYPE_CRV_Blend02Boundary {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_CRV_Blend02Boundary::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_CRV_Blend02Boundary::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_CRV_Blend02Boundary) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_CRV_Blend02Boundary,
             PrcType::try_from(id.value).unwrap()
@@ -9861,13 +10556,15 @@ impl PRC_TYPE_CRV_Blend02Boundary {
         let curve_data = self.curve_data.clone();
         curve_data.to_writer(_w, _ctx)?;
         let transform2d_cond = !curve_data.is_3d_flag.value;
-        let transform2d = self.transform2d.as_ref().unwrap();
+        let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
+            transform2d = self.transform2d.as_ref().unwrap();
             transform2d.to_writer(_w, _ctx)?;
         }
         let transform3d_cond = !!curve_data.is_3d_flag.value;
-        let transform3d = self.transform3d.as_ref().unwrap();
+        let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
+            transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
         let paramaterization = self.paramaterization.clone();
@@ -9924,7 +10621,11 @@ impl ControlPointsNurbsCrv {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ControlPointsNurbsCrv::from_reader()", indent::get());
+        trace!(
+            "{}ControlPointsNurbsCrv::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
@@ -9958,13 +10659,15 @@ impl ControlPointsNurbsCrv {
         let y = self.y.clone();
         y.to_writer(_w)?;
         let z_cond = _ctx.ContentCurve_is_3d_flag;
-        let z = self.z.as_ref().unwrap();
+        let mut z: &Double = &Default::default();
         if z_cond {
+            z = self.z.as_ref().unwrap();
             z.to_writer(_w)?;
         }
         let w_cond = _ctx.PRC_TYPE_CRV_NURBS_is_rational;
-        let w = self.w.as_ref().unwrap();
+        let mut w: &Double = &Default::default();
         if w_cond {
+            w = self.w.as_ref().unwrap();
             w.to_writer(_w)?;
         }
         Ok(())
@@ -9991,10 +10694,17 @@ impl PRC_TYPE_CRV_NURBS {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_CRV_NURBS::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_CRV_NURBS::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_CRV_NURBS) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_CRV_NURBS, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
@@ -10090,10 +10800,17 @@ impl PRC_TYPE_CRV_Circle {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_CRV_Circle::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_CRV_Circle::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_CRV_Circle) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_CRV_Circle, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
@@ -10140,13 +10857,15 @@ impl PRC_TYPE_CRV_Circle {
         let curve_data = self.curve_data.clone();
         curve_data.to_writer(_w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
-        let transform2d = self.transform2d.as_ref().unwrap();
+        let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
+            transform2d = self.transform2d.as_ref().unwrap();
             transform2d.to_writer(_w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
-        let transform3d = self.transform3d.as_ref().unwrap();
+        let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
+            transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
         let paramaterization = self.paramaterization.clone();
@@ -10169,7 +10888,11 @@ impl CompositeSubCurve {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}CompositeSubCurve::from_reader()", indent::get());
+        trace!(
+            "{}CompositeSubCurve::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut subcurve: PtrCurve = Default::default();
         subcurve = PtrCurve::from_reader(rdr, _ctx)?;
@@ -10209,10 +10932,17 @@ impl PRC_TYPE_CRV_Composite {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_CRV_Composite::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_CRV_Composite::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_CRV_Composite) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_CRV_Composite, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
@@ -10269,13 +10999,15 @@ impl PRC_TYPE_CRV_Composite {
         let curve_data = self.curve_data.clone();
         curve_data.to_writer(_w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
-        let transform2d = self.transform2d.as_ref().unwrap();
+        let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
+            transform2d = self.transform2d.as_ref().unwrap();
             transform2d.to_writer(_w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
-        let transform3d = self.transform3d.as_ref().unwrap();
+        let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
+            transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
         let paramaterization = self.paramaterization.clone();
@@ -10311,10 +11043,17 @@ impl PRC_TYPE_CRV_OnSurf {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_CRV_OnSurf::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_CRV_OnSurf::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_CRV_OnSurf) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_CRV_OnSurf, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
@@ -10370,13 +11109,15 @@ impl PRC_TYPE_CRV_OnSurf {
         let curve_data = self.curve_data.clone();
         curve_data.to_writer(_w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
-        let transform2d = self.transform2d.as_ref().unwrap();
+        let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
+            transform2d = self.transform2d.as_ref().unwrap();
             transform2d.to_writer(_w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
-        let transform3d = self.transform3d.as_ref().unwrap();
+        let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
+            transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
         let paramaterization = self.paramaterization.clone();
@@ -10410,10 +11151,17 @@ impl PRC_TYPE_CRV_Ellipse {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_CRV_Ellipse::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_CRV_Ellipse::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_CRV_Ellipse) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_CRV_Ellipse, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
@@ -10463,13 +11211,15 @@ impl PRC_TYPE_CRV_Ellipse {
         let curve_data = self.curve_data.clone();
         curve_data.to_writer(_w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
-        let transform2d = self.transform2d.as_ref().unwrap();
+        let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
+            transform2d = self.transform2d.as_ref().unwrap();
             transform2d.to_writer(_w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
-        let transform3d = self.transform3d.as_ref().unwrap();
+        let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
+            transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
         let paramaterization = self.paramaterization.clone();
@@ -10496,12 +11246,16 @@ impl PRC_TYPE_MATH_FCT_1D_Polynom {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_MATH_FCT_1D_Polynom::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_MATH_FCT_1D_Polynom::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MATH_FCT_1D_Polynom) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_MATH_FCT_1D_Polynom,
             PrcType::try_from(id.value).unwrap()
@@ -10557,12 +11311,16 @@ impl PRC_TYPE_MATH_FCT_1D_Trigonometric {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_MATH_FCT_1D_Trigonometric::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_MATH_FCT_1D_Trigonometric::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MATH_FCT_1D_Trigonometric) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_MATH_FCT_1D_Trigonometric,
             PrcType::try_from(id.value).unwrap()
@@ -10620,12 +11378,16 @@ impl PRC_TYPE_MATH_FCT_1D_Fraction {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_MATH_FCT_1D_Fraction::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_MATH_FCT_1D_Fraction::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MATH_FCT_1D_Fraction) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_MATH_FCT_1D_Fraction,
             PrcType::try_from(id.value).unwrap()
@@ -10676,12 +11438,16 @@ impl PRC_TYPE_MATH_FCT_1D_ArctanCos {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_MATH_FCT_1D_ArctanCos::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_MATH_FCT_1D_ArctanCos::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MATH_FCT_1D_ArctanCos) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_MATH_FCT_1D_ArctanCos,
             PrcType::try_from(id.value).unwrap()
@@ -10742,7 +11508,11 @@ impl CombinationFunctions {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}CombinationFunctions::from_reader()", indent::get());
+        trace!(
+            "{}CombinationFunctions::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut coefficient: Double = Default::default();
         coefficient = Double::from_reader(rdr)?;
@@ -10781,12 +11551,16 @@ impl PRC_TYPE_MATH_FCT_1D_Combination {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_MATH_FCT_1D_Combination::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_MATH_FCT_1D_Combination::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MATH_FCT_1D_Combination) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_MATH_FCT_1D_Combination,
             PrcType::try_from(id.value).unwrap()
@@ -10837,7 +11611,11 @@ impl PRC_TYPE_MATH_FCT_1D {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_MATH_FCT_1D::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_MATH_FCT_1D::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_MATH_FCT_1D_idConcrete =
@@ -10861,8 +11639,9 @@ impl PRC_TYPE_MATH_FCT_1D {
                 PRC_TYPE_MATH_FCT_1D_Combination::from_reader(rdr, _ctx)?,
             ),
             _ => panic!(
-                "PRC_TYPE_MATH_FCT_1D: Unrecognized subtype: {}!",
-                id_type_id.to_string()
+                "PRC_TYPE_MATH_FCT_1D: Unrecognized subtype: {}! bp={}",
+                id_type_id.to_string(),
+                rdr.position_in_bits()?
             ),
         };
         let _ = _ctx.se.eval(rdr, PRC_TYPE_MATH_FCT_1D as u32, false, 0);
@@ -10917,12 +11696,16 @@ impl PRC_TYPE_MATH_FCT_3D_Linear {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_MATH_FCT_3D_Linear::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_MATH_FCT_3D_Linear::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MATH_FCT_3D_Linear) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_MATH_FCT_3D_Linear,
             PrcType::try_from(id.value).unwrap()
@@ -10975,12 +11758,16 @@ impl PRC_TYPE_MATH_FCT_3D_NonLinear {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_MATH_FCT_3D_NonLinear::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_MATH_FCT_3D_NonLinear::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_MATH_FCT_3D_NonLinear) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_MATH_FCT_3D_NonLinear,
             PrcType::try_from(id.value).unwrap()
@@ -11050,7 +11837,11 @@ impl PRC_TYPE_MATH_FCT_3D {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_MATH_FCT_3D::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_MATH_FCT_3D::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_MATH_FCT_3D_idConcrete =
@@ -11065,8 +11856,9 @@ impl PRC_TYPE_MATH_FCT_3D {
                 PRC_TYPE_MATH_FCT_3D_NonLinear::from_reader(rdr, _ctx)?,
             ),
             _ => panic!(
-                "PRC_TYPE_MATH_FCT_3D: Unrecognized subtype: {}!",
-                id_type_id.to_string()
+                "PRC_TYPE_MATH_FCT_3D: Unrecognized subtype: {}! bp={}",
+                id_type_id.to_string(),
+                rdr.position_in_bits()?
             ),
         };
         let _ = _ctx.se.eval(rdr, PRC_TYPE_MATH_FCT_3D as u32, false, 0);
@@ -11120,10 +11912,17 @@ impl PRC_TYPE_CRV_Equation {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_CRV_Equation::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_CRV_Equation::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_CRV_Equation) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_CRV_Equation, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
@@ -11186,13 +11985,15 @@ impl PRC_TYPE_CRV_Equation {
         let curve_data = self.curve_data.clone();
         curve_data.to_writer(_w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
-        let transform2d = self.transform2d.as_ref().unwrap();
+        let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
+            transform2d = self.transform2d.as_ref().unwrap();
             transform2d.to_writer(_w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
-        let transform3d = self.transform3d.as_ref().unwrap();
+        let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
+            transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
         let paramaterization = self.paramaterization.clone();
@@ -11204,8 +12005,9 @@ impl PRC_TYPE_CRV_Equation {
         let y_function = self.y_function.clone();
         y_function.to_writer(_w, _ctx)?;
         let z_function_cond = _ctx.ContentCurve_is_3d_flag;
-        let z_function = self.z_function.as_ref().unwrap();
+        let mut z_function: &PRC_TYPE_MATH_FCT_1D = &Default::default();
         if z_function_cond {
+            z_function = self.z_function.as_ref().unwrap();
             z_function.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -11230,7 +12032,11 @@ impl Type0HelixData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}Type0HelixData::from_reader()", indent::get());
+        trace!(
+            "{}Type0HelixData::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut origin0: Double = Default::default();
         origin0 = Double::from_reader(rdr)?;
@@ -11305,7 +12111,11 @@ impl Type1HelixData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}Type1HelixData::from_reader()", indent::get());
+        trace!(
+            "{}Type1HelixData::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut unit_z0: Double = Default::default();
         unit_z0 = Double::from_reader(rdr)?;
@@ -11394,10 +12204,17 @@ impl PRC_TYPE_CRV_Helix {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_CRV_Helix::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_CRV_Helix::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_CRV_Helix) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_CRV_Helix, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
@@ -11457,13 +12274,15 @@ impl PRC_TYPE_CRV_Helix {
         let curve_data = self.curve_data.clone();
         curve_data.to_writer(_w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
-        let transform2d = self.transform2d.as_ref().unwrap();
+        let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
+            transform2d = self.transform2d.as_ref().unwrap();
             transform2d.to_writer(_w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
-        let transform3d = self.transform3d.as_ref().unwrap();
+        let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
+            transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
         let paramaterization = self.paramaterization.clone();
@@ -11500,10 +12319,17 @@ impl PRC_TYPE_CRV_Hyperbola {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_CRV_Hyperbola::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_CRV_Hyperbola::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_CRV_Hyperbola) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_CRV_Hyperbola, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
@@ -11557,13 +12383,15 @@ impl PRC_TYPE_CRV_Hyperbola {
         let curve_data = self.curve_data.clone();
         curve_data.to_writer(_w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
-        let transform2d = self.transform2d.as_ref().unwrap();
+        let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
+            transform2d = self.transform2d.as_ref().unwrap();
             transform2d.to_writer(_w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
-        let transform3d = self.transform3d.as_ref().unwrap();
+        let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
+            transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
         let paramaterization = self.paramaterization.clone();
@@ -11596,8 +12424,9 @@ impl CrossingPointsCrvIntersection {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}CrossingPointsCrvIntersection::from_reader()",
-            indent::get()
+            "{}CrossingPointsCrvIntersection::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut position: Vector3D = Default::default();
@@ -11677,10 +12506,17 @@ impl PRC_TYPE_CRV_Intersection {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_CRV_Intersection::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_CRV_Intersection::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_CRV_Intersection) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_CRV_Intersection,
             PrcType::try_from(id.value).unwrap()
@@ -11775,13 +12611,15 @@ impl PRC_TYPE_CRV_Intersection {
         let curve_data = self.curve_data.clone();
         curve_data.to_writer(_w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
-        let transform2d = self.transform2d.as_ref().unwrap();
+        let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
+            transform2d = self.transform2d.as_ref().unwrap();
             transform2d.to_writer(_w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
-        let transform3d = self.transform3d.as_ref().unwrap();
+        let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
+            transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
         let paramaterization = self.paramaterization.clone();
@@ -11835,10 +12673,17 @@ impl PRC_TYPE_CRV_Line {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_CRV_Line::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_CRV_Line::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_CRV_Line) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_CRV_Line, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
@@ -11882,13 +12727,15 @@ impl PRC_TYPE_CRV_Line {
         let curve_data = self.curve_data.clone();
         curve_data.to_writer(_w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
-        let transform2d = self.transform2d.as_ref().unwrap();
+        let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
+            transform2d = self.transform2d.as_ref().unwrap();
             transform2d.to_writer(_w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
-        let transform3d = self.transform3d.as_ref().unwrap();
+        let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
+            transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
         let paramaterization = self.paramaterization.clone();
@@ -11915,10 +12762,17 @@ impl PRC_TYPE_CRV_Offset {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_CRV_Offset::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_CRV_Offset::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_CRV_Offset) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_CRV_Offset, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
@@ -11972,13 +12826,15 @@ impl PRC_TYPE_CRV_Offset {
         let curve_data = self.curve_data.clone();
         curve_data.to_writer(_w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
-        let transform2d = self.transform2d.as_ref().unwrap();
+        let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
+            transform2d = self.transform2d.as_ref().unwrap();
             transform2d.to_writer(_w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
-        let transform3d = self.transform3d.as_ref().unwrap();
+        let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
+            transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
         let paramaterization = self.paramaterization.clone();
@@ -12010,10 +12866,17 @@ impl PRC_TYPE_CRV_Parabola {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_CRV_Parabola::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_CRV_Parabola::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_CRV_Parabola) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_CRV_Parabola, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
@@ -12064,13 +12927,15 @@ impl PRC_TYPE_CRV_Parabola {
         let curve_data = self.curve_data.clone();
         curve_data.to_writer(_w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
-        let transform2d = self.transform2d.as_ref().unwrap();
+        let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
+            transform2d = self.transform2d.as_ref().unwrap();
             transform2d.to_writer(_w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
-        let transform3d = self.transform3d.as_ref().unwrap();
+        let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
+            transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
         let paramaterization = self.paramaterization.clone();
@@ -12101,10 +12966,17 @@ impl PRC_TYPE_CRV_PolyLine {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_CRV_PolyLine::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_CRV_PolyLine::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_CRV_PolyLine) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_CRV_PolyLine, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
@@ -12177,13 +13049,15 @@ impl PRC_TYPE_CRV_PolyLine {
         let curve_data = self.curve_data.clone();
         curve_data.to_writer(_w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
-        let transform2d = self.transform2d.as_ref().unwrap();
+        let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
+            transform2d = self.transform2d.as_ref().unwrap();
             transform2d.to_writer(_w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
-        let transform3d = self.transform3d.as_ref().unwrap();
+        let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
+            transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
         let paramaterization = self.paramaterization.clone();
@@ -12223,10 +13097,17 @@ impl PRC_TYPE_CRV_Transform {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_CRV_Transform::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_CRV_Transform::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_CRV_Transform) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_CRV_Transform, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
@@ -12276,13 +13157,15 @@ impl PRC_TYPE_CRV_Transform {
         let curve_data = self.curve_data.clone();
         curve_data.to_writer(_w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
-        let transform2d = self.transform2d.as_ref().unwrap();
+        let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
+            transform2d = self.transform2d.as_ref().unwrap();
             transform2d.to_writer(_w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
-        let transform3d = self.transform3d.as_ref().unwrap();
+        let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
+            transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
         let paramaterization = self.paramaterization.clone();
@@ -12306,7 +13189,11 @@ impl PRC_TYPE_CRV {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_CRV::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_CRV::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_CRV_idConcrete = PRC_TYPE_CRV_idConcrete::Invalid(id_type_id);
@@ -12362,8 +13249,9 @@ impl PRC_TYPE_CRV {
                 PRC_TYPE_CRV_idConcrete::tr(PRC_TYPE_CRV_Transform::from_reader(rdr, _ctx)?)
             }
             _ => panic!(
-                "PRC_TYPE_CRV: Unrecognized subtype: {}!",
-                id_type_id.to_string()
+                "PRC_TYPE_CRV: Unrecognized subtype: {}! bp={}",
+                id_type_id.to_string(),
+                rdr.position_in_bits()?
             ),
         };
         let _ = _ctx.se.eval(rdr, PRC_TYPE_CRV as u32, false, 0);
@@ -12439,7 +13327,11 @@ impl PtrCurve {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PtrCurve::from_reader()", indent::get());
+        trace!(
+            "{}PtrCurve::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut is_referenced: Boolean = Default::default();
         is_referenced = Boolean::from_reader(rdr)?;
@@ -12472,13 +13364,15 @@ impl PtrCurve {
         let is_referenced = self.is_referenced.clone();
         is_referenced.to_writer(_w)?;
         let curve_cond = !is_referenced;
-        let curve = self.curve.as_ref().unwrap();
+        let mut curve: &PRC_TYPE_CRV = &Default::default();
         if curve_cond {
+            curve = self.curve.as_ref().unwrap();
             curve.to_writer(_w, _ctx)?;
         }
         let curve_identifier_cond = !!is_referenced;
-        let curve_identifier = self.curve_identifier.as_ref().unwrap();
+        let mut curve_identifier: &UnsignedInteger = &Default::default();
         if curve_identifier_cond {
+            curve_identifier = self.curve_identifier.as_ref().unwrap();
             curve_identifier.to_writer(_w)?;
         }
         Ok(())
@@ -12503,10 +13397,17 @@ impl PRC_TYPE_SURF_Blend01 {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_SURF_Blend01::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_SURF_Blend01::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_SURF_Blend01) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_SURF_Blend01, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
@@ -12583,10 +13484,17 @@ impl PRC_TYPE_SURF_Blend02 {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_SURF_Blend02::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_SURF_Blend02::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_SURF_Blend02) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_SURF_Blend02, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
@@ -12719,10 +13627,17 @@ impl PRC_TYPE_SURF_Blend03 {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_SURF_Blend03::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_SURF_Blend03::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_SURF_Blend03) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_SURF_Blend03, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
@@ -12909,7 +13824,11 @@ impl ControlPointsNurbsSurf3 {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ControlPointsNurbsSurf3::from_reader()", indent::get());
+        trace!(
+            "{}ControlPointsNurbsSurf3::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
@@ -12949,7 +13868,11 @@ impl ControlPointsNurbsSurf4 {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ControlPointsNurbsSurf4::from_reader()", indent::get());
+        trace!(
+            "{}ControlPointsNurbsSurf4::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
@@ -13004,10 +13927,17 @@ impl PRC_TYPE_SURF_NURBS {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_SURF_NURBS::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_SURF_NURBS::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_SURF_NURBS) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_SURF_NURBS, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
@@ -13156,10 +14086,17 @@ impl PRC_TYPE_SURF_Cone {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_SURF_Cone::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_SURF_Cone::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_SURF_Cone) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_SURF_Cone, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
@@ -13218,10 +14155,17 @@ impl PRC_TYPE_SURF_Cylinder {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_SURF_Cylinder::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_SURF_Cylinder::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_SURF_Cylinder) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_SURF_Cylinder, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
@@ -13276,10 +14220,17 @@ impl PRC_TYPE_SURF_Cylindrical {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_SURF_Cylindrical::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_SURF_Cylindrical::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_SURF_Cylindrical) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_SURF_Cylindrical,
             PrcType::try_from(id.value).unwrap()
@@ -13344,10 +14295,17 @@ impl PRC_TYPE_SURF_Offset {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_SURF_Offset::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_SURF_Offset::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_SURF_Offset) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_SURF_Offset, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
@@ -13408,10 +14366,17 @@ impl PRC_TYPE_SURF_Pipe {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_SURF_Pipe::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_SURF_Pipe::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_SURF_Pipe) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_SURF_Pipe, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
@@ -13476,10 +14441,17 @@ impl PRC_TYPE_SURF_Ruled {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_SURF_Ruled::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_SURF_Ruled::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_SURF_Ruled) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_SURF_Ruled, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
@@ -13538,10 +14510,17 @@ impl PRC_TYPE_SURF_Sphere {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_SURF_Sphere::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_SURF_Sphere::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_SURF_Sphere) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_SURF_Sphere, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
@@ -13599,10 +14578,17 @@ impl PRC_TYPE_SURF_Revolution {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_SURF_Revolution::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_SURF_Revolution::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_SURF_Revolution) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_SURF_Revolution,
             PrcType::try_from(id.value).unwrap()
@@ -13680,10 +14666,17 @@ impl PRC_TYPE_SURF_Extrusion {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_SURF_Extrusion::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_SURF_Extrusion::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_SURF_Extrusion) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_SURF_Extrusion,
             PrcType::try_from(id.value).unwrap()
@@ -13747,10 +14740,17 @@ impl PRC_TYPE_SURF_FromCurves {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_SURF_FromCurves::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_SURF_FromCurves::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_SURF_FromCurves) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_SURF_FromCurves,
             PrcType::try_from(id.value).unwrap()
@@ -13818,10 +14818,17 @@ impl PRC_TYPE_SURF_Torus {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_SURF_Torus::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_SURF_Torus::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_SURF_Torus) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_SURF_Torus, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
@@ -13881,10 +14888,17 @@ impl PRC_TYPE_SURF_Transform {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_SURF_Transform::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_SURF_Transform::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_SURF_Transform) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_SURF_Transform,
             PrcType::try_from(id.value).unwrap()
@@ -13940,7 +14954,11 @@ impl PRC_TYPE_SURF_Blend04 {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_SURF_Blend04::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_SURF_Blend04::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         panic!("PRC_TYPE_SURF_Blend04 not implemented");
         let rv = Self {};
@@ -13966,7 +14984,11 @@ impl PRC_TYPE_SURF {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_SURF::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_SURF::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_SURF_idConcrete =
@@ -14032,8 +15054,9 @@ impl PRC_TYPE_SURF {
                 PRC_TYPE_SURF_idConcrete::b04(PRC_TYPE_SURF_Blend04::from_reader(rdr, _ctx)?)
             }
             _ => panic!(
-                "PRC_TYPE_SURF: Unrecognized subtype: {}!",
-                id_type_id.to_string()
+                "PRC_TYPE_SURF: Unrecognized subtype: {}! bp={}",
+                id_type_id.to_string(),
+                rdr.position_in_bits()?
             ),
         };
         let _ = _ctx.se.eval(rdr, PRC_TYPE_SURF as u32, false, 0);
@@ -14115,7 +15138,11 @@ impl PtrSurface {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PtrSurface::from_reader()", indent::get());
+        trace!(
+            "{}PtrSurface::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut is_referenced: Boolean = Default::default();
         is_referenced = Boolean::from_reader(rdr)?;
@@ -14148,13 +15175,15 @@ impl PtrSurface {
         let is_referenced = self.is_referenced.clone();
         is_referenced.to_writer(_w)?;
         let surface_cond = !is_referenced;
-        let surface = self.surface.as_ref().unwrap();
+        let mut surface: &PRC_TYPE_SURF = &Default::default();
         if surface_cond {
+            surface = self.surface.as_ref().unwrap();
             surface.to_writer(_w, _ctx)?;
         }
         let surface_identifier_cond = !!is_referenced;
-        let surface_identifier = self.surface_identifier.as_ref().unwrap();
+        let mut surface_identifier: &UnsignedInteger = &Default::default();
         if surface_identifier_cond {
+            surface_identifier = self.surface_identifier.as_ref().unwrap();
             surface_identifier.to_writer(_w)?;
         }
         Ok(())
@@ -14175,7 +15204,11 @@ impl ContentWireEdge {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ContentWireEdge::from_reader()", indent::get());
+        trace!(
+            "{}ContentWireEdge::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut base: BaseTopology = Default::default();
         base = BaseTopology::from_reader(rdr, _ctx)?;
@@ -14212,8 +15245,9 @@ impl ContentWireEdge {
         let is_trimmed = self.is_trimmed.clone();
         is_trimmed.to_writer(_w)?;
         let trim_interval_cond = !!is_trimmed;
-        let trim_interval = self.trim_interval.as_ref().unwrap();
+        let mut trim_interval: &Interval = &Default::default();
         if trim_interval_cond {
+            trim_interval = self.trim_interval.as_ref().unwrap();
             trim_interval.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -14232,10 +15266,17 @@ impl PRC_TYPE_TOPO_WireEdge {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_TOPO_WireEdge::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_TOPO_WireEdge::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_TOPO_WireEdge) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_TOPO_WireEdge, PrcType::try_from(id.value).unwrap());
         let mut curve: ContentWireEdge = Default::default();
         curve = ContentWireEdge::from_reader(rdr, _ctx)?;
@@ -14272,10 +15313,17 @@ impl PRC_TYPE_TOPO_Edge {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_TOPO_Edge::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_TOPO_Edge::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_TOPO_Edge) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_TOPO_Edge, PrcType::try_from(id.value).unwrap());
         let mut wire_edge: ContentWireEdge = Default::default();
         wire_edge = ContentWireEdge::from_reader(rdr, _ctx)?;
@@ -14321,8 +15369,9 @@ impl PRC_TYPE_TOPO_Edge {
         let has_tolerance = self.has_tolerance.clone();
         has_tolerance.to_writer(_w)?;
         let tolerance_cond = !!has_tolerance;
-        let tolerance = self.tolerance.as_ref().unwrap();
+        let mut tolerance: &Double = &Default::default();
         if tolerance_cond {
+            tolerance = self.tolerance.as_ref().unwrap();
             tolerance.to_writer(_w)?;
         }
         Ok(())
@@ -14345,10 +15394,17 @@ impl PRC_TYPE_TOPO_CoEdge {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_TOPO_CoEdge::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_TOPO_CoEdge::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_TOPO_CoEdge) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_TOPO_CoEdge, PrcType::try_from(id.value).unwrap());
         let mut base_tolopogy: BaseTopology = Default::default();
         base_tolopogy = BaseTopology::from_reader(rdr, _ctx)?;
@@ -14404,7 +15460,11 @@ impl CoedgeInLoop {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}CoedgeInLoop::from_reader()", indent::get());
+        trace!(
+            "{}CoedgeInLoop::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut next_coedge: PtrTopology = Default::default();
         next_coedge = PtrTopology::from_reader(rdr, _ctx)?;
@@ -14444,10 +15504,17 @@ impl PRC_TYPE_TOPO_Loop {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_TOPO_Loop::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_TOPO_Loop::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_TOPO_Loop) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_TOPO_Loop, PrcType::try_from(id.value).unwrap());
         let mut base_tolopogy: BaseTopology = Default::default();
         base_tolopogy = BaseTopology::from_reader(rdr, _ctx)?;
@@ -14511,10 +15578,17 @@ impl PRC_TYPE_TOPO_Face {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_TOPO_Face::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_TOPO_Face::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_TOPO_Face) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_TOPO_Face, PrcType::try_from(id.value).unwrap());
         let mut base_tolopogy: BaseTopology = Default::default();
         base_tolopogy = BaseTopology::from_reader(rdr, _ctx)?;
@@ -14580,15 +15654,17 @@ impl PRC_TYPE_TOPO_Face {
         let is_trimmed = self.is_trimmed.clone();
         is_trimmed.to_writer(_w)?;
         let trimmed_surface_cond = !!is_trimmed;
-        let trimmed_surface = self.trimmed_surface.as_ref().unwrap();
+        let mut trimmed_surface: &Domain = &Default::default();
         if trimmed_surface_cond {
+            trimmed_surface = self.trimmed_surface.as_ref().unwrap();
             trimmed_surface.to_writer(_w, _ctx)?;
         }
         let has_tolerance = self.has_tolerance.clone();
         has_tolerance.to_writer(_w)?;
         let tolerance_cond = !!has_tolerance;
-        let tolerance = self.tolerance.as_ref().unwrap();
+        let mut tolerance: &Double = &Default::default();
         if tolerance_cond {
+            tolerance = self.tolerance.as_ref().unwrap();
             tolerance.to_writer(_w)?;
         }
         let number_of_loops = self.number_of_loops.clone();
@@ -14615,7 +15691,11 @@ impl FacesInShell {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}FacesInShell::from_reader()", indent::get());
+        trace!(
+            "{}FacesInShell::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut face: PtrTopology = Default::default();
         face = PtrTopology::from_reader(rdr, _ctx)?;
@@ -14652,10 +15732,17 @@ impl PRC_TYPE_TOPO_Shell {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_TOPO_Shell::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_TOPO_Shell::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_TOPO_Shell) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_TOPO_Shell, PrcType::try_from(id.value).unwrap());
         let mut base_tolopogy: BaseTopology = Default::default();
         base_tolopogy = BaseTopology::from_reader(rdr, _ctx)?;
@@ -14713,10 +15800,17 @@ impl PRC_TYPE_TOPO_Connex {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_TOPO_Connex::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_TOPO_Connex::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_TOPO_Connex) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_TOPO_Connex, PrcType::try_from(id.value).unwrap());
         let mut base_tolopogy: BaseTopology = Default::default();
         base_tolopogy = BaseTopology::from_reader(rdr, _ctx)?;
@@ -14766,10 +15860,17 @@ impl PRC_TYPE_ROOT {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_ROOT::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_ROOT::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_ROOT) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_ROOT, PrcType::try_from(id.value).unwrap());
         let _ = _ctx.se.eval(rdr, PRC_TYPE_ROOT as u32, false, 0);
         let rv = Self { id };
@@ -14797,7 +15898,11 @@ impl PRC_TYPE_TOPO {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_TOPO::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_TOPO::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_TOPO_idConcrete =
@@ -14836,8 +15941,9 @@ impl PRC_TYPE_TOPO {
                 PRC_TYPE_TOPO_idConcrete::c(PRC_TYPE_TOPO_Connex::from_reader(rdr, _ctx)?)
             }
             _ => panic!(
-                "PRC_TYPE_TOPO: Unrecognized subtype: {}!",
-                id_type_id.to_string()
+                "PRC_TYPE_TOPO: Unrecognized subtype: {}! bp={}",
+                id_type_id.to_string(),
+                rdr.position_in_bits()?
             ),
         };
         let _ = _ctx.se.eval(rdr, PRC_TYPE_TOPO as u32, false, 0);
@@ -14901,7 +16007,11 @@ impl PtrTopology {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PtrTopology::from_reader()", indent::get());
+        trace!(
+            "{}PtrTopology::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut is_stored: Boolean = Default::default();
         is_stored = Boolean::from_reader(rdr)?;
@@ -14934,13 +16044,15 @@ impl PtrTopology {
         let is_stored = self.is_stored.clone();
         is_stored.to_writer(_w)?;
         let topo_cond = !is_stored;
-        let topo = self.topo.as_ref().unwrap();
+        let mut topo: &PRC_TYPE_TOPO = &Default::default();
         if topo_cond {
+            topo = self.topo.as_ref().unwrap();
             topo.to_writer(_w, _ctx)?;
         }
         let topo_identifier_cond = !!is_stored;
-        let topo_identifier = self.topo_identifier.as_ref().unwrap();
+        let mut topo_identifier: &UnsignedInteger = &Default::default();
         if topo_identifier_cond {
+            topo_identifier = self.topo_identifier.as_ref().unwrap();
             topo_identifier.to_writer(_w)?;
         }
         Ok(())
@@ -14961,12 +16073,16 @@ impl PRC_TYPE_TOPO_SingleWireBody {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_TOPO_SingleWireBody::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_TOPO_SingleWireBody::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_TOPO_SingleWireBody) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_TOPO_SingleWireBody,
             PrcType::try_from(id.value).unwrap()
@@ -15016,10 +16132,17 @@ impl PRC_TYPE_TOPO_BrepData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_TOPO_BrepData::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_TOPO_BrepData::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_TOPO_BrepData) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_TOPO_BrepData, PrcType::try_from(id.value).unwrap());
         let mut base: ContentBody = Default::default();
         base = ContentBody::from_reader(rdr, _ctx)?;
@@ -15065,8 +16188,9 @@ impl PRC_TYPE_TOPO_BrepData {
             i.to_writer(_w, _ctx)?;
         }
         let bounding_box_cond = have_bbox(base.bounding_box_behavior.value);
-        let bounding_box = self.bounding_box.as_ref().unwrap();
+        let mut bounding_box: &BoundingBox = &Default::default();
         if bounding_box_cond {
+            bounding_box = self.bounding_box.as_ref().unwrap();
             bounding_box.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -15086,8 +16210,13 @@ impl CompressedVertex {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}CompressedVertex::from_reader()", indent::get());
+        trace!(
+            "{}CompressedVertex::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
+        assert!(_ctx.is_curve_trimming_face());
         let mut already_stored: Boolean = Default::default();
         already_stored = Boolean::from_reader(rdr)?;
         let point_index_cond = !already_stored.value;
@@ -15108,7 +16237,7 @@ impl CompressedVertex {
                 CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         if !!already_stored.value {
-            _ctx.BrepDataCompress_CompressedVertex_add([point_data.x, point_data.y, point_data.z]);
+            _ctx.BrepDataCompress_CompressedVertex_add(point_data);
         };
         let rv = Self {
             already_stored,
@@ -15133,13 +16262,15 @@ impl CompressedVertex {
         let already_stored = self.already_stored.clone();
         already_stored.to_writer(_w)?;
         let point_index_cond = !already_stored.value;
-        let point_index = self.point_index.as_ref().unwrap();
+        let mut point_index: &UnsignedIntegerWithVariableBitNumber = &Default::default();
         if point_index_cond {
+            point_index = self.point_index.as_ref().unwrap();
             point_index.to_writer(_w, _ctx.BrepDataCompress_number_of_bits_to_store_reference)?;
         }
         let point_data_cond = !!already_stored.value;
-        let point_data = self.point_data.as_ref().unwrap();
+        let mut point_data: &CompressedPoint = &Default::default();
         if point_data_cond {
+            point_data = self.point_data.as_ref().unwrap();
             point_data.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         Ok(())
@@ -15162,7 +16293,11 @@ impl ParticularCircle {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ParticularCircle::from_reader()", indent::get());
+        trace!(
+            "{}ParticularCircle::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut full_circle: Boolean = Default::default();
         full_circle = Boolean::from_reader(rdr)?;
@@ -15214,23 +16349,27 @@ impl ParticularCircle {
         let full_circle = self.full_circle.clone();
         full_circle.to_writer(_w)?;
         let start_end_data_cond = !_ctx.is_compressed_iso_spline();
-        let start_end_data = self.start_end_data.as_ref().unwrap();
+        let mut start_end_data: &StartEndData = &Default::default();
         if start_end_data_cond {
+            start_end_data = self.start_end_data.as_ref().unwrap();
             start_end_data.to_writer(_w, _ctx)?;
         }
         let center_cond = full_circle.value;
-        let center = self.center.as_ref().unwrap();
+        let mut center: &CompressedPoint = &Default::default();
         if center_cond {
+            center = self.center.as_ref().unwrap();
             center.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         let normal_cond = full_circle.value;
-        let normal = self.normal.as_ref().unwrap();
+        let mut normal: &CompressedPoint = &Default::default();
         if normal_cond {
+            normal = self.normal.as_ref().unwrap();
             normal.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         let middle_of_arc_cond = !full_circle.value;
-        let middle_of_arc = self.middle_of_arc.as_ref().unwrap();
+        let mut middle_of_arc: &CompressedPoint = &Default::default();
         if middle_of_arc_cond {
+            middle_of_arc = self.middle_of_arc.as_ref().unwrap();
             middle_of_arc.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         Ok(())
@@ -15240,7 +16379,7 @@ impl ParticularCircle {
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, Copy)]
 #[allow(non_camel_case_types)]
 pub struct GeneralCircle {
-    pub start_end_data: StartEndData,
+    pub start_end_data: Option<StartEndData>,
     pub center: CompressedPoint,
     /// adobe sdk 9 says: circle_angle > PI
     pub circle_angle: Boolean,
@@ -15251,16 +16390,27 @@ impl GeneralCircle {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}GeneralCircle::from_reader()", indent::get());
+        trace!(
+            "{}GeneralCircle::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
+        let start_end_data_cond = !_ctx.is_compressed_iso_spline();
         let mut start_end_data: StartEndData = Default::default();
-        start_end_data = StartEndData::from_reader(rdr, _ctx)?;
+        if start_end_data_cond {
+            start_end_data = StartEndData::from_reader(rdr, _ctx)?;
+        }
         let mut center: CompressedPoint = Default::default();
         center = CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         let mut circle_angle: Boolean = Default::default();
         circle_angle = Boolean::from_reader(rdr)?;
         let rv = Self {
-            start_end_data,
+            start_end_data: if start_end_data_cond {
+                Some(start_end_data)
+            } else {
+                None
+            },
             center,
             circle_angle,
         };
@@ -15271,8 +16421,12 @@ impl GeneralCircle {
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> std::io::Result<()> {
-        let start_end_data = self.start_end_data.clone();
-        start_end_data.to_writer(_w, _ctx)?;
+        let start_end_data_cond = !_ctx.is_compressed_iso_spline();
+        let mut start_end_data: &StartEndData = &Default::default();
+        if start_end_data_cond {
+            start_end_data = self.start_end_data.as_ref().unwrap();
+            start_end_data.to_writer(_w, _ctx)?;
+        }
         let center = self.center.clone();
         center.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         let circle_angle = self.circle_angle.clone();
@@ -15295,7 +16449,11 @@ impl StartEndData {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}StartEndData::from_reader()", indent::get());
+        trace!(
+            "{}StartEndData::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let start_vertex_cond = !!_ctx.is_curve_trimming_face();
         let mut start_vertex: CompressedVertex = Default::default();
@@ -15349,29 +16507,34 @@ impl StartEndData {
         _ctx: &mut PrcParsingContext,
     ) -> std::io::Result<()> {
         let start_vertex_cond = !!_ctx.is_curve_trimming_face();
-        let start_vertex = self.start_vertex.as_ref().unwrap();
+        let mut start_vertex: &CompressedVertex = &Default::default();
         if start_vertex_cond {
+            start_vertex = self.start_vertex.as_ref().unwrap();
             start_vertex.to_writer(_w, _ctx)?;
         }
         let end_vertex_cond = !!_ctx.is_curve_trimming_face();
-        let end_vertex = self.end_vertex.as_ref().unwrap();
+        let mut end_vertex: &CompressedVertex = &Default::default();
         if end_vertex_cond {
+            end_vertex = self.end_vertex.as_ref().unwrap();
             end_vertex.to_writer(_w, _ctx)?;
         }
         let start_point_cond = !_ctx.is_curve_trimming_face();
-        let start_point = self.start_point.as_ref().unwrap();
+        let mut start_point: &CompressedPoint = &Default::default();
         if start_point_cond {
+            start_point = self.start_point.as_ref().unwrap();
             start_point.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         let end_point_cond = !_ctx.is_curve_trimming_face();
-        let end_point = self.end_point.as_ref().unwrap();
+        let mut end_point: &CompressedPoint = &Default::default();
         if end_point_cond {
+            end_point = self.end_point.as_ref().unwrap();
             end_point.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         Ok(())
     }
 }
 
+/// called CompressedLine (in 2014 spec) inside IsoNurbsTrimCrv
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, Copy)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_Line {
@@ -15384,18 +16547,23 @@ impl PRC_HCG_Line {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_HCG_Line::from_reader()", indent::get());
+        trace!(
+            "{}PRC_HCG_Line::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        if (PRC_HCG_Line) != (PrcCompressedCurveType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_HCG_Line,
             PrcCompressedCurveType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id);
         let mut start_end_data: StartEndData = Default::default();
         start_end_data = StartEndData::from_reader(rdr, _ctx)?;
-        _ctx.pop_face_type();
         let rv = Self { id, start_end_data };
         Ok(rv)
     }
@@ -15412,7 +16580,7 @@ impl PRC_HCG_Line {
     }
 }
 
-/// called CompressedCircle inside IsoNurbsTrimCrv
+/// called CompressedCircle (in 2014 spec) inside IsoNurbsTrimCrv
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, Copy)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_Circle {
@@ -15428,19 +16596,24 @@ impl PRC_HCG_Circle {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_HCG_Circle::from_reader()", indent::get());
+        trace!(
+            "{}PRC_HCG_Circle::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
-        warn!("PRC_HCG_Circle.id field contains FIXME!");
         let id_cond = !_ctx.is_compressed_iso_spline();
         let mut id: CompressedEntityType = Default::default();
         if id_cond {
             id = CompressedEntityType::from_reader(rdr)?;
+            if (PRC_HCG_Circle) != (PrcCompressedCurveType::try_from(id.value).unwrap()) {
+                warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+            }
             assert_eq!(
                 PRC_HCG_Circle,
                 PrcCompressedCurveType::try_from(id.value).unwrap()
             );
         }
-        _ctx.push_face_type(id);
         let mut is_particular_circle: Boolean = Default::default();
         is_particular_circle = Boolean::from_reader(rdr)?;
         let particular_circle_cond = is_particular_circle.value;
@@ -15453,7 +16626,6 @@ impl PRC_HCG_Circle {
         if general_circle_cond {
             general_circle = GeneralCircle::from_reader(rdr, _ctx)?;
         }
-        _ctx.pop_face_type();
         let rv = Self {
             id: if id_cond { Some(id) } else { None },
             is_particular_circle,
@@ -15476,20 +16648,23 @@ impl PRC_HCG_Circle {
         _ctx: &mut PrcParsingContext,
     ) -> std::io::Result<()> {
         let id_cond = !_ctx.is_compressed_iso_spline();
-        let id = self.id.as_ref().unwrap();
+        let mut id: &CompressedEntityType = &Default::default();
         if id_cond {
+            id = self.id.as_ref().unwrap();
             id.to_writer(_w)?;
         }
         let is_particular_circle = self.is_particular_circle.clone();
         is_particular_circle.to_writer(_w)?;
         let particular_circle_cond = is_particular_circle.value;
-        let particular_circle = self.particular_circle.as_ref().unwrap();
+        let mut particular_circle: &ParticularCircle = &Default::default();
         if particular_circle_cond {
+            particular_circle = self.particular_circle.as_ref().unwrap();
             particular_circle.to_writer(_w, _ctx)?;
         }
         let general_circle_cond = !is_particular_circle.value;
-        let general_circle = self.general_circle.as_ref().unwrap();
+        let mut general_circle: &GeneralCircle = &Default::default();
         if general_circle_cond {
+            general_circle = self.general_circle.as_ref().unwrap();
             general_circle.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -15500,6 +16675,7 @@ impl PRC_HCG_Circle {
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_BSplineHermiteCurve {
     pub id: CompressedEntityType,
+    /// no conditon, always present, see https://github.com/pdf-association/pdf-issues/issues/583#issuecomment-4604792976
     pub start_end_data: StartEndData,
     pub number_bits: UnsignedIntegerWithVariableBitNumber,
     pub number_points: UnsignedIntegerWithVariableBitNumber,
@@ -15517,17 +16693,20 @@ impl PRC_HCG_BSplineHermiteCurve {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_HCG_BSplineHermiteCurve::from_reader()",
-            indent::get()
+            "{}PRC_HCG_BSplineHermiteCurve::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        if (PRC_HCG_BSplineHermiteCurve) != (PrcCompressedCurveType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_HCG_BSplineHermiteCurve,
             PrcCompressedCurveType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id);
         let mut start_end_data: StartEndData = Default::default();
         start_end_data = StartEndData::from_reader(rdr, _ctx)?;
         let mut number_bits: UnsignedIntegerWithVariableBitNumber = Default::default();
@@ -15580,7 +16759,6 @@ impl PRC_HCG_BSplineHermiteCurve {
                 compressed_tangents.push(element);
             }
         }
-        _ctx.pop_face_type();
         let rv = Self {
             id,
             start_end_data,
@@ -15673,19 +16851,25 @@ impl PRC_HCG_CompositeCurve {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_HCG_CompositeCurve::from_reader()", indent::get());
+        trace!(
+            "{}PRC_HCG_CompositeCurve::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         warn!("PRC_HCG_CompositeCurve.id field contains FIXME!");
         let id_cond = !_ctx.is_compressed_iso_spline();
         let mut id: CompressedEntityType = Default::default();
         if id_cond {
             id = CompressedEntityType::from_reader(rdr)?;
+            if (PRC_HCG_CompositeCurve) != (PrcCompressedCurveType::try_from(id.value).unwrap()) {
+                warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+            }
             assert_eq!(
                 PRC_HCG_CompositeCurve,
                 PrcCompressedCurveType::try_from(id.value).unwrap()
             );
         }
-        _ctx.push_face_type(id);
         let mut start_end_data: StartEndData = Default::default();
         start_end_data = StartEndData::from_reader(rdr, _ctx)?;
         let mut dimension: UnsignedInteger = Default::default();
@@ -15700,7 +16884,6 @@ impl PRC_HCG_CompositeCurve {
             let element = CompressedCurve::from_reader(rdr, _ctx)?;
             curves.push(element);
         }
-        _ctx.pop_face_type();
         let rv = Self {
             id: if id_cond { Some(id) } else { None },
             start_end_data,
@@ -15717,8 +16900,9 @@ impl PRC_HCG_CompositeCurve {
         _ctx: &mut PrcParsingContext,
     ) -> std::io::Result<()> {
         let id_cond = !_ctx.is_compressed_iso_spline();
-        let id = self.id.as_ref().unwrap();
+        let mut id: &CompressedEntityType = &Default::default();
         if id_cond {
+            id = self.id.as_ref().unwrap();
             id.to_writer(_w)?;
         }
         let start_end_data = self.start_end_data.clone();
@@ -15748,17 +16932,22 @@ impl PRC_HCG_Ellipse {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_HCG_Ellipse::from_reader()", indent::get());
+        trace!(
+            "{}PRC_HCG_Ellipse::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         panic!("PRC_HCG_Ellipse: not implemented");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        if (PRC_HCG_Ellipse) != (PrcCompressedCurveType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_HCG_Ellipse,
             PrcCompressedCurveType::try_from(id.value).unwrap()
         );
-        _ctx.push_face_type(id);
-        _ctx.pop_face_type();
         let rv = Self { id };
         Ok(rv)
     }
@@ -15785,7 +16974,11 @@ impl CompressedCurve {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}CompressedCurve::from_reader()", indent::get());
+        trace!(
+            "{}CompressedCurve::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: CompressedCurve_idConcrete =
@@ -15811,8 +17004,9 @@ impl CompressedCurve {
                 CompressedCurve_idConcrete::ellipse(PRC_HCG_Ellipse::from_reader(rdr, _ctx)?)
             }
             _ => panic!(
-                "CompressedCurve: Unrecognized subtype: {}!",
-                id_type_id.to_string()
+                "CompressedCurve: Unrecognized subtype: {}! bp={}",
+                id_type_id.to_string(),
+                rdr.position_in_bits()?
             ),
         };
         let rv = Self { id_concrete };
@@ -15870,7 +17064,11 @@ impl ContentCompressedIsoFace {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ContentCompressedIsoFace::from_reader()", indent::get());
+        trace!(
+            "{}ContentCompressedIsoFace::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut orientation_loop_with_surface: Boolean = Default::default();
         orientation_loop_with_surface = Boolean::from_reader(rdr)?;
@@ -15942,23 +17140,26 @@ impl ContentCompressedIsoFace {
         let third_trim_curve_is_not_yet_saved = self.third_trim_curve_is_not_yet_saved.clone();
         third_trim_curve_is_not_yet_saved.to_writer(_w)?;
         let third_trim_curve_cond = !third_trim_curve_is_not_yet_saved.value;
-        let third_trim_curve = self.third_trim_curve.as_ref().unwrap();
+        let mut third_trim_curve: &UnsignedIntegerWithVariableBitNumber = &Default::default();
         if third_trim_curve_cond {
+            third_trim_curve = self.third_trim_curve.as_ref().unwrap();
             third_trim_curve
                 .to_writer(_w, _ctx.BrepDataCompress_number_of_bits_to_store_reference)?;
         }
         let fourth_trim_curve_is_not_yet_saved = self.fourth_trim_curve_is_not_yet_saved.clone();
         fourth_trim_curve_is_not_yet_saved.to_writer(_w)?;
         let fourth_trim_curve_cond = !fourth_trim_curve_is_not_yet_saved.value;
-        let fourth_trim_curve = self.fourth_trim_curve.as_ref().unwrap();
+        let mut fourth_trim_curve: &UnsignedIntegerWithVariableBitNumber = &Default::default();
         if fourth_trim_curve_cond {
+            fourth_trim_curve = self.fourth_trim_curve.as_ref().unwrap();
             fourth_trim_curve
                 .to_writer(_w, _ctx.BrepDataCompress_number_of_bits_to_store_reference)?;
         }
         let common_third_fourth_vertex_cond =
             third_trim_curve_is_not_yet_saved.value && fourth_trim_curve_is_not_yet_saved.value;
-        let common_third_fourth_vertex = self.common_third_fourth_vertex.as_ref().unwrap();
+        let mut common_third_fourth_vertex: &CompressedVertex = &Default::default();
         if common_third_fourth_vertex_cond {
+            common_third_fourth_vertex = self.common_third_fourth_vertex.as_ref().unwrap();
             common_third_fourth_vertex.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -15978,7 +17179,11 @@ impl RefOrCompressedCurve {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}RefOrCompressedCurve::from_reader()", indent::get());
+        trace!(
+            "{}RefOrCompressedCurve::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut curve_is_not_already_stored: Boolean = Default::default();
         curve_is_not_already_stored = Boolean::from_reader(rdr)?;
@@ -16018,14 +17223,16 @@ impl RefOrCompressedCurve {
         let curve_is_not_already_stored = self.curve_is_not_already_stored.clone();
         curve_is_not_already_stored.to_writer(_w)?;
         let index_compressed_curve_cond = !curve_is_not_already_stored.value;
-        let index_compressed_curve = self.index_compressed_curve.as_ref().unwrap();
+        let mut index_compressed_curve: &UnsignedIntegerWithVariableBitNumber = &Default::default();
         if index_compressed_curve_cond {
+            index_compressed_curve = self.index_compressed_curve.as_ref().unwrap();
             index_compressed_curve
                 .to_writer(_w, _ctx.BrepDataCompress_number_of_bits_to_store_reference)?;
         }
         let compressed_curve_cond = !!curve_is_not_already_stored.value;
-        let compressed_curve = self.compressed_curve.as_ref().unwrap();
+        let mut compressed_curve: &CompressedCurve = &Default::default();
         if compressed_curve_cond {
+            compressed_curve = self.compressed_curve.as_ref().unwrap();
             compressed_curve.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -16044,14 +17251,16 @@ impl AnaFaceTrimLoop {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}AnaFaceTrimLoop::from_reader()", indent::get());
+        trace!(
+            "{}AnaFaceTrimLoop::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
-        return AnaFaceTrimLoop::from_reader_while_loop(rdr, _ctx);
         let mut loop_surface_orientation: Boolean = Default::default();
         loop_surface_orientation = Boolean::from_reader(rdr)?;
-        warn!("AnaFaceTrimLoop.curves field contains FIXME!");
-        let mut curves: Vec<RefOrCompressedCurve> = Vec::with_capacity((999) as usize);
-        for _i in 0..(999) {
+        let mut curves: Vec<RefOrCompressedCurve> = Vec::with_capacity((0) as usize);
+        for _i in 0..(0) {
             let element = RefOrCompressedCurve::from_reader(rdr, _ctx)?;
             curves.push(element);
         }
@@ -16080,7 +17289,7 @@ impl AnaFaceTrimLoop {
 #[allow(non_camel_case_types)]
 pub struct ContentCompressedAnaFace {
     pub is_trimmed: Boolean,
-    pub trim_loop: Option<AnaFaceTrimLoop>,
+    pub trim_loop: Option<Vec<AnaFaceTrimLoop>>,
     pub point_on_torus: Option<CompressedPoint>,
 }
 impl ContentCompressedAnaFace {
@@ -16089,16 +17298,26 @@ impl ContentCompressedAnaFace {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ContentCompressedAnaFace::from_reader()", indent::get());
+        trace!(
+            "{}ContentCompressedAnaFace::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut is_trimmed: Boolean = Default::default();
         is_trimmed = Boolean::from_reader(rdr)?;
         trace!("{}is_trimmed: {:?}", indent::get(), &is_trimmed);
         let trim_loop_cond = !!is_trimmed.value;
-        let mut trim_loop: AnaFaceTrimLoop = Default::default();
+        let mut trim_loop: Vec<AnaFaceTrimLoop> = Vec::with_capacity((0) as usize);
         if trim_loop_cond {
-            trim_loop = AnaFaceTrimLoop::from_reader(rdr, _ctx)?;
+            for _i in 0..(0) {
+                let element = AnaFaceTrimLoop::from_reader(rdr, _ctx)?;
+                trim_loop.push(element);
+            }
         }
+        if !!is_trimmed.value {
+            trim_loop = AnaFaceTrimLoop::from_reader_while_loop2(rdr, _ctx)?;
+        };
         let point_on_torus_cond =
             _ctx.ContentCompressedAnaFace_has_point_on_torus(is_trimmed.value);
         let mut point_on_torus: CompressedPoint = Default::default();
@@ -16129,15 +17348,17 @@ impl ContentCompressedAnaFace {
     ) -> std::io::Result<()> {
         let is_trimmed = self.is_trimmed.clone();
         is_trimmed.to_writer(_w)?;
-        let trim_loop_cond = !!is_trimmed.value;
-        let trim_loop = self.trim_loop.as_ref().unwrap();
-        if trim_loop_cond {
-            trim_loop.to_writer(_w, _ctx)?;
+        let trim_loop = self.trim_loop.clone();
+        if !!is_trimmed.value {
+            for i in self.trim_loop.as_ref().unwrap() {
+                i.to_writer(_w, _ctx)?;
+            }
         }
         let point_on_torus_cond =
             _ctx.ContentCompressedAnaFace_has_point_on_torus(is_trimmed.value);
-        let point_on_torus = self.point_on_torus.as_ref().unwrap();
+        let mut point_on_torus: &CompressedPoint = &Default::default();
         if point_on_torus_cond {
+            point_on_torus = self.point_on_torus.as_ref().unwrap();
             point_on_torus.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         Ok(())
@@ -16158,16 +17379,20 @@ impl ContentCompressedFace {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}ContentCompressedFace::from_reader()", indent::get());
+        trace!(
+            "{}ContentCompressedFace::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut orientation_surface_with_shell: Boolean = Default::default();
         orientation_surface_with_shell = Boolean::from_reader(rdr)?;
-        let iso_face_cond = _ctx.is_an_iso_face(_ctx.get_surface_type().unwrap());
+        let iso_face_cond = _ctx.ContentCompressedFace_owner_is_an_iso_face();
         let mut iso_face: ContentCompressedIsoFace = Default::default();
         if iso_face_cond {
             iso_face = ContentCompressedIsoFace::from_reader(rdr, _ctx)?;
         }
-        let ana_face_cond = !_ctx.is_an_iso_face(_ctx.get_surface_type().unwrap());
+        let ana_face_cond = !_ctx.ContentCompressedFace_owner_is_an_iso_face();
         let mut ana_face: ContentCompressedAnaFace = Default::default();
         if ana_face_cond {
             ana_face = ContentCompressedAnaFace::from_reader(rdr, _ctx)?;
@@ -16186,86 +17411,18 @@ impl ContentCompressedFace {
     ) -> std::io::Result<()> {
         let orientation_surface_with_shell = self.orientation_surface_with_shell.clone();
         orientation_surface_with_shell.to_writer(_w)?;
-        let iso_face_cond = _ctx.is_an_iso_face(_ctx.get_surface_type().unwrap());
-        let iso_face = self.iso_face.as_ref().unwrap();
+        let iso_face_cond = _ctx.ContentCompressedFace_owner_is_an_iso_face();
+        let mut iso_face: &ContentCompressedIsoFace = &Default::default();
         if iso_face_cond {
+            iso_face = self.iso_face.as_ref().unwrap();
             iso_face.to_writer(_w, _ctx)?;
         }
-        let ana_face_cond = !_ctx.is_an_iso_face(_ctx.get_surface_type().unwrap());
-        let ana_face = self.ana_face.as_ref().unwrap();
+        let ana_face_cond = !_ctx.ContentCompressedFace_owner_is_an_iso_face();
+        let mut ana_face: &ContentCompressedAnaFace = &Default::default();
         if ana_face_cond {
+            ana_face = self.ana_face.as_ref().unwrap();
             ana_face.to_writer(_w, _ctx)?;
         }
-        Ok(())
-    }
-}
-
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
-#[allow(non_camel_case_types)]
-pub struct PRC_HCG_NewLoop {
-    pub id: CompressedEntityType,
-}
-impl PRC_HCG_NewLoop {
-    #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
-        rdr: &mut BitReader<R, E>,
-        _ctx: &mut PrcParsingContext,
-    ) -> io::Result<Self> {
-        trace!("{}PRC_HCG_NewLoop::from_reader()", indent::get());
-        let _ig = indent::IndentGuard::new();
-        panic!("PRC_HCG_NewLoop should only be encountered inside an AnaFaceTrimLoop!");
-        let mut id: CompressedEntityType = Default::default();
-        id = CompressedEntityType::from_reader(rdr)?;
-        assert_eq!(
-            PRC_HCG_NewLoop,
-            PrcCompressedFaceType::try_from(id.value).unwrap()
-        );
-        _ctx.pop_face_type();
-        let rv = Self { id };
-        Ok(rv)
-    }
-    pub fn to_writer<W: BitWrite + ?Sized>(
-        &self,
-        _w: &mut W,
-        _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
-        let id = self.id.clone();
-        id.to_writer(_w)?;
-        Ok(())
-    }
-}
-
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
-#[allow(non_camel_case_types)]
-pub struct PRC_HCG_EndLoop {
-    pub id: CompressedEntityType,
-}
-impl PRC_HCG_EndLoop {
-    #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
-        rdr: &mut BitReader<R, E>,
-        _ctx: &mut PrcParsingContext,
-    ) -> io::Result<Self> {
-        trace!("{}PRC_HCG_EndLoop::from_reader()", indent::get());
-        let _ig = indent::IndentGuard::new();
-        panic!("PRC_HCG_EndLoop should only be encountered inside an AnaFaceTrimLoop!");
-        let mut id: CompressedEntityType = Default::default();
-        id = CompressedEntityType::from_reader(rdr)?;
-        assert_eq!(
-            PRC_HCG_EndLoop,
-            PrcCompressedFaceType::try_from(id.value).unwrap()
-        );
-        _ctx.pop_face_type();
-        let rv = Self { id };
-        Ok(rv)
-    }
-    pub fn to_writer<W: BitWrite + ?Sized>(
-        &self,
-        _w: &mut W,
-        _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
-        let id = self.id.clone();
-        id.to_writer(_w)?;
         Ok(())
     }
 }
@@ -16285,10 +17442,18 @@ impl PRC_HCG_IsoPlane {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_HCG_IsoPlane::from_reader()", indent::get());
+        trace!(
+            "{}PRC_HCG_IsoPlane::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
+        _ctx.ContentCompressedFace_owner_enter(true);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        if (PRC_HCG_IsoPlane) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_HCG_IsoPlane,
             PrcCompressedFaceType::try_from(id.value).unwrap()
@@ -16303,6 +17468,7 @@ impl PRC_HCG_IsoPlane {
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         _ctx.pop_face_type();
+        _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
             id,
             x,
@@ -16343,10 +17509,18 @@ impl PRC_HCG_IsoCylinder {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_HCG_IsoCylinder::from_reader()", indent::get());
+        trace!(
+            "{}PRC_HCG_IsoCylinder::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
+        _ctx.ContentCompressedFace_owner_enter(true);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        if (PRC_HCG_IsoCylinder) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_HCG_IsoCylinder,
             PrcCompressedFaceType::try_from(id.value).unwrap()
@@ -16355,6 +17529,7 @@ impl PRC_HCG_IsoCylinder {
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         _ctx.pop_face_type();
+        _ctx.ContentCompressedFace_owner_leave();
         let rv = Self { id, face };
         Ok(rv)
     }
@@ -16384,10 +17559,18 @@ impl PRC_HCG_IsoTorus {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_HCG_IsoTorus::from_reader()", indent::get());
+        trace!(
+            "{}PRC_HCG_IsoTorus::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
+        _ctx.ContentCompressedFace_owner_enter(true);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        if (PRC_HCG_IsoTorus) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_HCG_IsoTorus,
             PrcCompressedFaceType::try_from(id.value).unwrap()
@@ -16398,6 +17581,7 @@ impl PRC_HCG_IsoTorus {
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         _ctx.pop_face_type();
+        _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
             id,
             is_major_radius,
@@ -16432,10 +17616,18 @@ impl PRC_HCG_IsoSphere {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_HCG_IsoSphere::from_reader()", indent::get());
+        trace!(
+            "{}PRC_HCG_IsoSphere::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
+        _ctx.ContentCompressedFace_owner_enter(true);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        if (PRC_HCG_IsoSphere) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_HCG_IsoSphere,
             PrcCompressedFaceType::try_from(id.value).unwrap()
@@ -16444,6 +17636,7 @@ impl PRC_HCG_IsoSphere {
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         _ctx.pop_face_type();
+        _ctx.ContentCompressedFace_owner_leave();
         let rv = Self { id, face };
         Ok(rv)
     }
@@ -16472,10 +17665,18 @@ impl PRC_HCG_IsoCone {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_HCG_IsoCone::from_reader()", indent::get());
+        trace!(
+            "{}PRC_HCG_IsoCone::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
+        _ctx.ContentCompressedFace_owner_enter(true);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        if (PRC_HCG_IsoCone) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_HCG_IsoCone,
             PrcCompressedFaceType::try_from(id.value).unwrap()
@@ -16484,6 +17685,7 @@ impl PRC_HCG_IsoCone {
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         _ctx.pop_face_type();
+        _ctx.ContentCompressedFace_owner_leave();
         let rv = Self { id, face };
         Ok(rv)
     }
@@ -16515,10 +17717,18 @@ impl PRC_HCG_AnaPlane {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_HCG_AnaPlane::from_reader()", indent::get());
+        trace!(
+            "{}PRC_HCG_AnaPlane::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
+        _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        if (PRC_HCG_AnaPlane) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_HCG_AnaPlane,
             PrcCompressedFaceType::try_from(id.value).unwrap()
@@ -16533,6 +17743,7 @@ impl PRC_HCG_AnaPlane {
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         _ctx.pop_face_type();
+        _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
             id,
             x,
@@ -16575,10 +17786,18 @@ impl PRC_HCG_AnaCylinder {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_HCG_AnaCylinder::from_reader()", indent::get());
+        trace!(
+            "{}PRC_HCG_AnaCylinder::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
+        _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        if (PRC_HCG_AnaCylinder) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_HCG_AnaCylinder,
             PrcCompressedFaceType::try_from(id.value).unwrap()
@@ -16591,6 +17810,7 @@ impl PRC_HCG_AnaCylinder {
         let mut direction: CompressedPoint = Default::default();
         direction = CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         _ctx.pop_face_type();
+        _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
             id,
             face,
@@ -16631,10 +17851,18 @@ impl PRC_HCG_AnaTorus {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_HCG_AnaTorus::from_reader()", indent::get());
+        trace!(
+            "{}PRC_HCG_AnaTorus::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
+        _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        if (PRC_HCG_AnaTorus) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_HCG_AnaTorus,
             PrcCompressedFaceType::try_from(id.value).unwrap()
@@ -16652,6 +17880,7 @@ impl PRC_HCG_AnaTorus {
         y_axis = Vector3D::from_reader(rdr, _ctx)?;
         trace!("{}y_axis: {:?}", indent::get(), &y_axis);
         _ctx.pop_face_type();
+        _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
             id,
             face,
@@ -16693,10 +17922,18 @@ impl PRC_HCG_AnaSphere {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_HCG_AnaSphere::from_reader()", indent::get());
+        trace!(
+            "{}PRC_HCG_AnaSphere::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
+        _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        if (PRC_HCG_AnaSphere) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_HCG_AnaSphere,
             PrcCompressedFaceType::try_from(id.value).unwrap()
@@ -16708,6 +17945,7 @@ impl PRC_HCG_AnaSphere {
         sphere_center =
             CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         _ctx.pop_face_type();
+        _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
             id,
             face,
@@ -16744,10 +17982,18 @@ impl PRC_HCG_AnaCone {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_HCG_AnaCone::from_reader()", indent::get());
+        trace!(
+            "{}PRC_HCG_AnaCone::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
+        _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        if (PRC_HCG_AnaCone) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_HCG_AnaCone,
             PrcCompressedFaceType::try_from(id.value).unwrap()
@@ -16762,6 +18008,7 @@ impl PRC_HCG_AnaCone {
         apex_point =
             CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
         _ctx.pop_face_type();
+        _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
             id,
             face,
@@ -16800,10 +18047,18 @@ impl PRC_HCG_AnaNurbs {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_HCG_AnaNurbs::from_reader()", indent::get());
+        trace!(
+            "{}PRC_HCG_AnaNurbs::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
+        _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        if (PRC_HCG_AnaNurbs) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_HCG_AnaNurbs,
             PrcCompressedFaceType::try_from(id.value).unwrap()
@@ -16814,6 +18069,7 @@ impl PRC_HCG_AnaNurbs {
         let mut compressed_surface: CompressedNurbs = Default::default();
         compressed_surface = CompressedNurbs::from_reader(rdr, _ctx)?;
         _ctx.pop_face_type();
+        _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
             id,
             face,
@@ -16849,10 +18105,18 @@ impl PRC_HCG_AnaGenericFace {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_HCG_AnaGenericFace::from_reader()", indent::get());
+        trace!(
+            "{}PRC_HCG_AnaGenericFace::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
+        _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        if (PRC_HCG_AnaGenericFace) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_HCG_AnaGenericFace,
             PrcCompressedFaceType::try_from(id.value).unwrap()
@@ -16863,6 +18127,7 @@ impl PRC_HCG_AnaGenericFace {
         let mut surface_definition: PRC_TYPE_SURF = Default::default();
         surface_definition = PRC_TYPE_SURF::from_reader(rdr, _ctx)?;
         _ctx.pop_face_type();
+        _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
             id,
             face,
@@ -16888,7 +18153,7 @@ impl PRC_HCG_AnaGenericFace {
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct CompressedMultiplicitiesU {
-    pub multiplicity_is_stored: Boolean,
+    pub multiplicity_is_not_stored: Boolean,
     /// number_bits is either number_bits_u or number_bits_v from CompressedNurbs
     pub multiplicity: Option<UnsignedIntegerWithVariableBitNumber>,
 }
@@ -16898,11 +18163,15 @@ impl CompressedMultiplicitiesU {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}CompressedMultiplicitiesU::from_reader()", indent::get());
+        trace!(
+            "{}CompressedMultiplicitiesU::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
-        let mut multiplicity_is_stored: Boolean = Default::default();
-        multiplicity_is_stored = Boolean::from_reader(rdr)?;
-        let multiplicity_cond = !multiplicity_is_stored;
+        let mut multiplicity_is_not_stored: Boolean = Default::default();
+        multiplicity_is_not_stored = Boolean::from_reader(rdr)?;
+        let multiplicity_cond = !multiplicity_is_not_stored;
         let mut multiplicity: UnsignedIntegerWithVariableBitNumber = Default::default();
         if multiplicity_cond {
             multiplicity = UnsignedIntegerWithVariableBitNumber::from_reader(
@@ -16911,7 +18180,7 @@ impl CompressedMultiplicitiesU {
             )?;
         }
         let rv = Self {
-            multiplicity_is_stored,
+            multiplicity_is_not_stored,
             multiplicity: if multiplicity_cond {
                 Some(multiplicity)
             } else {
@@ -16925,11 +18194,12 @@ impl CompressedMultiplicitiesU {
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> std::io::Result<()> {
-        let multiplicity_is_stored = self.multiplicity_is_stored.clone();
-        multiplicity_is_stored.to_writer(_w)?;
-        let multiplicity_cond = !multiplicity_is_stored;
-        let multiplicity = self.multiplicity.as_ref().unwrap();
+        let multiplicity_is_not_stored = self.multiplicity_is_not_stored.clone();
+        multiplicity_is_not_stored.to_writer(_w)?;
+        let multiplicity_cond = !multiplicity_is_not_stored;
+        let mut multiplicity: &UnsignedIntegerWithVariableBitNumber = &Default::default();
         if multiplicity_cond {
+            multiplicity = self.multiplicity.as_ref().unwrap();
             multiplicity.to_writer(_w, _ctx.CompressedNurbs_number_bits_u)?;
         }
         Ok(())
@@ -16939,7 +18209,7 @@ impl CompressedMultiplicitiesU {
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct CompressedMultiplicitiesV {
-    pub multiplicity_is_stored: Boolean,
+    pub multiplicity_is_not_stored: Boolean,
     /// number_bits is either number_bits_u or number_bits_v from CompressedNurbs
     pub multiplicity: Option<UnsignedIntegerWithVariableBitNumber>,
 }
@@ -16949,11 +18219,15 @@ impl CompressedMultiplicitiesV {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}CompressedMultiplicitiesV::from_reader()", indent::get());
+        trace!(
+            "{}CompressedMultiplicitiesV::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
-        let mut multiplicity_is_stored: Boolean = Default::default();
-        multiplicity_is_stored = Boolean::from_reader(rdr)?;
-        let multiplicity_cond = !multiplicity_is_stored;
+        let mut multiplicity_is_not_stored: Boolean = Default::default();
+        multiplicity_is_not_stored = Boolean::from_reader(rdr)?;
+        let multiplicity_cond = !multiplicity_is_not_stored;
         let mut multiplicity: UnsignedIntegerWithVariableBitNumber = Default::default();
         if multiplicity_cond {
             multiplicity = UnsignedIntegerWithVariableBitNumber::from_reader(
@@ -16962,7 +18236,7 @@ impl CompressedMultiplicitiesV {
             )?;
         }
         let rv = Self {
-            multiplicity_is_stored,
+            multiplicity_is_not_stored,
             multiplicity: if multiplicity_cond {
                 Some(multiplicity)
             } else {
@@ -16976,11 +18250,12 @@ impl CompressedMultiplicitiesV {
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> std::io::Result<()> {
-        let multiplicity_is_stored = self.multiplicity_is_stored.clone();
-        multiplicity_is_stored.to_writer(_w)?;
-        let multiplicity_cond = !multiplicity_is_stored;
-        let multiplicity = self.multiplicity.as_ref().unwrap();
+        let multiplicity_is_not_stored = self.multiplicity_is_not_stored.clone();
+        multiplicity_is_not_stored.to_writer(_w)?;
+        let multiplicity_cond = !multiplicity_is_not_stored;
+        let mut multiplicity: &UnsignedIntegerWithVariableBitNumber = &Default::default();
         if multiplicity_cond {
+            multiplicity = self.multiplicity.as_ref().unwrap();
             multiplicity.to_writer(_w, _ctx.CompressedNurbs_number_bits_v)?;
         }
         Ok(())
@@ -17005,8 +18280,9 @@ impl InteriorCompressedControlPoints {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}InteriorCompressedControlPoints::from_reader()",
-            indent::get()
+            "{}InteriorCompressedControlPoints::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut _type: UnsignedIntegerWithVariableBitNumber = Default::default();
@@ -17084,8 +18360,9 @@ impl InteriorCompressedControlPoints {
         let _type = self._type.clone();
         _type.to_writer(_w, 2)?;
         let p1z_cond = _type.value == 1;
-        let p1z = self.p1z.as_ref().unwrap();
+        let mut p1z: &DoubleWithVariableBitNumber = &Default::default();
         if p1z_cond {
+            p1z = self.p1z.as_ref().unwrap();
             p1z.to_writer(
                 _w,
                 _ctx.CompressedNurbs_number_of_bits_for_rest + 1,
@@ -17093,8 +18370,9 @@ impl InteriorCompressedControlPoints {
             )?;
         }
         let p2x_cond = _type.value == 2;
-        let p2x = self.p2x.as_ref().unwrap();
+        let mut p2x: &DoubleWithVariableBitNumber = &Default::default();
         if p2x_cond {
+            p2x = self.p2x.as_ref().unwrap();
             p2x.to_writer(
                 _w,
                 _ctx.CompressedNurbs_number_of_bits_for_rest + 1,
@@ -17102,8 +18380,9 @@ impl InteriorCompressedControlPoints {
             )?;
         }
         let p2y_cond = _type.value == 2;
-        let p2y = self.p2y.as_ref().unwrap();
+        let mut p2y: &DoubleWithVariableBitNumber = &Default::default();
         if p2y_cond {
+            p2y = self.p2y.as_ref().unwrap();
             p2y.to_writer(
                 _w,
                 _ctx.CompressedNurbs_number_of_bits_for_rest + 1,
@@ -17111,8 +18390,9 @@ impl InteriorCompressedControlPoints {
             )?;
         }
         let p3x_cond = _type.value == 3;
-        let p3x = self.p3x.as_ref().unwrap();
+        let mut p3x: &DoubleWithVariableBitNumber = &Default::default();
         if p3x_cond {
+            p3x = self.p3x.as_ref().unwrap();
             p3x.to_writer(
                 _w,
                 _ctx.CompressedNurbs_number_of_bits_for_rest + 1,
@@ -17120,8 +18400,9 @@ impl InteriorCompressedControlPoints {
             )?;
         }
         let p3y_cond = _type.value == 3;
-        let p3y = self.p3y.as_ref().unwrap();
+        let mut p3y: &DoubleWithVariableBitNumber = &Default::default();
         if p3y_cond {
+            p3y = self.p3y.as_ref().unwrap();
             p3y.to_writer(
                 _w,
                 _ctx.CompressedNurbs_number_of_bits_for_rest + 1,
@@ -17129,8 +18410,9 @@ impl InteriorCompressedControlPoints {
             )?;
         }
         let p3z_cond = _type.value == 3;
-        let p3z = self.p3z.as_ref().unwrap();
+        let mut p3z: &DoubleWithVariableBitNumber = &Default::default();
         if p3z_cond {
+            p3z = self.p3z.as_ref().unwrap();
             p3z.to_writer(
                 _w,
                 _ctx.CompressedNurbs_number_of_bits_for_rest + 1,
@@ -17155,13 +18437,17 @@ impl CompressedControlPoints {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}CompressedControlPoints::from_reader()", indent::get());
+        trace!(
+            "{}CompressedControlPoints::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut p00: Vector3D = Default::default();
         p00 = Vector3D::from_reader(rdr, _ctx)?;
         let mut ccpt_in_v: Vec<Point3DWithVariableBitNumber> =
-            Vec::with_capacity((_ctx.CompressedNurbs_number_ccpt_in_v - 1) as usize);
-        for _i in 0..(_ctx.CompressedNurbs_number_ccpt_in_v - 1) {
+            Vec::with_capacity((_ctx.compressed_nurbs.number_ccpt_in_v - 1) as usize);
+        for _i in 0..(_ctx.compressed_nurbs.number_ccpt_in_v - 1) {
             let element = Point3DWithVariableBitNumber::from_reader(
                 rdr,
                 _ctx.CompressedNurbs_number_of_bits_for_isomin + 1,
@@ -17170,8 +18456,8 @@ impl CompressedControlPoints {
             ccpt_in_v.push(element);
         }
         let mut ccpt_in_u: Vec<Point3DWithVariableBitNumber> =
-            Vec::with_capacity((_ctx.CompressedNurbs_number_ccpt_in_u - 1) as usize);
-        for _i in 0..(_ctx.CompressedNurbs_number_ccpt_in_u - 1) {
+            Vec::with_capacity((_ctx.compressed_nurbs.number_ccpt_in_u - 1) as usize);
+        for _i in 0..(_ctx.compressed_nurbs.number_ccpt_in_u - 1) {
             let element = Point3DWithVariableBitNumber::from_reader(
                 rdr,
                 _ctx.CompressedNurbs_number_of_bits_for_isomin + 1,
@@ -17180,11 +18466,11 @@ impl CompressedControlPoints {
             ccpt_in_u.push(element);
         }
         let mut ccpt_interior: Vec<InteriorCompressedControlPoints> = Vec::with_capacity(
-            ((_ctx.CompressedNurbs_number_ccpt_in_v - 1)
-                * (_ctx.CompressedNurbs_number_ccpt_in_u - 1)) as usize,
+            ((_ctx.compressed_nurbs.number_ccpt_in_v - 1)
+                * (_ctx.compressed_nurbs.number_ccpt_in_u - 1)) as usize,
         );
-        for _i in 0..((_ctx.CompressedNurbs_number_ccpt_in_v - 1)
-            * (_ctx.CompressedNurbs_number_ccpt_in_u - 1))
+        for _i in 0..((_ctx.compressed_nurbs.number_ccpt_in_v - 1)
+            * (_ctx.compressed_nurbs.number_ccpt_in_u - 1))
         {
             let element = InteriorCompressedControlPoints::from_reader(rdr, _ctx)?;
             ccpt_interior.push(element);
@@ -17240,7 +18526,11 @@ impl CompressedKnot {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}CompressedKnot::from_reader()", indent::get());
+        trace!(
+            "{}CompressedKnot::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let knot_cond = _ctx.CompressedKnots_number_bit_parameter > 30;
         let mut knot: Double = Default::default();
@@ -17253,7 +18543,7 @@ impl CompressedKnot {
             knot_vbr = DoubleWithVariableBitNumber::from_reader(
                 rdr,
                 _ctx.CompressedKnots_number_bit_parameter + 1,
-                _ctx.tolerance_parameter,
+                _ctx.CompressedKnots_tolerance_parameter,
             )?;
         }
         let rv = Self {
@@ -17268,17 +18558,19 @@ impl CompressedKnot {
         _ctx: &mut PrcParsingContext,
     ) -> std::io::Result<()> {
         let knot_cond = _ctx.CompressedKnots_number_bit_parameter > 30;
-        let knot = self.knot.as_ref().unwrap();
+        let mut knot: &Double = &Default::default();
         if knot_cond {
+            knot = self.knot.as_ref().unwrap();
             knot.to_writer(_w)?;
         }
         let knot_vbr_cond = _ctx.CompressedKnots_number_bit_parameter <= 30;
-        let knot_vbr = self.knot_vbr.as_ref().unwrap();
+        let mut knot_vbr: &DoubleWithVariableBitNumber = &Default::default();
         if knot_vbr_cond {
+            knot_vbr = self.knot_vbr.as_ref().unwrap();
             knot_vbr.to_writer(
                 _w,
                 _ctx.CompressedKnots_number_bit_parameter + 1,
-                _ctx.tolerance_parameter,
+                _ctx.CompressedKnots_tolerance_parameter,
             )?;
         }
         Ok(())
@@ -17300,7 +18592,11 @@ impl CompressedKnotsU {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}CompressedKnotsU::from_reader()", indent::get());
+        trace!(
+            "{}CompressedKnotsU::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut is_unknown_form: Boolean = Default::default();
         is_unknown_form = Boolean::from_reader(rdr)?;
@@ -17312,6 +18608,8 @@ impl CompressedKnotsU {
         let mut number_bit_parameter: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_bit_parameter = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 6)?;
         _ctx.CompressedKnots_number_bit_parameter = number_bit_parameter.value;
+        _ctx.CompressedKnots_tolerance_parameter =
+            1.0_f64 / 2.0_f64.powi(number_bit_parameter.value as i32 - 1);
         let mut compressed_knots: Vec<CompressedKnot> =
             Vec::with_capacity((_ctx.CompressedNurbs_number_stored_knots_in_u) as usize);
         for _i in 0..(_ctx.CompressedNurbs_number_stored_knots_in_u) {
@@ -17338,8 +18636,9 @@ impl CompressedKnotsU {
         let is_unknown_form = self.is_unknown_form.clone();
         is_unknown_form.to_writer(_w)?;
         let is_pseudo_uniform_cond = !is_unknown_form.value;
-        let is_pseudo_uniform = self.is_pseudo_uniform.as_ref().unwrap();
+        let mut is_pseudo_uniform: &Boolean = &Default::default();
         if is_pseudo_uniform_cond {
+            is_pseudo_uniform = self.is_pseudo_uniform.as_ref().unwrap();
             is_pseudo_uniform.to_writer(_w)?;
         }
         let number_bit_parameter = self.number_bit_parameter.clone();
@@ -17367,7 +18666,11 @@ impl CompressedKnotsV {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}CompressedKnotsV::from_reader()", indent::get());
+        trace!(
+            "{}CompressedKnotsV::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut is_unknown_form: Boolean = Default::default();
         is_unknown_form = Boolean::from_reader(rdr)?;
@@ -17379,6 +18682,8 @@ impl CompressedKnotsV {
         let mut number_bit_parameter: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_bit_parameter = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 6)?;
         _ctx.CompressedKnots_number_bit_parameter = number_bit_parameter.value;
+        _ctx.CompressedKnots_tolerance_parameter =
+            1.0_f64 / 2.0_f64.powi(number_bit_parameter.value as i32 - 1);
         let mut compressed_knots: Vec<CompressedKnot> =
             Vec::with_capacity((_ctx.CompressedNurbs_number_stored_knots_in_v) as usize);
         for _i in 0..(_ctx.CompressedNurbs_number_stored_knots_in_v) {
@@ -17405,8 +18710,9 @@ impl CompressedKnotsV {
         let is_unknown_form = self.is_unknown_form.clone();
         is_unknown_form.to_writer(_w)?;
         let is_pseudo_uniform_cond = !is_unknown_form.value;
-        let is_pseudo_uniform = self.is_pseudo_uniform.as_ref().unwrap();
+        let mut is_pseudo_uniform: &Boolean = &Default::default();
         if is_pseudo_uniform_cond {
+            is_pseudo_uniform = self.is_pseudo_uniform.as_ref().unwrap();
             is_pseudo_uniform.to_writer(_w)?;
         }
         let number_bit_parameter = self.number_bit_parameter.clone();
@@ -17432,7 +18738,11 @@ impl CompressedKnotVectorU {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}CompressedKnotVectorU::from_reader()", indent::get());
+        trace!(
+            "{}CompressedKnotVectorU::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut is_uniform: Boolean = Default::default();
         is_uniform = Boolean::from_reader(rdr)?;
@@ -17455,8 +18765,9 @@ impl CompressedKnotVectorU {
         let is_uniform = self.is_uniform.clone();
         is_uniform.to_writer(_w)?;
         let knots_cond = !is_uniform.value;
-        let knots = self.knots.as_ref().unwrap();
+        let mut knots: &CompressedKnotsU = &Default::default();
         if knots_cond {
+            knots = self.knots.as_ref().unwrap();
             knots.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -17476,7 +18787,11 @@ impl CompressedKnotVectorV {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}CompressedKnotVectorV::from_reader()", indent::get());
+        trace!(
+            "{}CompressedKnotVectorV::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut is_uniform: Boolean = Default::default();
         is_uniform = Boolean::from_reader(rdr)?;
@@ -17499,8 +18814,9 @@ impl CompressedKnotVectorV {
         let is_uniform = self.is_uniform.clone();
         is_uniform.to_writer(_w)?;
         let knots_cond = !is_uniform.value;
-        let knots = self.knots.as_ref().unwrap();
+        let mut knots: &CompressedKnotsV = &Default::default();
         if knots_cond {
+            knots = self.knots.as_ref().unwrap();
             knots.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -17521,18 +18837,22 @@ impl CompressedWeights {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}CompressedWeights::from_reader()", indent::get());
+        trace!(
+            "{}CompressedWeights::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut number_bit_weight: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_bit_weight = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 6)?;
         let weights_cond = number_bit_weight.value > 30;
         let mut weights: Vec<Double> = Vec::with_capacity(
-            (_ctx.CompressedNurbs_number_ccpt_in_u * _ctx.CompressedNurbs_number_ccpt_in_v)
+            (_ctx.compressed_nurbs.number_ccpt_in_u * _ctx.compressed_nurbs.number_ccpt_in_v)
                 as usize,
         );
         if weights_cond {
             for _i in
-                0..(_ctx.CompressedNurbs_number_ccpt_in_u * _ctx.CompressedNurbs_number_ccpt_in_v)
+                0..(_ctx.compressed_nurbs.number_ccpt_in_u * _ctx.compressed_nurbs.number_ccpt_in_v)
             {
                 let element = Double::from_reader(rdr)?;
                 weights.push(element);
@@ -17545,12 +18865,12 @@ impl CompressedWeights {
         }
         let compressed_weights_cond = number_bit_weight.value <= 30;
         let mut compressed_weights: Vec<DoubleWithVariableBitNumber> = Vec::with_capacity(
-            (_ctx.CompressedNurbs_number_ccpt_in_u * _ctx.CompressedNurbs_number_ccpt_in_v)
+            (_ctx.compressed_nurbs.number_ccpt_in_u * _ctx.compressed_nurbs.number_ccpt_in_v)
                 as usize,
         );
         if compressed_weights_cond {
             for _i in
-                0..(_ctx.CompressedNurbs_number_ccpt_in_u * _ctx.CompressedNurbs_number_ccpt_in_v)
+                0..(_ctx.compressed_nurbs.number_ccpt_in_u * _ctx.compressed_nurbs.number_ccpt_in_v)
             {
                 let element = DoubleWithVariableBitNumber::from_reader(
                     rdr,
@@ -17590,8 +18910,9 @@ impl CompressedWeights {
             }
         }
         let weight_tolerance_cond = number_bit_weight.value <= 30;
-        let weight_tolerance = self.weight_tolerance.as_ref().unwrap();
+        let mut weight_tolerance: &Double = &Default::default();
         if weight_tolerance_cond {
+            weight_tolerance = self.weight_tolerance.as_ref().unwrap();
             weight_tolerance.to_writer(_w)?;
         }
         let compressed_weights = self.compressed_weights.clone();
@@ -17631,7 +18952,11 @@ impl CompressedNurbs {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}CompressedNurbs::from_reader()", indent::get());
+        trace!(
+            "{}CompressedNurbs::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut degree_in_u: UnsignedIntegerWithVariableBitNumber = Default::default();
         degree_in_u = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 5)?;
@@ -17649,24 +18974,43 @@ impl CompressedNurbs {
         };
         let mut number_stored_knots_in_u: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_stored_knots_in_u = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 16)?;
+        _ctx.compressed_nurbs.set0(
+            degree_in_u.value,
+            degree_in_v.value,
+            number_stored_knots_in_u.value,
+        );
         _ctx.CompressedNurbs_number_stored_knots_in_u = number_stored_knots_in_u.value;
         let mut mult_u: Vec<CompressedMultiplicitiesU> =
             Vec::with_capacity((number_stored_knots_in_u.value) as usize);
         for _i in 0..(number_stored_knots_in_u.value) {
             let element = CompressedMultiplicitiesU::from_reader(rdr, _ctx)?;
+            trace!(
+                "{}CompressedNurbs.mult_u[{}]: {:#?}",
+                indent::get(),
+                &_i,
+                &element
+            );
             mult_u.push(element);
         }
-        _ctx.CompressedNurbs_number_ccpt_in_u = sum_up_u(&mult_u) - degree_in_u.value - 1;
         let mut number_stored_knots_in_v: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_stored_knots_in_v = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 16)?;
+        _ctx.compressed_nurbs
+            .set1(&mult_u, number_stored_knots_in_v.value);
         _ctx.CompressedNurbs_number_stored_knots_in_v = number_stored_knots_in_v.value;
         let mut mult_v: Vec<CompressedMultiplicitiesV> =
             Vec::with_capacity((number_stored_knots_in_v.value) as usize);
         for _i in 0..(number_stored_knots_in_v.value) {
             let element = CompressedMultiplicitiesV::from_reader(rdr, _ctx)?;
+            trace!(
+                "{}CompressedNurbs.mult_v[{}]: {:#?}",
+                indent::get(),
+                &_i,
+                &element
+            );
             mult_v.push(element);
         }
-        _ctx.CompressedNurbs_number_ccpt_in_v = sum_up_v(&mult_v) - degree_in_v.value - 1;
+        _ctx.compressed_nurbs.set2(&mult_v);
+        /*_ctx.CompressedNurbs_number_ccpt_in_v = sum_up_v(&mult_v) - degree_in_v.value - 1*/
         let mut is_closed_in_u: Boolean = Default::default();
         is_closed_in_u = Boolean::from_reader(rdr)?;
         let mut is_closed_in_v: Boolean = Default::default();
@@ -17677,11 +19021,19 @@ impl CompressedNurbs {
         _ctx.CompressedNurbs_number_of_bits_for_isomin = number_of_bits_for_isomin.value;
         let mut number_of_bits_for_rest: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_of_bits_for_rest = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 20)?;
+        _ctx.compressed_nurbs.set3(
+            is_closed_in_u.value,
+            is_closed_in_v.value,
+            number_of_bits_for_isomin.value,
+            number_of_bits_for_rest.value,
+        );
         _ctx.CompressedNurbs_number_of_bits_for_rest = number_of_bits_for_rest.value;
         let mut compressed_control_points: CompressedControlPoints = Default::default();
         compressed_control_points = CompressedControlPoints::from_reader(rdr, _ctx)?;
+        _ctx.compressed_nurbs.set4(&compressed_control_points);
         let mut knot_vector_u: CompressedKnotVectorU = Default::default();
         knot_vector_u = CompressedKnotVectorU::from_reader(rdr, _ctx)?;
+        _ctx.compressed_nurbs.set5(&knot_vector_u);
         let mut knot_vector_v: CompressedKnotVectorV = Default::default();
         knot_vector_v = CompressedKnotVectorV::from_reader(rdr, _ctx)?;
         let mut is_rational: Boolean = Default::default();
@@ -17748,8 +19100,9 @@ impl CompressedNurbs {
         let is_rational = self.is_rational.clone();
         is_rational.to_writer(_w)?;
         let weights_cond = !!is_rational;
-        let weights = self.weights.as_ref().unwrap();
+        let mut weights: &CompressedWeights = &Default::default();
         if weights_cond {
+            weights = self.weights.as_ref().unwrap();
             weights.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -17757,13 +19110,13 @@ impl CompressedNurbs {
 }
 
 /// https://github.com/pdf-association/pdf-issues/issues/666
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, Copy)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct IsoNurbsTrimCrv {
     pub iso_boundary: Boolean,
+    pub hermite: Option<PRC_HCG_BSplineHermiteCurve>,
     pub is_a_circle: Option<Boolean>,
     pub compressed_circle: Option<PRC_HCG_Circle>,
-    pub compressed_line: Option<PRC_HCG_Line>,
 }
 impl IsoNurbsTrimCrv {
     #[allow(unused_assignments)]
@@ -17771,28 +19124,35 @@ impl IsoNurbsTrimCrv {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}IsoNurbsTrimCrv::from_reader()", indent::get());
+        trace!(
+            "{}IsoNurbsTrimCrv::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut iso_boundary: Boolean = Default::default();
         iso_boundary = Boolean::from_reader(rdr)?;
+        let hermite_cond = iso_boundary.value;
+        let mut hermite: PRC_HCG_BSplineHermiteCurve = Default::default();
+        if hermite_cond {
+            hermite = PRC_HCG_BSplineHermiteCurve::from_reader(rdr, _ctx)?;
+        }
         let is_a_circle_cond = !iso_boundary.value;
         let mut is_a_circle: Boolean = Default::default();
         if is_a_circle_cond {
             is_a_circle = Boolean::from_reader(rdr)?;
         }
+        if !iso_boundary.value && !is_a_circle.value {
+            error!("No PRC_HCG_Line stored! TODO: ends are to be calculated based on LoopVertexN.");
+        };
         let compressed_circle_cond = !iso_boundary.value && is_a_circle.value;
         let mut compressed_circle: PRC_HCG_Circle = Default::default();
         if compressed_circle_cond {
             compressed_circle = PRC_HCG_Circle::from_reader(rdr, _ctx)?;
         }
-        warn!("IsoNurbsTrimCrv.compressed_line field contains FIXME!");
-        let compressed_line_cond = !iso_boundary.value && !is_a_circle.value;
-        let mut compressed_line: PRC_HCG_Line = Default::default();
-        if compressed_line_cond {
-            compressed_line = PRC_HCG_Line::from_reader(rdr, _ctx)?;
-        }
         let rv = Self {
             iso_boundary,
+            hermite: if hermite_cond { Some(hermite) } else { None },
             is_a_circle: if is_a_circle_cond {
                 Some(is_a_circle)
             } else {
@@ -17800,11 +19160,6 @@ impl IsoNurbsTrimCrv {
             },
             compressed_circle: if compressed_circle_cond {
                 Some(compressed_circle)
-            } else {
-                None
-            },
-            compressed_line: if compressed_line_cond {
-                Some(compressed_line)
             } else {
                 None
             },
@@ -17818,26 +19173,29 @@ impl IsoNurbsTrimCrv {
     ) -> std::io::Result<()> {
         let iso_boundary = self.iso_boundary.clone();
         iso_boundary.to_writer(_w)?;
+        let hermite_cond = iso_boundary.value;
+        let mut hermite: &PRC_HCG_BSplineHermiteCurve = &Default::default();
+        if hermite_cond {
+            hermite = self.hermite.as_ref().unwrap();
+            hermite.to_writer(_w, _ctx)?;
+        }
         let is_a_circle_cond = !iso_boundary.value;
-        let is_a_circle = self.is_a_circle.as_ref().unwrap();
+        let mut is_a_circle: &Boolean = &Default::default();
         if is_a_circle_cond {
+            is_a_circle = self.is_a_circle.as_ref().unwrap();
             is_a_circle.to_writer(_w)?;
         }
         let compressed_circle_cond = !iso_boundary.value && is_a_circle.value;
-        let compressed_circle = self.compressed_circle.as_ref().unwrap();
+        let mut compressed_circle: &PRC_HCG_Circle = &Default::default();
         if compressed_circle_cond {
+            compressed_circle = self.compressed_circle.as_ref().unwrap();
             compressed_circle.to_writer(_w, _ctx)?;
-        }
-        let compressed_line_cond = !iso_boundary.value && !is_a_circle.value;
-        let compressed_line = self.compressed_line.as_ref().unwrap();
-        if compressed_line_cond {
-            compressed_line.to_writer(_w, _ctx)?;
         }
         Ok(())
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, Copy)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct IsoNurbsTrimCurve {
     pub is_referenced: Boolean,
@@ -17850,7 +19208,11 @@ impl IsoNurbsTrimCurve {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}IsoNurbsTrimCurve::from_reader()", indent::get());
+        trace!(
+            "{}IsoNurbsTrimCurve::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut is_referenced: Boolean = Default::default();
         is_referenced = Boolean::from_reader(rdr)?;
@@ -17890,14 +19252,16 @@ impl IsoNurbsTrimCurve {
         let is_referenced = self.is_referenced.clone();
         is_referenced.to_writer(_w)?;
         let trim_curve_index_cond = is_referenced.value;
-        let trim_curve_index = self.trim_curve_index.as_ref().unwrap();
+        let mut trim_curve_index: &UnsignedIntegerWithVariableBitNumber = &Default::default();
         if trim_curve_index_cond {
+            trim_curve_index = self.trim_curve_index.as_ref().unwrap();
             trim_curve_index
                 .to_writer(_w, _ctx.BrepDataCompress_number_of_bits_to_store_reference)?;
         }
         let trim_curve_cond = !is_referenced.value;
-        let trim_curve = self.trim_curve.as_ref().unwrap();
+        let mut trim_curve: &IsoNurbsTrimCrv = &Default::default();
         if trim_curve_cond {
+            trim_curve = self.trim_curve.as_ref().unwrap();
             trim_curve.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -17912,7 +19276,10 @@ pub struct PRC_HCG_IsoNurbs {
     pub orientation_loop_with_surface: Boolean,
     pub sense_array: [Boolean; 3],
     pub surface: CompressedNurbs,
-    pub curves: [IsoNurbsTrimCurve; 4],
+    pub curve0: IsoNurbsTrimCurve,
+    pub curve1: IsoNurbsTrimCurve,
+    pub curve2: IsoNurbsTrimCurve,
+    pub curve3: IsoNurbsTrimCurve,
     pub loop_vertex0: Option<CompressedVertex>,
     pub loop_vertex1: Option<CompressedVertex>,
     pub loop_vertex2: Option<CompressedVertex>,
@@ -17924,11 +19291,19 @@ impl PRC_HCG_IsoNurbs {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_HCG_IsoNurbs::from_reader()", indent::get());
+        trace!(
+            "{}PRC_HCG_IsoNurbs::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         _ctx.set_compressed_iso_spline(true);
+        _ctx.ContentCompressedFace_owner_enter(true);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        if (PRC_HCG_IsoNurbs) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_HCG_IsoNurbs,
             PrcCompressedFaceType::try_from(id.value).unwrap()
@@ -17944,39 +19319,59 @@ impl PRC_HCG_IsoNurbs {
         }
         let mut surface: CompressedNurbs = Default::default();
         surface = CompressedNurbs::from_reader(rdr, _ctx)?;
-        let mut curves: [IsoNurbsTrimCurve; 4] = [Default::default(); 4];
-        for i in 0..4 {
-            curves[i as usize] = IsoNurbsTrimCurve::from_reader(rdr, _ctx)?;
-        }
-        let loop_vertex0_cond = curves[0].is_referenced.value && curves[1].is_referenced.value;
+        let mut curve0: IsoNurbsTrimCurve = Default::default();
+        curve0 = IsoNurbsTrimCurve::from_reader(rdr, _ctx)?;
+        trace!("{}curve0: {:?}", indent::get(), &curve0);
+        let mut curve1: IsoNurbsTrimCurve = Default::default();
+        curve1 = IsoNurbsTrimCurve::from_reader(rdr, _ctx)?;
+        trace!("{}curve1: {:?}", indent::get(), &curve1);
+        let mut curve2: IsoNurbsTrimCurve = Default::default();
+        curve2 = IsoNurbsTrimCurve::from_reader(rdr, _ctx)?;
+        trace!("{}curve2: {:?}", indent::get(), &curve2);
+        let mut curve3: IsoNurbsTrimCurve = Default::default();
+        curve3 = IsoNurbsTrimCurve::from_reader(rdr, _ctx)?;
+        trace!("{}curve3: {:?}", indent::get(), &curve3);
+        let loop_vertex0_cond = !curve0.trim_curve.as_ref().unwrap().iso_boundary.value
+            || !curve1.trim_curve.as_ref().unwrap().iso_boundary.value;
         let mut loop_vertex0: CompressedVertex = Default::default();
         if loop_vertex0_cond {
             loop_vertex0 = CompressedVertex::from_reader(rdr, _ctx)?;
+            trace!("{}loop_vertex0: {:?}", indent::get(), &loop_vertex0);
         }
-        let loop_vertex1_cond = curves[1].is_referenced.value && curves[2].is_referenced.value;
+        let loop_vertex1_cond = !curve1.trim_curve.as_ref().unwrap().iso_boundary.value
+            || !curve2.trim_curve.as_ref().unwrap().iso_boundary.value;
         let mut loop_vertex1: CompressedVertex = Default::default();
         if loop_vertex1_cond {
             loop_vertex1 = CompressedVertex::from_reader(rdr, _ctx)?;
+            trace!("{}loop_vertex1: {:?}", indent::get(), &loop_vertex1);
         }
-        let loop_vertex2_cond = curves[2].is_referenced.value && curves[3].is_referenced.value;
+        let loop_vertex2_cond = !curve2.trim_curve.as_ref().unwrap().iso_boundary.value
+            || !curve3.trim_curve.as_ref().unwrap().iso_boundary.value;
         let mut loop_vertex2: CompressedVertex = Default::default();
         if loop_vertex2_cond {
             loop_vertex2 = CompressedVertex::from_reader(rdr, _ctx)?;
+            trace!("{}loop_vertex2: {:?}", indent::get(), &loop_vertex2);
         }
-        let loop_vertex3_cond = curves[3].is_referenced.value && curves[0].is_referenced.value;
+        let loop_vertex3_cond = !curve3.trim_curve.as_ref().unwrap().iso_boundary.value
+            || !curve0.trim_curve.as_ref().unwrap().iso_boundary.value;
         let mut loop_vertex3: CompressedVertex = Default::default();
         if loop_vertex3_cond {
             loop_vertex3 = CompressedVertex::from_reader(rdr, _ctx)?;
+            trace!("{}loop_vertex3: {:?}", indent::get(), &loop_vertex3);
         }
         _ctx.set_compressed_iso_spline(false);
         _ctx.pop_face_type();
+        _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
             id,
             orientation_surface_with_shell,
             orientation_loop_with_surface,
             sense_array,
             surface,
-            curves,
+            curve0,
+            curve1,
+            curve2,
+            curve3,
             loop_vertex0: if loop_vertex0_cond {
                 Some(loop_vertex0)
             } else {
@@ -18017,28 +19412,40 @@ impl PRC_HCG_IsoNurbs {
         }
         let surface = self.surface.clone();
         surface.to_writer(_w, _ctx)?;
-        let curves = self.curves.clone();
-        for i in &self.curves {
-            i.to_writer(_w, _ctx)?;
-        }
-        let loop_vertex0_cond = curves[0].is_referenced.value && curves[1].is_referenced.value;
-        let loop_vertex0 = self.loop_vertex0.as_ref().unwrap();
+        let curve0 = self.curve0.clone();
+        curve0.to_writer(_w, _ctx)?;
+        let curve1 = self.curve1.clone();
+        curve1.to_writer(_w, _ctx)?;
+        let curve2 = self.curve2.clone();
+        curve2.to_writer(_w, _ctx)?;
+        let curve3 = self.curve3.clone();
+        curve3.to_writer(_w, _ctx)?;
+        let loop_vertex0_cond = !curve0.trim_curve.as_ref().unwrap().iso_boundary.value
+            || !curve1.trim_curve.as_ref().unwrap().iso_boundary.value;
+        let mut loop_vertex0: &CompressedVertex = &Default::default();
         if loop_vertex0_cond {
+            loop_vertex0 = self.loop_vertex0.as_ref().unwrap();
             loop_vertex0.to_writer(_w, _ctx)?;
         }
-        let loop_vertex1_cond = curves[1].is_referenced.value && curves[2].is_referenced.value;
-        let loop_vertex1 = self.loop_vertex1.as_ref().unwrap();
+        let loop_vertex1_cond = !curve1.trim_curve.as_ref().unwrap().iso_boundary.value
+            || !curve2.trim_curve.as_ref().unwrap().iso_boundary.value;
+        let mut loop_vertex1: &CompressedVertex = &Default::default();
         if loop_vertex1_cond {
+            loop_vertex1 = self.loop_vertex1.as_ref().unwrap();
             loop_vertex1.to_writer(_w, _ctx)?;
         }
-        let loop_vertex2_cond = curves[2].is_referenced.value && curves[3].is_referenced.value;
-        let loop_vertex2 = self.loop_vertex2.as_ref().unwrap();
+        let loop_vertex2_cond = !curve2.trim_curve.as_ref().unwrap().iso_boundary.value
+            || !curve3.trim_curve.as_ref().unwrap().iso_boundary.value;
+        let mut loop_vertex2: &CompressedVertex = &Default::default();
         if loop_vertex2_cond {
+            loop_vertex2 = self.loop_vertex2.as_ref().unwrap();
             loop_vertex2.to_writer(_w, _ctx)?;
         }
-        let loop_vertex3_cond = curves[3].is_referenced.value && curves[0].is_referenced.value;
-        let loop_vertex3 = self.loop_vertex3.as_ref().unwrap();
+        let loop_vertex3_cond = !curve3.trim_curve.as_ref().unwrap().iso_boundary.value
+            || !curve0.trim_curve.as_ref().unwrap().iso_boundary.value;
+        let mut loop_vertex3: &CompressedVertex = &Default::default();
         if loop_vertex3_cond {
+            loop_vertex3 = self.loop_vertex3.as_ref().unwrap();
             loop_vertex3.to_writer(_w, _ctx)?;
         }
         Ok(())
@@ -18056,7 +19463,11 @@ impl CompressedFace {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}CompressedFace::from_reader()", indent::get());
+        trace!(
+            "{}CompressedFace::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: CompressedFace_idConcrete =
@@ -18104,8 +19515,9 @@ impl CompressedFace {
                 CompressedFace_idConcrete::agf(PRC_HCG_AnaGenericFace::from_reader(rdr, _ctx)?)
             }
             _ => panic!(
-                "CompressedFace: Unrecognized subtype: {}!",
-                id_type_id.to_string()
+                "CompressedFace: Unrecognized subtype: {}! bp={}",
+                id_type_id.to_string(),
+                rdr.position_in_bits()?
             ),
         };
         let rv = Self { id_concrete };
@@ -18167,6 +19579,7 @@ pub struct CompressedShell {
     pub single_face: Boolean,
     pub number_of_faces: Option<NumberOfBitsThenUnsignedInteger>,
     pub faces: Vec<CompressedFace>,
+    /// https://github.com/pdf-association/pdf-issues/issues/752#issuecomment-4572953990
     pub is_an_iso_face: Vec<Boolean>,
 }
 impl CompressedShell {
@@ -18175,7 +19588,11 @@ impl CompressedShell {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}CompressedShell::from_reader()", indent::get());
+        trace!(
+            "{}CompressedShell::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut single_face: Boolean = Default::default();
         single_face = Boolean::from_reader(rdr)?;
@@ -18219,6 +19636,7 @@ impl CompressedShell {
             let element = Boolean::from_reader(rdr)?;
             is_an_iso_face.push(element);
         }
+        _ctx.CompressedShell_reorder_faces();
         let rv = Self {
             single_face,
             number_of_faces: if number_of_faces_cond {
@@ -18239,8 +19657,9 @@ impl CompressedShell {
         let single_face = self.single_face.clone();
         single_face.to_writer(_w)?;
         let number_of_faces_cond = !single_face;
-        let number_of_faces = self.number_of_faces.as_ref().unwrap();
+        let mut number_of_faces: &NumberOfBitsThenUnsignedInteger = &Default::default();
         if number_of_faces_cond {
+            number_of_faces = self.number_of_faces.as_ref().unwrap();
             number_of_faces.to_writer(_w)?;
         }
         let faces = self.faces.clone();
@@ -18267,7 +19686,11 @@ impl CompressedConnex {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}CompressedConnex::from_reader()", indent::get());
+        trace!(
+            "{}CompressedConnex::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut number_of_shells: NumberOfBitsThenUnsignedInteger = Default::default();
         number_of_shells = NumberOfBitsThenUnsignedInteger::from_reader(rdr)?;
@@ -18310,7 +19733,11 @@ impl MultipleCompressedConnex {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}MultipleCompressedConnex::from_reader()", indent::get());
+        trace!(
+            "{}MultipleCompressedConnex::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut number_of_connex: NumberOfBitsThenUnsignedInteger = Default::default();
         number_of_connex = NumberOfBitsThenUnsignedInteger::from_reader(rdr)?;
@@ -18341,13 +19768,15 @@ impl MultipleCompressedConnex {
     }
 }
 
+/// https://github.com/pdf-association/pdf-issues/issues/753
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_SingleWireBodyCompress {
     pub id: UnsignedInteger,
     pub base: ContentBody,
-    /// guesswork, have not found this assignment documented anywhere, but number_of_bits_to_store_reference is still not set
+    /// this assignment is confirmed by https://github.com/pdf-association/pdf-issues/issues/753
     pub curve_tolerance: Double,
+    pub dummy: [Boolean; 1],
     pub compressed_curve: CompressedCurve,
 }
 impl PRC_TYPE_TOPO_SingleWireBodyCompress {
@@ -18357,28 +19786,38 @@ impl PRC_TYPE_TOPO_SingleWireBodyCompress {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_TOPO_SingleWireBodyCompress::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_TOPO_SingleWireBodyCompress::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         _ctx.set_curve_trimming_face(false);
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_TOPO_SingleWireBodyCompress) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_TOPO_SingleWireBodyCompress,
             PrcType::try_from(id.value).unwrap()
         );
         let mut base: ContentBody = Default::default();
         base = ContentBody::from_reader(rdr, _ctx)?;
-        warn!("PRC_TYPE_TOPO_SingleWireBodyCompress.curve_tolerance field contains FIXME!");
+        trace!("{}base: {:?}", indent::get(), &base);
+        error!("bp={}", rdr.position_in_bits()?);
         let mut curve_tolerance: Double = Default::default();
         curve_tolerance = Double::from_reader(rdr)?;
         trace!("{}curve_tolerance: {:?}", indent::get(), &curve_tolerance);
         _ctx.brep_data_compressed_tolerance = curve_tolerance.value;
         _ctx.nurbs_tolerance = _ctx.brep_data_compressed_tolerance / 5.0;
+        let mut dummy: [Boolean; 1] = [Default::default(); 1];
+        for i in 0..1 {
+            dummy[i as usize] = Boolean::from_reader(rdr)?;
+            trace!("dummy[{}]: {:#?}", i, &dummy[i as usize]);
+        }
         let mut compressed_curve: CompressedCurve = Default::default();
         compressed_curve = CompressedCurve::from_reader(rdr, _ctx)?;
-        UnsignedInteger::search_and_seek_back(rdr, PrcType::PRC_TYPE_TOPO_Context as u32, 9999, 5);
+        trace!("{}compressed_curve: {:?}", indent::get(), &compressed_curve);
         let _ = _ctx
             .se
             .eval(rdr, PRC_TYPE_TOPO_SingleWireBodyCompress as u32, false, 0);
@@ -18386,6 +19825,7 @@ impl PRC_TYPE_TOPO_SingleWireBodyCompress {
             id,
             base,
             curve_tolerance,
+            dummy,
             compressed_curve,
         };
         Ok(rv)
@@ -18401,6 +19841,10 @@ impl PRC_TYPE_TOPO_SingleWireBodyCompress {
         base.to_writer(_w, _ctx)?;
         let curve_tolerance = self.curve_tolerance.clone();
         curve_tolerance.to_writer(_w)?;
+        let dummy = self.dummy.clone();
+        for i in &self.dummy {
+            i.to_writer(_w)?;
+        }
         let compressed_curve = self.compressed_curve.clone();
         compressed_curve.to_writer(_w, _ctx)?;
         Ok(())
@@ -18428,13 +19872,17 @@ impl PRC_TYPE_TOPO_BrepDataCompress {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_TOPO_BrepDataCompress::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_TOPO_BrepDataCompress::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         _ctx.BrepDataCompress_enter();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_TOPO_BrepDataCompress) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_TOPO_BrepDataCompress,
             PrcType::try_from(id.value).unwrap()
@@ -18516,13 +19964,15 @@ impl PRC_TYPE_TOPO_BrepDataCompress {
         let single_connex = self.single_connex.clone();
         single_connex.to_writer(_w)?;
         let single_cond = !!single_connex;
-        let single = self.single.as_ref().unwrap();
+        let mut single: &CompressedShell = &Default::default();
         if single_cond {
+            single = self.single.as_ref().unwrap();
             single.to_writer(_w, _ctx)?;
         }
         let multi_cond = !single_connex;
-        let multi = self.multi.as_ref().unwrap();
+        let mut multi: &MultipleCompressedConnex = &Default::default();
         if multi_cond {
+            multi = self.multi.as_ref().unwrap();
             multi.to_writer(_w, _ctx)?;
         }
         let base_topology_data = self.base_topology_data.clone();
@@ -18544,7 +19994,11 @@ impl PRC_TYPE_TOPO_Body {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_TOPO_Body::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_TOPO_Body::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_TOPO_Body_idConcrete =
@@ -18567,8 +20021,9 @@ impl PRC_TYPE_TOPO_Body {
                 PRC_TYPE_TOPO_BrepDataCompress::from_reader(rdr, _ctx)?,
             ),
             _ => panic!(
-                "PRC_TYPE_TOPO_Body: Unrecognized subtype: {}!",
-                id_type_id.to_string()
+                "PRC_TYPE_TOPO_Body: Unrecognized subtype: {}! bp={}",
+                id_type_id.to_string(),
+                rdr.position_in_bits()?
             ),
         };
         let _ = _ctx.se.eval(rdr, PRC_TYPE_TOPO_Body as u32, false, 0);
@@ -18629,10 +20084,17 @@ impl PRC_TYPE_TOPO_Context {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}PRC_TYPE_TOPO_Context::from_reader()", indent::get());
+        trace!(
+            "{}PRC_TYPE_TOPO_Context::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_TOPO_Context) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(PRC_TYPE_TOPO_Context, PrcType::try_from(id.value).unwrap());
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
@@ -18702,15 +20164,17 @@ impl PRC_TYPE_TOPO_Context {
         let has_face_thickness = self.has_face_thickness.clone();
         has_face_thickness.to_writer(_w)?;
         let face_thicknes_cond = !!has_face_thickness;
-        let face_thicknes = self.face_thicknes.as_ref().unwrap();
+        let mut face_thicknes: &Double = &Default::default();
         if face_thicknes_cond {
+            face_thicknes = self.face_thicknes.as_ref().unwrap();
             face_thicknes.to_writer(_w)?;
         }
         let has_scale = self.has_scale.clone();
         has_scale.to_writer(_w)?;
         let scale_cond = !!has_scale;
-        let scale = self.scale.as_ref().unwrap();
+        let mut scale: &Double = &Default::default();
         if scale_cond {
+            scale = self.scale.as_ref().unwrap();
             scale.to_writer(_w)?;
         }
         let number_of_bodies = self.number_of_bodies.clone();
@@ -18736,7 +20200,11 @@ impl FileStructureExactGeometry {
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
-        trace!("{}FileStructureExactGeometry::from_reader()", indent::get());
+        trace!(
+            "{}FileStructureExactGeometry::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
         let _ig = indent::IndentGuard::new();
         let mut topo_context_count: UnsignedInteger = Default::default();
         topo_context_count = UnsignedInteger::from_reader(rdr)?;
@@ -18744,6 +20212,12 @@ impl FileStructureExactGeometry {
             Vec::with_capacity((topo_context_count.value) as usize);
         for _i in 0..(topo_context_count.value) {
             let element = PRC_TYPE_TOPO_Context::from_reader(rdr, _ctx)?;
+            trace!(
+                "{}FileStructureExactGeometry.topo_contexts[{}]: {:#?}",
+                indent::get(),
+                &_i,
+                &element
+            );
             topo_contexts.push(element);
         }
         let rv = Self {
@@ -18783,12 +20257,16 @@ impl PRC_TYPE_ASM_FileStructureGeometry {
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
         trace!(
-            "{}PRC_TYPE_ASM_FileStructureGeometry::from_reader()",
-            indent::get()
+            "{}PRC_TYPE_ASM_FileStructureGeometry::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        if (PRC_TYPE_ASM_FileStructureGeometry) != (PrcType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        }
         assert_eq!(
             PRC_TYPE_ASM_FileStructureGeometry,
             PrcType::try_from(id.value).unwrap()
@@ -18823,6 +20301,350 @@ impl PRC_TYPE_ASM_FileStructureGeometry {
         exact_geometry.to_writer(_w, _ctx)?;
         let user_data = self.user_data.clone();
         user_data.to_writer(_w)?;
+        Ok(())
+    }
+}
+
+#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[allow(non_camel_case_types)]
+pub struct UncompressedUniqueId {
+    pub unique_id: [UncompressedUnsignedInteger; 4],
+}
+impl UncompressedUniqueId {
+    #[allow(unused_assignments)]
+    pub fn from_reader<R: std::io::Read + std::io::Seek>(
+        rdr: &mut R,
+        _ctx: &mut PrcParsingContext,
+    ) -> io::Result<Self> {
+        trace!(
+            "{}UncompressedUniqueId::from_reader() byp={}",
+            indent::get(),
+            position(rdr)?
+        );
+        let _ig = indent::IndentGuard::new();
+        let mut unique_id: [UncompressedUnsignedInteger; 4] = [Default::default(); 4];
+        for i in 0..4 {
+            unique_id[i as usize] = UncompressedUnsignedInteger::from_reader(rdr)?;
+        }
+        let rv = Self { unique_id };
+        Ok(rv)
+    }
+    pub fn to_writer<W: Write>(
+        &self,
+        _w: &mut W,
+        _ctx: &mut PrcParsingContext,
+    ) -> std::io::Result<()> {
+        let unique_id = self.unique_id.clone();
+        for i in &self.unique_id {
+            i.to_writer(_w)?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[allow(non_camel_case_types)]
+pub struct UncompressedBlock {
+    pub block_size: UncompressedUnsignedInteger,
+    pub block: UncompressedByteArray,
+}
+impl UncompressedBlock {
+    #[allow(unused_assignments)]
+    pub fn from_reader<R: std::io::Read + std::io::Seek>(
+        rdr: &mut R,
+        _ctx: &mut PrcParsingContext,
+    ) -> io::Result<Self> {
+        trace!(
+            "{}UncompressedBlock::from_reader() byp={}",
+            indent::get(),
+            position(rdr)?
+        );
+        let _ig = indent::IndentGuard::new();
+        let mut block_size: UncompressedUnsignedInteger = Default::default();
+        block_size = UncompressedUnsignedInteger::from_reader(rdr)?;
+        let mut block: UncompressedByteArray = Default::default();
+        block = UncompressedByteArray::from_reader(rdr, block_size.value)?;
+        let rv = Self { block_size, block };
+        Ok(rv)
+    }
+    pub fn to_writer<W: Write>(
+        &self,
+        _w: &mut W,
+        _ctx: &mut PrcParsingContext,
+    ) -> std::io::Result<()> {
+        let block_size = self.block_size.clone();
+        block_size.to_writer(_w)?;
+        let block = self.block.clone();
+        block.to_writer(_w, block_size.value)?;
+        Ok(())
+    }
+}
+
+#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[allow(non_camel_case_types)]
+pub struct UncompressedFileStructureHeader {
+    pub magic: UncompressedByteArray,
+    pub minimal_version_for_read: UncompressedUnsignedInteger,
+    pub authoring_version: UncompressedUnsignedInteger,
+    pub unique_id_file: UncompressedUniqueId,
+    pub unique_id_application: UncompressedUniqueId,
+    pub file_count: UncompressedUnsignedInteger,
+    pub files: Vec<UncompressedBlock>,
+}
+impl UncompressedFileStructureHeader {
+    #[allow(unused_assignments)]
+    pub fn from_reader<R: std::io::Read + std::io::Seek>(
+        rdr: &mut R,
+        _ctx: &mut PrcParsingContext,
+    ) -> io::Result<Self> {
+        trace!(
+            "{}UncompressedFileStructureHeader::from_reader() byp={}",
+            indent::get(),
+            position(rdr)?
+        );
+        let _ig = indent::IndentGuard::new();
+        let mut magic: UncompressedByteArray = Default::default();
+        magic = UncompressedByteArray::from_reader(rdr, 3)?;
+        assert_eq!(b"PRC", magic.a.as_slice());
+        let mut minimal_version_for_read: UncompressedUnsignedInteger = Default::default();
+        minimal_version_for_read = UncompressedUnsignedInteger::from_reader(rdr)?;
+        let mut authoring_version: UncompressedUnsignedInteger = Default::default();
+        authoring_version = UncompressedUnsignedInteger::from_reader(rdr)?;
+        let mut unique_id_file: UncompressedUniqueId = Default::default();
+        unique_id_file = UncompressedUniqueId::from_reader(rdr, _ctx)?;
+        let mut unique_id_application: UncompressedUniqueId = Default::default();
+        unique_id_application = UncompressedUniqueId::from_reader(rdr, _ctx)?;
+        let mut file_count: UncompressedUnsignedInteger = Default::default();
+        file_count = UncompressedUnsignedInteger::from_reader(rdr)?;
+        let mut files: Vec<UncompressedBlock> = Vec::with_capacity((file_count.value) as usize);
+        for _i in 0..(file_count.value) {
+            let element = UncompressedBlock::from_reader(rdr, _ctx)?;
+            files.push(element);
+        }
+        let rv = Self {
+            magic,
+            minimal_version_for_read,
+            authoring_version,
+            unique_id_file,
+            unique_id_application,
+            file_count,
+            files,
+        };
+        Ok(rv)
+    }
+    pub fn to_writer<W: Write>(
+        &self,
+        _w: &mut W,
+        _ctx: &mut PrcParsingContext,
+    ) -> std::io::Result<()> {
+        let magic = self.magic.clone();
+        magic.to_writer(_w, 3)?;
+        let minimal_version_for_read = self.minimal_version_for_read.clone();
+        minimal_version_for_read.to_writer(_w)?;
+        let authoring_version = self.authoring_version.clone();
+        authoring_version.to_writer(_w)?;
+        let unique_id_file = self.unique_id_file.clone();
+        unique_id_file.to_writer(_w, _ctx)?;
+        let unique_id_application = self.unique_id_application.clone();
+        unique_id_application.to_writer(_w, _ctx)?;
+        let file_count = self.file_count.clone();
+        file_count.to_writer(_w)?;
+        let files = self.files.clone();
+        for i in &self.files {
+            i.to_writer(_w, _ctx)?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[allow(non_camel_case_types)]
+pub struct UncompressedFileStructureDescription {
+    pub unique_id: UncompressedUniqueId,
+    pub reserved: UncompressedUnsignedInteger,
+    pub section_count: UncompressedUnsignedInteger,
+    pub header_start_offset: UncompressedUnsignedInteger,
+    pub glob_start_offset: UncompressedUnsignedInteger,
+    pub tree_start_offset: UncompressedUnsignedInteger,
+    pub tess_start_offset: UncompressedUnsignedInteger,
+    pub geom_start_offset: UncompressedUnsignedInteger,
+    pub extg_start_offset: UncompressedUnsignedInteger,
+}
+impl UncompressedFileStructureDescription {
+    #[allow(unused_assignments)]
+    pub fn from_reader<R: std::io::Read + std::io::Seek>(
+        rdr: &mut R,
+        _ctx: &mut PrcParsingContext,
+    ) -> io::Result<Self> {
+        trace!(
+            "{}UncompressedFileStructureDescription::from_reader() byp={}",
+            indent::get(),
+            position(rdr)?
+        );
+        let _ig = indent::IndentGuard::new();
+        let mut unique_id: UncompressedUniqueId = Default::default();
+        unique_id = UncompressedUniqueId::from_reader(rdr, _ctx)?;
+        let mut reserved: UncompressedUnsignedInteger = Default::default();
+        reserved = UncompressedUnsignedInteger::from_reader(rdr)?;
+        let mut section_count: UncompressedUnsignedInteger = Default::default();
+        section_count = UncompressedUnsignedInteger::from_reader(rdr)?;
+        assert_eq!(section_count.value, 6);
+        let mut header_start_offset: UncompressedUnsignedInteger = Default::default();
+        header_start_offset = UncompressedUnsignedInteger::from_reader(rdr)?;
+        let mut glob_start_offset: UncompressedUnsignedInteger = Default::default();
+        glob_start_offset = UncompressedUnsignedInteger::from_reader(rdr)?;
+        let mut tree_start_offset: UncompressedUnsignedInteger = Default::default();
+        tree_start_offset = UncompressedUnsignedInteger::from_reader(rdr)?;
+        let mut tess_start_offset: UncompressedUnsignedInteger = Default::default();
+        tess_start_offset = UncompressedUnsignedInteger::from_reader(rdr)?;
+        let mut geom_start_offset: UncompressedUnsignedInteger = Default::default();
+        geom_start_offset = UncompressedUnsignedInteger::from_reader(rdr)?;
+        let mut extg_start_offset: UncompressedUnsignedInteger = Default::default();
+        extg_start_offset = UncompressedUnsignedInteger::from_reader(rdr)?;
+        let rv = Self {
+            unique_id,
+            reserved,
+            section_count,
+            header_start_offset,
+            glob_start_offset,
+            tree_start_offset,
+            tess_start_offset,
+            geom_start_offset,
+            extg_start_offset,
+        };
+        Ok(rv)
+    }
+    pub fn to_writer<W: Write>(
+        &self,
+        _w: &mut W,
+        _ctx: &mut PrcParsingContext,
+    ) -> std::io::Result<()> {
+        let unique_id = self.unique_id.clone();
+        unique_id.to_writer(_w, _ctx)?;
+        let reserved = self.reserved.clone();
+        reserved.to_writer(_w)?;
+        let section_count = self.section_count.clone();
+        section_count.to_writer(_w)?;
+        let header_start_offset = self.header_start_offset.clone();
+        header_start_offset.to_writer(_w)?;
+        let glob_start_offset = self.glob_start_offset.clone();
+        glob_start_offset.to_writer(_w)?;
+        let tree_start_offset = self.tree_start_offset.clone();
+        tree_start_offset.to_writer(_w)?;
+        let tess_start_offset = self.tess_start_offset.clone();
+        tess_start_offset.to_writer(_w)?;
+        let geom_start_offset = self.geom_start_offset.clone();
+        geom_start_offset.to_writer(_w)?;
+        let extg_start_offset = self.extg_start_offset.clone();
+        extg_start_offset.to_writer(_w)?;
+        Ok(())
+    }
+}
+
+#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[allow(non_camel_case_types)]
+pub struct UncompressedFileHeader {
+    pub magic: UncompressedByteArray,
+    pub minimal_version_for_read: UncompressedUnsignedInteger,
+    pub authoring_version: UncompressedUnsignedInteger,
+    pub unique_id_file: UncompressedUniqueId,
+    pub unique_id_application: UncompressedUniqueId,
+    pub num_file_structs: UncompressedUnsignedInteger,
+    pub fsi: Vec<UncompressedFileStructureDescription>,
+    pub mf_start_offset: UncompressedUnsignedInteger,
+    pub mf_end_offset: UncompressedUnsignedInteger,
+    pub num_uncompr_files: UncompressedUnsignedInteger,
+    pub uncompressed_files: Vec<UncompressedBlock>,
+}
+impl UncompressedFileHeader {
+    #[allow(unused_assignments)]
+    pub fn from_reader<R: std::io::Read + std::io::Seek>(
+        rdr: &mut R,
+        _ctx: &mut PrcParsingContext,
+    ) -> io::Result<Self> {
+        trace!(
+            "{}UncompressedFileHeader::from_reader() byp={}",
+            indent::get(),
+            position(rdr)?
+        );
+        let _ig = indent::IndentGuard::new();
+        let mut magic: UncompressedByteArray = Default::default();
+        magic = UncompressedByteArray::from_reader(rdr, 3)?;
+        assert_eq!(b"PRC", magic.a.as_slice());
+        let mut minimal_version_for_read: UncompressedUnsignedInteger = Default::default();
+        minimal_version_for_read = UncompressedUnsignedInteger::from_reader(rdr)?;
+        let mut authoring_version: UncompressedUnsignedInteger = Default::default();
+        authoring_version = UncompressedUnsignedInteger::from_reader(rdr)?;
+        let mut unique_id_file: UncompressedUniqueId = Default::default();
+        unique_id_file = UncompressedUniqueId::from_reader(rdr, _ctx)?;
+        let mut unique_id_application: UncompressedUniqueId = Default::default();
+        unique_id_application = UncompressedUniqueId::from_reader(rdr, _ctx)?;
+        let mut num_file_structs: UncompressedUnsignedInteger = Default::default();
+        num_file_structs = UncompressedUnsignedInteger::from_reader(rdr)?;
+        let mut fsi: Vec<UncompressedFileStructureDescription> =
+            Vec::with_capacity((num_file_structs.value) as usize);
+        for _i in 0..(num_file_structs.value) {
+            let element = UncompressedFileStructureDescription::from_reader(rdr, _ctx)?;
+            fsi.push(element);
+        }
+        let mut mf_start_offset: UncompressedUnsignedInteger = Default::default();
+        mf_start_offset = UncompressedUnsignedInteger::from_reader(rdr)?;
+        let mut mf_end_offset: UncompressedUnsignedInteger = Default::default();
+        mf_end_offset = UncompressedUnsignedInteger::from_reader(rdr)?;
+        let mut num_uncompr_files: UncompressedUnsignedInteger = Default::default();
+        num_uncompr_files = UncompressedUnsignedInteger::from_reader(rdr)?;
+        let mut uncompressed_files: Vec<UncompressedBlock> =
+            Vec::with_capacity((num_uncompr_files.value) as usize);
+        for _i in 0..(num_uncompr_files.value) {
+            let element = UncompressedBlock::from_reader(rdr, _ctx)?;
+            uncompressed_files.push(element);
+        }
+        let rv = Self {
+            magic,
+            minimal_version_for_read,
+            authoring_version,
+            unique_id_file,
+            unique_id_application,
+            num_file_structs,
+            fsi,
+            mf_start_offset,
+            mf_end_offset,
+            num_uncompr_files,
+            uncompressed_files,
+        };
+        Ok(rv)
+    }
+    pub fn to_writer<W: Write>(
+        &self,
+        _w: &mut W,
+        _ctx: &mut PrcParsingContext,
+    ) -> std::io::Result<()> {
+        let magic = self.magic.clone();
+        magic.to_writer(_w, 3)?;
+        let minimal_version_for_read = self.minimal_version_for_read.clone();
+        minimal_version_for_read.to_writer(_w)?;
+        let authoring_version = self.authoring_version.clone();
+        authoring_version.to_writer(_w)?;
+        let unique_id_file = self.unique_id_file.clone();
+        unique_id_file.to_writer(_w, _ctx)?;
+        let unique_id_application = self.unique_id_application.clone();
+        unique_id_application.to_writer(_w, _ctx)?;
+        let num_file_structs = self.num_file_structs.clone();
+        num_file_structs.to_writer(_w)?;
+        let fsi = self.fsi.clone();
+        for i in &self.fsi {
+            i.to_writer(_w, _ctx)?;
+        }
+        let mf_start_offset = self.mf_start_offset.clone();
+        mf_start_offset.to_writer(_w)?;
+        let mf_end_offset = self.mf_end_offset.clone();
+        mf_end_offset.to_writer(_w)?;
+        let num_uncompr_files = self.num_uncompr_files.clone();
+        num_uncompr_files.to_writer(_w)?;
+        let uncompressed_files = self.uncompressed_files.clone();
+        for i in &self.uncompressed_files {
+            i.to_writer(_w, _ctx)?;
+        }
         Ok(())
     }
 }
