@@ -62,7 +62,6 @@ def describe_one_section(_case):
     #rv = subprocess.run(["bash", "-c", f'{cmd}'], capture_output = True, check = True)#, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
     #print(rv)
     rv = subprocess.run([f"{describe}", f"{arg}", f'{file_path}'], capture_output = False, check = False, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
-    #print(f'{file_path}/{arg}: {len(rv.stdout)}\n{rv.stdout}', flush=True)
     with lz4.frame.open(f"{folder}/{log_path}.lz4", mode='wb', compression_level=6) as fp:
         bytes_written = fp.write(rv.stdout)
     #print(type(rv), rv)

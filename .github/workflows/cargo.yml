@@ -91,8 +91,6 @@ jobs:
       if: runner.os == 'Windows'
       run: |
         cd prc-db/prcs
-        #Get-ChildItem .
-        #Get-Acl *.prc
         echo "RUST_LOG=debug RUST_BACKTRACE=1 describe=../../target/${{env.BUILD_TYPE}}/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt"
         $env:RUST_LOG="debug";
         $env:RUST_BACKTRACE="1";
@@ -101,7 +99,6 @@ jobs:
         python3 ../../testdata/prc_describe_mt
         cd ../..
         #Get-ChildItem -Recurse target
-        Get-ChildItem .
 
     - name: No bb t regressions
       if: runner.os != 'Windows'
