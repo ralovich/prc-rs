@@ -20,6 +20,11 @@
 - [ ] B-rep tessellation
 - [ ] PRC write/output
 
+## How to parse a PRC
+
+Build the CMake project under `src/tools/prc2json`. Afterwards run `prc2json input.prc | jq > output.json`.
+
+
 ## PRC Test Data
 
 [Test data](https://github.com/ralovich/prc-db) is currently very scarce, many parts (structures) of the PRC standard are not yet found in existing test data. If you can, please submit new data (sample 3D PDFs) to increase the coverage of the library.
