@@ -81,7 +81,8 @@ impl UncompressedFileHeader {
         rdr.seek(std::io::SeekFrom::Start(self.mf_start_offset.value as u64))?;
         rdr.read_exact(&mut mf_compr)?;
 
-        let mut sections_decompressed: Vec<[Vec<u8>; 6]> = vec![Default::default(); self.fsi.len()];
+        let mut sections_decompressed: Vec<[Vec<u8>; PrcSectionKind::Count as usize]> =
+            vec![Default::default(); self.fsi.len()];
         for i in 0..self.fsi.len() {
             let fs = &self.fsi[i];
 
@@ -398,23 +399,6 @@ impl UncompressedFileHeader {
                     fs.unique_id.unique_id[3].value,
                 ],
                 header: head,
-                // header: FileStructureHeader {
-                //     verread: head.minimal_version_for_read.value,
-                //     verauth: head.authoring_version.value,
-                //     uuid_file: [
-                //         head.unique_id_file.unique_id[0].value,
-                //         head.unique_id_file.unique_id[1].value,
-                //         head.unique_id_file.unique_id[2].value,
-                //         head.unique_id_file.unique_id[3].value,
-                //     ],
-                //     uuid_application: [
-                //         head.unique_id_application.unique_id[0].value,
-                //         head.unique_id_application.unique_id[1].value,
-                //         head.unique_id_application.unique_id[2].value,
-                //         head.unique_id_application.unique_id[3].value,
-                //     ],
-                //     files: head.files.into_iter().map(|f| f.block.a).collect(),
-                // },
                 schema,
                 glob,
                 tree,
@@ -424,8 +408,9 @@ impl UncompressedFileHeader {
             });
             debug!("--fsi[{}] len={} ENDOK--", i, self.fsi.len());
         }
+        let mut mf_decompressed: Vec<u8> = Vec::new();
         if all || _modelfile {
-            let mf_decompressed = decompress(&mf_compr).unwrap();
+            mf_decompressed = decompress(&mf_compr).unwrap();
             trace!(
                 "mf uncompressed {} -> {}",
                 mf_compr.len(),
@@ -469,6 +454,8 @@ impl UncompressedFileHeader {
                 warn!("--{:?} many uninterpreted tailing bits! --", "ModelFile");
             }
         }
+        ctx.prc_parsed.sections_decompressed = sections_decompressed;
+        ctx.prc_parsed.mf_decompressed = mf_decompressed;
 
         Ok(())
     }

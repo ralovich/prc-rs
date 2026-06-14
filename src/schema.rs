@@ -5,6 +5,7 @@
 // SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026. All rights reserved.
 
 use crate::builtin;
+use crate::common::PrcParsingContext;
 use crate::constants::PrcType;
 use crate::prc_gen::Entity_schema_definition;
 use bitstream_io::BitReader;
@@ -384,7 +385,7 @@ impl SchemaEvaluator {
                     //panic!("EPRCSchema_Father_Type not yet implemented!");
                 }
             }
-            val if val == EPRCSchema_Vector_2D as u32 => {
+            val if val == EPRCSchema_Vector_2D as u32 || val == EPRCSchema_Extent_1D as u32 => {
                 if skip {
                     debug!("{}SKIP READV2D", s.i());
                 } else {
@@ -408,6 +409,64 @@ impl SchemaEvaluator {
                     debug!("{}READV3D {:?}", s.i(), tmp);
                     s.dstack
                         .push(VariableKind::Vector3D(tmp[0], tmp[1], tmp[2]));
+                }
+            }
+            val if val == EPRCSchema_Extent_2D as u32 => {
+                if skip {
+                    debug!("{}SKIP READExtent_2D", s.i());
+                } else {
+                    let tmp: [f64; 4] = [
+                        builtin::Double::from_reader(rdr).unwrap().value,
+                        builtin::Double::from_reader(rdr).unwrap().value,
+                        builtin::Double::from_reader(rdr).unwrap().value,
+                        builtin::Double::from_reader(rdr).unwrap().value,
+                    ];
+                    debug!("{}READExtent_2D {:?}", s.i(), tmp);
+                    s.dstack.push(VariableKind::Vector2D(tmp[0], tmp[1]));
+                    s.dstack.push(VariableKind::Vector2D(tmp[2], tmp[3]));
+                }
+            }
+            val if val == EPRCSchema_Extent_3D as u32 => {
+                if skip {
+                    debug!("{}SKIP READExtent_3D", s.i());
+                } else {
+                    let tmp: [f64; 6] = [
+                        builtin::Double::from_reader(rdr).unwrap().value,
+                        builtin::Double::from_reader(rdr).unwrap().value,
+                        builtin::Double::from_reader(rdr).unwrap().value,
+                        builtin::Double::from_reader(rdr).unwrap().value,
+                        builtin::Double::from_reader(rdr).unwrap().value,
+                        builtin::Double::from_reader(rdr).unwrap().value,
+                    ];
+                    debug!("{}READExtent_3D {:?}", s.i(), tmp);
+                    s.dstack
+                        .push(VariableKind::Vector3D(tmp[0], tmp[1], tmp[2]));
+                    s.dstack
+                        .push(VariableKind::Vector3D(tmp[3], tmp[4], tmp[5]));
+                }
+            }
+            val if val == EPRCSchema_Ptr_Surface as u32 => {
+                if skip {
+                    debug!("{}SKIP READPtr_Surface", s.i());
+                } else {
+                    let mut ctx: PrcParsingContext = Default::default();
+                    let tmp = crate::prc_gen::PRC_TYPE_SURF::from_reader(rdr, &mut ctx)
+                        .unwrap()
+                        .id_concrete;
+                    debug!("{}READPtr_Surface {:?}", s.i(), tmp);
+                    // TODO: push on dstack?
+                }
+            }
+            val if val == EPRCSchema_Ptr_Curve as u32 => {
+                if skip {
+                    debug!("{}SKIP READPtr_Curve", s.i());
+                } else {
+                    let mut ctx: PrcParsingContext = Default::default();
+                    let tmp = crate::prc_gen::PRC_TYPE_CRV::from_reader(rdr, &mut ctx)
+                        .unwrap()
+                        .id_concrete;
+                    debug!("{}READPtr_Curve {:?}", s.i(), tmp);
+                    // TODO: push on dstack?
                 }
             }
             val if val == EPRCSchema_For as u32 => {

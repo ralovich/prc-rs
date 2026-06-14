@@ -16838,12 +16838,12 @@ impl PRC_HCG_BSplineHermiteCurve {
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_CompositeCurve {
     /// this field is OPTIONAL
-    pub id: Option<CompressedEntityType>,
+    pub id: CompressedEntityType,
     pub start_end_data: StartEndData,
     pub dimension: UnsignedInteger,
     pub is_closed: Boolean,
     pub number_of_curves: UnsignedInteger,
-    pub curves: Vec<CompressedCurve>,
+    pub curves: Vec<RefOrCompressedCurve>,
 }
 impl PRC_HCG_CompositeCurve {
     #[allow(unused_assignments)]
@@ -16858,18 +16858,15 @@ impl PRC_HCG_CompositeCurve {
         );
         let _ig = indent::IndentGuard::new();
         warn!("PRC_HCG_CompositeCurve.id field contains FIXME!");
-        let id_cond = !_ctx.is_compressed_iso_spline();
         let mut id: CompressedEntityType = Default::default();
-        if id_cond {
-            id = CompressedEntityType::from_reader(rdr)?;
-            if (PRC_HCG_CompositeCurve) != (PrcCompressedCurveType::try_from(id.value).unwrap()) {
-                warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
-            }
-            assert_eq!(
-                PRC_HCG_CompositeCurve,
-                PrcCompressedCurveType::try_from(id.value).unwrap()
-            );
+        id = CompressedEntityType::from_reader(rdr)?;
+        if (PRC_HCG_CompositeCurve) != (PrcCompressedCurveType::try_from(id.value).unwrap()) {
+            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
         }
+        assert_eq!(
+            PRC_HCG_CompositeCurve,
+            PrcCompressedCurveType::try_from(id.value).unwrap()
+        );
         let mut start_end_data: StartEndData = Default::default();
         start_end_data = StartEndData::from_reader(rdr, _ctx)?;
         let mut dimension: UnsignedInteger = Default::default();
@@ -16878,14 +16875,14 @@ impl PRC_HCG_CompositeCurve {
         is_closed = Boolean::from_reader(rdr)?;
         let mut number_of_curves: UnsignedInteger = Default::default();
         number_of_curves = UnsignedInteger::from_reader(rdr)?;
-        let mut curves: Vec<CompressedCurve> =
+        let mut curves: Vec<RefOrCompressedCurve> =
             Vec::with_capacity((number_of_curves.value) as usize);
         for _i in 0..(number_of_curves.value) {
-            let element = CompressedCurve::from_reader(rdr, _ctx)?;
+            let element = RefOrCompressedCurve::from_reader(rdr, _ctx)?;
             curves.push(element);
         }
         let rv = Self {
-            id: if id_cond { Some(id) } else { None },
+            id,
             start_end_data,
             dimension,
             is_closed,
@@ -16899,12 +16896,8 @@ impl PRC_HCG_CompositeCurve {
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> std::io::Result<()> {
-        let id_cond = !_ctx.is_compressed_iso_spline();
-        let mut id: &CompressedEntityType = &Default::default();
-        if id_cond {
-            id = self.id.as_ref().unwrap();
-            id.to_writer(_w)?;
-        }
+        let id = self.id.clone();
+        id.to_writer(_w)?;
         let start_end_data = self.start_end_data.clone();
         start_end_data.to_writer(_w, _ctx)?;
         let dimension = self.dimension.clone();
@@ -18176,7 +18169,7 @@ impl CompressedMultiplicitiesU {
         if multiplicity_cond {
             multiplicity = UnsignedIntegerWithVariableBitNumber::from_reader(
                 rdr,
-                _ctx.CompressedNurbs_number_bits_u,
+                _ctx.compressed_nurbs.number_bits_u,
             )?;
         }
         let rv = Self {
@@ -18200,7 +18193,7 @@ impl CompressedMultiplicitiesU {
         let mut multiplicity: &UnsignedIntegerWithVariableBitNumber = &Default::default();
         if multiplicity_cond {
             multiplicity = self.multiplicity.as_ref().unwrap();
-            multiplicity.to_writer(_w, _ctx.CompressedNurbs_number_bits_u)?;
+            multiplicity.to_writer(_w, _ctx.compressed_nurbs.number_bits_u)?;
         }
         Ok(())
     }
@@ -18232,7 +18225,7 @@ impl CompressedMultiplicitiesV {
         if multiplicity_cond {
             multiplicity = UnsignedIntegerWithVariableBitNumber::from_reader(
                 rdr,
-                _ctx.CompressedNurbs_number_bits_v,
+                _ctx.compressed_nurbs.number_bits_v,
             )?;
         }
         let rv = Self {
@@ -18256,7 +18249,7 @@ impl CompressedMultiplicitiesV {
         let mut multiplicity: &UnsignedIntegerWithVariableBitNumber = &Default::default();
         if multiplicity_cond {
             multiplicity = self.multiplicity.as_ref().unwrap();
-            multiplicity.to_writer(_w, _ctx.CompressedNurbs_number_bits_v)?;
+            multiplicity.to_writer(_w, _ctx.compressed_nurbs.number_bits_v)?;
         }
         Ok(())
     }
@@ -18292,7 +18285,7 @@ impl InteriorCompressedControlPoints {
         if p1z_cond {
             p1z = DoubleWithVariableBitNumber::from_reader(
                 rdr,
-                _ctx.CompressedNurbs_number_of_bits_for_rest + 1,
+                _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
         }
@@ -18301,7 +18294,7 @@ impl InteriorCompressedControlPoints {
         if p2x_cond {
             p2x = DoubleWithVariableBitNumber::from_reader(
                 rdr,
-                _ctx.CompressedNurbs_number_of_bits_for_rest + 1,
+                _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
         }
@@ -18310,7 +18303,7 @@ impl InteriorCompressedControlPoints {
         if p2y_cond {
             p2y = DoubleWithVariableBitNumber::from_reader(
                 rdr,
-                _ctx.CompressedNurbs_number_of_bits_for_rest + 1,
+                _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
         }
@@ -18319,7 +18312,7 @@ impl InteriorCompressedControlPoints {
         if p3x_cond {
             p3x = DoubleWithVariableBitNumber::from_reader(
                 rdr,
-                _ctx.CompressedNurbs_number_of_bits_for_rest + 1,
+                _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
         }
@@ -18328,7 +18321,7 @@ impl InteriorCompressedControlPoints {
         if p3y_cond {
             p3y = DoubleWithVariableBitNumber::from_reader(
                 rdr,
-                _ctx.CompressedNurbs_number_of_bits_for_rest + 1,
+                _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
         }
@@ -18337,7 +18330,7 @@ impl InteriorCompressedControlPoints {
         if p3z_cond {
             p3z = DoubleWithVariableBitNumber::from_reader(
                 rdr,
-                _ctx.CompressedNurbs_number_of_bits_for_rest + 1,
+                _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
         }
@@ -18365,7 +18358,7 @@ impl InteriorCompressedControlPoints {
             p1z = self.p1z.as_ref().unwrap();
             p1z.to_writer(
                 _w,
-                _ctx.CompressedNurbs_number_of_bits_for_rest + 1,
+                _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
         }
@@ -18375,7 +18368,7 @@ impl InteriorCompressedControlPoints {
             p2x = self.p2x.as_ref().unwrap();
             p2x.to_writer(
                 _w,
-                _ctx.CompressedNurbs_number_of_bits_for_rest + 1,
+                _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
         }
@@ -18385,7 +18378,7 @@ impl InteriorCompressedControlPoints {
             p2y = self.p2y.as_ref().unwrap();
             p2y.to_writer(
                 _w,
-                _ctx.CompressedNurbs_number_of_bits_for_rest + 1,
+                _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
         }
@@ -18395,7 +18388,7 @@ impl InteriorCompressedControlPoints {
             p3x = self.p3x.as_ref().unwrap();
             p3x.to_writer(
                 _w,
-                _ctx.CompressedNurbs_number_of_bits_for_rest + 1,
+                _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
         }
@@ -18405,7 +18398,7 @@ impl InteriorCompressedControlPoints {
             p3y = self.p3y.as_ref().unwrap();
             p3y.to_writer(
                 _w,
-                _ctx.CompressedNurbs_number_of_bits_for_rest + 1,
+                _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
         }
@@ -18415,7 +18408,7 @@ impl InteriorCompressedControlPoints {
             p3z = self.p3z.as_ref().unwrap();
             p3z.to_writer(
                 _w,
-                _ctx.CompressedNurbs_number_of_bits_for_rest + 1,
+                _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
         }
@@ -18450,7 +18443,7 @@ impl CompressedControlPoints {
         for _i in 0..(_ctx.compressed_nurbs.number_ccpt_in_v - 1) {
             let element = Point3DWithVariableBitNumber::from_reader(
                 rdr,
-                _ctx.CompressedNurbs_number_of_bits_for_isomin + 1,
+                _ctx.compressed_nurbs.number_of_bits_for_isomin + 1,
                 _ctx.nurbs_tolerance,
             )?;
             ccpt_in_v.push(element);
@@ -18460,7 +18453,7 @@ impl CompressedControlPoints {
         for _i in 0..(_ctx.compressed_nurbs.number_ccpt_in_u - 1) {
             let element = Point3DWithVariableBitNumber::from_reader(
                 rdr,
-                _ctx.CompressedNurbs_number_of_bits_for_isomin + 1,
+                _ctx.compressed_nurbs.number_of_bits_for_isomin + 1,
                 _ctx.nurbs_tolerance,
             )?;
             ccpt_in_u.push(element);
@@ -18494,7 +18487,7 @@ impl CompressedControlPoints {
         for i in &self.ccpt_in_v {
             i.to_writer(
                 _w,
-                _ctx.CompressedNurbs_number_of_bits_for_isomin + 1,
+                _ctx.compressed_nurbs.number_of_bits_for_isomin + 1,
                 _ctx.nurbs_tolerance,
             )?;
         }
@@ -18502,7 +18495,7 @@ impl CompressedControlPoints {
         for i in &self.ccpt_in_u {
             i.to_writer(
                 _w,
-                _ctx.CompressedNurbs_number_of_bits_for_isomin + 1,
+                _ctx.compressed_nurbs.number_of_bits_for_isomin + 1,
                 _ctx.nurbs_tolerance,
             )?;
         }
@@ -18532,18 +18525,18 @@ impl CompressedKnot {
             rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
-        let knot_cond = _ctx.CompressedKnots_number_bit_parameter > 30;
+        let knot_cond = _ctx.compressed_nurbs.number_bit_parameter > 30;
         let mut knot: Double = Default::default();
         if knot_cond {
             knot = Double::from_reader(rdr)?;
         }
-        let knot_vbr_cond = _ctx.CompressedKnots_number_bit_parameter <= 30;
+        let knot_vbr_cond = _ctx.compressed_nurbs.number_bit_parameter <= 30;
         let mut knot_vbr: DoubleWithVariableBitNumber = Default::default();
         if knot_vbr_cond {
             knot_vbr = DoubleWithVariableBitNumber::from_reader(
                 rdr,
-                _ctx.CompressedKnots_number_bit_parameter + 1,
-                _ctx.CompressedKnots_tolerance_parameter,
+                _ctx.compressed_nurbs.number_bit_parameter + 1,
+                _ctx.compressed_nurbs.tolerance_parameter,
             )?;
         }
         let rv = Self {
@@ -18557,20 +18550,20 @@ impl CompressedKnot {
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> std::io::Result<()> {
-        let knot_cond = _ctx.CompressedKnots_number_bit_parameter > 30;
+        let knot_cond = _ctx.compressed_nurbs.number_bit_parameter > 30;
         let mut knot: &Double = &Default::default();
         if knot_cond {
             knot = self.knot.as_ref().unwrap();
             knot.to_writer(_w)?;
         }
-        let knot_vbr_cond = _ctx.CompressedKnots_number_bit_parameter <= 30;
+        let knot_vbr_cond = _ctx.compressed_nurbs.number_bit_parameter <= 30;
         let mut knot_vbr: &DoubleWithVariableBitNumber = &Default::default();
         if knot_vbr_cond {
             knot_vbr = self.knot_vbr.as_ref().unwrap();
             knot_vbr.to_writer(
                 _w,
-                _ctx.CompressedKnots_number_bit_parameter + 1,
-                _ctx.CompressedKnots_tolerance_parameter,
+                _ctx.compressed_nurbs.number_bit_parameter + 1,
+                _ctx.compressed_nurbs.tolerance_parameter,
             )?;
         }
         Ok(())
@@ -18607,12 +18600,21 @@ impl CompressedKnotsU {
         }
         let mut number_bit_parameter: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_bit_parameter = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 6)?;
-        _ctx.CompressedKnots_number_bit_parameter = number_bit_parameter.value;
-        _ctx.CompressedKnots_tolerance_parameter =
+        _ctx.compressed_nurbs.number_bit_parameter = number_bit_parameter.value;
+        _ctx.compressed_nurbs.tolerance_parameter =
             1.0_f64 / 2.0_f64.powi(number_bit_parameter.value as i32 - 1);
-        let mut compressed_knots: Vec<CompressedKnot> =
-            Vec::with_capacity((_ctx.CompressedNurbs_number_stored_knots_in_u) as usize);
-        for _i in 0..(_ctx.CompressedNurbs_number_stored_knots_in_u) {
+        let mut compressed_knots: Vec<CompressedKnot> = Vec::with_capacity(
+            (if is_pseudo_uniform.value {
+                2
+            } else {
+                _ctx.compressed_nurbs.number_of_knots_in_u
+            }) as usize,
+        );
+        for _i in 0..(if is_pseudo_uniform.value {
+            2
+        } else {
+            _ctx.compressed_nurbs.number_of_knots_in_u
+        }) {
             let element = CompressedKnot::from_reader(rdr, _ctx)?;
             compressed_knots.push(element);
         }
@@ -18681,12 +18683,21 @@ impl CompressedKnotsV {
         }
         let mut number_bit_parameter: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_bit_parameter = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 6)?;
-        _ctx.CompressedKnots_number_bit_parameter = number_bit_parameter.value;
-        _ctx.CompressedKnots_tolerance_parameter =
+        _ctx.compressed_nurbs.number_bit_parameter = number_bit_parameter.value;
+        _ctx.compressed_nurbs.tolerance_parameter =
             1.0_f64 / 2.0_f64.powi(number_bit_parameter.value as i32 - 1);
-        let mut compressed_knots: Vec<CompressedKnot> =
-            Vec::with_capacity((_ctx.CompressedNurbs_number_stored_knots_in_v) as usize);
-        for _i in 0..(_ctx.CompressedNurbs_number_stored_knots_in_v) {
+        let mut compressed_knots: Vec<CompressedKnot> = Vec::with_capacity(
+            (if is_pseudo_uniform.value {
+                2
+            } else {
+                _ctx.compressed_nurbs.number_of_knots_in_v
+            }) as usize,
+        );
+        for _i in 0..(if is_pseudo_uniform.value {
+            2
+        } else {
+            _ctx.compressed_nurbs.number_of_knots_in_v
+        }) {
             let element = CompressedKnot::from_reader(rdr, _ctx)?;
             compressed_knots.push(element);
         }
@@ -18960,18 +18971,8 @@ impl CompressedNurbs {
         let _ig = indent::IndentGuard::new();
         let mut degree_in_u: UnsignedIntegerWithVariableBitNumber = Default::default();
         degree_in_u = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 5)?;
-        _ctx.CompressedNurbs_number_bits_u = if degree_in_u.value != 0 {
-            ((degree_in_u.value as f64 + 2.0).ln() / (2.0_f64).ln()).ceil() as u32
-        } else {
-            2_u32
-        };
         let mut degree_in_v: UnsignedIntegerWithVariableBitNumber = Default::default();
         degree_in_v = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 5)?;
-        _ctx.CompressedNurbs_number_bits_v = if degree_in_v.value != 0 {
-            ((degree_in_v.value as f64 + 2.0).ln() / (2.0_f64).ln()).ceil() as u32
-        } else {
-            2_u32
-        };
         let mut number_stored_knots_in_u: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_stored_knots_in_u = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 16)?;
         _ctx.compressed_nurbs.set0(
@@ -18979,38 +18980,23 @@ impl CompressedNurbs {
             degree_in_v.value,
             number_stored_knots_in_u.value,
         );
-        _ctx.CompressedNurbs_number_stored_knots_in_u = number_stored_knots_in_u.value;
         let mut mult_u: Vec<CompressedMultiplicitiesU> =
             Vec::with_capacity((number_stored_knots_in_u.value) as usize);
         for _i in 0..(number_stored_knots_in_u.value) {
             let element = CompressedMultiplicitiesU::from_reader(rdr, _ctx)?;
-            trace!(
-                "{}CompressedNurbs.mult_u[{}]: {:#?}",
-                indent::get(),
-                &_i,
-                &element
-            );
             mult_u.push(element);
         }
         let mut number_stored_knots_in_v: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_stored_knots_in_v = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 16)?;
         _ctx.compressed_nurbs
             .set1(&mult_u, number_stored_knots_in_v.value);
-        _ctx.CompressedNurbs_number_stored_knots_in_v = number_stored_knots_in_v.value;
         let mut mult_v: Vec<CompressedMultiplicitiesV> =
             Vec::with_capacity((number_stored_knots_in_v.value) as usize);
         for _i in 0..(number_stored_knots_in_v.value) {
             let element = CompressedMultiplicitiesV::from_reader(rdr, _ctx)?;
-            trace!(
-                "{}CompressedNurbs.mult_v[{}]: {:#?}",
-                indent::get(),
-                &_i,
-                &element
-            );
             mult_v.push(element);
         }
         _ctx.compressed_nurbs.set2(&mult_v);
-        /*_ctx.CompressedNurbs_number_ccpt_in_v = sum_up_v(&mult_v) - degree_in_v.value - 1*/
         let mut is_closed_in_u: Boolean = Default::default();
         is_closed_in_u = Boolean::from_reader(rdr)?;
         let mut is_closed_in_v: Boolean = Default::default();
@@ -19018,7 +19004,7 @@ impl CompressedNurbs {
         let mut number_of_bits_for_isomin: UnsignedIntegerWithVariableBitNumber =
             Default::default();
         number_of_bits_for_isomin = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 20)?;
-        _ctx.CompressedNurbs_number_of_bits_for_isomin = number_of_bits_for_isomin.value;
+        _ctx.compressed_nurbs.number_of_bits_for_isomin = number_of_bits_for_isomin.value;
         let mut number_of_bits_for_rest: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_of_bits_for_rest = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 20)?;
         _ctx.compressed_nurbs.set3(
@@ -19027,7 +19013,6 @@ impl CompressedNurbs {
             number_of_bits_for_isomin.value,
             number_of_bits_for_rest.value,
         );
-        _ctx.CompressedNurbs_number_of_bits_for_rest = number_of_bits_for_rest.value;
         let mut compressed_control_points: CompressedControlPoints = Default::default();
         compressed_control_points = CompressedControlPoints::from_reader(rdr, _ctx)?;
         _ctx.compressed_nurbs.set4(&compressed_control_points);
@@ -19036,6 +19021,7 @@ impl CompressedNurbs {
         _ctx.compressed_nurbs.set5(&knot_vector_u);
         let mut knot_vector_v: CompressedKnotVectorV = Default::default();
         knot_vector_v = CompressedKnotVectorV::from_reader(rdr, _ctx)?;
+        _ctx.compressed_nurbs.set6(&knot_vector_v);
         let mut is_rational: Boolean = Default::default();
         is_rational = Boolean::from_reader(rdr)?;
         let weights_cond = !!is_rational;
@@ -19114,7 +19100,6 @@ impl CompressedNurbs {
 #[allow(non_camel_case_types)]
 pub struct IsoNurbsTrimCrv {
     pub iso_boundary: Boolean,
-    pub hermite: Option<PRC_HCG_BSplineHermiteCurve>,
     pub is_a_circle: Option<Boolean>,
     pub compressed_circle: Option<PRC_HCG_Circle>,
 }
@@ -19132,11 +19117,6 @@ impl IsoNurbsTrimCrv {
         let _ig = indent::IndentGuard::new();
         let mut iso_boundary: Boolean = Default::default();
         iso_boundary = Boolean::from_reader(rdr)?;
-        let hermite_cond = iso_boundary.value;
-        let mut hermite: PRC_HCG_BSplineHermiteCurve = Default::default();
-        if hermite_cond {
-            hermite = PRC_HCG_BSplineHermiteCurve::from_reader(rdr, _ctx)?;
-        }
         let is_a_circle_cond = !iso_boundary.value;
         let mut is_a_circle: Boolean = Default::default();
         if is_a_circle_cond {
@@ -19152,7 +19132,6 @@ impl IsoNurbsTrimCrv {
         }
         let rv = Self {
             iso_boundary,
-            hermite: if hermite_cond { Some(hermite) } else { None },
             is_a_circle: if is_a_circle_cond {
                 Some(is_a_circle)
             } else {
@@ -19173,12 +19152,6 @@ impl IsoNurbsTrimCrv {
     ) -> std::io::Result<()> {
         let iso_boundary = self.iso_boundary.clone();
         iso_boundary.to_writer(_w)?;
-        let hermite_cond = iso_boundary.value;
-        let mut hermite: &PRC_HCG_BSplineHermiteCurve = &Default::default();
-        if hermite_cond {
-            hermite = self.hermite.as_ref().unwrap();
-            hermite.to_writer(_w, _ctx)?;
-        }
         let is_a_circle_cond = !iso_boundary.value;
         let mut is_a_circle: &Boolean = &Default::default();
         if is_a_circle_cond {
@@ -19280,10 +19253,10 @@ pub struct PRC_HCG_IsoNurbs {
     pub curve1: IsoNurbsTrimCurve,
     pub curve2: IsoNurbsTrimCurve,
     pub curve3: IsoNurbsTrimCurve,
+    pub loop_vertex3: Option<CompressedVertex>,
     pub loop_vertex0: Option<CompressedVertex>,
     pub loop_vertex1: Option<CompressedVertex>,
     pub loop_vertex2: Option<CompressedVertex>,
-    pub loop_vertex3: Option<CompressedVertex>,
 }
 impl PRC_HCG_IsoNurbs {
     #[allow(unused_assignments)]
@@ -19331,33 +19304,29 @@ impl PRC_HCG_IsoNurbs {
         let mut curve3: IsoNurbsTrimCurve = Default::default();
         curve3 = IsoNurbsTrimCurve::from_reader(rdr, _ctx)?;
         trace!("{}curve3: {:?}", indent::get(), &curve3);
-        let loop_vertex0_cond = !curve0.trim_curve.as_ref().unwrap().iso_boundary.value
-            || !curve1.trim_curve.as_ref().unwrap().iso_boundary.value;
+        let loop_vertex3_cond = !curve3.is_referenced.value && !curve0.is_referenced.value;
+        let mut loop_vertex3: CompressedVertex = Default::default();
+        if loop_vertex3_cond {
+            loop_vertex3 = CompressedVertex::from_reader(rdr, _ctx)?;
+            trace!("{}loop_vertex3: {:?}", indent::get(), &loop_vertex3);
+        }
+        let loop_vertex0_cond = !curve0.is_referenced.value && !curve1.is_referenced.value;
         let mut loop_vertex0: CompressedVertex = Default::default();
         if loop_vertex0_cond {
             loop_vertex0 = CompressedVertex::from_reader(rdr, _ctx)?;
             trace!("{}loop_vertex0: {:?}", indent::get(), &loop_vertex0);
         }
-        let loop_vertex1_cond = !curve1.trim_curve.as_ref().unwrap().iso_boundary.value
-            || !curve2.trim_curve.as_ref().unwrap().iso_boundary.value;
+        let loop_vertex1_cond = !curve1.is_referenced.value && !curve2.is_referenced.value;
         let mut loop_vertex1: CompressedVertex = Default::default();
         if loop_vertex1_cond {
             loop_vertex1 = CompressedVertex::from_reader(rdr, _ctx)?;
             trace!("{}loop_vertex1: {:?}", indent::get(), &loop_vertex1);
         }
-        let loop_vertex2_cond = !curve2.trim_curve.as_ref().unwrap().iso_boundary.value
-            || !curve3.trim_curve.as_ref().unwrap().iso_boundary.value;
+        let loop_vertex2_cond = !curve2.is_referenced.value && !curve3.is_referenced.value;
         let mut loop_vertex2: CompressedVertex = Default::default();
         if loop_vertex2_cond {
             loop_vertex2 = CompressedVertex::from_reader(rdr, _ctx)?;
             trace!("{}loop_vertex2: {:?}", indent::get(), &loop_vertex2);
-        }
-        let loop_vertex3_cond = !curve3.trim_curve.as_ref().unwrap().iso_boundary.value
-            || !curve0.trim_curve.as_ref().unwrap().iso_boundary.value;
-        let mut loop_vertex3: CompressedVertex = Default::default();
-        if loop_vertex3_cond {
-            loop_vertex3 = CompressedVertex::from_reader(rdr, _ctx)?;
-            trace!("{}loop_vertex3: {:?}", indent::get(), &loop_vertex3);
         }
         _ctx.set_compressed_iso_spline(false);
         _ctx.pop_face_type();
@@ -19372,6 +19341,11 @@ impl PRC_HCG_IsoNurbs {
             curve1,
             curve2,
             curve3,
+            loop_vertex3: if loop_vertex3_cond {
+                Some(loop_vertex3)
+            } else {
+                None
+            },
             loop_vertex0: if loop_vertex0_cond {
                 Some(loop_vertex0)
             } else {
@@ -19384,11 +19358,6 @@ impl PRC_HCG_IsoNurbs {
             },
             loop_vertex2: if loop_vertex2_cond {
                 Some(loop_vertex2)
-            } else {
-                None
-            },
-            loop_vertex3: if loop_vertex3_cond {
-                Some(loop_vertex3)
             } else {
                 None
             },
@@ -19420,33 +19389,29 @@ impl PRC_HCG_IsoNurbs {
         curve2.to_writer(_w, _ctx)?;
         let curve3 = self.curve3.clone();
         curve3.to_writer(_w, _ctx)?;
-        let loop_vertex0_cond = !curve0.trim_curve.as_ref().unwrap().iso_boundary.value
-            || !curve1.trim_curve.as_ref().unwrap().iso_boundary.value;
+        let loop_vertex3_cond = !curve3.is_referenced.value && !curve0.is_referenced.value;
+        let mut loop_vertex3: &CompressedVertex = &Default::default();
+        if loop_vertex3_cond {
+            loop_vertex3 = self.loop_vertex3.as_ref().unwrap();
+            loop_vertex3.to_writer(_w, _ctx)?;
+        }
+        let loop_vertex0_cond = !curve0.is_referenced.value && !curve1.is_referenced.value;
         let mut loop_vertex0: &CompressedVertex = &Default::default();
         if loop_vertex0_cond {
             loop_vertex0 = self.loop_vertex0.as_ref().unwrap();
             loop_vertex0.to_writer(_w, _ctx)?;
         }
-        let loop_vertex1_cond = !curve1.trim_curve.as_ref().unwrap().iso_boundary.value
-            || !curve2.trim_curve.as_ref().unwrap().iso_boundary.value;
+        let loop_vertex1_cond = !curve1.is_referenced.value && !curve2.is_referenced.value;
         let mut loop_vertex1: &CompressedVertex = &Default::default();
         if loop_vertex1_cond {
             loop_vertex1 = self.loop_vertex1.as_ref().unwrap();
             loop_vertex1.to_writer(_w, _ctx)?;
         }
-        let loop_vertex2_cond = !curve2.trim_curve.as_ref().unwrap().iso_boundary.value
-            || !curve3.trim_curve.as_ref().unwrap().iso_boundary.value;
+        let loop_vertex2_cond = !curve2.is_referenced.value && !curve3.is_referenced.value;
         let mut loop_vertex2: &CompressedVertex = &Default::default();
         if loop_vertex2_cond {
             loop_vertex2 = self.loop_vertex2.as_ref().unwrap();
             loop_vertex2.to_writer(_w, _ctx)?;
-        }
-        let loop_vertex3_cond = !curve3.trim_curve.as_ref().unwrap().iso_boundary.value
-            || !curve0.trim_curve.as_ref().unwrap().iso_boundary.value;
-        let mut loop_vertex3: &CompressedVertex = &Default::default();
-        if loop_vertex3_cond {
-            loop_vertex3 = self.loop_vertex3.as_ref().unwrap();
-            loop_vertex3.to_writer(_w, _ctx)?;
         }
         Ok(())
     }
@@ -19858,7 +19823,9 @@ pub struct PRC_TYPE_TOPO_BrepDataCompress {
     pub base: ContentBody,
     pub brep_data_compressed_tolerance: Double,
     pub number_of_bits_to_store_reference: NumberOfBitsThenUnsignedInteger,
+    /// references to CompressedVertex
     pub number_vertex_references: UnsignedIntegerWithVariableBitNumber,
+    /// references to CompressedCurve
     pub number_edge_references: UnsignedIntegerWithVariableBitNumber,
     pub single_connex: Boolean,
     pub single: Option<CompressedShell>,

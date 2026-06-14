@@ -10,10 +10,12 @@
 
 use crate::builtin::*;
 use crate::constants::*;
-use crate::indent;
 use crate::prc_gen::*;
 use crate::schema::SchemaEvaluator;
 use crate::tess_3d_compressed::Tess3dCompressed;
+use crate::tess_3d_wire::Tess3dWire;
+use crate::{compressed_nurbs, indent};
+use bitstream_io::BitReader;
 use log::{debug, error, info, trace, warn};
 use measure_time::debug_time;
 use serde::{Deserialize, Serialize};
@@ -22,6 +24,7 @@ use std::io;
 use std::io::Cursor;
 use std::path::Path;
 //use bson::{bson, Bson};
+use crate::vec3::Vec3;
 
 #[macro_export]
 macro_rules! function {
@@ -48,7 +51,6 @@ pub struct ParsedPrcFileStructure {
 }
 
 /// All information from a parsed PRC. Can be (de-)serialized into e.g. JSON.
-/// TODO: merge with PrcHeader?
 #[derive(Serialize, Deserialize, Debug, Default, Clone, PartialEq)]
 pub struct ParsedPrc {
     pub verread: u32,
@@ -59,6 +61,12 @@ pub struct ParsedPrc {
     pub mf_schema: Schema,
     pub mf: PRC_TYPE_ASM_ModelFile,
     pub uncompr_files: Vec<Vec<u8>>,
+
+    /// decompressed sections from binary PRC
+    #[serde(skip)]
+    pub sections_decompressed: Vec<[Vec<u8>; PrcSectionKind::Count as usize]>,
+    #[serde(skip)]
+    pub mf_decompressed: Vec<u8>,
 }
 impl ParsedPrc {
     pub fn uncompr_files_size(&self) -> u32 {
@@ -67,266 +75,6 @@ impl ParsedPrc {
             num_bytes += self.uncompr_files[i].len() as u32;
         }
         num_bytes
-    }
-}
-
-/// See also [prc_rs::prc_gen::PRC_TYPE_TESS_3D_Wire]
-#[derive(Default, Clone)]
-pub struct Tess3dWire {
-    coordinates: Vec<Double>,
-    wire_indexes: Vec<Integer>,
-    is_segment_color: bool,
-    VertexColors_number_of_colors: u32,
-}
-impl Tess3dWire {
-    pub fn set0(&mut self, coordinates: &Vec<Double>, wire_indexes: &Vec<Integer>) {
-        self.coordinates = coordinates.clone();
-        self.wire_indexes = wire_indexes.clone();
-    }
-    pub fn set1(&mut self, is_segment_color: bool) {
-        self.is_segment_color = is_segment_color;
-    }
-    /// group___tf3_d_wire_tess_data_____serialize_content2.html
-    /// Note that the number of colors is deduced from the number of point indices as calculated from wire_indexes * 3 or 4 (RGB or RGBA).
-    /// It is important to remember that implicit points must also have a color (see Special flags for 3DWireTessData tessellation).
-    pub fn get_num_vertex_colors(&mut self) -> u32 {
-        // TODO
-        let mut wires: Vec<Vec<u32>> = vec![];
-
-        if self.wire_indexes.is_empty() {
-            // If number_of_wire_indexes is zero, the tessellation is given as a single wire edge containing an array of points as described in SerializeContentBaseTessData.
-        } else {
-        }
-
-        // if self.TESS_3D_Wire_inside {
-        //
-        // }
-
-        let mut i = 0;
-        while i < self.wire_indexes.len() {
-            if self.wire_indexes[i].value as u32
-                & Prc3DWireTessFlags::PRC_3DWIRETESSDATA_IsContinuous as u32
-                != 0
-            {
-                warn!("PRC_3DWIRETESSDATA_IsContinuous not implemented!");
-            }
-            if self.wire_indexes[i].value as u32
-                & Prc3DWireTessFlags::PRC_3DWIRETESSDATA_IsClosing as u32
-                != 0
-            {
-                warn!("PRC_3DWIRETESSDATA_IsClosing not implemented!");
-            }
-            // The flag is the leftmost 4 bits and is interpreted using 3D Wire Tess Flags to indicate
-            let number_of_indices_per_wire_edge = self.wire_indexes[i].value as u32 & 0x7FFFFFFF;
-            debug!(
-                "number of indices_per_wire_edge: {}",
-                number_of_indices_per_wire_edge
-            );
-            wires.push(vec![]);
-
-            let start = i + 1;
-            for j in 0..number_of_indices_per_wire_edge {
-                let id = start + j as usize;
-                wires
-                    .last_mut()
-                    .unwrap()
-                    .push(self.wire_indexes[id].value as u32);
-                i += 1;
-            }
-
-            i += 1;
-        }
-
-        self.VertexColors_number_of_colors = 0;
-        for w in wires {
-            if !self.is_segment_color {
-                self.VertexColors_number_of_colors += w.len() as u32;
-            } else {
-                self.VertexColors_number_of_colors += w.len() as u32 - 1;
-            }
-        }
-        // if self.VertexColors_number_of_colors == 62 {
-        //     self.VertexColors_number_of_colors = 60;
-        // }
-        // if self.VertexColors_number_of_colors == 8 {
-        //     self.VertexColors_number_of_colors = 6;
-        // }
-
-        debug!(
-            "VertexColors_number_of_colors: {}",
-            self.VertexColors_number_of_colors
-        );
-        return self.VertexColors_number_of_colors;
-    }
-}
-
-#[derive(Debug, Default, Clone)]
-pub struct ComprNurbs {
-    pub degree_in_u: u32,
-    pub degree_in_v: u32,
-    pub number_bits_u: u32,
-    pub number_bits_v: u32,
-    pub number_ccpt_in_u: u32, // Number_ccpt_in_u = sumOf(mult_u) - degree_in_u - 1
-    //Number_ccpt_in_v = sumOf(mult_v) - degree_in_v - 1
-    pub number_ccpt_in_v: u32,
-    pub number_stored_knots_in_u: u32,
-    pub number_stored_knots_in_v: u32,
-    pub number_of_knots_in_u: u32,
-    pub number_of_knots_in_v: u32,
-    is_closed_in_u: bool,
-    is_closed_in_v: bool,
-    number_of_bits_for_isomin: u32,
-    number_of_bits_for_rest: u32,
-
-    mult_u_flat: Vec<u32>,
-    mult_v_flat: Vec<u32>,
-    knots_u_type_param: u32,
-    knots_u: Vec<f64>,
-}
-impl ComprNurbs {
-    pub fn set0(&mut self, degree_in_u: u32, degree_in_v: u32, number_stored_knots_in_u: u32) {
-        self.degree_in_u = degree_in_u;
-        self.number_bits_u = if degree_in_u != 0 {
-            ((degree_in_u as f64 + 2.0).ln() / (2.0_f64).ln()).ceil() as u32
-        } else {
-            2_u32
-        };
-        self.degree_in_v = degree_in_v;
-        self.number_bits_v = if degree_in_v != 0 {
-            ((degree_in_v as f64 + 2.0).ln() / (2.0_f64).ln()).ceil() as u32
-        } else {
-            2_u32
-        };
-        self.number_stored_knots_in_u = number_stored_knots_in_u;
-        self.number_of_knots_in_u = number_stored_knots_in_u + 2;
-    }
-    pub fn set1(&mut self, mult_u: &Vec<CompressedMultiplicitiesU>, number_stored_knots_in_v: u32) {
-        let sum_u;
-        (self.mult_u_flat, sum_u) = sum_up_u(mult_u);
-        self.number_ccpt_in_u = sum_u - self.degree_in_u - 1;
-        self.number_stored_knots_in_v = number_stored_knots_in_v;
-        self.number_of_knots_in_v = number_stored_knots_in_v + 2;
-    }
-    pub fn set2(&mut self, mult_v: &Vec<CompressedMultiplicitiesV>) {
-        let sum_v;
-        (self.mult_v_flat, sum_v) = sum_up_v(&mult_v);
-        self.number_ccpt_in_v = sum_v - self.degree_in_v - 1;
-    }
-    pub fn set3(
-        &mut self,
-        is_closed_in_u: bool,
-        is_closed_in_v: bool,
-        number_of_bits_for_isomin: u32,
-        number_of_bits_for_rest: u32,
-    ) {
-        self.is_closed_in_u = is_closed_in_u;
-        self.is_closed_in_v = is_closed_in_v;
-        self.number_of_bits_for_isomin = number_of_bits_for_isomin;
-        self.number_of_bits_for_rest = number_of_bits_for_rest;
-        debug!("{:#?}", self);
-    }
-    pub fn set4(&mut self, ccpt: &CompressedControlPoints) {
-        let mut cp: Vec<Vec<[f64; 3]>> =
-            vec![
-                vec![Default::default(); self.number_ccpt_in_v as usize];
-                self.number_ccpt_in_u as usize
-            ];
-        cp[0][0] = [ccpt.p00.x.value, ccpt.p00.y.value, ccpt.p00.z.value];
-        for i in 0..ccpt.ccpt_in_u.len() {
-            // FIXME:
-            cp[i + 1][0] = [
-                cp[i][0][0] + ccpt.ccpt_in_u[i].x,
-                cp[i][0][1] + ccpt.ccpt_in_u[i].y,
-                cp[i][0][2] + ccpt.ccpt_in_u[i].z,
-            ];
-        }
-        for j in 0..ccpt.ccpt_in_v.len() {
-            // FIXME:
-            cp[0][j + 1] = [
-                cp[0][j][0] + ccpt.ccpt_in_v[j].x,
-                cp[0][j][1] + ccpt.ccpt_in_v[j].y,
-                cp[0][j][2] + ccpt.ccpt_in_v[j].z,
-            ];
-        }
-        fn get_interior_pt(
-            ccpt: &CompressedControlPoints,
-            nu: usize,
-            nv: usize,
-            u: usize,
-            v: usize,
-        ) -> [f64; 3] {
-            assert!(nu > 1);
-            assert!(nv > 1);
-            let id = (nv - 1) * u + v;
-            trace!("id={}", id);
-            let inpt = &ccpt.ccpt_interior[id];
-            match inpt._type.value {
-                0 => [0.0, 0.0, 0.0], // FIXME:
-                1 => [0.0, 0.0, inpt.p1z.unwrap().value],
-                2 => [inpt.p2x.unwrap().value, inpt.p2y.unwrap().value, 0.0],
-                3 => [
-                    inpt.p3x.unwrap().value,
-                    inpt.p3y.unwrap().value,
-                    inpt.p3z.unwrap().value,
-                ],
-                _ => unreachable!("v={}", inpt._type.value),
-            }
-        }
-        for u in 1..self.number_ccpt_in_u as usize {
-            for v in 1..self.number_ccpt_in_v as usize {
-                let pt = get_interior_pt(
-                    ccpt,
-                    self.number_ccpt_in_u as usize,
-                    self.number_ccpt_in_v as usize,
-                    u - 1,
-                    v - 1,
-                );
-                cp[u][v] = pt;
-            }
-        }
-
-        debug!("{:#?}", cp);
-    }
-    pub fn set5(&mut self, knot_vector_u: &CompressedKnotVectorU) {
-        //debug!("{:#?}", knot_vector_u);
-        let mut knots = vec![];
-        let type_param: u32;
-        if !knot_vector_u.is_uniform {
-            if knot_vector_u.knots.as_ref().unwrap().is_unknown_form.value {
-                type_param = 1;
-                for knot in knot_vector_u
-                    .knots
-                    .as_ref()
-                    .unwrap()
-                    .compressed_knots
-                    .iter()
-                {
-                    let knot_value;
-                    if knot_vector_u
-                        .knots
-                        .as_ref()
-                        .unwrap()
-                        .number_bit_parameter
-                        .value
-                        > 30
-                    {
-                        knot_value = knot.knot.unwrap().value;
-                    } else {
-                        knot_value = knot.knot_vbr.unwrap().value;
-                    }
-                    assert!(knot_value >= 0.0);
-                    assert!(knot_value <= 1.0);
-                    knots.push(knot_value);
-                }
-            } else {
-                type_param = 2;
-            }
-        } else {
-            type_param = 0;
-        }
-        debug!("U knots {:#?}", (type_param, &knots));
-        self.knots_u_type_param = type_param;
-        self.knots_u = knots;
     }
 }
 
@@ -376,19 +124,8 @@ pub struct PrcParsingContext {
 
     pub brep_data_compressed_tolerance: f64,
     pub nurbs_tolerance: f64, /*= self.brep_data_compressed_tolerance / 5.0*/
-    // used for (Interior)CompressedControlPoints
-    pub CompressedNurbs_number_stored_knots_in_u: u32, /*= self.number_of_knots_in_u ‐ 2*/
-    pub CompressedNurbs_number_stored_knots_in_v: u32, /*= self.number_of_knots_in_v – 2*/
-    pub CompressedNurbs_number_bits_u: u32, /*= (degree_in_u ? ceil[ log( degree_in_u + 2 ) / log(2) ] : 2)*/
-    pub CompressedNurbs_number_bits_v: u32, /*= (degree_in_v ? ceil[ log( degree_in_v + 2 ) / log(2) ] : 2)*/
-    pub CompressedKnots_tolerance_parameter: f64, /*= 1./ 2^( number_bit_parameter ‐1)*/
-    //pub CompressedNurbs_number_ccpt_in_u: u32, // Number_ccpt_in_u = sumOf(mult_u) - degree_in_u - 1
-    //Number_ccpt_in_v = sumOf(mult_v) - degree_in_v - 1
-    //pub CompressedNurbs_number_ccpt_in_v: u32, // CompressedControlPoints https://github.com/pdf-association/pdf-issues/issues/663
-    pub CompressedKnots_number_bit_parameter: u32, // the number of bits used to store knots
-    pub CompressedNurbs_number_of_bits_for_isomin: u32, // number of bits used to store first row and column of control points
-    pub CompressedNurbs_number_of_bits_for_rest: u32, // number of bits to store the remainder of the control points
-    pub compressed_nurbs: ComprNurbs,
+
+    pub compressed_nurbs: compressed_nurbs::CompressedNurbs,
 
     pub VertexColors_number_of_colors: u32,
     pub VertexColors_is_segment_color: bool,
@@ -804,6 +541,55 @@ impl PrcParsingContext {
     pub fn CompressedShell_reorder_faces(&mut self) {
         warn!("TODO: CompressedShell_reorder_faces not yet implemented!");
     }
+
+    pub fn load_prc(&mut self, infname: &std::string::String) -> Result<(), std::io::Error> {
+        debug_time!("load_prc");
+
+        let verbose = true;
+        let all = true;
+        let globals = true;
+        let tree = true;
+        let tess = true;
+        let geom = true;
+        let extgeom = true;
+        let _schema = true;
+        let modelfile = true;
+
+        let bytes = std::fs::read(infname)?;
+        let file_size_bytes = bytes.len();
+        debug!("given {} bytes", file_size_bytes);
+        let mut mem_reader: Cursor<Vec<u8>> = Cursor::new(bytes);
+
+        let header = UncompressedFileHeader::from_reader(&mut mem_reader, self)?;
+
+        header.decompress_sections(
+            &mut mem_reader,
+            self,
+            file_size_bytes,
+            verbose,
+            all,
+            globals,
+            tree,
+            tess,
+            geom,
+            extgeom,
+            _schema,
+            modelfile,
+        )?;
+
+        Ok(())
+    }
+    pub fn save_prc(&mut self, outfname: &std::string::String) -> Result<(), std::io::Error> {
+        debug_time!("save_prc");
+
+        let mut bytes: Vec<u8> = vec![];
+
+        UncompressedFileHeader::compress_and_write(&mut bytes, self).expect("unable to write");
+
+        std::fs::write(outfname, bytes)?;
+
+        Ok(())
+    }
 }
 
 pub fn prc_describe(
@@ -891,12 +677,68 @@ pub fn prc_describe_file(
     }
 }
 
+pub fn prc_search(ctx: &mut PrcParsingContext) -> Result<(), io::Error> {
+    // search decompressed parts bit-by-bit for a value
+    let values_to_search_for = [
+        PrcType::PRC_TYPE_ASM_ModelFile as u32,
+        PrcType::PRC_TYPE_TOPO_Context as u32,
+        PrcType::PRC_TYPE_ASM_FileStructureGlobals as u32,
+        PrcType::PRC_TYPE_ASM_FileStructureTree as u32,
+        PrcType::PRC_TYPE_ASM_FileStructureTessellation as u32,
+        PrcType::PRC_TYPE_ASM_FileStructureGeometry as u32,
+        PrcType::PRC_TYPE_ASM_FileStructureExtraGeometry as u32,
+        PrcType::PRC_TYPE_ASM_ProductOccurrence as u32,
+        PrcType::PRC_TYPE_ASM_PartDefinition as u32,
+        PrcType::PRC_TYPE_MKP_View as u32,
+    ];
+    for fsi in ctx.prc_parsed.sections_decompressed.iter() {
+        println!(".");
+        for section in fsi.iter() {
+            println!("-");
+            //let mut r = std::io::Cursor::new(section.as_slice());
+            let endian = bitstream_io::BigEndian;
+            let mut r = BitReader::endian(Cursor::new(section.as_slice()), endian);
+            let mut bits_consumed = 0u64;
+            while bits_consumed < section.len() as u64 * 8u64 {
+                for val in values_to_search_for.iter() {
+                    let rv = crate::builtin::UnsignedInteger::from_reader_and_seek_back(&mut r);
+                    match rv {
+                        Ok(ui) => {
+                            if rv?.value == *val {
+                                println!(
+                                    "{} @ bp={}",
+                                    PrcType::try_from(*val).unwrap(),
+                                    r.position_in_bits()?
+                                );
+                            }
+                        }
+                        Err(ref e) if e.kind() == io::ErrorKind::UnexpectedEof => {}
+                        Err(e) => {}
+                    }
+                }
+                {
+                    let rv =
+                        crate::builtin::CompressedEntityType::from_reader_and_seek_back(&mut r);
+                    match rv {
+                        Ok(cet) => {
+                            println!("{:?} @ bp={}", cet, r.position_in_bits()?);
+                        }
+                        Err(ref e) if e.kind() == io::ErrorKind::InvalidData => {}
+                        Err(e) => {}
+                    }
+                }
+                read_bits(&mut r, 1);
+                bits_consumed += 1;
+            }
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::test_common::tests::*;
-    use std::io::Read;
-
     #[test]
     fn test_describe() {
         let path = std::env::current_dir().unwrap();

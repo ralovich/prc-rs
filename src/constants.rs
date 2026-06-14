@@ -25,6 +25,7 @@ pub enum PrcSectionKind {
     Tessellation,
     Geometry,
     ExtraGeometry,
+    Count,
 }
 
 #[allow(non_camel_case_types)]
@@ -442,4 +443,10 @@ pub enum Prc3DWireTessFlags {
     PRC_3DWIRETESSDATA_IsClosing = 0x10000000,
     /// if the last point of this wire should be linked to the first point of this wire
     PRC_3DWIRETESSDATA_IsContinuous = 0x20000000,
+}
+
+pub enum KnotKind {
+    Uniform,
+    Unknown,
+    PseudoUniform,
 }

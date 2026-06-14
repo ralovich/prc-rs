@@ -12,7 +12,7 @@
 - [ ] parsing PRC_TYPE_TESS_3D_Compressed: vertex and triangle interpretation (https://patents.google.com/patent/US8207965B2/en, https://github.com/pdf-association/pdf-issues/issues/727)
 - [ ] parsing PRC_TYPE_TESS_3D_Compressed: normals (https://github.com/pdf-association/pdf-issues/issues/436, https://github.com/pdf-association/pdf-issues/issues/540)
 - [ ] parsing PRC_TYPE_TESS_3D_Compressed: color data
-- [ ] parsing compressed NURBS
+- [x] parsing compressed NURBS
 - [x] parsing AnaFaceTrimLoop
 - [x] parsing VertexColors
 - [x] parsing PRC_TYPE_SURF_Blend03

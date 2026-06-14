@@ -104,7 +104,7 @@ jobs:
       if: runner.os != 'Windows'
       run: |
         echo "colordiff -u testdata/expected_all.txt prc-db/prcs/review_summary.txt"
-        colordiff -u testdata/expected_all.txt prc-db/prcs/review_summary.txt || true
+        colordiff -u testdata/expected_all.txt prc-db/prcs/review_summary.txt
 
     - name: Archive prc_tools
       uses: actions/upload-artifact@v7

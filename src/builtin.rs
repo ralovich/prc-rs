@@ -1344,7 +1344,7 @@ impl DoubleWithVariableBitNumber {
     ) -> io::Result<Self> {
         assert!(num_bits > 0);
         //assert!(num_bits <= 30); // if greater Double is used in CompressedNurbs
-        assert!(tolerance > 0.0);
+        //assert!(tolerance > 0.0); // 0.0 is also acceptable
 
         let neg = read_bits(_rdr, 1)? != 0;
 

@@ -6435,9 +6435,7 @@
                         "on_set1": "let cf_guard = CurrentFaceType::new(id.value, _ctx)",
                         "NOon_set": "_ctx.push_face_type(id)",
                         "FIXME": true,
-                        "comment": "this field is OPTIONAL",
-                        "condition": "!_ctx.compressed_iso_spline",
-                        "condition_rust": "!_ctx.is_compressed_iso_spline()"
+                        "comment": "this field is OPTIONAL"
                     },
                     {
                         "name": "start_end_data",
@@ -6457,7 +6455,7 @@
                     },
                     {
                         "name": "curves",
-                        "data_type": "CompressedCurve",
+                        "data_type": "RefOrCompressedCurve",
                         "is_vec": true,
                         "size": "number_of_curves.value"
                     }
@@ -6929,7 +6927,7 @@
                     {
                         "name": "multiplicity",
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
-                        "vbr": "_ctx.CompressedNurbs_number_bits_u",
+                        "vbr": "_ctx.compressed_nurbs.number_bits_u",
                         "condition": "TODO",
                         "condition_rust": "!self.multiplicity_is_not_stored",
                         "comment": "number_bits is either number_bits_u or number_bits_v from CompressedNurbs"
@@ -6945,7 +6943,7 @@
                     {
                         "name": "multiplicity",
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
-                        "vbr": "_ctx.CompressedNurbs_number_bits_v",
+                        "vbr": "_ctx.compressed_nurbs.number_bits_v",
                         "condition": "TODO",
                         "condition_rust": "!self.multiplicity_is_not_stored",
                         "comment": "number_bits is either number_bits_u or number_bits_v from CompressedNurbs"
@@ -6962,7 +6960,7 @@
                     {
                         "name": "p1z",
                         "data_type": "DoubleWithVariableBitNumber",
-                        "vbr": "_ctx.CompressedNurbs_number_of_bits_for_rest + 1",
+                        "vbr": "_ctx.compressed_nurbs.number_of_bits_for_rest + 1",
                         "tol": "_ctx.nurbs_tolerance",
                         "condition": "_type.value == 1",
                         "condition_rust": "self._type.value == 1"
@@ -6970,7 +6968,7 @@
                     {
                         "name": "p2x",
                         "data_type": "DoubleWithVariableBitNumber",
-                        "vbr": "_ctx.CompressedNurbs_number_of_bits_for_rest + 1",
+                        "vbr": "_ctx.compressed_nurbs.number_of_bits_for_rest + 1",
                         "tol": "_ctx.nurbs_tolerance",
                         "condition": "_type.value == 2",
                         "condition_rust": "self._type.value == 2"
@@ -6978,7 +6976,7 @@
                     {
                         "name": "p2y",
                         "data_type": "DoubleWithVariableBitNumber",
-                        "vbr": "_ctx.CompressedNurbs_number_of_bits_for_rest + 1",
+                        "vbr": "_ctx.compressed_nurbs.number_of_bits_for_rest + 1",
                         "tol": "_ctx.nurbs_tolerance",
                         "condition": "_type.value == 2",
                         "condition_rust": "self._type.value == 2"
@@ -6986,7 +6984,7 @@
                     {
                         "name": "p3x",
                         "data_type": "DoubleWithVariableBitNumber",
-                        "vbr": "_ctx.CompressedNurbs_number_of_bits_for_rest + 1",
+                        "vbr": "_ctx.compressed_nurbs.number_of_bits_for_rest + 1",
                         "tol": "_ctx.nurbs_tolerance",
                         "condition": "_type.value == 3",
                         "condition_rust": "self._type.value == 3"
@@ -6994,7 +6992,7 @@
                     {
                         "name": "p3y",
                         "data_type": "DoubleWithVariableBitNumber",
-                        "vbr": "_ctx.CompressedNurbs_number_of_bits_for_rest + 1",
+                        "vbr": "_ctx.compressed_nurbs.number_of_bits_for_rest + 1",
                         "tol": "_ctx.nurbs_tolerance",
                         "condition": "_type.value == 3",
                         "condition_rust": "self._type.value == 3"
@@ -7002,7 +7000,7 @@
                     {
                         "name": "p3z",
                         "data_type": "DoubleWithVariableBitNumber",
-                        "vbr": "_ctx.CompressedNurbs_number_of_bits_for_rest + 1",
+                        "vbr": "_ctx.compressed_nurbs.number_of_bits_for_rest + 1",
                         "tol": "_ctx.nurbs_tolerance",
                         "condition": "_type.value == 3",
                         "condition_rust": "self._type.value == 3"
@@ -7018,7 +7016,7 @@
                     {
                         "name": "ccpt_in_v",
                         "data_type": "Point3DWithVariableBitNumber",
-                        "vbr": "_ctx.CompressedNurbs_number_of_bits_for_isomin + 1",
+                        "vbr": "_ctx.compressed_nurbs.number_of_bits_for_isomin + 1",
                         "tol": "_ctx.nurbs_tolerance",
                         "is_vec": "true",
                         "size": "_ctx.compressed_nurbs.number_ccpt_in_v-1"
@@ -7026,7 +7024,7 @@
                     {
                         "name": "ccpt_in_u",
                         "data_type": "Point3DWithVariableBitNumber",
-                        "vbr": "_ctx.CompressedNurbs_number_of_bits_for_isomin + 1",
+                        "vbr": "_ctx.compressed_nurbs.number_of_bits_for_isomin + 1",
                         "tol": "_ctx.nurbs_tolerance",
                         "is_vec": "true",
                         "size": "_ctx.compressed_nurbs.number_ccpt_in_u-1"
@@ -7044,16 +7042,16 @@
                     {
                         "name": "knot",
                         "data_type": "Double",
-                        "condition": "_ctx.CompressedKnots_number_bit_parameter > 30",
-                        "condition_rust": "_ctx.CompressedKnots_number_bit_parameter > 30"
+                        "condition": "_ctx.compressed_nurbs.number_bit_parameter > 30",
+                        "condition_rust": "_ctx.compressed_nurbs.number_bit_parameter > 30"
                     },
                     {
                         "name": "knot_vbr",
                         "data_type": "DoubleWithVariableBitNumber",
-                        "vbr": "_ctx.CompressedKnots_number_bit_parameter+1",
-                        "tol": "_ctx.CompressedKnots_tolerance_parameter",
-                        "condition": "_ctx.CompressedKnots_number_bit_parameter <= 30",
-                        "condition_rust": "_ctx.CompressedKnots_number_bit_parameter <= 30"
+                        "vbr": "_ctx.compressed_nurbs.number_bit_parameter+1",
+                        "tol": "_ctx.compressed_nurbs.tolerance_parameter",
+                        "condition": "_ctx.compressed_nurbs.number_bit_parameter <= 30",
+                        "condition_rust": "_ctx.compressed_nurbs.number_bit_parameter <= 30"
                     }
                 ]
             },
@@ -7075,14 +7073,14 @@
                         "name": "number_bit_parameter",
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
                         "vbr": "6",
-                        "on_set": "_ctx.CompressedKnots_number_bit_parameter = number_bit_parameter.value;\n_ctx.CompressedKnots_tolerance_parameter = 1.0_f64 / 2.0_f64.powi(number_bit_parameter.value as i32 - 1);",
+                        "on_set": "_ctx.compressed_nurbs.number_bit_parameter = number_bit_parameter.value;\n_ctx.compressed_nurbs.tolerance_parameter = 1.0_f64 / 2.0_f64.powi(number_bit_parameter.value as i32 - 1);",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/692#issuecomment-3874233557"
                     },
                     {
                         "name": "compressed_knots",
                         "data_type": "CompressedKnot",
                         "is_vec": true,
-                        "size": "_ctx.CompressedNurbs_number_stored_knots_in_u"
+                        "size": "if is_pseudo_uniform.value { 2 } else {_ctx.compressed_nurbs.number_of_knots_in_u}"
                     }
                 ]
             },
@@ -7104,14 +7102,14 @@
                         "name": "number_bit_parameter",
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
                         "vbr": "6",
-                        "on_set": "_ctx.CompressedKnots_number_bit_parameter = number_bit_parameter.value;\n_ctx.CompressedKnots_tolerance_parameter = 1.0_f64 / 2.0_f64.powi(number_bit_parameter.value as i32 - 1);",
+                        "on_set": "_ctx.compressed_nurbs.number_bit_parameter = number_bit_parameter.value;\n_ctx.compressed_nurbs.tolerance_parameter = 1.0_f64 / 2.0_f64.powi(number_bit_parameter.value as i32 - 1);",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/692#issuecomment-3874233557"
                     },
                     {
                         "name": "compressed_knots",
                         "data_type": "CompressedKnot",
                         "is_vec": true,
-                        "size": "_ctx.CompressedNurbs_number_stored_knots_in_v"
+                        "size": "if is_pseudo_uniform.value { 2 } else {_ctx.compressed_nurbs.number_of_knots_in_v}"
                     }
                 ]
             },
@@ -7188,37 +7186,31 @@
                     {
                         "name": "degree_in_u",
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
-                        "vbr": "5",
-                        "on_set_cxx": "_ctx.CompressedNurbs_number_bits_u = (degree_in_u.value ? ceil( log( degree_in_u.value + 2 ) / log(2) ) : 2)",
-                        "on_set1": "_ctx.CompressedNurbs_number_bits_u = (degree_in_u.value ? ceil( log( degree_in_u.value + 2 ) / log(2) ) : 2)",
-                        "on_set": "_ctx.CompressedNurbs_number_bits_u = if degree_in_u.value!=0 {( (degree_in_u.value as f64 + 2.0).ln() / (2.0_f64).ln()).ceil() as u32} else {2_u32};"
+                        "vbr": "5"
                     },
                     {
                         "name": "degree_in_v",
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
-                        "vbr": "5",
-                        "on_set": "_ctx.CompressedNurbs_number_bits_v = if degree_in_v.value!=0 {( (degree_in_v.value as f64 + 2.0).ln() / (2.0_f64).ln()).ceil() as u32} else {2_u32};"
+                        "vbr": "5"
                     },
                     {
                         "name": "number_stored_knots_in_u",
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
                         "vbr": "16",
-                        "on_set": "_ctx.compressed_nurbs.set0(degree_in_u.value, degree_in_v.value, number_stored_knots_in_u.value);\n_ctx.CompressedNurbs_number_stored_knots_in_u = number_stored_knots_in_u.value"
+                        "on_set": "_ctx.compressed_nurbs.set0(degree_in_u.value, degree_in_v.value, number_stored_knots_in_u.value)"
                     },
                     {
                         "name": "mult_u",
                         "data_type": "CompressedMultiplicitiesU",
                         "is_vec": true,
                         "size": "number_stored_knots_in_u.value",
-                        "bug": "https://github.com/pdf-association/pdf-issues/issues/663#issuecomment-3590926462",
-                        "1on_set": "_ctx.CompressedNurbs_number_ccpt_in_u = sum_up_u(&mult_u) - degree_in_u.value - 1",
-                        "debug": true
+                        "bug": "https://github.com/pdf-association/pdf-issues/issues/663#issuecomment-3590926462"
                     },
                     {
                         "name": "number_stored_knots_in_v",
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
                         "vbr": "16",
-                        "on_set": "_ctx.compressed_nurbs.set1(&mult_u, number_stored_knots_in_v.value);\n_ctx.CompressedNurbs_number_stored_knots_in_v = number_stored_knots_in_v.value"
+                        "on_set": "_ctx.compressed_nurbs.set1(&mult_u, number_stored_knots_in_v.value)"
                     },
                     {
                         "name": "mult_v",
@@ -7226,8 +7218,7 @@
                         "is_vec": true,
                         "size": "number_stored_knots_in_v.value",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/663#issuecomment-3590926462",
-                        "on_set": "_ctx.compressed_nurbs.set2(&mult_v);\n/*_ctx.CompressedNurbs_number_ccpt_in_v = sum_up_v(&mult_v) - degree_in_v.value - 1*/",
-                        "debug": true
+                        "on_set": "_ctx.compressed_nurbs.set2(&mult_v)"
                     },
                     {
                         "name": "is_closed_in_u",
@@ -7241,13 +7232,13 @@
                         "name": "number_of_bits_for_isomin",
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
                         "vbr": "20",
-                        "on_set": "_ctx.CompressedNurbs_number_of_bits_for_isomin = number_of_bits_for_isomin.value"
+                        "on_set": "_ctx.compressed_nurbs.number_of_bits_for_isomin = number_of_bits_for_isomin.value"
                     },
                     {
                         "name": "number_of_bits_for_rest",
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
                         "vbr": "20",
-                        "on_set": "_ctx.compressed_nurbs.set3(is_closed_in_u.value, is_closed_in_v.value, number_of_bits_for_isomin.value, number_of_bits_for_rest.value);\n_ctx.CompressedNurbs_number_of_bits_for_rest = number_of_bits_for_rest.value"
+                        "on_set": "_ctx.compressed_nurbs.set3(is_closed_in_u.value, is_closed_in_v.value, number_of_bits_for_isomin.value, number_of_bits_for_rest.value)"
                     },
                     {
                         "name": "compressed_control_points",
@@ -7261,7 +7252,8 @@
                     },
                     {
                         "name": "knot_vector_v",
-                        "data_type": "CompressedKnotVectorV"
+                        "data_type": "CompressedKnotVectorV",
+                        "on_set": "_ctx.compressed_nurbs.set6(&knot_vector_v)"
                     },
                     {
                         "name": "is_rational",
@@ -7284,12 +7276,6 @@
                         "data_type": "Boolean"
                     },
                     {
-                        "name": "hermite",
-                        "data_type": "PRC_HCG_BSplineHermiteCurve",
-                        "condition": "iso_boundary.value",
-                        "condition_rust": "self.iso_boundary.value"
-                    },
-                    {
                         "name": "is_a_circle",
                         "data_type": "Boolean",
                         "condition": "!iso_boundary.value",
@@ -7301,6 +7287,15 @@
                         "data_type": "PRC_HCG_Circle",
                         "condition": "!iso_boundary.value && is_a_circle.value",
                         "condition_rust": "!iso_boundary.value && self.is_a_circle.value"
+                    }
+                ],
+                "UNUSEDfields": [
+                    {
+                        "name": "hermite",
+                        "data_type": "PRC_HCG_BSplineHermiteCurve",
+                        "condition": "iso_boundary.value",
+                        "condition_rust": "self.iso_boundary.value",
+                        "comment": "was added following https://github.com/pdf-association/pdf-issues/issues/582, but testing does not show needed"
                     }
                 ]
             },
@@ -7374,39 +7369,27 @@
                         "debug": true
                     },
                     {
+                        "name": "loop_vertex3",
+                        "data_type": "CompressedVertex",
+                        "condition_rust": "!self.curve3.is_referenced.value && !self.curve0.is_referenced.value",
+                        "debug": true
+                    },
+                    {
                         "name": "loop_vertex0",
                         "data_type": "CompressedVertex",
-                        "condition": "self.curve0.is_referenced.value && self.curve1.is_referenced.value",
-                        "1condition_rust": "true||self.curve0.is_referenced.value && self.curve1.is_referenced.value",
-                        "2condition_rust": "(!self.curve0.trim_curve.as_ref().unwrap().iso_boundary.value && !self.curve0.trim_curve.as_ref().unwrap().is_a_circle.unwrap().value) || (!self.curve1.trim_curve.as_ref().unwrap().iso_boundary.value && !self.curve1.trim_curve.as_ref().unwrap().is_a_circle.unwrap().value)",
-                        "condition_rust": "!self.curve0.trim_curve.as_ref().unwrap().iso_boundary.value || !self.curve1.trim_curve.as_ref().unwrap().iso_boundary.value",
+                        "condition_rust": "!self.curve0.is_referenced.value && !self.curve1.is_referenced.value",
                         "debug": true
                     },
                     {
                         "name": "loop_vertex1",
                         "data_type": "CompressedVertex",
-                        "condition": "self.curve1.is_referenced.value && self.curve2.is_referenced.value",
-                        "1condition_rust": "true||self.curve1.is_referenced.value && self.curve2.is_referenced.value",
-                        "2condition_rust": "(!self.curve1.trim_curve.as_ref().unwrap().iso_boundary.value && !self.curve1.trim_curve.as_ref().unwrap().is_a_circle.unwrap().value) || (!self.curve2.trim_curve.as_ref().unwrap().iso_boundary.value && !self.curve2.trim_curve.as_ref().unwrap().is_a_circle.unwrap().value)",
-                        "condition_rust": "!self.curve1.trim_curve.as_ref().unwrap().iso_boundary.value || !self.curve2.trim_curve.as_ref().unwrap().iso_boundary.value",
+                        "condition_rust": "!self.curve1.is_referenced.value && !self.curve2.is_referenced.value",
                         "debug": true
                     },
                     {
                         "name": "loop_vertex2",
                         "data_type": "CompressedVertex",
-                        "condition": "self.curve2.is_referenced.value && self.curve3.is_referenced.value",
-                        "1condition_rust": "true||self.curve2.is_referenced.value && self.curve3.is_referenced.value",
-                        "2condition_rust": "(!self.curve2.trim_curve.as_ref().unwrap().iso_boundary.value && !self.curve2.trim_curve.as_ref().unwrap().is_a_circle.unwrap().value) || (!self.curve3.trim_curve.as_ref().unwrap().iso_boundary.value && !self.curve3.trim_curve.as_ref().unwrap().is_a_circle.unwrap().value)",
-                        "condition_rust": "!self.curve2.trim_curve.as_ref().unwrap().iso_boundary.value || !self.curve3.trim_curve.as_ref().unwrap().iso_boundary.value",
-                        "debug": true
-                    },
-                    {
-                        "name": "loop_vertex3",
-                        "data_type": "CompressedVertex",
-                        "condition": "self.curve3.is_referenced.value && self.curve0.is_referenced.value",
-                        "1condition_rust": "true||self.curve3.is_referenced.value && self.curve0.is_referenced.value",
-                        "2condition_rust": "(!self.curve3.trim_curve.as_ref().unwrap().iso_boundary.value && !self.curve3.trim_curve.as_ref().unwrap().is_a_circle.unwrap().value) || (!self.curve0.trim_curve.as_ref().unwrap().iso_boundary.value && !self.curve0.trim_curve.as_ref().unwrap().is_a_circle.unwrap().value)",
-                        "condition_rust": "!self.curve3.trim_curve.as_ref().unwrap().iso_boundary.value || !self.curve0.trim_curve.as_ref().unwrap().iso_boundary.value",
+                        "condition_rust": "!self.curve2.is_referenced.value && !self.curve3.is_referenced.value",
                         "debug": true
                     }
                 ]
@@ -7556,12 +7539,14 @@
                     {
                         "name": "number_vertex_references",
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
-                        "vbr": "number_of_bits_to_store_reference.value"
+                        "vbr": "number_of_bits_to_store_reference.value",
+                        "comment": "references to CompressedVertex"
                     },
                     {
                         "name": "number_edge_references",
                         "data_type": "UnsignedIntegerWithVariableBitNumber",
-                        "vbr": "number_of_bits_to_store_reference.value"
+                        "vbr": "number_of_bits_to_store_reference.value",
+                        "comment": "references to CompressedCurve"
                     },
                     {
                         "name": "single_connex",
