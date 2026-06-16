@@ -8918,7 +8918,6 @@ impl PRC_TYPE_TESS_3D_Wire {
             let element = Integer::from_reader(rdr)?;
             wire_indexes.push(element);
         }
-        /*_ctx.set_num_vertex_colors_from_tess_3d_wire(&tessellation_coordinates.coordinates, &wire_indexes);*/
         _ctx.t3dw
             .set0(&tessellation_coordinates.coordinates, &wire_indexes);
         let mut has_vertex_colors: Boolean = Default::default();
@@ -16837,7 +16836,6 @@ impl PRC_HCG_BSplineHermiteCurve {
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_CompositeCurve {
-    /// this field is OPTIONAL
     pub id: CompressedEntityType,
     pub start_end_data: StartEndData,
     pub dimension: UnsignedInteger,
@@ -16857,7 +16855,6 @@ impl PRC_HCG_CompositeCurve {
             rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
-        warn!("PRC_HCG_CompositeCurve.id field contains FIXME!");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         if (PRC_HCG_CompositeCurve) != (PrcCompressedCurveType::try_from(id.value).unwrap()) {
@@ -16931,7 +16928,7 @@ impl PRC_HCG_Ellipse {
             rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
-        panic!("PRC_HCG_Ellipse: not implemented");
+        unimplemented!("PRC_HCG_Ellipse: not implemented");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         if (PRC_HCG_Ellipse) != (PrcCompressedCurveType::try_from(id.value).unwrap()) {
@@ -17309,7 +17306,7 @@ impl ContentCompressedAnaFace {
             }
         }
         if !!is_trimmed.value {
-            trim_loop = AnaFaceTrimLoop::from_reader_while_loop2(rdr, _ctx)?;
+            trim_loop = AnaFaceTrimLoop::from_reader_while_loop(rdr, _ctx)?;
         };
         let point_on_torus_cond =
             _ctx.ContentCompressedAnaFace_has_point_on_torus(is_trimmed.value);

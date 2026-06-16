@@ -6,7 +6,7 @@
 // All rights reserved.
 
 #![allow(non_snake_case)]
-#![allow(unused)]
+//#![allow(unused)]
 
 use crate::builtin::*;
 use crate::constants::*;
@@ -19,12 +19,10 @@ use bitstream_io::BitReader;
 use log::{debug, error, info, trace, warn};
 use measure_time::debug_time;
 use serde::{Deserialize, Serialize};
-use std::fs::File;
 use std::io;
 use std::io::Cursor;
 use std::path::Path;
 //use bson::{bson, Bson};
-use crate::vec3::Vec3;
 
 #[macro_export]
 macro_rules! function {
@@ -171,9 +169,6 @@ impl PrcParsingContext {
             d
         }
 
-        // TODO
-        //warn!("FIXME: all_loops_are_vertex_loops: not implemented yet");
-
         // from https://github.com/pdf-association/pdf-issues/issues/696#issuecomment-3599474152
         // Which means that ALL the loops in this array of loops are degenerate lines (a line with two
         // points that are the same with precision/tolerance), the surface type is PRC_HCG_AnaTorus and
@@ -193,7 +188,6 @@ impl PrcParsingContext {
                     all_loops_are_vertex_loops = false;
                     break;
                 }
-                //let id = curve.compressed_curve.as_ref().unwrap().id_concrete;
                 match curve.compressed_curve.as_ref().unwrap().id_concrete {
                     CompressedCurve_idConcrete::line(l) => {
                         if l.start_end_data.start_point.is_some() {
@@ -263,7 +257,7 @@ impl PrcParsingContext {
     }
 
     pub fn push_face_type(&mut self, cet: CompressedEntityType) {
-        let id = cet.value;
+        let _id = cet.value;
         self.current_face_type.push(cet);
         warn!("Pushing face {:?} [{}]", cet, self.current_face_type.len());
     }
@@ -392,7 +386,7 @@ impl PrcParsingContext {
     /// It is important to remember that implicit points must also have a color (see Special flags for 3DWireTessData tessellation).
     pub fn set_num_vertex_colors_from_tess_3d_wire(
         &mut self,
-        coordinates: &Vec<Double>,
+        _coordinates: &Vec<Double>,
         wire_indexes: &Vec<Integer>, /*is_segment_color: bool*/
     ) {
         // TODO
@@ -482,11 +476,11 @@ impl PrcParsingContext {
     pub fn set_num_vertex_colors_from_tess_3d_face(
         &mut self,
         used_entities_flag: u32,
-        triangulateddata: &Vec<UnsignedInteger>,
+        triangulated_data: &Vec<UnsignedInteger>,
     ) {
         // TODO
 
-        let mut num_colors_per_triangle = 0u32;
+        let num_colors_per_triangle;
         if used_entities_flag != PrcTesselationFlags::PRC_FACETESSDATA_Triangle as u32
             && used_entities_flag != PrcTesselationFlags::PRC_FACETESSDATA_TriangleTextured as u32
         {
@@ -497,9 +491,9 @@ impl PrcParsingContext {
         num_colors_per_triangle = 3;
 
         self.VertexColors_number_of_colors = 0;
-        for i in 0..triangulateddata.len() {
+        for i in 0..triangulated_data.len() {
             self.VertexColors_number_of_colors +=
-                num_colors_per_triangle * triangulateddata[i].value;
+                num_colors_per_triangle * triangulated_data[i].value;
         }
     }
 
@@ -704,7 +698,7 @@ pub fn prc_search(ctx: &mut PrcParsingContext) -> Result<(), io::Error> {
                     let rv = crate::builtin::UnsignedInteger::from_reader_and_seek_back(&mut r);
                     match rv {
                         Ok(ui) => {
-                            if rv?.value == *val {
+                            if ui.value == *val {
                                 println!(
                                     "{} @ bp={}",
                                     PrcType::try_from(*val).unwrap(),
@@ -713,7 +707,7 @@ pub fn prc_search(ctx: &mut PrcParsingContext) -> Result<(), io::Error> {
                             }
                         }
                         Err(ref e) if e.kind() == io::ErrorKind::UnexpectedEof => {}
-                        Err(e) => {}
+                        Err(_e) => {}
                     }
                 }
                 {
@@ -724,10 +718,10 @@ pub fn prc_search(ctx: &mut PrcParsingContext) -> Result<(), io::Error> {
                             println!("{:?} @ bp={}", cet, r.position_in_bits()?);
                         }
                         Err(ref e) if e.kind() == io::ErrorKind::InvalidData => {}
-                        Err(e) => {}
+                        Err(_e) => {}
                     }
                 }
-                read_bits(&mut r, 1);
+                read_bits(&mut r, 1)?;
                 bits_consumed += 1;
             }
         }
@@ -780,7 +774,8 @@ mod tests {
     fn test_describe_compr() {
         let path = std::env::current_dir().unwrap();
         println!(
-            "[test_describe_compr] The current directory is {}",
+            "[{}] The current directory is {}",
+            function!(),
             path.display()
         );
         let bytes_external = get_file_as_byte_vec(&std::string::String::from(
