@@ -66,14 +66,6 @@ type VT = ValueType;
 //     }
 // }
 
-//#[allow(non_camel_case_types)]
-//#[allow(non_snake_case)]
-//#[derive(Clone, Copy)]
-//union Storage {
-//    ul: [u32; 2],
-//    pub Value: f64,
-//    u: u64,
-//}
 impl Ord for ieee754_double {
     fn cmp(&self, other: &Self) -> Ordering {
         unsafe { self.u.cmp(&other.u) }
@@ -249,11 +241,7 @@ pub fn read_double_from_reader<R: BitRead>(rdr: &mut R) -> io::Result<f64> {
             }
             //println!("u64={:064b} d={}", unsafe { value.u }, unsafe { value.d } );
         } else {
-            //let offset: u8 = rdr.read::<3, u8>()? & 0x07;
-            let mut offset: u8 = read_bits(rdr, 3)? & 0x07;
-            // offset |= ((read_bits(rdr, 1)?&0x01)<<2);
-            // offset |= ((read_bits(rdr, 1)?&0x01)<<1);
-            // offset |= ((read_bits(rdr, 1)?&0x01)<<0);
+            let offset: u8 = read_bits(rdr, 3)? & 0x07;
             //println!("offset={}", offset);
             if offset == 0 {
                 let b = unsafe { value.bytes[cbi as usize + 1] };
@@ -2582,36 +2570,24 @@ const ACOFDOE: [C; N] = [
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::test_common::tests::*;
-    use bitstream_io::{BigEndian, BitWriter, BitsWritten};
-    use std::fs::File;
-    use std::io::Read;
-    use std::io::{BufRead, Cursor, Write};
-    use std::ops::Add;
+    use bitstream_io::BitWriter;
+    use std::io::Cursor;
 
     #[test]
     fn io_double_lowlevel() {
         fn internal<E: bitstream_io::Endianness + ?Sized + Copy>(endian: E, bytes: &mut Vec<u8>) {
             let mut w = BitWriter::endian(Cursor::new(&mut *bytes), endian);
-            //{
-            //let bw: BitsWritten<u32> = bitstream_io::BitsWritten::new();
-
-            //let mut w = BitWriter::endian(Cursor::new(&mut bytes), bitstream_io::LittleEndian);
             let p1 = super::write_double_to_writer(&mut w, 0.1).unwrap();
 
             fill_partial_byte_at_end(&mut w, false).expect("failed to fill partial byte at end");
 
-            let p0 = w.writer().unwrap().position();
+            //let p0 = w.writer().unwrap().position();
             //let x = w.bits;
 
             assert_eq!(p1, 33);
             assert_eq!(bytes.len(), 5 as usize);
-            //}
-            //assert_eq!(bytes, vec![0b1000_1110]);
-            //
 
-            //{
             let bytes_ro: &Vec<u8> = &bytes;
             let mut rdr = bitstream_io::BitReader::endian(Cursor::new(&bytes_ro), endian);
             let d = super::read_double_from_reader(&mut rdr).unwrap();
