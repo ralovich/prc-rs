@@ -8,7 +8,6 @@
 
 use crate::builtin::{read_bits, write_bits};
 use bitstream_io::{BitRead, BitWrite};
-use bitvec::prelude::*;
 use modular_bitfield::bitfield;
 use modular_bitfield::prelude::{B1, B11, B20};
 use std::cmp::Ordering;
@@ -47,7 +46,6 @@ union ieee754_double {
     pub ieee: Ieee,
     pub u: u64,
     pub bytes: [u8; 8],
-    pub ba: BitArray<[u64; 1]>,
     pub ul: [u32; 2],
 }
 sa::const_assert_eq!(8, mem::size_of::<ieee754_double>());
@@ -2587,7 +2585,6 @@ mod tests {
     use super::*;
     use crate::test_common::tests::*;
     use bitstream_io::{BigEndian, BitWriter, BitsWritten};
-    use bitvec::ptr::read;
     use std::fs::File;
     use std::io::Read;
     use std::io::{BufRead, Cursor, Write};
