@@ -687,7 +687,7 @@ pub struct UncompressedUnsignedInteger {
 }
 impl UncompressedUnsignedInteger {
     pub fn new() -> Self {
-        UncompressedUnsignedInteger { value: 0 }
+        Self { value: 0 }
     }
     pub fn from_reader<R: Read>(rdr: &mut R) -> io::Result<Self> {
         let mut bytes: [u8; 4] = [0; 4];

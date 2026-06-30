@@ -415,10 +415,10 @@ impl PrcParsingContext {
             }
             // The flag is the leftmost 4 bits and is interpreted using 3D Wire Tess Flags to indicate
             let number_of_indices_per_wire_edge = wire_indexes[i].value as u32 & 0x7FFFFFFF;
-            debug!(
-                "number of indices_per_wire_edge: {}",
-                number_of_indices_per_wire_edge
-            );
+            // debug!(
+            //     "number of indices_per_wire_edge: {}",
+            //     number_of_indices_per_wire_edge
+            // );
             wires.push(vec![]);
 
             let start = i + 1;

@@ -12,6 +12,7 @@ use crate::builtin::Boolean;
 use crate::builtin::*;
 use crate::constants::*;
 use crate::function;
+use crate::vec3::Vec3;
 use log::{debug, warn};
 use measure_time::debug_time;
 
@@ -245,5 +246,38 @@ impl Tess3dCompressed {
         self.number_of_faces(triangle_face_array)
         //panic!("number_of_faces_stored_in_mesh: Not implemented yet");
         //return triangle_face_array.len() as u32;
+    }
+
+    fn derive_normal(vertex_1: Vec3, vertex_2: Vec3, vertex_3: Vec3) -> Vec3 {
+        let midpoint = (vertex_1 + vertex_2) * 0.5;
+        let v1 = vertex_2 - vertex_1;
+        let v2 = vertex_3 - midpoint;
+
+        return crate::vec3::cross_product(v2, v1);
+    }
+    fn sin_taylor_4(x: f64) -> f64 {
+        let x2 = x * x;
+        let c1 = 1.0 / 6.0;
+        let c2 = 1.0 / 120.0;
+        let c3 = 1.0 / 5040.0;
+
+        let intermediate_1 = c2 - (x2 * c3);
+        let intermediate_2 = c1 - (x2 * intermediate_1);
+        let res = x * (1.0 - (x2 * intermediate_2));
+
+        return res;
+    }
+    fn cos_taylor_4(x: f64) -> f64 {
+        let x2 = x * x;
+
+        let c1 = 1.0 / 2.0;
+        let c2 = 1.0 / 24.0;
+        let c3 = 1.0 / 720.0;
+
+        let intermediate_1 = c2 - (x2 * c3);
+        let intermediate_2 = c1 - (x2 * intermediate_1);
+        let res = 1.0 - (x2 * intermediate_2);
+
+        return res;
     }
 }
