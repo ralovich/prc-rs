@@ -69,6 +69,7 @@
 6-fault-blocks.stream-14.prc
 8240-3D-PDF.stream-14.prc
 A1351A_st.stream-14.prc
+a3drtemplate_01.stream-26.prc
 A700000010220782.stream-8.prc
 A700000010220810.stream-8.prc
 A700000010221306.stream-8.prc
@@ -149,6 +150,7 @@ BOM Table Listing.stream-384.prc
 Bracket-with-PMI.attachment-Bracket_Shock_PMI_data.stream-12.prc
 c1-102580.prc
 car_v76_suspension_brake_pmi.stream-9.prc
+Castle_of_Bouvignes_Belgium_landscape.stream-48.prc
 Chromalloy-PW4000_HPT1.stream-8.prc
 coastal-facility.stream-14.prc
 Component_View_2_23_17.stream-462.prc
