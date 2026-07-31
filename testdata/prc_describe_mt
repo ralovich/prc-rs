@@ -12,7 +12,7 @@
 # RUST_LOG=trace RUST_BACKTRACE=1 describe=~/dev/pdf3d/prc-rs/target/reldeb/prc_describe INPUT=list_all.txt time ./prc_describe_mt
 
 # ls -1SL *.prc > list_all.txt
-# (cd ../prc-db/prcs && ls -1L *.prc | sort > ../../testdata/list_all.txt)
+# (cd ../prc-db/prcs && ls -1SL *.prc > ../../testdata/list_all.txt)
 
 import os
 import subprocess
