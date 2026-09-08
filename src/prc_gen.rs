@@ -8979,7 +8979,7 @@ impl PRC_TYPE_TESS_3D_Wire {
 #[allow(non_camel_case_types)]
 pub struct BinaryTextureData {
     pub texture_binary_data_size: UnsignedInteger,
-    pub texture_binary_data: Vec<UnsignedInteger>,
+    pub texture_binary_data: Vec<UnsignedCharacter>,
     pub last_integer_used_bit_number: UnsignedInteger,
 }
 impl BinaryTextureData {
@@ -8996,17 +8996,22 @@ impl BinaryTextureData {
         let _ig = indent::IndentGuard::new();
         let mut texture_binary_data_size: UnsignedInteger = Default::default();
         texture_binary_data_size = UnsignedInteger::from_reader(rdr)?;
-        let mut texture_binary_data: Vec<UnsignedInteger> =
-            Vec::with_capacity((texture_binary_data_size.value / 1) as usize);
-        for _i in 0..(texture_binary_data_size.value / 1) {
-            let element = UnsignedInteger::from_reader(rdr)?;
+        let mut texture_binary_data: Vec<UnsignedCharacter> =
+            Vec::with_capacity((texture_binary_data_size.value * 4) as usize);
+        for _i in 0..(texture_binary_data_size.value * 4) {
+            let element = UnsignedCharacter::from_reader(rdr)?;
             texture_binary_data.push(element);
         }
         let mut last_integer_used_bit_number: UnsignedInteger = Default::default();
         last_integer_used_bit_number = UnsignedInteger::from_reader(rdr)?;
+        trace!(
+            "{}last_integer_used_bit_number: {:?}",
+            indent::get(),
+            &last_integer_used_bit_number
+        );
         assert!(
             /*last_integer_used_bit_number.value >= 0 &&*/
-            last_integer_used_bit_number.value < 32
+            last_integer_used_bit_number.value <= 32
         );
         let rv = Self {
             texture_binary_data_size,
@@ -9133,7 +9138,6 @@ pub struct PRC_TYPE_TESS_3D_Compressed {
     pub point_reference_array: CompressedIndiceArrayWithoutBit,
     /// see also must_calculate_normals
     pub must_recalculate_normals: Boolean,
-    /// SIZE is missing!
     pub normal_is_reversed: Option<UncompressedBoolArray>,
     /// definition similar than VRML
     pub crease_angle: Option<Double>,
@@ -9281,14 +9285,11 @@ impl PRC_TYPE_TESS_3D_Compressed {
             &edge_status_array.a,
             &triangle_face_array.a,
         );
-        warn!("PRC_TYPE_TESS_3D_Compressed.normal_is_reversed field contains FIXME!");
         let normal_is_reversed_cond = !!must_recalculate_normals;
         let mut normal_is_reversed: UncompressedBoolArray = Default::default();
         if normal_is_reversed_cond {
-            normal_is_reversed = UncompressedBoolArray::from_reader(
-                rdr,
-                _ctx.t3dc.number_of_normals(&triangle_face_array.a),
-            )?;
+            normal_is_reversed =
+                UncompressedBoolArray::from_reader(rdr, triangle_face_array.a.len() as u32)?;
         }
         if !!must_recalculate_normals {
             debug!(
@@ -9623,8 +9624,7 @@ impl PRC_TYPE_TESS_3D_Compressed {
         let mut normal_is_reversed: &UncompressedBoolArray = &Default::default();
         if normal_is_reversed_cond {
             normal_is_reversed = self.normal_is_reversed.as_ref().unwrap();
-            normal_is_reversed
-                .to_writer(_w, _ctx.t3dc.number_of_normals(&triangle_face_array.a))?;
+            normal_is_reversed.to_writer(_w, triangle_face_array.a.len() as u32)?;
         }
         let crease_angle_cond = !!must_recalculate_normals;
         let mut crease_angle: &Double = &Default::default();
@@ -19738,7 +19738,8 @@ pub struct PRC_TYPE_TOPO_SingleWireBodyCompress {
     pub base: ContentBody,
     /// this assignment is confirmed by https://github.com/pdf-association/pdf-issues/issues/753
     pub curve_tolerance: Double,
-    pub dummy: [Boolean; 1],
+    pub unknown: Boolean,
+    /// RefOrCompressedCurve maybe? That would render the previous 1-bit unknown field go away...
     pub compressed_curve: CompressedCurve,
 }
 impl PRC_TYPE_TOPO_SingleWireBodyCompress {
@@ -19753,7 +19754,7 @@ impl PRC_TYPE_TOPO_SingleWireBodyCompress {
             rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
-        _ctx.set_curve_trimming_face(false);
+        assert!(!_ctx.is_curve_trimming_face());
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         if (PRC_TYPE_TOPO_SingleWireBodyCompress) != (PrcType::try_from(id.value).unwrap()) {
@@ -19765,21 +19766,14 @@ impl PRC_TYPE_TOPO_SingleWireBodyCompress {
         );
         let mut base: ContentBody = Default::default();
         base = ContentBody::from_reader(rdr, _ctx)?;
-        trace!("{}base: {:?}", indent::get(), &base);
-        error!("bp={}", rdr.position_in_bits()?);
         let mut curve_tolerance: Double = Default::default();
         curve_tolerance = Double::from_reader(rdr)?;
-        trace!("{}curve_tolerance: {:?}", indent::get(), &curve_tolerance);
         _ctx.brep_data_compressed_tolerance = curve_tolerance.value;
         _ctx.nurbs_tolerance = _ctx.brep_data_compressed_tolerance / 5.0;
-        let mut dummy: [Boolean; 1] = [Default::default(); 1];
-        for i in 0..1 {
-            dummy[i as usize] = Boolean::from_reader(rdr)?;
-            trace!("dummy[{}]: {:#?}", i, &dummy[i as usize]);
-        }
+        let mut unknown: Boolean = Default::default();
+        unknown = Boolean::from_reader(rdr)?;
         let mut compressed_curve: CompressedCurve = Default::default();
         compressed_curve = CompressedCurve::from_reader(rdr, _ctx)?;
-        trace!("{}compressed_curve: {:?}", indent::get(), &compressed_curve);
         let _ = _ctx
             .se
             .eval(rdr, PRC_TYPE_TOPO_SingleWireBodyCompress as u32, false, 0);
@@ -19787,7 +19781,7 @@ impl PRC_TYPE_TOPO_SingleWireBodyCompress {
             id,
             base,
             curve_tolerance,
-            dummy,
+            unknown,
             compressed_curve,
         };
         Ok(rv)
@@ -19803,10 +19797,8 @@ impl PRC_TYPE_TOPO_SingleWireBodyCompress {
         base.to_writer(_w, _ctx)?;
         let curve_tolerance = self.curve_tolerance.clone();
         curve_tolerance.to_writer(_w)?;
-        let dummy = self.dummy.clone();
-        for i in &self.dummy {
-            i.to_writer(_w)?;
-        }
+        let unknown = self.unknown.clone();
+        unknown.to_writer(_w)?;
         let compressed_curve = self.compressed_curve.clone();
         compressed_curve.to_writer(_w, _ctx)?;
         Ok(())

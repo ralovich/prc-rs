@@ -66,7 +66,7 @@ pub fn read_huffman_to_element_array_i8<R: BitRead>(
 
     let number_of_bits_used_in_last_integer = UnsignedInteger::from_reader(r)?.value;
     //dbg!(number_of_bits_used_in_last_integer);
-    assert!(number_of_bits_used_in_last_integer < 32);
+    assert!(number_of_bits_used_in_last_integer <= 32);
 
     let tot_bits = huffman_bytes.len() * 8 - 32 + number_of_bits_used_in_last_integer as usize;
     //dbg!(tot_bits);
@@ -697,7 +697,7 @@ mod tests {
                 ((u >> 24) & 0xFF) as u8,
             ];
             for j in 0..4 {
-                huffman_bytes.push(/*byte_reverse*/ bytes[j]);
+                huffman_bytes.push(bytes[j]);
             }
         }
         let tot_bits = huffman_array.len() * 32 - 32 + number_of_bits_used_in_last_integer as usize;
