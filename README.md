@@ -26,7 +26,7 @@ Build the CMake project under `src/tools/prc2json`. Afterwards run `prc2json inp
 
 ## PRC Test Data
 
-[Test data](https://github.com/ralovich/prc-db) is currently very scarce, many parts (structures) of the PRC standard are not yet found in existing test data. If you can, please submit new data (sample 3D PDFs) to increase the coverage of the library.
+[Test data](https://github.com/ralovich/prc-db) is currently very scarce, many parts (structures) of the PRC standard are not yet found in existing test data. If you can, please submit new data (sample 3D PDFs) to increase the coverage of the library. The script [extract3d.sh](https://github.com/ralovich/prc-rs/blob/main/scripts/extract3d.sh) may be used to find and dump PRC and U3D streams from a PDF file.
 
 ## License
 
@@ -41,4 +41,5 @@ The PRC file format documentation is quite scattered, incomplete sometimes contr
 - Acrobat SDK 9 for [Mac](http://download.macromedia.com/pub/developer/acrobat/sdk/9/sdk91_v2_mac.dmg) [Win](http://download.macromedia.com/pub/developer/acrobat/sdk/9/sdk91_v2_win.zip)
 - Acrobat SDK 10 for [Mac](http://download.macromedia.com/pub/developer/acrobat/sdk/10/sdk100_v1_mac.dmg) [Win](http://download.macromedia.com/pub/developer/acrobat/sdk/10/sdk100_v1_win.zip)
 - Acrobat SDK 11 for [Mac](https://download.macromedia.com/pub/developer/acrobat/sdk/11/sdk110_v1_mac.dmg) [Win](https://download.macromedia.com/pub/developer/acrobat/sdk/11/sdk110_v1_win.zip)
-- [US pat. 8.207,965](https://patents.google.com/patent/US8207965B2/en)
+- [US pat. 8.207,965](https://patents.google.com/patent/US8207965B2/en) on compressed tesselation
+- [Acrobat Pro Extended 9](http://trials.adobe.com/Applications/Acrobat/APEX/9/APEX9_Win_WEB_WWEFG.7z)
