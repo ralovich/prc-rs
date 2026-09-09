@@ -6,7 +6,7 @@
 
 use clap::Parser;
 use log::{info, warn};
-use prc_rs::*;
+use prc::*;
 use std::io::*;
 use std::path::PathBuf;
 use std::process::ExitCode;

@@ -1,12 +1,12 @@
 [package]
-name = "prc_rs"
+name = "prc"
 version = "0.1.0"
 authors = ["Kristof Ralovich <tade60@freemail.hu>"]
 edition = "2024"
 license = "MIT"
 
 [lib]
-name = "prc_rs"
+name = "prc"
 path = "src/lib.rs"
 crate-type = ["lib", "staticlib"]
 

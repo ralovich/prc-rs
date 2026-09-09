@@ -15,14 +15,14 @@ enable_testing()
 include (ExternalProject)
 set(RUST_DIR ../../../prc-rs)
 if (WIN32)
-    set(LIB_NAME "prc_rs.lib")
+    set(LIB_NAME "prc.lib")
 endif (WIN32)
 if (UNIX)
-    set(LIB_NAME "libprc_rs.a")
+    set(LIB_NAME "libprc.a")
 endif (UNIX)
 
 ExternalProject_Add(
-    prc_rs
+    prc
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}
     DOWNLOAD_COMMAND ""
     CONFIGURE_COMMAND ""
@@ -42,7 +42,7 @@ ExternalProject_Add(
 ADD_EXECUTABLE(prc2json
   main.cpp
   )
-add_dependencies(prc2json prc_rs)
+add_dependencies(prc2json prc)
 
 SET(ADDITIONAL_LIBS "")
 if (WIN32)
