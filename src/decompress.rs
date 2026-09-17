@@ -11,6 +11,7 @@ use deflate::deflate_bytes_zlib;
 use inflate::inflate_bytes_zlib;
 use libdeflater::*;
 
+// FIXME should return io::Result<Vec<u8>>
 pub fn decompress(section_compressed: &[u8]) -> Result<Vec<u8>, String> {
     let use_slow = true;
     if use_slow {

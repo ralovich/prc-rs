@@ -44,6 +44,7 @@
     "structures": [
         {
             "Name": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "same_name",
@@ -58,6 +59,7 @@
                 ]
             },
             "AttributeEntry": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "flag",
@@ -77,6 +79,7 @@
                 ]
             },            
             "AttributeKeyValue": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "title",
@@ -119,6 +122,7 @@
                 ]
             },
             "PRC_TYPE_MISC_Attribute": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -278,6 +282,7 @@
                 ]
             },
             "PRC_TYPE_ASM_FileStructureExtraGeometry": {
+                "gen_ctor": true,
                 "comment": "Extra geometry: geometry summary data, which allow for partial loading of the file structure without loading the entire geometry.",
                 "fields": [
                     {
@@ -430,6 +435,7 @@
                 ]
             },
             "PRC_TYPE_GRAPH_Picture": {
+                "gen_ctor": true,
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/411",
                 "fields": [
                     {
@@ -599,6 +605,7 @@
                 ]
             },
             "PRC_TYPE_MISC_CartesianTransformation": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -612,6 +619,7 @@
                 ]
             },
             "PRC_TYPE_MISC_GeneralTransformation": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -626,6 +634,7 @@
                 ]
             },
             "PRC_TYPE_GRAPH_TextureTransformation": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -673,6 +682,7 @@
                 ]
             },
             "PRC_TYPE_GRAPH_TextureDefinition": {
+                "gen_ctor": true,
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/412",
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/485",
                 "fields": [
@@ -812,6 +822,7 @@
                 ]
             },
             "PRC_TYPE_GRAPH_Material": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -861,6 +872,7 @@
                 ]
             },
             "PRC_TYPE_GRAPH_TextureApplication": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -903,6 +915,7 @@
                 ]
             },
             "PRC_TYPE_GRAPH_LinePattern": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -934,6 +947,7 @@
                 ]
             },
             "PRC_TYPE_GRAPH_Style": {
+                "gen_ctor": true,
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/738",
                 "fields": [
                     {
@@ -1005,6 +1019,7 @@
                 ]
             },
             "PRC_TYPE_GRAPH_DottingPattern": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -1016,7 +1031,7 @@
                         "data_type": "ContentPRCRefBase"
                     },
                     {
-                        "name": "basebiased_next_pattern_index",
+                        "name": "biased_next_pattern_index",
                         "data_type": "UnsignedInteger"
                     },
                     {
@@ -1054,6 +1069,7 @@
                 ]
             },
             "PRC_TYPE_GRAPH_HatchingPattern": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -1065,7 +1081,7 @@
                         "data_type": "ContentPRCRefBase"
                     },
                     {
-                        "name": "basebiased_next_pattern_index",
+                        "name": "biased_next_pattern_index",
                         "data_type": "UnsignedInteger"
                     },
                     {
@@ -1081,6 +1097,7 @@
                 ]
             },
             "PRC_TYPE_GRAPH_SolidPattern": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -1092,7 +1109,7 @@
                         "data_type": "ContentPRCRefBase"
                     },
                     {
-                        "name": "basebiased_next_pattern_index",
+                        "name": "biased_next_pattern_index",
                         "data_type": "UnsignedInteger"
                     },
                     {
@@ -1133,6 +1150,7 @@
                 ]
             },
             "PRC_TYPE_TESS_Markup": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -1174,6 +1192,7 @@
                 ]
             },
             "PRC_TYPE_GRAPH_VPicturePattern": {
+                "gen_ctor": true,
                 "comment": "Vectorized picture pattern",
                 "fields": [
                     {
@@ -1233,6 +1252,7 @@
                 ]
             },
             "PRC_TYPE_ROOT_PRCBaseWithGraphics": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "base",
@@ -1260,12 +1280,13 @@
                         "data_type": "UnsignedInteger"
                     },
                     {
-                        "name": "biased_index_tesselation",
+                        "name": "biased_index_tessellation",
                         "data_type": "UnsignedInteger"
                     }
                 ]
             },
             "PRC_TYPE_RI_CoordinateSystem": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -1388,6 +1409,7 @@
                 ]
             },
             "PRC_TYPE_ASM_FileStructureGlobals": {
+                "gen_ctor": true,
                 "comment": "Globals: referenced file structures and colors, line styles, and coordinate systems for each tree entity of the file structure.",
                 "fields": [
                     {
@@ -1438,6 +1460,7 @@
                 ]
             },
             "PRC_TYPE_ASM_ModelFile": {
+                "gen_ctor": true,
                 "comment": "A model file is typically created by importing a CAD file. A PRC file always handles a single ModelFile, which can be considered a document that contains all of the CAD file's objects. The model file contains product occurrences, which are split into different file structures.",
                 "fields": [
                     {
@@ -1473,7 +1496,7 @@
                         "name": "file_structure_index_in_model_file",
                         "data_type": "UnsignedInteger",
                         "is_vec": true,
-                        "size": "_ctx.prc_parsed.fsi.len() as u32",
+                        "size": "_ctx.get_num_fsi()",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/724",
                         "SPECBUG": true
                     },
@@ -1498,6 +1521,7 @@
                 ]
             },
             "PRC_TYPE_RI_BrepModel": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -1533,6 +1557,7 @@
                 ]
             },
             "PRC_TYPE_RI_Curve": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -1564,6 +1589,7 @@
                 ]
             },
             "PRC_TYPE_RI_Direction": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -1594,6 +1620,7 @@
                 ]
             },
             "PRC_TYPE_RI_Plane": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -1625,6 +1652,7 @@
                 ]
             },
             "PRC_TYPE_RI_PointSet": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -1652,6 +1680,7 @@
                 ]
             },
             "PRC_TYPE_RI_PolyBrepModel": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -1673,6 +1702,7 @@
                 ]
             },
             "PRC_TYPE_RI_PolyWire": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -1690,6 +1720,7 @@
                 ]
             },
             "PRC_TYPE_RI_Set": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -1769,6 +1800,7 @@
                 ]
             },
             "PRC_TYPE_MISC_ReferenceOnTopology": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -1794,6 +1826,7 @@
                 ]
             },
             "PRC_TYPE_MISC_ReferenceOnPRCBase": {
+                "gen_ctor": true,
                 "alias": [ "ReferenceUniqueIdentifier" ],
                 "fields": [
                     {
@@ -1875,6 +1908,7 @@
                 ]
             },
             "PRC_TYPE_MISC_MarkupLinkedItem": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -1908,6 +1942,7 @@
                 ]
             },
             "PRC_TYPE_MKP_Leader": {
+                "gen_ctor": true,
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/698",
                 "fields": [
                     {
@@ -1938,7 +1973,7 @@
                         "condition_rust": "!!self.is_second_linked_item"
                     },
                     {
-                        "name": "biased_index_tesselation",
+                        "name": "biased_index_tessellation",
                         "data_type": "UnsignedInteger"
                     },
                     {
@@ -1948,6 +1983,7 @@
                 ]
             },
             "PRC_TYPE_MKP_Markup": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -1987,7 +2023,7 @@
                         "size": "number_of_leaders.value"
                     },
                     {
-                        "name": "biased_index_tesselation",
+                        "name": "biased_index_tessellation",
                         "data_type": "UnsignedInteger"
                     },
                     {
@@ -1997,6 +2033,7 @@
                 ]
             },
             "PRC_TYPE_MKP_AnnotationItem": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -2018,6 +2055,7 @@
                 ]
             },
             "PRC_TYPE_MKP_AnnotationSet": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -2045,6 +2083,7 @@
                 ]
             },
             "PRC_TYPE_MKP_AnnotationReference": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -2171,6 +2210,7 @@
                 ]
             },
             "PRC_TYPE_SURF_Plane": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -2209,6 +2249,7 @@
                 ]
             },
             "PRC_TYPE_GRAPH_AmbientLight": {
+                "gen_ctor": true,
                 "comment": "TODO: according to adobe sdk 9, there is UserData in the tail",
                 "fields": [
                     {
@@ -2235,6 +2276,7 @@
                 ]
             },
             "PRC_TYPE_GRAPH_PointLight": {
+                "gen_ctor": true,
                 "comment": "TODO: according to adobe sdk 9, there is UserData in the tail",
                 "fields": [
                     {
@@ -2308,12 +2350,13 @@
                     {
                         "name": "intensity",
                         "data_type": "Double",
-                        "condition_rust": "_ctx.ver_authoring >= 8030",
+                        "condition_rust": "_ctx.get_authoring_version() >= 8030",
                         "comment": "https://github.com/pdf-association/pdf-issues/issues/745#issuecomment-4372655906"
                     }
                 ]
             },
             "PRC_TYPE_GRAPH_SpotLight": {
+                "gen_ctor": true,
                 "comment": "TODO: according to adobe sdk 9, there is UserData in the tail",
                 "fields": [
                     {
@@ -2383,6 +2426,7 @@
                 ]
             },
             "PRC_TYPE_GRAPH_Camera": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -2510,7 +2554,7 @@
                     {
                         "name": "is_absolute",
                         "data_type": "Boolean",
-                        "condition_rust": "_ctx.ver_authoring >= 8137"
+                        "condition_rust": "_ctx.get_authoring_version() >= 8137"
                     }
                 ]
             },
@@ -2533,6 +2577,7 @@
                 ]
             },
             "PRC_TYPE_MISC_EntityReference": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -2568,6 +2613,7 @@
                 ]
             },
             "PRC_TYPE_ASM_Filter": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -2634,41 +2680,41 @@
                     {
                         "name": "is_annotation_view",
                         "data_type": "Boolean",
-                        "condition_rust": "_ctx.ver_authoring >= 8137"
+                        "condition_rust": "_ctx.get_authoring_version() >= 8137"
                     },
                     {
                         "name": "is_default_view",
                         "data_type": "Boolean",
-                        "condition_rust": "_ctx.ver_authoring >= 8137"
+                        "condition_rust": "_ctx.get_authoring_version() >= 8137"
                     },
                     {
                         "name": "is_direction",
                         "data_type": "Boolean",
-                        "condition_rust": "_ctx.ver_authoring >= 8137"
+                        "condition_rust": "_ctx.get_authoring_version() >= 8137"
                     },
                     {
                         "name": "number_of_linked_items",
                         "data_type": "UnsignedInteger",
-                        "condition_rust": "_ctx.ver_authoring >= 8137"
+                        "condition_rust": "_ctx.get_authoring_version() >= 8137"
                     },
                     {
                         "name": "linked_items",
                         "data_type": "PRC_TYPE_MISC_ReferenceOnPRCBase",
                         "is_vec": true,
                         "size": "number_of_linked_items.value",
-                        "condition_rust": "_ctx.ver_authoring >= 8137"
+                        "condition_rust": "_ctx.get_authoring_version() >= 8137"
                     },
                     {
                         "name": "number_of_filters",
                         "data_type": "UnsignedInteger",
-                        "condition_rust": "_ctx.ver_authoring >= 8137"
+                        "condition_rust": "_ctx.get_authoring_version() >= 8137"
                     },
                     {
                         "name": "filters",
                         "data_type": "PRC_TYPE_ASM_Filter",
                         "is_vec": true,
                         "size": "number_of_filters.value",
-                        "condition_rust": "_ctx.ver_authoring >= 8137"
+                        "condition_rust": "_ctx.get_authoring_version() >= 8137"
                     },
                     {
                         "name": "user_data",
@@ -2677,6 +2723,7 @@
                 ]
             },
             "PRC_TYPE_ASM_PartDefinition": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -2888,6 +2935,7 @@
                 ]
             },
             "PRC_TYPE_ASM_FileStructure": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -2909,6 +2957,7 @@
                 ]
             },
             "PRC_TYPE_ASM_FileStructureTree": {
+                "gen_ctor": true,
                 "comment": "Tree: a description of the tree of items (product occurrences, part definitions, representation items, and markup).",
                 "fields": [
                     {
@@ -3046,6 +3095,7 @@
                 ]
             },
             "PRC_TYPE_TESS_Face": {
+                "gen_ctor": true,
                 "debug": false,
                 "fields": [
                     {
@@ -3080,7 +3130,7 @@
                     {
                         "name": "used_entities_flag",
                         "data_type": "UnsignedInteger",
-                        "on_set": "debug!(\"used_entities_flag: {:?}\", PrcTesselationBitField::from_bytes(used_entities_flag.value.to_le_bytes()));"
+                        "on_set": "debug!(\"used_entities_flag: {:?}\", PrcTessellationBitField::from_bytes(used_entities_flag.value.to_le_bytes()));"
                     },
                     {
                         "name": "start_triangulated",
@@ -3142,14 +3192,14 @@
                     {
                         "name": "has_loops",
                         "data_type": "Boolean",
-                        "condition_rust": "_ctx.ver_authoring >= 7039",
+                        "condition_rust": "_ctx.get_authoring_version() >= 7039",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/705",
                         "SPECBUG": "missing OPTIONAL in spec"
                     },
                     {
                         "name": "must_calculate_normals",
                         "data_type": "Boolean",
-                        "condition_rust": "_ctx.ver_authoring >= 7047",
+                        "condition_rust": "_ctx.get_authoring_version() >= 7047",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/705",
                         "SPECBUG": "missing OPTIONAL in spec",
                         "comment": "see also must_recalculate_normals"
@@ -3157,14 +3207,14 @@
                     {
                         "name": "normal_recalculation_flags",
                         "data_type": "Character",
-                        "condition_rust": "!!self.must_calculate_normals.value && _ctx.ver_authoring >= 7047",
+                        "condition_rust": "!!self.must_calculate_normals.value && _ctx.get_authoring_version() >= 7047",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/705",
                         "SPECBUG": "missing OPTIONAL in spec"
                     },
                     {
                         "name": "crease_angle",
                         "data_type": "Double",
-                        "condition_rust": "!!self.must_calculate_normals.value && _ctx.ver_authoring >= 7047",
+                        "condition_rust": "!!self.must_calculate_normals.value && _ctx.get_authoring_version() >= 7047",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/705",
                         "SPECBUG": "missing OPTIONAL in spec"
                     },
@@ -3224,6 +3274,7 @@
                 ]
             },
             "PRC_TYPE_TESS_3D_Wire": {
+                "gen_ctor": true,
                 "on_enter": "_ctx.TESS_3D_Wire__enter()",
                 "on_leave": "_ctx.TESS_3D_Wire__leave()",
                 "fields": [
@@ -3242,7 +3293,7 @@
                     },
                     {
                         "name": "wire_indexes",
-                        "data_type": "Integer",
+                        "data_type": "UnsignedInteger",
                         "is_vec": true,
                         "size": "number_of_wire_indexes.value",
                         "on_set": "_ctx.t3dw.set0(&tessellation_coordinates.coordinates, &wire_indexes)"
@@ -3270,12 +3321,13 @@
                         "name": "texture_binary_data",
                         "data_type": "UnsignedCharacter",
                         "is_vec": true,
-                        "size": "texture_binary_data_size.value * 4"
+                        "size": "texture_binary_data_size.value as usize * 4usize"
                     },
                     {
                         "name": "last_integer_used_bit_number",
                         "data_type": "UnsignedInteger",
-                        "on_set": "assert!(/*last_integer_used_bit_number.value >= 0 &&*/ last_integer_used_bit_number.value <= 32)",
+                        "on_set1": "assert!(/*last_integer_used_bit_number.value >= 0 &&*/ last_integer_used_bit_number.value <= 32)",
+                        "on_set": "if last_integer_used_bit_number.value > 32 { return Err(std::io::Error::other(\"last_integer_used_bit_number.value > 32 failed!\")); }",
                         "debug": true
                     }
                 ]
@@ -3300,17 +3352,22 @@
                     },
                     {
                         "name": "texture_parameters_tolerance",
-                        "data_type": "Double"
+                        "data_type": "Double",
+                        "on_set": "if texture_parameters_tolerance.value < 0.0 || texture_parameters_tolerance.value > 1.0 { return Err(std::io::Error::other(\"OOB value in texture_parameters_tolerance\")); }"
                     },
                     {
                         "name": "texture_parameters_size",
-                        "data_type": "UnsignedInteger"
+                        "data_type": "UnsignedInteger",
+                        "on_set": "if texture_parameters_size.value == 0 { return Err(std::io::Error::other(\"texture_parameters_size==0\")); }"
                     },
                     {
                         "name": "texture_parameters",
                         "data_type": "FloatAsBytes",
                         "is_vec": true,
-                        "size": "texture_parameters_size.value"
+                        "size": "texture_parameters_size.value",
+                        "on_set1": "let _ = texture_parameters.iter().map(|tp| if tp.value < 0.0f32 || tp.value > 1.0f32 { return Err(std::io::Error::from(std::io::ErrorKind::InvalidData)); });",
+                        "a": "below fails on Subdiv_Car_compr.prc",
+                        "on_set2": "for i in 0..texture_parameters.len() { let tp = texture_parameters[i]; if tp.value.is_nan()/*tp.value < 0.0f32 || tp.value > 1.0f32*/ { return Err(std::io::Error::other(\"tp contains NaNs\")); }}"
                     }
                 ]
             },
@@ -3347,7 +3404,7 @@
                         "name": "origin_array",
                         "data_type": "FloatAsBytes",
                         "multiplicity": 3,
-                        "condition_rust": "_ctx.ver_authoring >= 7031",
+                        "condition_rust": "_ctx.get_authoring_version() >= 7031",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/705",
                         "SPECBUG": "missing OPTIONAL for field in 2014 spec"
                     },
@@ -3374,7 +3431,8 @@
                     {
                         "name": "reference_array_size",
                         "data_type": "UnsignedInteger",
-                        "debug": true
+                        "debug": true,
+                        "on_set": "let num_disjoint_shells2 = reference_array_size.value - triangle_face_array.a.len() as u32; debug!(\"num_disjoint_shells={} num_disjoint_shells2={}\", num_disjoint_shells2/2, num_disjoint_shells2)"
                     },
                     {
                         "name": "point_is_reference_array",
@@ -3481,6 +3539,8 @@
                         "data_type": "CharacterArray",
                         "vbr": "8",
                         "condition_rust": "!!self.is_point_color",
+                        "on_set": "_ctx.t3dc.on_point_color(&point_color_array.a)",
+                        "comment": "point_color_array describes colors on vertices for each triangle. For each triangle vertex with point color, 5 characters are stored. The first character describe if the vertex has got RGB or RGBA components. Then 4 components are used to stored R, G, B, and alpha.",
                         "debug": true
                     },
                     {
@@ -3496,12 +3556,13 @@
                         "FIXME": true,
                         "vbr": "_ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a)",
                         "condition_rust": "!!self.is_multiple_line_attribute",
-                        "on_set": "debug!(\"{}is_multiple_line_attribute_on_face: {}\", indent::get(), format(&is_multiple_line_attribute_on_face.a))"
+                        "on_set1": "debug!(\"{}is_multiple_line_attribute_on_face: {}\", indent::get(), format(&is_multiple_line_attribute_on_face.a))"
                     },
                     {
                         "name": "line_attribute_array",
                         "data_type": "ShortArray",
                         "vbr": "16",
+                        "comment": "line_attribute_array describe indexes in a graphic array. If a face contains multiple attributes, one index per triangle is added in line_attribute_array. Otherwise, one index per face is added, when encountering the first triangle of this face.",
                         "debug": true
                     },
                     {
@@ -3563,6 +3624,7 @@
                 ]
             },
             "PRC_TYPE_ASM_FileStructureTessellation": {
+                "gen_ctor": true,
                 "comment": "Tessellation: all tessellated (triangulated) data in the leaf entities of the tree (representation items and markups).",
                 "fields": [
                     {
@@ -3584,7 +3646,8 @@
                         "name": "tess",
                         "data_type": "PRC_TYPE_TESS",
                         "is_vec": true,
-                        "size": "tess_count.value"
+                        "size": "tess_count.value",
+                        "debug": true
                     },
                     {
                         "name": "user_data",
@@ -3631,6 +3694,7 @@
                 ]
             },
             "PRC_TYPE_TOPO_MultipleVertex": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -3654,6 +3718,7 @@
                 ]
             },
             "PRC_TYPE_TOPO_UniqueVertex": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -3803,7 +3868,7 @@
                         "condition_rust": "!!self.curve_data.is_3d_flag.value"
                     },
                     {
-                        "name": "paramaterization",
+                        "name": "parameterization",
                         "data_type": "Parameterization"
                     },
                     {
@@ -3897,6 +3962,7 @@
                 ]
             },
             "PRC_TYPE_CRV_NURBS": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -3969,7 +4035,7 @@
                         "condition_rust": "_ctx.ContentCurve_is_3d_flag"
                     },
                     {
-                        "name": "paramaterization",
+                        "name": "parameterization",
                         "data_type": "Parameterization"
                     },
                     {
@@ -4012,7 +4078,7 @@
                         "condition_rust": "_ctx.ContentCurve_is_3d_flag"
                     },
                     {
-                        "name": "paramaterization",
+                        "name": "parameterization",
                         "data_type": "Parameterization"
                     },
                     {
@@ -4053,7 +4119,7 @@
                         "condition_rust": "_ctx.ContentCurve_is_3d_flag"
                     },
                     {
-                        "name": "paramaterization",
+                        "name": "parameterization",
                         "data_type": "Parameterization"
                     },
                     {
@@ -4096,7 +4162,7 @@
                         "condition_rust": "_ctx.ContentCurve_is_3d_flag"
                     },
                     {
-                        "name": "paramaterization",
+                        "name": "parameterization",
                         "data_type": "Parameterization"
                     },
                     {
@@ -4110,6 +4176,7 @@
                 ]
             },
             "PRC_TYPE_MATH_FCT_1D_Polynom": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -4129,6 +4196,7 @@
                 ]
             },
             "PRC_TYPE_MATH_FCT_1D_Trigonometric": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -4173,6 +4241,7 @@
                 ]
             },
             "PRC_TYPE_MATH_FCT_1D_ArctanCos": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -4215,6 +4284,7 @@
                 ]
             },
             "PRC_TYPE_MATH_FCT_1D_Combination": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -4251,6 +4321,7 @@
                 ]
             },
             "PRC_TYPE_MATH_FCT_3D_Linear": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -4343,7 +4414,7 @@
                         "condition_rust": "_ctx.ContentCurve_is_3d_flag"
                     },
                     {
-                        "name": "paramaterization",
+                        "name": "parameterization",
                         "data_type": "Parameterization"
                     },
                     {
@@ -4468,7 +4539,7 @@
                         "condition_rust": "_ctx.ContentCurve_is_3d_flag"
                     },
                     {
-                        "name": "paramaterization",
+                        "name": "parameterization",
                         "data_type": "Parameterization"
                     },
                     {
@@ -4516,7 +4587,7 @@
                         "condition_rust": "_ctx.ContentCurve_is_3d_flag"
                     },
                     {
-                        "name": "paramaterization",
+                        "name": "parameterization",
                         "data_type": "Parameterization"
                     },
                     {
@@ -4588,7 +4659,7 @@
                         "condition_rust": "_ctx.ContentCurve_is_3d_flag"
                     },
                     {
-                        "name": "paramaterization",
+                        "name": "parameterization",
                         "data_type": "Parameterization"
                     },
                     {
@@ -4673,7 +4744,7 @@
                         "condition_rust": "_ctx.ContentCurve_is_3d_flag"
                     },
                     {
-                        "name": "paramaterization",
+                        "name": "parameterization",
                         "data_type": "Parameterization"
                     }
                 ]
@@ -4701,7 +4772,7 @@
                         "condition_rust": "_ctx.ContentCurve_is_3d_flag"
                     },
                     {
-                        "name": "paramaterization",
+                        "name": "parameterization",
                         "data_type": "Parameterization"
                     },
                     {
@@ -4740,7 +4811,7 @@
                         "condition_rust": "_ctx.ContentCurve_is_3d_flag"
                     },
                     {
-                        "name": "paramaterization",
+                        "name": "parameterization",
                         "data_type": "Parameterization"
                     },
                     {
@@ -4776,7 +4847,7 @@
                         "condition_rust": "_ctx.ContentCurve_is_3d_flag"
                     },
                     {
-                        "name": "paramaterization",
+                        "name": "parameterization",
                         "data_type": "Parameterization"
                     },
                     {
@@ -4821,7 +4892,7 @@
                         "condition_rust": "_ctx.ContentCurve_is_3d_flag"
                     },
                     {
-                        "name": "paramaterization",
+                        "name": "parameterization",
                         "data_type": "Parameterization"
                     },
                     {
@@ -4910,6 +4981,7 @@
                 ]
             },
             "PRC_TYPE_SURF_Blend01": {
+                "gen_ctor": true,
                 "comment": "proe neu",
                 "fields": [
                     {
@@ -4944,6 +5016,7 @@
                 ]
             },
             "PRC_TYPE_SURF_Blend02": {
+                "gen_ctor": true,
                 "comment": "xt",
                 "debug": false,
                 "fields": [
@@ -5019,6 +5092,7 @@
                 ]
             },
             "PRC_TYPE_SURF_Blend03": {
+                "gen_ctor": true,
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/651",
                 "bug1": "https://github.com/pdf-association/pdf-issues/issues/715#issuecomment-3770493916",
                 "comment": "Catia fillet surface defined by three curves. points, tangents, and second_derivatives arrays should be declared as Array<Vector3d>[number_of_elements * 3] size.",
@@ -5165,6 +5239,7 @@
                 ]
             },
             "PRC_TYPE_SURF_NURBS": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5240,6 +5315,7 @@
                 ]
             },
             "PRC_TYPE_SURF_Cone": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5269,6 +5345,7 @@
                 ]
             },
             "PRC_TYPE_SURF_Cylinder": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5294,6 +5371,7 @@
                 ]
             },
             "PRC_TYPE_SURF_Cylindrical": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5323,6 +5401,7 @@
                 ]
             },
             "PRC_TYPE_SURF_Offset": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5352,6 +5431,7 @@
                 ]
             },
             "PRC_TYPE_SURF_Pipe": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5385,6 +5465,7 @@
                 ]
             },
             "PRC_TYPE_SURF_Ruled": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5414,6 +5495,7 @@
                 ]
             },
             "PRC_TYPE_SURF_Sphere": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5439,6 +5521,7 @@
                 ]
             },
             "PRC_TYPE_SURF_Revolution": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5480,6 +5563,7 @@
                 ]
             },
             "PRC_TYPE_SURF_Extrusion": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5509,6 +5593,7 @@
                 ]
             },
             "PRC_TYPE_SURF_FromCurves": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5542,6 +5627,7 @@
                 ]
             },
             "PRC_TYPE_SURF_Torus": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5571,6 +5657,7 @@
                 ]
             },
             "PRC_TYPE_SURF_Transform": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5675,6 +5762,7 @@
                 ]
             },
             "PRC_TYPE_TOPO_WireEdge": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5688,6 +5776,7 @@
                 ]
             },
             "PRC_TYPE_TOPO_Edge": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5718,6 +5807,7 @@
                 ]
             },
             "PRC_TYPE_TOPO_CoEdge": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5759,6 +5849,7 @@
                 ]
             },
             "PRC_TYPE_TOPO_Loop": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5786,6 +5877,7 @@
                 ]
             },
             "PRC_TYPE_TOPO_Face": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5847,6 +5939,7 @@
                 ]
             },
             "PRC_TYPE_TOPO_Shell": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5874,6 +5967,7 @@
                 ]
             },
             "PRC_TYPE_TOPO_Connex": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -5897,6 +5991,7 @@
                 ]
             },
             "PRC_TYPE_ROOT": {
+                "gen_ctor": true,
                 "debug": false,
                 "fields": [
                     {
@@ -5948,6 +6043,7 @@
                 ]
             },
             "PRC_TYPE_TOPO_SingleWireBody": {
+                "gen_ctor": true,
                 "fields": [
                     {
                         "name": "id",
@@ -6357,7 +6453,8 @@
                         "is_vec": true,
                         "size": "0",
                         "condition_rust": "!!self.is_trimmed.value",
-                        "on_set": "if !!is_trimmed.value { trim_loop = AnaFaceTrimLoop::from_reader_while_loop(rdr, _ctx)?; }"
+                        "on_set": "if !!is_trimmed.value { trim_loop = AnaFaceTrimLoop::from_reader_while_loop(rdr, _ctx)?; }",
+                        "on_write_override": "if !!is_trimmed.value { AnaFaceTrimLoop::to_writer_loops(_w, _ctx, self.trim_loop.as_ref().unwrap().as_slice())?; }"
                     },
                     {
                         "name": "point_on_torus",
@@ -7303,6 +7400,7 @@
                 ]
             },
             "PRC_TYPE_TOPO_Context": {
+                "gen_ctor": true,
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/532",
                 "debug": false,
                 "fields": [
@@ -7377,6 +7475,7 @@
                 ]
             },
             "PRC_TYPE_ASM_FileStructureGeometry": {
+                "gen_ctor": true,
                 "comment": "Geometry: all exact geometry and topology data of the leaf entities of the tree (representation items).",
                 "debug": false,
                 "fields": [
@@ -7431,11 +7530,12 @@
                         "name": "magic",
                         "data_type": "UncompressedByteArray",
                         "vbr": "3",
-                        "on_set": "assert_eq!(b\"PRC\", magic.a.as_slice())"
+                        "on_set": "if b\"PRC\" != magic.a.as_slice() { return Err(std::io::Error::other(\"Invalid magic bytes!\")); }"
                     },
                     {
                         "name": "minimal_version_for_read",
-                        "data_type": "UncompressedUnsignedInteger"
+                        "data_type": "UncompressedUnsignedInteger",
+                        "on_set": "io_check_limit!(minimal_version_for_read.value, crate::LIBPRC_PRC_SPEC_VERSION)"
                     },
                     {
                         "name": "authoring_version",
@@ -7476,7 +7576,7 @@
                         "name": "section_count",
                         "data_type": "UncompressedUnsignedInteger",
                         "TODOexpected_value": "6",
-                        "on_set": "assert_eq!(section_count.value, 6)"
+                        "on_set": "if section_count.value != 6 { return Err(std::io::Error::other(\"Expected 6 sections!\")); }"
                     },
                     {
                         "name": "header_start_offset",
@@ -7511,11 +7611,12 @@
                         "name": "magic",
                         "data_type": "UncompressedByteArray",
                         "vbr": "3",
-                        "on_set": "assert_eq!(b\"PRC\", magic.a.as_slice())"
+                        "on_set": "if b\"PRC\" != magic.a.as_slice() { return Err(std::io::Error::other(\"Invalid magic bytes!\")); }"
                     },
                     {
                         "name": "minimal_version_for_read",
-                        "data_type": "UncompressedUnsignedInteger"
+                        "data_type": "UncompressedUnsignedInteger",
+                        "on_set": "io_check_limit!(minimal_version_for_read.value, crate::LIBPRC_PRC_SPEC_VERSION)"
                     },
                     {
                         "name": "authoring_version",
@@ -7534,7 +7635,7 @@
                         "data_type": "UncompressedUnsignedInteger"
                     },
                     {
-                        "name": "fsi",
+                        "name": "ufsd",
                         "data_type": "UncompressedFileStructureDescription",
                         "is_vec": true,
                         "size": "num_file_structs.value"

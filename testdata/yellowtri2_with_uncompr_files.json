@@ -956,5 +956,8 @@
     ],
     "user_data": {}
   },
-  "uncompr_files": []
+  "uncompr_files": [
+    [1,2,3,4,255],
+    [255,128,0,1]
+  ]
 }

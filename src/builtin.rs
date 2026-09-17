@@ -12,15 +12,15 @@
 /// Built-in structures that are bit-aligned in a PRC bitstream.
 use crate::constants::*;
 use crate::double;
-use crate::function;
 use crate::indent;
-use crate::prc_gen::{CompressedMultiplicitiesU, CompressedMultiplicitiesV};
 use bitstream_io::{BitRead, BitReader, BitWrite};
-use log::{info, trace, warn};
+use log::{info, trace};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::io;
-use std::io::{Seek, SeekFrom};
+use std::io::{Error, Seek, SeekFrom};
+
+use crate::io_check_limit;
 
 pub fn have_bbox(bounding_box_behavior: i8) -> bool {
     let bf = PrcBodyBoundingBoxBehaviorBitField::from_bytes([bounding_box_behavior as u8]);
@@ -45,62 +45,6 @@ pub fn format<T: std::cmp::Ord + std::fmt::Display>(v: &Vec<T>) -> std::string::
         ),
         (_, _) => format!("Vec<{}> {} elements", std::any::type_name::<T>(), v.len()),
     }
-}
-
-pub fn sum_up_u(mult: &Vec<CompressedMultiplicitiesU>) -> (Vec<u32>, u32) {
-    fn get_multiplicity(mult: &Vec<CompressedMultiplicitiesU>, i: usize) -> u32 {
-        if i == 0 {
-            //assert!(!mult[i].multiplicity_is_stored);
-            if !mult[i].multiplicity_is_not_stored {
-                mult[i].multiplicity.unwrap().value
-            } else {
-                warn!("according to sdk9, return 1, might be wrong!");
-                1
-            }
-        } else {
-            if !mult[i].multiplicity_is_not_stored {
-                mult[i].multiplicity.unwrap().value
-            } else {
-                get_multiplicity(mult, i - 1)
-            }
-        }
-    }
-    let mut flat = vec![];
-    let mut accum = 0_u32;
-    for i in 0..mult.len() {
-        let m = get_multiplicity(mult, i);
-        flat.push(m);
-        accum += m;
-    }
-    (flat, accum)
-}
-
-pub fn sum_up_v(mult: &Vec<CompressedMultiplicitiesV>) -> (Vec<u32>, u32) {
-    fn get_multiplicity(mult: &Vec<CompressedMultiplicitiesV>, i: usize) -> u32 {
-        if i == 0 {
-            //assert!(!mult[i].multiplicity_is_stored);
-            if !mult[i].multiplicity_is_not_stored {
-                mult[i].multiplicity.unwrap().value
-            } else {
-                warn!("according to sdk9, return 1, might be wrong!");
-                1
-            }
-        } else {
-            if !mult[i].multiplicity_is_not_stored {
-                mult[i].multiplicity.unwrap().value
-            } else {
-                get_multiplicity(mult, i - 1)
-            }
-        }
-    }
-    let mut flat = vec![];
-    let mut accum = 0_u32;
-    for i in 0..mult.len() {
-        let m = get_multiplicity(mult, i);
-        flat.push(m);
-        accum += m;
-    }
-    (flat, accum)
 }
 
 /// Current position in a seekable stream.
@@ -132,15 +76,18 @@ pub struct Boolean {
     pub value: bool,
 }
 impl Boolean {
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
-        rdr: &mut BitReader<R, E>,
-    ) -> io::Result<Self> {
+    pub fn from_reader<R: BitRead>(rdr: &mut R) -> io::Result<Self> {
         Ok(Self {
             value: read_bits(rdr, 1)? != 0,
         })
     }
     pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W) -> std::io::Result<()> {
         write_bits(w, self.value as u8, 1)
+    }
+}
+impl From<bool> for Boolean {
+    fn from(value: bool) -> Self {
+        Boolean { value }
     }
 }
 impl std::ops::Not for Boolean {
@@ -262,6 +209,11 @@ impl fmt::Debug for UnsignedShort {
 #[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub struct UnsignedInteger {
     pub value: u32,
+}
+impl From<u32> for UnsignedInteger {
+    fn from(i: u32) -> Self {
+        UnsignedInteger { value: i }
+    }
 }
 impl UnsignedInteger {
     pub fn new() -> Self {
@@ -440,6 +392,18 @@ impl<'de> Deserialize<'de> for UnsignedInteger {
 pub struct String {
     pub value: std::string::String,
 }
+impl From<std::string::String> for String {
+    fn from(i: std::string::String) -> Self {
+        Self { value: i }
+    }
+}
+impl From<&str> for String {
+    fn from(i: &str) -> Self {
+        String {
+            value: i.to_owned(),
+        }
+    }
+}
 impl String {
     pub fn new() -> Self {
         String {
@@ -450,17 +414,31 @@ impl String {
         rdr: &mut BitReader<R, E>,
     ) -> io::Result<Self> {
         let is_not_empty: bool = Boolean::from_reader(rdr)?.value;
-        let mut value: std::string::String = std::string::String::new();
+        let mut data = vec![];
         if is_not_empty {
             let str_len: u32 = UnsignedInteger::from_reader(rdr)?.value;
-            for _i in 0..str_len {
-                //let uc8: u8 = rdr.read_to().unwrap();
+            io_check_limit!(str_len, crate::limits::MAX_NUM_STR_LEN);
+            data.resize(str_len as usize, 0);
+            for i in 0..str_len as usize {
                 let uc8: u8 = UnsignedCharacter::from_reader(rdr)?.value;
-                let uc: char = uc8 as char;
-                value.push(uc);
+                data[i] = uc8;
             }
         }
-        Ok(Self { value })
+        // 3dpdf-AEC-OfficeBuilding.stream-78.prc contains non UTF-8 string...
+        const ENFORCE_UTF8: bool = false;
+        if ENFORCE_UTF8 {
+            match std::str::from_utf8(data.as_slice()) {
+                Ok(value) => Ok(Self {
+                    value: value.to_string(),
+                    //value: data.iter().map(|ch| )
+                }),
+                Err(e) => Err(Error::other(e.to_string())),
+            }
+        } else {
+            let mut value = std::string::String::new();
+            data.iter().for_each(|ch| value.push(*ch as char));
+            Ok(Self { value })
+        }
     }
     pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W) -> std::io::Result<()> {
         if self.value.is_empty() {
@@ -491,6 +469,11 @@ impl fmt::Debug for String {
 #[derive(Serialize, Deserialize, Default, Clone, Copy, PartialEq, Eq)]
 pub struct Integer {
     pub value: i32,
+}
+impl From<i32> for Integer {
+    fn from(i: i32) -> Self {
+        Integer { value: i }
+    }
 }
 impl Integer {
     pub fn new() -> Self {
@@ -537,9 +520,14 @@ impl fmt::Debug for Integer {
     }
 }
 
-#[derive(Default, Clone, Copy, PartialOrd)]
+#[derive(Default, Clone, Copy)]
 pub struct Double {
     pub value: f64,
+}
+impl From<f64> for Double {
+    fn from(i: f64) -> Self {
+        Double { value: i }
+    }
 }
 impl Double {
     pub fn new() -> Self {
@@ -564,6 +552,11 @@ impl PartialEq for Double {
     }
 }
 impl Eq for Double {}
+impl PartialOrd for Double {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.value.partial_cmp(&other.value)
+    }
+}
 impl Ord for Double {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.value.total_cmp(&other.value)
@@ -645,6 +638,7 @@ impl UserData {
             rdr.position_in_bits()?
         );
         let num_bits: u32 = UnsignedInteger::from_reader(rdr)?.value;
+        io_check_limit!(num_bits, crate::limits::MAX_NUM_USERDATA_BITS);
         let mut data: Vec<bool> = Vec::with_capacity(num_bits as usize);
         for _i in 0..num_bits {
             //data.push(rdr.read_bit()?);
@@ -670,7 +664,7 @@ impl fmt::Debug for UserData {
 }
 
 /// Getnumberofbitsusedtostoreunsignedinteger in spec
-fn get_number_of_bits_used_to_store_unsigned_integer(u: u32) -> u32 {
+pub fn get_number_of_bits_used_to_store_unsigned_integer(u: u32) -> u32 {
     let mut nb = 2;
     let mut tmp = 2;
     while u >= tmp {
@@ -791,6 +785,18 @@ pub struct CompressedEntityType {
     pub is_a_curve: bool,
 }
 impl CompressedEntityType {
+    pub fn new_curve(typev: PrcCompressedCurveType) -> Self {
+        CompressedEntityType {
+            value: typev as u8,
+            is_a_curve: true,
+        }
+    }
+    pub fn new_face(typev: PrcCompressedFaceType) -> Self {
+        CompressedEntityType {
+            value: typev as u8,
+            is_a_curve: false,
+        }
+    }
     pub fn from_reader_and_seek_back<
         R: std::io::Read + std::io::Seek,
         E: bitstream_io::Endianness,
@@ -798,7 +804,7 @@ impl CompressedEntityType {
         rdr: &mut BitReader<R, E>,
     ) -> io::Result<Self> {
         let pos = rdr.position_in_bits()?;
-        let rv = CompressedEntityType::from_reader(rdr)?;
+        let rv = Self::from_reader(rdr)?;
         rdr.seek_bits(SeekFrom::Start(pos))?;
         assert_eq!(pos, rdr.position_in_bits()?);
         Ok(rv)
@@ -1031,19 +1037,42 @@ pub struct CharacterArray {
     pub a: Vec<i8>,
 }
 impl CharacterArray {
-    pub fn from_reader<R: BitRead>(r: &mut R, num_bits_per_elem: u8) -> io::Result<Self> {
+    pub fn from_reader_and_seek_back<
+        R: std::io::Read + std::io::Seek,
+        E: bitstream_io::Endianness,
+    >(
+        rdr: &mut BitReader<R, E>,
+        num_bits_per_elem: u8,
+    ) -> io::Result<Self> {
+        let pos = rdr.position_in_bits()?;
+        let rv = Self::from_reader(rdr, num_bits_per_elem)?;
+        rdr.seek_bits(SeekFrom::Start(pos))?;
+        assert_eq!(pos, rdr.position_in_bits()?);
+        Ok(rv)
+    }
+    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+        rdr: &mut BitReader<R, E>,
+        num_bits_per_elem: u8,
+    ) -> io::Result<Self> {
+        trace!(
+            "{}CharacterArray::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
+
+        Self::from_reader1(rdr, num_bits_per_elem)
+    }
+    pub fn from_reader1<R: BitRead>(r: &mut R, num_bits_per_elem: u8) -> io::Result<Self> {
         let has_is_compressed_bit = true;
         let is_compressed_dv = true;
         let sign_extend = false;
-        let a = crate::huffman::read_huffman_to_element_array_i8(
+        Self::from_reader2(
             r,
             has_is_compressed_bit,
             num_bits_per_elem,
             is_compressed_dv,
             sign_extend,
-        )?;
-
-        Ok(Self { a })
+        )
     }
     pub fn from_reader2<R: BitRead>(
         r: &mut R,
@@ -1063,10 +1092,36 @@ impl CharacterArray {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
-        _num_bits_per_elem: u8,
+        w: &mut W,
+        num_bits_per_elem: u8,
     ) -> std::io::Result<()> {
-        unimplemented!("{}: Not implemented!", function!());
+        let has_is_compressed_bit = true;
+        let is_compressed_dv = true;
+        let sign_extend = false;
+        self.to_writer2(
+            w,
+            num_bits_per_elem,
+            has_is_compressed_bit,
+            is_compressed_dv,
+            sign_extend,
+        )
+    }
+    pub fn to_writer2<W: BitWrite + ?Sized>(
+        &self,
+        w: &mut W,
+        num_bits_per_elem: u8,
+        has_is_compressed_bit: bool,
+        is_compressed_dv: bool,
+        sign_extend: bool,
+    ) -> std::io::Result<()> {
+        crate::huffman::write_huffman_from_element_array_i8(
+            w,
+            &self.a,
+            has_is_compressed_bit,
+            num_bits_per_elem,
+            is_compressed_dv,
+            sign_extend,
+        )
     }
 }
 impl fmt::Debug for CharacterArray {
@@ -1091,13 +1146,56 @@ pub struct ShortArray {
     pub a: Vec<i16>,
 }
 impl ShortArray {
-    pub fn from_reader<R: BitRead>(r: &mut R, num_bits_per_elem: u8) -> io::Result<Self> {
-        let has_is_compressed_bit = true;
+    pub fn from_reader_and_seek_back<
+        R: std::io::Read + std::io::Seek,
+        E: bitstream_io::Endianness,
+    >(
+        rdr: &mut BitReader<R, E>,
+        num_bits_per_elem: u8,
+    ) -> io::Result<Self> {
+        let pos = rdr.position_in_bits()?;
+        let rv = Self::from_reader(rdr, num_bits_per_elem)?;
+        rdr.seek_bits(SeekFrom::Start(pos))?;
+        assert_eq!(pos, rdr.position_in_bits()?);
+        Ok(rv)
+    }
+    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+        rdr: &mut BitReader<R, E>,
+        num_bits_per_elem: u8,
+    ) -> io::Result<Self> {
+        trace!(
+            "{}ShortArray::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
+
+        Self::from_reader1(rdr, num_bits_per_elem)
+    }
+    pub fn from_reader1<R: BitRead>(r: &mut R, num_bits_per_elem: u8) -> io::Result<Self> {
+        let has_is_compressed_bit: bool = true;
+        let is_compressed_dv: bool = true;
+        let sign_extend: bool = true;
+        Self::from_reader2(
+            r,
+            num_bits_per_elem,
+            has_is_compressed_bit,
+            is_compressed_dv,
+            sign_extend,
+        )
+    }
+    pub fn from_reader2<R: BitRead>(
+        r: &mut R,
+        num_bits_per_elem: u8,
+        has_is_compressed_bit: bool,
+        is_compressed_dv: bool,
+        sign_extend: bool,
+    ) -> io::Result<Self> {
         let a = crate::huffman::read_huffman_to_element_array_i16(
             r,
             has_is_compressed_bit,
             num_bits_per_elem,
-            true,
+            is_compressed_dv,
+            sign_extend,
         )?;
 
         Ok(Self { a })
@@ -1107,7 +1205,33 @@ impl ShortArray {
         _w: &mut W,
         _num_bits_per_elem: u8,
     ) -> std::io::Result<()> {
-        unimplemented!("{}: Not implemented!", function!());
+        let has_is_compressed_bit: bool = true;
+        let is_compressed_dv: bool = true;
+        let sign_extend: bool = true;
+        self.to_writer2(
+            _w,
+            _num_bits_per_elem,
+            has_is_compressed_bit,
+            is_compressed_dv,
+            sign_extend,
+        )
+    }
+    pub fn to_writer2<W: BitWrite + ?Sized>(
+        &self,
+        _w: &mut W,
+        _num_bits_per_elem: u8,
+        has_is_compressed_bit: bool,
+        is_compressed_dv: bool,
+        sign_extend: bool,
+    ) -> std::io::Result<()> {
+        crate::huffman::write_huffman_from_element_array_i16(
+            _w,
+            &self.a,
+            has_is_compressed_bit,
+            _num_bits_per_elem,
+            is_compressed_dv,
+            sign_extend,
+        )
     }
 }
 impl fmt::Debug for ShortArray {
@@ -1132,7 +1256,18 @@ pub struct CompressedIntegerArray {
     pub a: Vec<i32>,
 }
 impl CompressedIntegerArray {
-    pub fn from_reader<R: BitRead>(_rdr: &mut R) -> io::Result<Self> {
+    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+        rdr: &mut BitReader<R, E>,
+    ) -> io::Result<Self> {
+        trace!(
+            "{}CompressedIntegerArray::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
+
+        Self::from_reader1(rdr)
+    }
+    pub fn from_reader1<R: BitRead>(_rdr: &mut R) -> io::Result<Self> {
         let has_is_compressed_bit = true;
         let num_bits_used_to_store_ints =
             CharacterArray::from_reader2(_rdr, has_is_compressed_bit, 6, true, true)?.a;
@@ -1144,7 +1279,20 @@ impl CompressedIntegerArray {
         Ok(Self { a })
     }
     pub fn to_writer<W: BitWrite + ?Sized>(&self, _w: &mut W) -> std::io::Result<()> {
-        unimplemented!("{}: Not implemented!", function!());
+        let mut num_bits_used_to_store_ints: Vec<i8> = vec![0; self.a.len()];
+        for i in 0..self.a.len() {
+            num_bits_used_to_store_ints[i] =
+                get_number_of_bits_used_to_store_integer(self.a[i]) as i8;
+        }
+        CharacterArray {
+            a: num_bits_used_to_store_ints.clone(),
+        }
+        .to_writer2(_w, 6, true, true, true)?;
+        for i in 0..self.a.len() {
+            IntegerWithVariableBitNumber { value: self.a[i] }
+                .to_writer(_w, num_bits_used_to_store_ints[i] as u32)?;
+        }
+        Ok(())
     }
 }
 impl fmt::Debug for CompressedIntegerArray {
@@ -1169,7 +1317,18 @@ pub struct CompressedIndiceArray {
     pub a: Vec<i32>,
 }
 impl CompressedIndiceArray {
-    pub fn from_reader<R: BitRead>(r: &mut R) -> io::Result<Self> {
+    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+        rdr: &mut BitReader<R, E>,
+    ) -> io::Result<Self> {
+        trace!(
+            "{}CompressedIndiceArray::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
+
+        Self::from_reader1(rdr)
+    }
+    pub fn from_reader1<R: BitRead>(r: &mut R) -> io::Result<Self> {
         let has_is_compressed_bit = true;
         let num_bits_used_to_store_chars = 6;
         CompressedIndiceArray::from_reader2(
@@ -1211,15 +1370,11 @@ impl CompressedIndiceArray {
             }
         }
 
-        let mut pc_array: Vec<i8> = Vec::with_capacity(num_elements);
-        pc_array.push(diff_num_bits_used_to_store_ints[0] as i8);
-        let mut c_bit_count = pc_array[0];
+        let mut c_bit_count = diff_num_bits_used_to_store_ints[0];
         let mut pi_array: Vec<i32> = Vec::with_capacity(num_elements);
         pi_array.push(IntegerWithVariableBitNumber::from_reader(r, c_bit_count as u32)?.value);
         for i in 1..diff_num_bits_used_to_store_ints.len() {
-            pc_array.push(diff_num_bits_used_to_store_ints[i] as i8);
-
-            c_bit_count += pc_array[i];
+            c_bit_count += diff_num_bits_used_to_store_ints[i];
             let ival = IntegerWithVariableBitNumber::from_reader(r, c_bit_count as u32)?.value;
             let index = ival + pi_array[i - 1];
             assert!(index >= 0);
@@ -1237,11 +1392,63 @@ impl CompressedIndiceArray {
                 (_, _) => (),
             }
         }
+        let _ = pi_array.iter().map(|i| assert!(*i >= 0));
         Ok(Self { a: pi_array })
     }
     /// the indices are always positive at input.
     pub fn to_writer<W: BitWrite + ?Sized>(&self, _w: &mut W) -> std::io::Result<()> {
-        unimplemented!("{}: Not implemented!", function!());
+        let has_is_compressed_bit: bool = true;
+        let num_bits_used_to_store_chars: u8 = 6;
+        let is_compressed_dv: bool = true;
+        self.to_writer2(
+            _w,
+            has_is_compressed_bit,
+            num_bits_used_to_store_chars,
+            is_compressed_dv,
+        )
+    }
+    pub fn to_writer2<W: BitWrite + ?Sized>(
+        &self,
+        _w: &mut W,
+        has_is_compressed_bit: bool,
+        num_bits_used_to_store_chars: u8,
+        is_compressed_dv: bool,
+    ) -> std::io::Result<()> {
+        let _ = self.a.iter().map(|i| assert!(*i >= 0));
+        if self.a.is_empty() {
+            return Ok(());
+        }
+        let mut diff_num_bits_used_to_store_ints: Vec<i8> = vec![0; self.a.len()];
+        let mut c_bit_count = get_number_of_bits_used_to_store_integer(self.a[0]) as i8;
+        diff_num_bits_used_to_store_ints[0] = c_bit_count;
+        for i in 1..self.a.len() {
+            let needed_bits =
+                get_number_of_bits_used_to_store_integer(self.a[i] - self.a[i - 1]) as i8;
+            diff_num_bits_used_to_store_ints[i] = needed_bits - c_bit_count;
+            c_bit_count += diff_num_bits_used_to_store_ints[i];
+        }
+        let sign_extend = true;
+        CharacterArray {
+            a: diff_num_bits_used_to_store_ints.clone(),
+        }
+        .to_writer2(
+            _w,
+            num_bits_used_to_store_chars,
+            has_is_compressed_bit,
+            is_compressed_dv,
+            sign_extend,
+        )?;
+        let mut c_bit_count = get_number_of_bits_used_to_store_integer(self.a[0]) as i8;
+        IntegerWithVariableBitNumber { value: self.a[0] }.to_writer(_w, c_bit_count as u32)?;
+        for i in 1..self.a.len() {
+            c_bit_count += diff_num_bits_used_to_store_ints[i];
+
+            IntegerWithVariableBitNumber {
+                value: self.a[i] - self.a[i - 1],
+            }
+            .to_writer(_w, c_bit_count as u32)?;
+        }
+        Ok(())
     }
 }
 impl fmt::Debug for CompressedIndiceArray {
@@ -1266,7 +1473,19 @@ pub struct CompressedIndiceArrayWithoutBit {
     pub a: Vec<i32>,
 }
 impl CompressedIndiceArrayWithoutBit {
-    pub fn from_reader<R: BitRead>(r: &mut R, is_compressed_dv: bool) -> io::Result<Self> {
+    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+        rdr: &mut BitReader<R, E>,
+        is_compressed_dv: bool,
+    ) -> io::Result<Self> {
+        trace!(
+            "{}CompressedIndiceArrayWithoutBit::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
+
+        Self::from_reader1(rdr, is_compressed_dv)
+    }
+    pub fn from_reader1<R: BitRead>(r: &mut R, is_compressed_dv: bool) -> io::Result<Self> {
         let has_is_compressed_bit = false;
         let num_bits_used_to_store_chars = 6;
         let a = CompressedIndiceArray::from_reader2(
@@ -1283,7 +1502,14 @@ impl CompressedIndiceArrayWithoutBit {
         _w: &mut W,
         _is_compressed_dv: bool,
     ) -> std::io::Result<()> {
-        unimplemented!("{}: Not implemented!", function!());
+        let has_is_compressed_bit = false;
+        let num_bits_used_to_store_chars = 6;
+        CompressedIndiceArray { a: self.a.clone() }.to_writer2(
+            _w,
+            has_is_compressed_bit,
+            num_bits_used_to_store_chars,
+            _is_compressed_dv,
+        )
     }
 }
 impl fmt::Debug for CompressedIndiceArrayWithoutBit {
@@ -1519,7 +1745,19 @@ pub struct UncompressedBoolArray {
     pub a: Vec<bool>,
 }
 impl UncompressedBoolArray {
-    pub fn from_reader<R: BitRead>(rdr: &mut R, num_bits: u32) -> io::Result<Self> {
+    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+        rdr: &mut BitReader<R, E>,
+        num_bits: u32,
+    ) -> io::Result<Self> {
+        trace!(
+            "{}UncompressedBoolArray::from_reader() bp={}",
+            indent::get(),
+            rdr.position_in_bits()?
+        );
+
+        Self::from_reader1(rdr, num_bits)
+    }
+    pub fn from_reader1<R: BitRead>(rdr: &mut R, num_bits: u32) -> io::Result<Self> {
         //println!("UncompressedBoolArray: {}", num_bits);
         let mut a: Vec<bool> = Vec::with_capacity(num_bits as usize);
         a.resize(num_bits as usize, false);
@@ -1556,7 +1794,7 @@ impl fmt::Debug for UncompressedBoolArray {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_common::tests::*;
+    use crate::test_common::*;
     use bitstream_io::{BigEndian, BitWriter};
     use std::io::{BufRead, Cursor, Write};
 
@@ -1832,7 +2070,7 @@ mod tests {
         let path = std::env::current_dir().unwrap();
         println!("The current directory is {}", path.display());
         let bytes_external =
-            get_file_as_byte_vec(&std::string::String::from("testdata/read_ints.bin"));
+            std::fs::read(&std::string::String::from("testdata/read_ints.bin")).unwrap();
         assert_eq!(bytes_external.len(), 808992 as usize);
 
         let n: u32 = 66002;
@@ -2412,7 +2650,7 @@ mod tests {
         let path = std::env::current_dir().unwrap();
         println!("[read_doubles] The current directory is {}", path.display());
         let bytes_external =
-            get_file_as_byte_vec(&std::string::String::from("testdata/read_doubles.bin"));
+            std::fs::read(&std::string::String::from("testdata/read_doubles.bin")).unwrap();
         assert_eq!(bytes_external.len(), 95340 as usize);
 
         let n: u32 = 6002;
@@ -2761,6 +2999,149 @@ mod tests {
             .unwrap()
             .a;
         assert_eq!(bools, read_bools);
+    }
+
+    #[test]
+    fn io_character_array() {
+        {
+            let mut bytes: Vec<u8> = vec![];
+
+            let ca = CharacterArray {
+                a: vec![8, 126, 1, 0, 127, 125],
+            };
+            let num_bits_per_elem = 8;
+
+            {
+                let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+                let _ = ca.to_writer(&mut w, num_bits_per_elem).unwrap();
+                fill_partial_byte_at_end(&mut w, false)
+                    .expect("failed to fill partial byte at end");
+            }
+
+            let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+            let read_ca = CharacterArray::from_reader(&mut r, num_bits_per_elem).unwrap();
+            assert_eq!(ca, read_ca);
+        }
+        {
+            let mut bytes: Vec<u8> = vec![];
+
+            let ca = CharacterArray {
+                a: vec![2, 0, 1, 0, 1, 2, 3, 1, 0, 2, 1, 0, 3],
+            };
+            let num_bits_per_elem = 2;
+
+            {
+                let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+                let _ = ca.to_writer(&mut w, num_bits_per_elem).unwrap();
+                fill_partial_byte_at_end(&mut w, false)
+                    .expect("failed to fill partial byte at end");
+            }
+
+            let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+            let read_ca = CharacterArray::from_reader(&mut r, num_bits_per_elem).unwrap();
+            assert_eq!(ca, read_ca);
+        }
+    }
+
+    #[test]
+    fn io_short_array() {
+        {
+            let mut bytes: Vec<u8> = vec![];
+
+            let ca = ShortArray {
+                a: vec![8, 5126, 1, 0, 5127, 5125, -256, -256, -257],
+            };
+            let num_bits_per_elem = 14;
+
+            {
+                let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+                let _ = ca.to_writer(&mut w, num_bits_per_elem).unwrap();
+                fill_partial_byte_at_end(&mut w, false)
+                    .expect("failed to fill partial byte at end");
+            }
+
+            let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+            let read_ca = ShortArray::from_reader(&mut r, num_bits_per_elem).unwrap();
+            assert_eq!(ca, read_ca);
+        }
+        {
+            let mut bytes: Vec<u8> = vec![];
+
+            let ca = ShortArray {
+                a: vec![2, 0, 1, 0, 1, 2, 3, 1, 0, 2, 1, 0, 3],
+            };
+            let num_bits_per_elem = 2;
+            let sign_extend = false;
+
+            {
+                let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+                let _ = ca
+                    .to_writer2(&mut w, num_bits_per_elem, true, true, sign_extend)
+                    .unwrap();
+                fill_partial_byte_at_end(&mut w, false)
+                    .expect("failed to fill partial byte at end");
+            }
+
+            let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+            let read_ca =
+                ShortArray::from_reader2(&mut r, num_bits_per_elem, true, true, sign_extend)
+                    .unwrap();
+            assert_eq!(ca, read_ca);
+        }
+    }
+
+    #[test]
+    fn io_compressed_integer_array() {
+        let mut bytes: Vec<u8> = vec![];
+
+        let cia = CompressedIntegerArray {
+            a: vec![8, 126, 1, 0, -127, 125, -190, 356333, 356444],
+        };
+        {
+            let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+            let _ = cia.to_writer(&mut w).unwrap();
+            fill_partial_byte_at_end(&mut w, false).expect("failed to fill partial byte at end");
+        }
+        let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+        let read_cia = CompressedIntegerArray::from_reader(&mut r).unwrap();
+        assert_eq!(cia, read_cia);
+    }
+
+    #[test]
+    fn io_compressed_indice_array() {
+        {
+            let mut bytes: Vec<u8> = vec![];
+
+            let cia = CompressedIndiceArray {
+                a: vec![
+                    8, 126, 1, 0, 127, 125, 188, 193, 190, 6333, 6385, 6410, 6444,
+                ],
+                //a: vec![0; 68],
+            };
+            {
+                let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+                let _ = cia.to_writer(&mut w).unwrap();
+                fill_partial_byte_at_end(&mut w, false)
+                    .expect("failed to fill partial byte at end");
+            }
+            let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+            let read_cia = CompressedIndiceArray::from_reader(&mut r).unwrap();
+            assert_eq!(cia, read_cia);
+        }
+        {
+            let mut bytes: Vec<u8> = vec![];
+
+            let cia = CompressedIndiceArrayWithoutBit { a: vec![0; 68] };
+            {
+                let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+                let _ = cia.to_writer(&mut w, false).unwrap();
+                fill_partial_byte_at_end(&mut w, false)
+                    .expect("failed to fill partial byte at end");
+            }
+            let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+            let read_cia = CompressedIndiceArrayWithoutBit::from_reader(&mut r, false).unwrap();
+            assert_eq!(cia, read_cia);
+        }
     }
 
     #[test]

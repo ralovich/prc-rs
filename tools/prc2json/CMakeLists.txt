@@ -56,6 +56,14 @@ target_link_libraries(prc2json
 )
 target_include_directories(prc2json PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/include)
 
-add_test(NAME test_prc2json
-    COMMAND prc2json ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/testdata/pmi_sample.stream-23.prc
-    )
+add_test(NAME remove_json
+    COMMAND ${CMAKE_COMMAND} -E rm -f pmi_sample.stream-23.json
+)
+add_test(NAME prc2json_runs
+    COMMAND prc2json ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/testdata/pmi_sample.stream-23.prc pmi_sample.stream-23.json
+)
+set_tests_properties(prc2json_runs PROPERTIES DEPENDS "remove_json")
+add_test(NAME json_as_expected
+    COMMAND ${CMAKE_COMMAND} -E compare_files ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/testdata/pmi_sample.stream-23.json pmi_sample.stream-23.json
+)
+set_tests_properties(json_as_expected PROPERTIES DEPENDS "prc2json_runs")

@@ -5,13 +5,68 @@
 // SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026.
 // All rights reserved.
 
-use crate::builtin::{sum_up_u, sum_up_v};
 use crate::prc_gen::{
     CompressedControlPoints, CompressedKnotVectorU, CompressedKnotVectorV,
     CompressedMultiplicitiesU, CompressedMultiplicitiesV,
 };
 use crate::vec3::Vec3;
-use log::{debug, trace};
+use log::{debug, trace, warn};
+
+pub fn sum_up_u(mult: &Vec<CompressedMultiplicitiesU>) -> (Vec<u32>, u32) {
+    fn get_multiplicity(mult: &Vec<CompressedMultiplicitiesU>, i: usize) -> u32 {
+        if i == 0 {
+            //assert!(!mult[i].multiplicity_is_stored);
+            if !mult[i].multiplicity_is_not_stored {
+                mult[i].multiplicity.unwrap().value
+            } else {
+                warn!("according to sdk9, return 1, might be wrong!");
+                1
+            }
+        } else {
+            if !mult[i].multiplicity_is_not_stored {
+                mult[i].multiplicity.unwrap().value
+            } else {
+                get_multiplicity(mult, i - 1)
+            }
+        }
+    }
+    let mut flat = vec![];
+    let mut accum = 0_u32;
+    for i in 0..mult.len() {
+        let m = get_multiplicity(mult, i);
+        flat.push(m);
+        accum += m;
+    }
+    (flat, accum)
+}
+
+pub fn sum_up_v(mult: &Vec<CompressedMultiplicitiesV>) -> (Vec<u32>, u32) {
+    fn get_multiplicity(mult: &Vec<CompressedMultiplicitiesV>, i: usize) -> u32 {
+        if i == 0 {
+            //assert!(!mult[i].multiplicity_is_stored);
+            if !mult[i].multiplicity_is_not_stored {
+                mult[i].multiplicity.unwrap().value
+            } else {
+                warn!("according to sdk9, return 1, might be wrong!");
+                1
+            }
+        } else {
+            if !mult[i].multiplicity_is_not_stored {
+                mult[i].multiplicity.unwrap().value
+            } else {
+                get_multiplicity(mult, i - 1)
+            }
+        }
+    }
+    let mut flat = vec![];
+    let mut accum = 0_u32;
+    for i in 0..mult.len() {
+        let m = get_multiplicity(mult, i);
+        flat.push(m);
+        accum += m;
+    }
+    (flat, accum)
+}
 
 #[derive(Debug, Default, Clone)]
 pub struct CompressedNurbs {

@@ -37,10 +37,10 @@ hundehodepinne-3d.stream-14.prc                                 	7094	8137	0	0	0
 PROSTEP-Change_Process_201408_3DData.stream-236.prc             	7095	8137	0	0	0	0	0	0
 3D-PDF-Machine-BOM.stream-211.prc                               	7095	8137	0	0	0	0	0	0
 Work Instruction.stream-331.prc                                 	7094	17093	0	0	0	0	0	0
-6-fault-blocks.stream-14.prc                                    	8137	8137	0	0	101	0	0	0
+6-fault-blocks.stream-14.prc                                    	8137	8137	0	0	0	0	0	0
 cutaway-tunnel.stream-14.prc                                    	8137	8137	0	0	0	0	0	0
 3D_PDF_PROSTEP-Auto_Carburetor.stream-78.prc                    	7094	8137	0	0	0	0	0	0
-3D-PDF-Sample-Chasis.stream-48.prc                              	7094	15083	0	0	101	0	0	0
+3D-PDF-Sample-Chasis.stream-48.prc                              	7094	15083	0	0	0	0	0	0
 Panorama_Demo_RicohThetaS-Interior_r11324.stream-54.prc         	8137	8137	0	0	0	0	0	0
 Work-In-Process-WIP-Report.stream-163.prc                       	7095	8137	0	0	0	0	0	0
 GoldenCap_Example_Animated.stream-18.prc                        	8137	8137	0	0	0	0	0	0
@@ -308,3 +308,11 @@ A700000011045529.stream-8.prc                                   	8137	8137	0	0	0
 divo_600.stream-14.prc                                          	8137	8137	0	0	0	0	0	0
 test.stream-7.prc                                               	8137	8137	0	0	0	0	0	0
 sample-chevrolet-camaro-2014-rs-medium_r10325.stream-137.prc    	8137	8137	0	0	0	0	0	0
+
+
+GLOB PASS:  310/ 310 (100%)		FAIL:    0/ 310 (0%)
+TREE PASS:  310/ 310 (100%)		FAIL:    0/ 310 (0%)
+TESS PASS:  308/ 310 (99%)		FAIL:    2/ 310 (1%)
+GEOM PASS:  310/ 310 (100%)		FAIL:    0/ 310 (0%)
+EXTG PASS:  310/ 310 (100%)		FAIL:    0/ 310 (0%)
+MODF PASS:  310/ 310 (100%)		FAIL:    0/ 310 (0%)

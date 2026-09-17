@@ -7,23 +7,23 @@
 
 #![allow(non_snake_case)]
 
-use crate::builtin::{Double, Integer};
+use crate::builtin::{Double, UnsignedInteger};
 use crate::constants::Prc3DWireTessFlags;
 use log::{debug, warn};
 
 /// See also [prc_rs::prc_gen::PRC_TYPE_TESS_3D_Wire]
 #[derive(Default, Clone)]
 pub struct Tess3dWire {
-    coordinates: Vec<Double>,
-    wire_indexes: Vec<Integer>,
+    coordinates: Vec<f64>,
+    wire_indexes: Vec<u32>,
     is_segment_color: bool,
     VertexColors_number_of_colors: u32,
 }
 
 impl Tess3dWire {
-    pub fn set0(&mut self, coordinates: &Vec<Double>, wire_indexes: &Vec<Integer>) {
-        self.coordinates = coordinates.clone();
-        self.wire_indexes = wire_indexes.clone();
+    pub fn set0(&mut self, coordinates: &Vec<Double>, wire_indexes: &Vec<UnsignedInteger>) {
+        self.coordinates = coordinates.iter().map(|d| d.value).collect::<Vec<_>>();
+        self.wire_indexes = wire_indexes.iter().map(|i| i.value).collect::<Vec<_>>();
     }
     pub fn set1(&mut self, is_segment_color: bool) {
         self.is_segment_color = is_segment_color;
@@ -44,22 +44,27 @@ impl Tess3dWire {
         //
         // }
 
+        let _wire_indices_unmasked = self
+            .wire_indexes
+            .iter()
+            .map(|i| *i as u32 & 0x7FFFFFFF)
+            .collect::<Vec<_>>();
+
         let mut i = 0;
         while i < self.wire_indexes.len() {
-            if self.wire_indexes[i].value as u32
+            if self.wire_indexes[i] as u32
                 & Prc3DWireTessFlags::PRC_3DWIRETESSDATA_IsContinuous as u32
                 != 0
             {
                 warn!("PRC_3DWIRETESSDATA_IsContinuous not implemented!");
             }
-            if self.wire_indexes[i].value as u32
-                & Prc3DWireTessFlags::PRC_3DWIRETESSDATA_IsClosing as u32
+            if self.wire_indexes[i] as u32 & Prc3DWireTessFlags::PRC_3DWIRETESSDATA_IsClosing as u32
                 != 0
             {
                 warn!("PRC_3DWIRETESSDATA_IsClosing not implemented!");
             }
             // The flag is the leftmost 4 bits and is interpreted using 3D Wire Tess Flags to indicate
-            let number_of_indices_per_wire_edge = self.wire_indexes[i].value as u32 & 0x7FFFFFFF;
+            let number_of_indices_per_wire_edge = self.wire_indexes[i] as u32 & 0x7FFFFFFF;
             // debug!(
             //     "number of indices_per_wire_edge: {}",
             //     number_of_indices_per_wire_edge
@@ -69,10 +74,7 @@ impl Tess3dWire {
             let start = i + 1;
             for j in 0..number_of_indices_per_wire_edge {
                 let id = start + j as usize;
-                wires
-                    .last_mut()
-                    .unwrap()
-                    .push(self.wire_indexes[id].value as u32);
+                wires.last_mut().unwrap().push(self.wire_indexes[id] as u32);
                 i += 1;
             }
 
