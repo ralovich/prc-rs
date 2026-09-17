@@ -7,12 +7,14 @@
 
 use crate::common::prc_describe;
 
+pub type AllocateFnT = ::std::option::Option<unsafe extern "C" fn(argument: usize) -> *mut u8>;
+
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn prc_parse_to_json(
     src_len: u64,
-    src: *const i8,
-    dst_size: u64,
-    dst: *mut i8,
+    src: *const u8,
+    allocate: AllocateFnT,
+    dst: *mut *mut u8,
     dst_actual_size: *mut u64,
 ) -> i32 {
     if src_len < 1 {
@@ -21,21 +23,17 @@ pub unsafe extern "C" fn prc_parse_to_json(
     if src == std::ptr::null() {
         return -2;
     }
-    if dst_size < 1 {
+    if allocate.is_none() {
         return -3;
     }
-    if dst == std::ptr::null::<i8>().cast_mut() {
+    if dst.is_null() {
         return -4;
     }
-    if dst_actual_size == std::ptr::null::<u64>().cast_mut() {
+    if dst_actual_size.is_null() {
         return -5;
     }
 
-    let mut bytes = Vec::with_capacity(src_len as usize);
-    bytes.resize(src_len as usize, 0);
-    for i in 0..src_len as usize {
-        bytes[i] = unsafe { *src.add(i) } as u8;
-    }
+    let src_slice = unsafe { std::slice::from_raw_parts(src, src_len as usize) };
 
     let verbose: bool = true;
     let all: bool = true;
@@ -47,34 +45,47 @@ pub unsafe extern "C" fn prc_parse_to_json(
     let _schema: bool = true;
     let modelfile = true;
     let rv = prc_describe(
-        bytes, verbose, all, globals, tree, tess, geom, extgeom, _schema, modelfile,
+        src_slice,
+        &"capi.prc_parse_to_json.prc".to_owned(),
+        verbose,
+        all,
+        globals,
+        tree,
+        tess,
+        geom,
+        extgeom,
+        _schema,
+        modelfile,
     );
-    match rv {
+    return match rv {
         Err(_) => {
             unsafe {
                 *dst_actual_size = 0;
             }
-            return -10;
+            -10
         }
         Ok(parsed_prc) => {
             // copy resulting text into dst
             let ser = serde_json::to_string(&parsed_prc);
-            if ser.is_err() {
-                return -11;
-            }
-            let parsed = ser.unwrap().as_bytes().to_vec();
-            if parsed.len() as u64 > dst_size {
-                return -12;
-            }
-            for i in 0..parsed.len() {
+            if let Ok(parsed) = ser {
+                let parsed = parsed.as_bytes();
+
+                let allocate_func = allocate.unwrap();
                 unsafe {
-                    *dst.add(i) = parsed[i] as i8;
+                    *dst = allocate_func(parsed.len());
+                    if (*dst).is_null() {
+                        return -12;
+                    }
                 }
+                // copy resulting text into dst
+                unsafe {
+                    std::ptr::copy_nonoverlapping::<u8>(&parsed[0], *dst, parsed.len());
+                    *dst_actual_size = parsed.len() as u64;
+                }
+                0
+            } else {
+                -11
             }
-            unsafe {
-                *dst_actual_size = parsed.len() as u64;
-            }
-            return 0;
         }
-    }
+    };
 }

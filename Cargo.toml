@@ -1,9 +1,11 @@
 [package]
 name = "prc"
-version = "0.1.0"
-authors = ["Kristof Ralovich <tade60@freemail.hu>"]
+version = "0.2.0"
+authors = ["Kristóf Ralovich <tade60@freemail.hu>"]
 edition = "2024"
 license = "MIT"
+description = "Rust crate implementation of the PRC (Product Representation Compact) file format, most commonly found embedded in 3D PDFs."
+repository = "https://github.com/ralovich/prc-rs"
 
 [lib]
 name = "prc"
@@ -12,24 +14,23 @@ crate-type = ["lib", "staticlib"]
 
 [dependencies]
 inflate = "0.4"
-deflate = "1.0.0"
-libdeflater = "1.25.2"
-log = "0.4.29"
-#nom = "8.0.0"
+deflate = "1"
+libdeflater = "1"
+log = "0.4"
 byteorder = "1"
-#bitreader = "0.3.11"
 modular-bitfield = "0.13.1"
 static_assertions = "1.1.0"
 num_enum = "0.7.6"
-bitstream-io = "4.9.0"
+bitstream-io = "4.10.0"
 #rayon = "1.11.0"
 measure_time = "0.9.0"
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.149"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 #bson = {  version = "3.1.0", features = ["serde"] }
 
 [workspace]
 members = ["tools"]
+exclude = ["fuzz"]
 
 [profile.release]
 lto = "thin"
@@ -38,3 +39,6 @@ lto = "thin"
 inherits = "release"
 lto = "off"
 debug = true
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(fuzzing)'] }

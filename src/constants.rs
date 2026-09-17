@@ -16,7 +16,7 @@ use std::mem;
 
 extern crate static_assertions as sa;
 
-#[derive(Debug, TryFromPrimitive, Clone, Copy)]
+#[derive(Debug, TryFromPrimitive, Clone, Copy, PartialEq)]
 #[repr(u8)]
 pub enum PrcSectionKind {
     Header,
@@ -334,7 +334,7 @@ impl TryFrom<CompressedEntityType> for PrcCompressedFaceType {
         if cet.is_a_curve {
             return Err(num_enum::TryFromPrimitiveError::new(0));
         }
-        Self::try_from(cet.value as u8)
+        Self::try_from(cet.value)
     }
 }
 
@@ -369,7 +369,7 @@ impl TryFrom<CompressedEntityType> for PrcCompressedCurveType {
         if !cet.is_a_curve {
             return Err(num_enum::TryFromPrimitiveError::new(0));
         }
-        Self::try_from(cet.value as u8)
+        Self::try_from(cet.value)
     }
 }
 
@@ -377,7 +377,7 @@ impl TryFrom<CompressedEntityType> for PrcCompressedCurveType {
 #[repr(u32)]
 #[allow(non_camel_case_types)]
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, TryFromPrimitive)]
-pub enum PrcTesselationFlags {
+pub enum PrcTessellationFlags {
     PRC_FACETESSDATA_Polyface = 0x0001,
     PRC_FACETESSDATA_Triangle = 0x0002,
     PRC_FACETESSDATA_TriangleFan = 0x0004,
@@ -400,7 +400,7 @@ pub enum PrcTesselationFlags {
 #[bitfield]
 #[repr(u32)]
 #[derive(Debug)]
-pub struct PrcTesselationBitField {
+pub struct PrcTessellationBitField {
     pub PRC_FACETESSDATA_Polyface: bool,                     // 0x01
     pub PRC_FACETESSDATA_Triangle: bool,                     // 0x02
     pub PRC_FACETESSDATA_TriangleFan: bool,                  // 0x0004,
@@ -423,7 +423,7 @@ pub struct PrcTesselationBitField {
     #[skip]
     unused2: bool,                 // 0x80000000,
 }
-sa::const_assert_eq!(4, mem::size_of::<PrcTesselationBitField>());
+sa::const_assert_eq!(4, mem::size_of::<PrcTessellationBitField>());
 
 /// PRC_TYPE_TESS_Face.sizes_wire
 #[repr(u32)]

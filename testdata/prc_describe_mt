@@ -9,7 +9,7 @@
 # .venv/bin/python -m pip freeze > requirements.txt
 # .venv/bin/python -m pip install -r requirements.txt
 # sudo apt install ugrep lz4
-# RUST_LOG=trace RUST_BACKTRACE=1 describe=~/dev/pdf3d/prc-rs/target/reldeb/prc_describe INPUT=list_all.txt time ./prc_describe_mt
+# RUST_LOG=trace RUST_BACKTRACE=1 DESCRIBE=~/dev/pdf3d/prc-rs/target/reldeb/prc_describe INPUT=list_all.txt time ./prc_describe_mt
 
 # ls -1SL *.prc > list_all.txt
 # (cd ../prc-db/prcs && ls -1SL *.prc > ../../testdata/list_all.txt)
@@ -72,26 +72,46 @@ def describe_one_section(_case):
     cmd_rv = rv.returncode#int(rv.stdout.decode('UTF-8').strip())
     #print(f'{file_path:70} {arg} took {run_time:8.0f} ms cmd_rv={cmd_rv}')
 
-    ver_read = '0'
-    ver_auth = '0'
-    num_fs = '0'
+    ver_read = '?'
+    ver_auth = '?'
+    num_fs = '?'
     num_uncompr_files = '0'
+    num_sum_glob_schs = '?'
+    num_mf_schs = '?'
 
     if sec_id == 0:
-        rv = subprocess.run(["ugrep", "-z", 'Version for reading', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
-        ver_read = rv.stdout.decode('UTF-8').strip().split()[6]
-        rv = subprocess.run(["ugrep", "-z", 'Authoring version', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
-        ver_auth = rv.stdout.decode('UTF-8').strip().split()[5]
-        rv = subprocess.run(["ugrep", "-z", 'Number of file sections', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
-        num_fs = rv.stdout.decode('UTF-8').strip().split()[7]
-        rv = subprocess.run(["ugrep", "-z", 'num_uncompr_files', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
-        num_uncompr_files = str(int(num_uncompr_files) + int(rv.stdout.decode('UTF-8').strip().split()[4]))
-        rv = subprocess.run(["ugrep", "-z", 'sum files', f'{folder}/{log_path}.lz4'], capture_output = True, check = True)
-        num_uncompr_files = str(int(num_uncompr_files) + int(rv.stdout.decode('UTF-8').strip().split()[5]))
+        rv = subprocess.run(["ugrep", "-z", 'Version for reading', f'{folder}/{log_path}.lz4'], capture_output = True, check = False)
+        if rv.returncode == 0:
+            ver_read = rv.stdout.decode('UTF-8').strip().split()[6]
+        rv = subprocess.run(["ugrep", "-z", 'Authoring version', f'{folder}/{log_path}.lz4'], capture_output = True, check = False)
+        if rv.returncode == 0:
+            ver_auth = rv.stdout.decode('UTF-8').strip().split()[5]
+        rv = subprocess.run(["ugrep", "-z", 'Number of file sections', f'{folder}/{log_path}.lz4'], capture_output = True, check = False)
+        if rv.returncode == 0:
+            num_fs = rv.stdout.decode('UTF-8').strip().split()[7]
+        rv = subprocess.run(["ugrep", "-z", 'num_uncompr_files', f'{folder}/{log_path}.lz4'], capture_output = True, check = False)
+        if rv.returncode == 0:
+            num_uncompr_files = str(int(num_uncompr_files) + int(rv.stdout.decode('UTF-8').strip().split()[4]))
+        rv = subprocess.run(["ugrep", "-z", 'sum files', f'{folder}/{log_path}.lz4'], capture_output = True, check = False)
+        if rv.returncode == 0:
+            num_uncompr_files = str(int(num_uncompr_files) + int(rv.stdout.decode('UTF-8').strip().split()[5]))
+        rv = subprocess.run(["ugrep", "-z", 'Number of sum global schemas:', f'{folder}/{log_path}.lz4'], capture_output = True, check = False)
+        if rv.returncode == 0:
+            num_sum_glob_schs = rv.stdout.decode('UTF-8').strip().split()[8]
+
+    if sec_id == 5:
+        rv = subprocess.run(["ugrep", "-z", 'Number of MF schemas:', f'{folder}/{log_path}.lz4'], capture_output = True, check = False)
+        #print(rv)
+        if rv.returncode == 0:
+            #print("AAA")
+            num_mf_schs = rv.stdout.decode('UTF-8').strip().split()[7]
+            #print(num_mf_schs)
+
 
     #print('*', end = '', flush = True)
 
-    return (file_path, sec_id, run_time, cmd_rv, ver_read, ver_auth, num_fs, num_uncompr_files)
+    #print(sec_id, num_mf_schs)
+    return (file_path, sec_id, run_time, cmd_rv, ver_read, ver_auth, num_fs, num_uncompr_files, num_sum_glob_schs, num_mf_schs)
 
 if __name__ == '__main__':
     with open(INPUT, 'r') as file:
@@ -106,7 +126,7 @@ if __name__ == '__main__':
     prc_sections[3] = ('--ge', 'geom_rs')
     prc_sections[4] = ('--ex', 'ext_rs')
     prc_sections[5] = ('--mf', 'mf_rs')
-    N = 6
+    N = 6 # number of sec_id-s
     assert(len(prc_sections) == N)
 
     for k, v in prc_sections.items():
@@ -139,23 +159,24 @@ if __name__ == '__main__':
             now = str(datetime.datetime.now())
             #rs.write(f'{now}\n')
             empty = " "
-            print(f"{empty:64}\tverr\tvera\tn_fs\tn_unc\tgl\ttr\tte\tge\tex\tmf\tgl_ms\ttr_ms\tte_ms\tge_ms\tex_ms\tmf_ms")
+            print(f"{empty:64}\tverr\tvera\tn_fs\tn_unc\tn_sgs\tn_mfs\tgl\ttr\tte\tge\tex\tmf\tgl_ms\ttr_ms\tte_ms\tge_ms\tex_ms\tmf_ms")
             print(now)
             ncases = len(lines)
             stats = {}
             for prc in lines:
                 collected_result = {}
                 for result in results:
-                    (file_path, sec_id, run_time, cmd_rv, ver_read, ver_auth, num_fs, num_uncompr_files) = result
+                    (file_path, sec_id, run_time, cmd_rv, ver_read, ver_auth, num_fs, num_uncompr_files, num_sum_glob_schs, num_mf_schs) = result
+                    #print(sec_id, num_mf_schs)
                     if prc != file_path:
                         continue
                     if not sec_id in stats:
                         stats[sec_id] = 0
                     if cmd_rv == 0:
                         stats[sec_id] += 1
-                    collected_result[sec_id] = (run_time, cmd_rv, ver_read, ver_auth, num_fs, num_uncompr_files)
+                    collected_result[sec_id] = (run_time, cmd_rv, ver_read, ver_auth, num_fs, num_uncompr_files, num_sum_glob_schs, num_mf_schs)
                 rs.write(f'{prc:64}\t{collected_result[0][2]}\t{collected_result[0][3]}')
-                print(f'{prc:64}\t{collected_result[0][2]}\t{collected_result[0][3]}\t{collected_result[0][4]}\t{collected_result[0][5]}', end='')
+                print(f'{prc:64}\t{collected_result[0][2]}\t{collected_result[0][3]}\t{collected_result[0][4]}\t{collected_result[0][5]}\t{collected_result[0][6]}\t{collected_result[5][7]}', end='')
                 for i in range(N):
                     #print(f'{collected_result[i][0]:.0f}\t{collected_result[i][1]}\t',end='')
                     print(f'\t{collected_result[i][1]}',end='')
@@ -170,6 +191,13 @@ if __name__ == '__main__':
             print(f'GEOM PASS: {stats[3]:4}/{ncases:4} ({stats[3]/ncases*100.0:.0f}%)\t\tFAIL: {ncases-stats[3]:4}/{ncases:4} ({(ncases-stats[3])/ncases*100.0:.0f}%)')
             print(f'EXTG PASS: {stats[4]:4}/{ncases:4} ({stats[4]/ncases*100.0:.0f}%)\t\tFAIL: {ncases-stats[4]:4}/{ncases:4} ({(ncases-stats[4])/ncases*100.0:.0f}%)')
             print(f'MODF PASS: {stats[5]:4}/{ncases:4} ({stats[5]/ncases*100.0:.0f}%)\t\tFAIL: {ncases-stats[5]:4}/{ncases:4} ({(ncases-stats[5])/ncases*100.0:.0f}%)')
+            rs.write(f'\n\nGLOB PASS: {stats[0]:4}/{ncases:4} ({stats[0]/ncases*100.0:.0f}%)\t\tFAIL: {ncases-stats[0]:4}/{ncases:4} ({(ncases-stats[0])/ncases*100.0:.0f}%)\n')
+            rs.write(f'TREE PASS: {stats[1]:4}/{ncases:4} ({stats[1]/ncases*100.0:.0f}%)\t\tFAIL: {ncases-stats[1]:4}/{ncases:4} ({(ncases-stats[1])/ncases*100.0:.0f}%)\n')
+            rs.write(f'TESS PASS: {stats[2]:4}/{ncases:4} ({stats[2]/ncases*100.0:.0f}%)\t\tFAIL: {ncases-stats[2]:4}/{ncases:4} ({(ncases-stats[2])/ncases*100.0:.0f}%)\n')
+            rs.write(f'GEOM PASS: {stats[3]:4}/{ncases:4} ({stats[3]/ncases*100.0:.0f}%)\t\tFAIL: {ncases-stats[3]:4}/{ncases:4} ({(ncases-stats[3])/ncases*100.0:.0f}%)\n')
+            rs.write(f'EXTG PASS: {stats[4]:4}/{ncases:4} ({stats[4]/ncases*100.0:.0f}%)\t\tFAIL: {ncases-stats[4]:4}/{ncases:4} ({(ncases-stats[4])/ncases*100.0:.0f}%)\n')
+            rs.write(f'MODF PASS: {stats[5]:4}/{ncases:4} ({stats[5]/ncases*100.0:.0f}%)\t\tFAIL: {ncases-stats[5]:4}/{ncases:4} ({(ncases-stats[5])/ncases*100.0:.0f}%)\n')
+
     else:
         for line in lines:
             prc_file = line.strip()

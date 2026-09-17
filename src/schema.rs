@@ -69,17 +69,15 @@ impl fmt::Display for SchemaTokens {
         // fmt::Debug::fmt(self, f)
     }
 }
-pub fn print_schema(tokens: &Vec<u32>) {
+pub fn print_schema(tokens: &[u32]) {
     use SchemaTokens::*;
 
     let mut indent: u32 = 4;
     let mut prev_raw: bool = false;
     for j in 0..tokens.len() {
         let tok = tokens[j];
-        if tok == EPRCSchema_Block_End as u32 || tok == EPRCSchema_Else as u32 {
-            if indent > 0 {
-                indent -= 2;
-            }
+        if tok == EPRCSchema_Block_End as u32 || tok == EPRCSchema_Else as u32 && indent > 0 {
+            indent -= 2;
         }
         let mut show_raw: bool = false;
         if j > 0 {
@@ -108,7 +106,7 @@ pub fn print_schema(tokens: &Vec<u32>) {
             debug!(
                 "{}{}",
                 (0..indent).map(|_| " ").collect::<String>(),
-                SchemaTokens::try_from(tok).unwrap().to_string()
+                SchemaTokens::try_from(tok).unwrap()
             );
         }
         if tok == EPRCSchema_Block_Start as u32
@@ -123,11 +121,11 @@ pub fn print_schema(tokens: &Vec<u32>) {
         prev_raw = show_raw;
     }
     debug!("");
-    ()
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum VariableKind {
+    #[default]
     Invalid,
     Boolean(bool),
     Double(f64),
@@ -164,11 +162,6 @@ impl VariableKind {
             VariableKind::Integer(x) => *x as f64,
             _ => panic!("not a scalar!"),
         }
-    }
-}
-impl Default for VariableKind {
-    fn default() -> VariableKind {
-        VariableKind::Invalid
     }
 }
 impl PartialEq for VariableKind {
@@ -218,7 +211,6 @@ impl VmState {
 #[derive(Default, Debug, Clone)]
 pub struct SchemaEvaluator {
     pub ops_per_type: HashMap<u32, Vec<u32>>, // key cannot be PRCType as there might be new ids, like 801
-    //s: VmState,
     stored_version: u32,
 }
 impl SchemaEvaluator {
@@ -244,7 +236,7 @@ impl SchemaEvaluator {
         SchemaEvaluator {
             ops_per_type,
             //s: Default::default(),
-            stored_version: 8137,
+            stored_version: crate::LIBPRC_PRC_SPEC_VERSION,
         }
     }
 
@@ -313,7 +305,7 @@ impl SchemaEvaluator {
         use SchemaTokens::*;
 
         if s.opstack.is_empty() {
-            return ();
+            return;
         }
 
         s.indent += 1;
@@ -684,7 +676,6 @@ impl SchemaEvaluator {
             _x => panic!("SchemaEvaluator::do_eval(): Unhandled token: {}!", _x),
         }
         s.indent -= 1;
-        ()
     }
 }
 
@@ -694,14 +685,13 @@ mod tests {
     use crate::builtin::{Boolean, Double, Integer, String, UnsignedInteger};
     use crate::schema::PrcType::*;
     use crate::schema::SchemaTokens::*;
-    use crate::test_common::tests::fill_partial_byte_at_end;
+    use crate::test_common::fill_partial_byte_at_end;
     use bitstream_io::{BigEndian, BitWriter};
     use std::io::Cursor;
 
     #[test]
     fn schema_evaluator() {
-        let mut bytes: Vec<u8> = Vec::new();
-        bytes.push(0);
+        let bytes: Vec<u8> = vec![0];
         let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
         let mut se: SchemaEvaluator = Default::default();
         let _ = se.eval(
@@ -781,9 +771,10 @@ mod tests {
         assert_eq!(53usize, bytes.len());
 
         let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
-        let mut se: SchemaEvaluator = Default::default();
-        se.stored_version = PRCVersion;
-        se.ops_per_type = ops_per_type;
+        let mut se: SchemaEvaluator = SchemaEvaluator {
+            stored_version: PRCVersion,
+            ops_per_type,
+        };
         let mut vars = se.eval(&mut r, 0, false, 0).unwrap();
         assert_eq!(vars.len(), 0usize);
 
@@ -878,9 +869,10 @@ mod tests {
         assert_eq!(53usize, bytes.len());
 
         let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
-        let mut se: SchemaEvaluator = Default::default();
-        se.stored_version = PRCVersion;
-        se.ops_per_type = ops_per_type;
+        let mut se: SchemaEvaluator = SchemaEvaluator {
+            stored_version: PRCVersion,
+            ops_per_type,
+        };
 
         let mut type_id = PRC_TYPE_MISC_GeneralTransformation as u32;
         let mut vars = se.eval(&mut r, type_id, false, 0).unwrap();
@@ -904,7 +896,7 @@ mod tests {
 
         type_id = 6;
         vars = se.eval(&mut r, type_id, false, 0).unwrap();
-        assert_eq!(vars.len(), 3/*6*/ as usize);
+        assert_eq!(vars.len(), 3_usize);
         assert_eq!(VariableKind::Boolean(true), vars[0]);
         assert_eq!(VariableKind::Boolean(true), vars[1]);
         assert_eq!(VariableKind::Boolean(true), vars[2]);
@@ -969,9 +961,10 @@ mod tests {
         assert_eq!(16usize, bytes.len());
 
         let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
-        let mut se: SchemaEvaluator = Default::default();
-        se.stored_version = PRCVersion;
-        se.ops_per_type = ops_per_type;
+        let mut se: SchemaEvaluator = SchemaEvaluator {
+            stored_version: PRCVersion,
+            ops_per_type,
+        };
 
         let type_id = 303u32;
         let vars = se.eval(&mut r, type_id, false, 0).unwrap();

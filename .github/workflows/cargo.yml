@@ -80,9 +80,8 @@ jobs:
       if: runner.os != 'Windows'
       run: |
         cd prc-db/prcs
-        #describe=../../target/${{env.BUILD_TYPE}}/prc_describe INPUT=../../testdata/list_all.txt ../../testdata/prc_describe
-        echo "RUST_LOG=debug RUST_BACKTRACE=1 DESCRIBE=../../target/${{env.BUILD_TYPE}}/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt"
-        RUST_LOG=debug RUST_BACKTRACE=1 DESCRIBE=../../target/${{env.BUILD_TYPE}}/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt
+        echo "RUST_LOG=debug RUST_BACKTRACE=1 DESCRIBE=../../target/${{env.BUILD_TYPE}}/prc-describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt"
+        RUST_LOG=debug RUST_BACKTRACE=1 DESCRIBE=../../target/${{env.BUILD_TYPE}}/prc-describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt
         #echo "du -d 1 -h"
         #du -d 1 -h
         cd ../..
@@ -91,10 +90,10 @@ jobs:
       if: runner.os == 'Windows'
       run: |
         cd prc-db/prcs
-        echo "RUST_LOG=debug RUST_BACKTRACE=1 describe=../../target/${{env.BUILD_TYPE}}/prc_describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt"
+        echo "RUST_LOG=debug RUST_BACKTRACE=1 DESCRIBE=../../target/${{env.BUILD_TYPE}}/prc-describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt"
         $env:RUST_LOG="debug";
         $env:RUST_BACKTRACE="1";
-        $env:describe="../../target/${{env.BUILD_TYPE}}/prc_describe";
+        $env:DESCRIBE="../../target/${{env.BUILD_TYPE}}/prc-describe";
         $env:INPUT="../../testdata/list_all.txt";
         python3 ../../testdata/prc_describe_mt
         cd ../..
@@ -111,10 +110,8 @@ jobs:
       with:
         name: prc_tools-${{runner.arch}}-${{runner.os}}
         path: |
-          target/${{env.BUILD_TYPE}}/prc_describe
-          target/${{env.BUILD_TYPE}}/prc_explode
-          target/${{env.BUILD_TYPE}}/prc_describe.exe
-          target/${{env.BUILD_TYPE}}/prc_explode.exe
+          target/${{env.BUILD_TYPE}}/prc-describe
+          target/${{env.BUILD_TYPE}}/prc-describe.exe
 
     - name: Archive testing logs
       uses: actions/upload-artifact@v7

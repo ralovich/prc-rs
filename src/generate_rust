@@ -51,7 +51,7 @@ def codegen_rust(rs, d):
 #![allow(dead_code, unused_imports, unused)]
 
 use std::io;
-use std::io::{Read, Seek, Write};
+use std::io::{Error, Read, Seek, Write};
 use bitstream_io::{BitReader, BitWrite};
 use log::{debug, trace, warn, error};
 use serde::{Serialize, Deserialize};
@@ -67,6 +67,7 @@ use crate::common::PrcParsingContext;
 use crate::constants::*;
 use crate::indent;
 
+use crate::io_check_limit;
 
 ''')
 
@@ -86,17 +87,21 @@ use crate::indent;
         for struct_name in structs:
             vswitch = {}
             is_byte_aligned = 'byte_aligned' in d['structures'][0][struct_name]
+            gen_ctor = 'gen_ctor' in d['structures'][0][struct_name]
             debug_fields = False
             if 'debug' in d['structures'][0][struct_name] and d['structures'][0][struct_name]['debug']:
                 debug_fields = True
             #
             # STRUCTURE DECLARATION
             #
+            derive_list = ["Serialize", "Deserialize", "Debug", "Clone", "PartialEq", "Eq"]
+            if not gen_ctor:
+                derive_list.append("Default")
             if 'comment' in d['structures'][0][struct_name]:
                 rs.write(f'/// {str_with_newlines_to_rust_comment(d['structures'][0][struct_name]['comment'])}\n')
             if 'bug' in d['structures'][0][struct_name]:
                 rs.write(f'/// {str_with_newlines_to_rust_comment(d['structures'][0][struct_name]['bug'])}\n')
-            rs.write('#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]\n')
+            rs.write(f'#[derive({", ".join(derive_list)})]\n')
             if 'rust_traits' in d['structures'][0][struct_name]:
                 for rt in d['structures'][0][struct_name]['rust_traits']:
                     rs.write('#[derive(%s)]\n' % rt)
@@ -141,15 +146,50 @@ use crate::indent;
                 rs.write('  pub %s: %s,\n' % (f['name'], field_type))
             rs.write('}\n')
             #
+            # TRAITS
+            #
+            if gen_ctor:
+                rs.write(f'impl Default for {struct_name} {{\n')
+                rs.write(f'  fn default() -> Self {{\n')
+                for f in d['structures'][0][struct_name]['fields']:
+                    is_virtual_type_switch = 'eligible_type_ids' in f
+                    is_vec = 'is_vec' in f
+                    is_mult = 'multiplicity' in f
+                    field_type = f['data_type']
+                    if is_mult:
+                        field_type = f"[{field_type}; {f['multiplicity']}]"
+                    elif is_vec:
+                        field_type = f"Vec<{field_type}>"
+                    if is_virtual_type_switch:
+                        rs.write(f'    let mut {f["name"]}_concrete: {struct_name}_{f["name"]}Concrete = Default::default();\n')
+                        continue
+                    rs.write(f'    let mut {f["name"]}: {field_type} = Default::default();\n')
+                    if 'expected_value' in f:
+                        rs.write(f'    {f["name"]}.value = {f["expected_value"][0]}::{f["expected_value"][1]} as u32;\n')
+                rs.write(f'    Self {{\n')
+                for f in d['structures'][0][struct_name]['fields']:
+                    is_virtual_type_switch = 'eligible_type_ids' in f
+                    is_conditional = 'condition_rust' in f
+                    if is_virtual_type_switch:
+                        rs.write(f'    {f["name"]}_concrete,\n')
+                        continue
+                    if not is_conditional:
+                        rs.write(f'    {f["name"]},\n')
+                    else:
+                        rs.write(f'    {f["name"]}: if {rust_condition_to_reader_condition(f["condition_rust"])} {{ Some({f["name"]}) }}else{{None}},\n')
+                rs.write(f'    }}\n')
+                rs.write(f'  }}\n')
+                rs.write(f'}}\n')
+            #
             # MEMBER FUNCTIONS
             #
             rs.write('impl %s {\n' % struct_name )
             rs.write('  #[allow(unused_assignments)]\n')
             #rs.write('  pub fn from_reader(rdr: &mut bitreader::BitReader) -> io::Result<Self> {\n')
             if not is_byte_aligned:
-                rs.write('  pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(rdr: &mut BitReader<R, E>, _ctx: &mut PrcParsingContext) -> io::Result<Self> {\n')
+                rs.write('  pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(rdr: &mut BitReader<R, E>, _ctx: &mut PrcParsingContext) -> io::Result<Self> {\n')
             else:
-                rs.write(f'  pub fn from_reader<R: std::io::Read + std::io::Seek>(rdr: &mut R, _ctx: &mut PrcParsingContext) -> io::Result<Self> {{')
+                rs.write(f'  pub fn from_reader<R: Read + Seek>(rdr: &mut R, _ctx: &mut PrcParsingContext) -> io::Result<Self> {{')
             call_schema_eval = struct_name.startswith('PRC_TYPE_')
             has_UserData = any(f for f in d['structures'][0][struct_name]['fields'] if ('name' in f and f['name'] == "user_data" and 'data_type' in f and f['data_type'] == "UserData"))
             emit_SEEval_after = ""
@@ -187,11 +227,13 @@ use crate::indent;
                     rs.write('  %s_type_id = %s::from_reader_and_seek_back(rdr)?.value as u32;\n' % (f['name'], f['data_type']) )
                     if do_debug:
                         rs.write(f'  trace!("{{}}{f['name']}_type_id: {{:?}}", indent::get(), &{f['name']}_type_id);\n')
-                    rs.write('  let %s_tid: %s = %s::try_from(%s_type_id).unwrap();\n' % (f['name'], f['eligible_type_kind'], f['eligible_type_kind'], f['name']) )
-                    rs.write('  %s_concrete = match %s_tid {\n' % (f['name'], f['name']) )
+                    rs.write('  let %s_tid = %s::try_from(%s_type_id);\n' % (f['name'], f['eligible_type_kind'], f['name']) )
+                    rs.write(f'  if {f["name"]}_tid.is_err() {{ return Err(Error::other(format!("Unrecognised type {{}}!", {f["name"]}_type_id))); }}\n')
+                    rs.write('  %s_concrete = match %s_tid.unwrap() {\n' % (f['name'], f['name']) )
                     for eti in f['eligible_type_ids']:
                         rs.write('    %s::%s => %s_%sConcrete::%s(%s::from_reader(rdr, _ctx)?),\n' % (f['eligible_type_kind'], eti[0], struct_name, f['name'], eti[1], eti[0]) )
-                    rs.write('    _ => panic!("%s: Unrecognized subtype: {}! bp={}", %s_type_id.to_string(), rdr.position_in_bits()?),\n' % (struct_name, f['name']) )
+                    #rs.write('    _ => panic!("%s: Unrecognized subtype: {}! bp={}", %s_type_id.to_string(), rdr.position_in_bits()?),\n' % (struct_name, f['name']) )
+                    rs.write('    _ => return Err(Error::other(format!("%s: Unrecognized subtype: {}! bp={}", %s_type_id.to_string(), rdr.position_in_bits()?))),\n' % (struct_name, f['name']) )
                     rs.write('  };\n')
                     if do_debug:
                         rs.write(f'  trace!("{{}}{f['name']}_concrete: {{:?}}", indent::get(), &{f['name']}_concrete);\n')
@@ -224,15 +266,19 @@ use crate::indent;
                     #    field_init = f"None"
                         rs.write(f'  let {f['name']}_cond = {rust_condition_to_reader_condition(f['condition_rust'])};\n')
                     if is_vec:
+                        rs.write(f'    io_check_limit!(({f["size"]}) as u32, crate::limits::MAX_NUM_ARRAY_ELEMENTS);\n')
                         rs.write('    let mut %s: Vec<%s> = Vec::with_capacity((%s) as usize);\n' % (f['name'], field_type, f['size']) )
                         if is_conditional:
                             rs.write(f'    if {f['name']}_cond {{\n')
+                        rs.write('    #[allow(clippy::reversed_empty_ranges)]')
                         rs.write('    for _i in 0..(%s) {\n' % f['size'])
+                        if do_debug:
+                            rs.write(f'      trace!("reading {f['data_type']}[{{}} of {{}}]", &_i, {f['size']});\n')
                         #if do_debug:
                         #    rs.write(f'      let _at = "{struct_name}.{f['name']}";trace!("{struct_name}.{f['name']}[{{}}]: {{}}", &_i, &_at);\n')
                         rs.write('      let element = %s;\n' %  field_reader )
                         if do_debug:
-                            rs.write(f'      trace!("{{}}{struct_name}.{f['name']}[{{}}]: {{:#?}}", indent::get(), &_i, &element);\n')
+                            rs.write(f'      trace!("{{}}{struct_name}.{f['name']}[{{}} of {{}}]: {{:#?}}", indent::get(), &_i, {f['size']}, &element);\n')
                         rs.write('      %s.push(element);\n' % f['name'])
                         rs.write('    }\n')
                         if is_conditional:
@@ -258,8 +304,8 @@ use crate::indent;
                             rs.write(f'      trace!("{{}}{f['name']}: {{:?}}", indent::get(), &{f['name']});\n')
                             #rs.write (f'      trace!("{f['name']}: {{:?}}", );\n')
                         if 'expected_value' in f:
-                            rs.write(f'     if ({f['expected_value'][1]}) != ({f['expected_value'][0]}::try_from({f['name']}.value).unwrap()) {{ warn!(\"next assertion will fail, bp={{}}\", rdr.position_in_bits()?); }}')
-                            rs.write('      assert_eq!(%s, %s::try_from(%s.value).unwrap());\n' % (f['expected_value'][1], f['expected_value'][0], f['name']) )
+                            rs.write(f'     if Ok({f['expected_value'][1]}) != ({f['expected_value'][0]}::try_from({f['name']}.value))\n {{ /*warn!(\"next assertion will fail, bp={{}}\", rdr.position_in_bits()?);*/ return Err(Error::other("expected {f['expected_value'][1]}")); }}')
+                            #rs.write('      assert_eq!(Ok(%s), %s::try_from(%s.value));\n' % (f['expected_value'][1], f['expected_value'][0], f['name']) )
                         if is_conditional:
                             rs.write('    }\n')
                 if 'on_set' in f:
@@ -291,12 +337,15 @@ use crate::indent;
     Ok(rv)
   }\n''')
             if not is_byte_aligned:
-                rs.write('  pub fn to_writer<W: BitWrite + ?Sized>(&self, _w: &mut W, _ctx: &mut PrcParsingContext) -> std::io::Result<()> {\n')
+                rs.write('  pub fn to_writer<W: BitWrite + ?Sized>(&self, _w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {\n')
             else:
-                rs.write('  pub fn to_writer<W: Write>(&self, _w: &mut W, _ctx: &mut PrcParsingContext) -> std::io::Result<()> {\n')
+                rs.write('  pub fn to_writer<W: Write>(&self, _w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {\n')
             for f in d['structures'][0][struct_name]['fields']:
                 is_conditional = 'condition_rust' in f
                 is_virtual_type_switch = 'eligible_type_ids' in f
+                if 'on_write_override' in f:
+                    rs.write(f'    {f['on_write_override']};\n')
+                    continue
                 if is_virtual_type_switch:
                     #rs.write('  // VSWITCH\n')
                     if is_conditional:
@@ -304,9 +353,8 @@ use crate::indent;
                     rs.write('  match &self.%s_concrete {\n' % f['name'] )
                     for eti in f['eligible_type_ids']:
                         rs.write('    %s_%sConcrete::%s(x) => &x.to_writer(_w, _ctx)?,\n' % (struct_name, f['name'], eti[1]) )
-                    rs.write('''    %s_%sConcrete::Invalid(x) => panic!(
-                "%s: Unrecognized subtype: {}!", x
-            ),''' % (struct_name, f['name'], struct_name) )
+                    #rs.write('''    %s_%sConcrete::Invalid(x) => panic!("%s: Unrecognized subtype: {}!", x),''' % (struct_name, f['name'], struct_name) )
+                    rs.write('''    %s_%sConcrete::Invalid(x) => return Err(Error::other(format!("%s: Unrecognized subtype: {}!", x))),''' % (struct_name, f['name'], struct_name) )
                     rs.write('  };\n')
                     if is_conditional:
                         rs.write('  }\n')
@@ -398,7 +446,7 @@ home = Path.home()
 cwd = os.getcwd()
 dir_output_path = os.path.dirname(os.path.realpath(output_module))
 rs_output_path = os.path.basename(os.path.realpath(output_module))
-subprocess.run(["rustfmt", "-v", rs_output_path], cwd = dir_output_path)
+subprocess.run(["rustfmt", "-v", "--edition", "2024", rs_output_path], cwd = dir_output_path)
 
 # Local Variables:
 # mode: python

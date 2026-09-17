@@ -22,6 +22,8 @@ pub struct Tess3dCompressed {
     num_faces: u32,
     /// for each face, the list of triangles in that face
     triangles_in_face: Vec<Vec<u32>>,
+    /// point color array
+    rgba: Vec<[u8; 4]>,
 }
 impl Tess3dCompressed {
     pub fn enter(&mut self) {
@@ -75,11 +77,21 @@ impl Tess3dCompressed {
             assert!(*edge_status_array.iter().max().unwrap() >= 0i8);
         }
         if edge_status_array.len() == triangle_face_array.len() {
-            warn!("t3dc: case A");
+            warn!("t3dc: kindA");
         } else if edge_status_array.len() == 3 * triangle_face_array.len() {
-            warn!("t3dc: case B");
+            warn!("t3dc: kindB");
+            let mut any_non_zero_in_latter_two_thirds = false;
+            for i in (edge_status_array.len() / 3)..edge_status_array.len() {
+                if edge_status_array[i] != 0i8 {
+                    any_non_zero_in_latter_two_thirds = true;
+                }
+            }
+            debug!(
+                "t3dc: kindB: any_non_zero_in_latter_two_thirds: {}",
+                any_non_zero_in_latter_two_thirds
+            )
         } else {
-            warn!("t3dc: case unknown!");
+            warn!("t3dc: kindC unknown!");
             assert!(false);
         }
 
@@ -134,12 +146,6 @@ impl Tess3dCompressed {
             if points_is_reference_array[i] {
                 num += 1;
             }
-        }
-        if num <= 3 {
-            warn!(
-                "Tess3dCompressed::number_of_reference_points {} <= 3, taking UNCOMPRESSED PATH",
-                num
-            );
         }
         num
     }
@@ -279,5 +285,33 @@ impl Tess3dCompressed {
         let res = 1.0 - (x2 * intermediate_2);
 
         return res;
+    }
+
+    pub fn on_point_color(&mut self, point_color_array5: &Vec<i8>) {
+        let num_colors = point_color_array5.len() / 5;
+        if point_color_array5.len() != num_colors * 5 {
+            warn!(
+                "t3dc.on_point_color: point_color_array5.len() not divisible by 5 as expected...but in parser?"
+            );
+        }
+        self.rgba = vec![[0u8; 4]; num_colors];
+        for i in 0..num_colors {
+            if point_color_array5[i * 5 + 0] != 0 {
+                self.rgba[i] = [
+                    point_color_array5[i * 5 + 1] as u8,
+                    point_color_array5[i * 5 + 2] as u8,
+                    point_color_array5[i * 5 + 3] as u8,
+                    point_color_array5[i * 5 + 4] as u8,
+                ];
+            } else {
+                self.rgba[i] = [
+                    point_color_array5[i * 5 + 1] as u8,
+                    point_color_array5[i * 5 + 2] as u8,
+                    point_color_array5[i * 5 + 3] as u8,
+                    255,
+                ];
+            }
+        }
+        debug!("t3dc.on_point_color: |rgba|={}", self.rgba.len());
     }
 }

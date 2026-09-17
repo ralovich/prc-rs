@@ -20,20 +20,32 @@ use bitstream_io::{BitReader, BitWrite};
 use log::{debug, error, trace, warn};
 use serde::{Deserialize, Serialize};
 use std::io;
-use std::io::{Read, Seek, Write};
+use std::io::{Error, Read, Seek, Write};
 //use crate::common::CurrentFaceType;
 use crate::constants::*;
 use crate::indent;
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+use crate::io_check_limit;
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct Name {
     pub same_name: Boolean,
     pub name: Option<String>,
 }
+impl Default for Name {
+    fn default() -> Self {
+        let mut same_name: Boolean = Default::default();
+        let mut name: String = Default::default();
+        Self {
+            same_name,
+            name: if !same_name { Some(name) } else { None },
+        }
+    }
+}
 impl Name {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -61,7 +73,7 @@ impl Name {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let same_name = self.same_name.clone();
         same_name.to_writer(_w)?;
         let name_cond = !same_name;
@@ -74,16 +86,28 @@ impl Name {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct AttributeEntry {
     pub flag: Boolean,
     pub integer_title: Option<UnsignedInteger>,
     pub string_title: Option<String>,
 }
+impl Default for AttributeEntry {
+    fn default() -> Self {
+        let mut flag: Boolean = Default::default();
+        let mut integer_title: UnsignedInteger = Default::default();
+        let mut string_title: String = Default::default();
+        Self {
+            flag,
+            integer_title: if !!flag { Some(integer_title) } else { None },
+            string_title: if !flag { Some(string_title) } else { None },
+        }
+    }
+}
 impl AttributeEntry {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -124,7 +148,7 @@ impl AttributeEntry {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let flag = self.flag.clone();
         flag.to_writer(_w)?;
         let integer_title_cond = !!flag;
@@ -143,7 +167,7 @@ impl AttributeEntry {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct AttributeKeyValue {
     pub title: AttributeEntry,
@@ -155,9 +179,39 @@ pub struct AttributeKeyValue {
     pub value_msp: Option<Integer>,
     pub value_lsp: Option<UnsignedInteger>,
 }
+impl Default for AttributeKeyValue {
+    fn default() -> Self {
+        let mut title: AttributeEntry = Default::default();
+        let mut type_: UnsignedInteger = Default::default();
+        let mut valuei: Integer = Default::default();
+        let mut valued: Double = Default::default();
+        let mut valuet: Integer = Default::default();
+        let mut values: String = Default::default();
+        let mut value_msp: Integer = Default::default();
+        let mut value_lsp: UnsignedInteger = Default::default();
+        Self {
+            title,
+            type_,
+            valuei: if type_.value == 1 { Some(valuei) } else { None },
+            valued: if type_.value == 2 { Some(valued) } else { None },
+            valuet: if type_.value == 3 { Some(valuet) } else { None },
+            values: if type_.value == 4 { Some(values) } else { None },
+            value_msp: if type_.value == 5 {
+                Some(value_msp)
+            } else {
+                None
+            },
+            value_lsp: if type_.value == 5 {
+                Some(value_lsp)
+            } else {
+                None
+            },
+        }
+    }
+}
 impl AttributeKeyValue {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -225,7 +279,7 @@ impl AttributeKeyValue {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let title = self.title.clone();
         title.to_writer(_w, _ctx)?;
         let type_ = self.type_.clone();
@@ -270,7 +324,7 @@ impl AttributeKeyValue {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MISC_Attribute {
     pub id: UnsignedInteger,
@@ -278,9 +332,24 @@ pub struct PRC_TYPE_MISC_Attribute {
     pub number_of_attributes: UnsignedInteger,
     pub attributes: Vec<AttributeKeyValue>,
 }
+impl Default for PRC_TYPE_MISC_Attribute {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_MISC_Attribute as u32;
+        let mut attribute_title: AttributeEntry = Default::default();
+        let mut number_of_attributes: UnsignedInteger = Default::default();
+        let mut attributes: Vec<AttributeKeyValue> = Default::default();
+        Self {
+            id,
+            attribute_title,
+            number_of_attributes,
+            attributes,
+        }
+    }
+}
 impl PRC_TYPE_MISC_Attribute {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -292,19 +361,21 @@ impl PRC_TYPE_MISC_Attribute {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MISC_Attribute) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MISC_Attribute) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_MISC_Attribute"));
         }
-        assert_eq!(
-            PRC_TYPE_MISC_Attribute,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut attribute_title: AttributeEntry = Default::default();
         attribute_title = AttributeEntry::from_reader(rdr, _ctx)?;
         let mut number_of_attributes: UnsignedInteger = Default::default();
         number_of_attributes = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_attributes.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut attributes: Vec<AttributeKeyValue> =
             Vec::with_capacity((number_of_attributes.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_attributes.value) {
             let element = AttributeKeyValue::from_reader(rdr, _ctx)?;
             attributes.push(element);
@@ -322,7 +393,7 @@ impl PRC_TYPE_MISC_Attribute {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let attribute_title = self.attribute_title.clone();
@@ -337,7 +408,7 @@ impl PRC_TYPE_MISC_Attribute {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct AttributeData {
     pub attribute_count: UnsignedInteger,
@@ -345,7 +416,7 @@ pub struct AttributeData {
 }
 impl AttributeData {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -357,8 +428,13 @@ impl AttributeData {
         let _ig = indent::IndentGuard::new();
         let mut attribute_count: UnsignedInteger = Default::default();
         attribute_count = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (attribute_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut attributes: Vec<PRC_TYPE_MISC_Attribute> =
             Vec::with_capacity((attribute_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(attribute_count.value) {
             let element = PRC_TYPE_MISC_Attribute::from_reader(rdr, _ctx)?;
             attributes.push(element);
@@ -373,7 +449,7 @@ impl AttributeData {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let attribute_count = self.attribute_count.clone();
         attribute_count.to_writer(_w)?;
         let attributes = self.attributes.clone();
@@ -384,7 +460,7 @@ impl AttributeData {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ContentPRCBase {
     pub attribute_data: AttributeData,
@@ -392,7 +468,7 @@ pub struct ContentPRCBase {
 }
 impl ContentPRCBase {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -416,7 +492,7 @@ impl ContentPRCBase {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let attribute_data = self.attribute_data.clone();
         attribute_data.to_writer(_w, _ctx)?;
         let entity_name = self.entity_name.clone();
@@ -425,7 +501,7 @@ impl ContentPRCBase {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ElementGraphicsBehavior {
     pub use_context: Boolean,
@@ -435,7 +511,7 @@ pub struct ElementGraphicsBehavior {
 }
 impl ElementGraphicsBehavior {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -494,7 +570,7 @@ impl ElementGraphicsBehavior {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let use_context = self.use_context.clone();
         use_context.to_writer(_w)?;
         let biased_layer_index_cond = !use_context;
@@ -519,7 +595,7 @@ impl ElementGraphicsBehavior {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct GeometrySummary {
     pub number_of_bodies: UnsignedInteger,
@@ -527,7 +603,7 @@ pub struct GeometrySummary {
 }
 impl GeometrySummary {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -539,8 +615,13 @@ impl GeometrySummary {
         let _ig = indent::IndentGuard::new();
         let mut number_of_bodies: UnsignedInteger = Default::default();
         number_of_bodies = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_bodies.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut bodies: Vec<BodyInformation> =
             Vec::with_capacity((number_of_bodies.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_bodies.value) {
             let element = BodyInformation::from_reader(rdr, _ctx)?;
             bodies.push(element);
@@ -555,7 +636,7 @@ impl GeometrySummary {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let number_of_bodies = self.number_of_bodies.clone();
         number_of_bodies.to_writer(_w)?;
         let bodies = self.bodies.clone();
@@ -566,7 +647,7 @@ impl GeometrySummary {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct BodyInformation {
     pub body_serial_type: UnsignedInteger,
@@ -574,7 +655,7 @@ pub struct BodyInformation {
 }
 impl BodyInformation {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -607,7 +688,7 @@ impl BodyInformation {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let body_serial_type = self.body_serial_type.clone();
         body_serial_type.to_writer(_w)?;
         let tolerance_cond = body_serial_type.value == PRC_TYPE_TOPO_BrepDataCompress as u32
@@ -622,7 +703,7 @@ impl BodyInformation {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ContextGraphics {
     pub number_of_treat_type: UnsignedInteger,
@@ -630,7 +711,7 @@ pub struct ContextGraphics {
 }
 impl ContextGraphics {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -642,8 +723,13 @@ impl ContextGraphics {
         let _ig = indent::IndentGuard::new();
         let mut number_of_treat_type: UnsignedInteger = Default::default();
         number_of_treat_type = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_treat_type.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut treat_types: Vec<GraphicsInformation> =
             Vec::with_capacity((number_of_treat_type.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_treat_type.value) {
             let element = GraphicsInformation::from_reader(rdr, _ctx)?;
             treat_types.push(element);
@@ -658,7 +744,7 @@ impl ContextGraphics {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let number_of_treat_type = self.number_of_treat_type.clone();
         number_of_treat_type.to_writer(_w)?;
         let treat_types = self.treat_types.clone();
@@ -669,7 +755,7 @@ impl ContextGraphics {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct GraphicsInformation {
     pub element_type: UnsignedInteger,
@@ -678,7 +764,7 @@ pub struct GraphicsInformation {
 }
 impl GraphicsInformation {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -692,8 +778,13 @@ impl GraphicsInformation {
         element_type = UnsignedInteger::from_reader(rdr)?;
         let mut number_of_element: UnsignedInteger = Default::default();
         number_of_element = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_element.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut treat_types: Vec<ElementInformation> =
             Vec::with_capacity((number_of_element.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_element.value) {
             let element = ElementInformation::from_reader(rdr, _ctx)?;
             treat_types.push(element);
@@ -709,7 +800,7 @@ impl GraphicsInformation {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let element_type = self.element_type.clone();
         element_type.to_writer(_w)?;
         let number_of_element = self.number_of_element.clone();
@@ -722,7 +813,7 @@ impl GraphicsInformation {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ElementInformation {
     pub has_graphics: Boolean,
@@ -730,7 +821,7 @@ pub struct ElementInformation {
 }
 impl ElementInformation {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -761,7 +852,7 @@ impl ElementInformation {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let has_graphics = self.has_graphics.clone();
         has_graphics.to_writer(_w)?;
         let graphic_behavior_cond = !!has_graphics;
@@ -774,7 +865,7 @@ impl ElementInformation {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ExtraGeometry {
     pub summary: GeometrySummary,
@@ -782,7 +873,7 @@ pub struct ExtraGeometry {
 }
 impl ExtraGeometry {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -806,7 +897,7 @@ impl ExtraGeometry {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let summary = self.summary.clone();
         summary.to_writer(_w, _ctx)?;
         let context_data = self.context_data.clone();
@@ -816,7 +907,7 @@ impl ExtraGeometry {
 }
 
 /// Extra geometry: geometry summary data, which allow for partial loading of the file structure without loading the entire geometry.
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_ASM_FileStructureExtraGeometry {
     pub id: UnsignedInteger,
@@ -825,9 +916,26 @@ pub struct PRC_TYPE_ASM_FileStructureExtraGeometry {
     pub extra_geom: Vec<ExtraGeometry>,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_ASM_FileStructureExtraGeometry {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_ASM_FileStructureExtraGeometry as u32;
+        let mut base: ContentPRCBase = Default::default();
+        let mut extra_geom_count: UnsignedInteger = Default::default();
+        let mut extra_geom: Vec<ExtraGeometry> = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            base,
+            extra_geom_count,
+            extra_geom,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_ASM_FileStructureExtraGeometry {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -839,19 +947,23 @@ impl PRC_TYPE_ASM_FileStructureExtraGeometry {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_ASM_FileStructureExtraGeometry) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_ASM_FileStructureExtraGeometry) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other(
+                "expected PRC_TYPE_ASM_FileStructureExtraGeometry",
+            ));
         }
-        assert_eq!(
-            PRC_TYPE_ASM_FileStructureExtraGeometry,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
         let mut extra_geom_count: UnsignedInteger = Default::default();
         extra_geom_count = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (extra_geom_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut extra_geom: Vec<ExtraGeometry> =
             Vec::with_capacity((extra_geom_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(extra_geom_count.value) {
             let element = ExtraGeometry::from_reader(rdr, _ctx)?;
             extra_geom.push(element);
@@ -877,7 +989,7 @@ impl PRC_TYPE_ASM_FileStructureExtraGeometry {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -894,7 +1006,7 @@ impl PRC_TYPE_ASM_FileStructureExtraGeometry {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct Entity_schema_definition {
     pub entity_type: UnsignedInteger,
@@ -903,7 +1015,7 @@ pub struct Entity_schema_definition {
 }
 impl Entity_schema_definition {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -917,8 +1029,13 @@ impl Entity_schema_definition {
         entity_type = UnsignedInteger::from_reader(rdr)?;
         let mut token_count: UnsignedInteger = Default::default();
         token_count = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (token_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut schema_tokens: Vec<UnsignedInteger> =
             Vec::with_capacity((token_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(token_count.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
             schema_tokens.push(element);
@@ -934,7 +1051,7 @@ impl Entity_schema_definition {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let entity_type = self.entity_type.clone();
         entity_type.to_writer(_w)?;
         let token_count = self.token_count.clone();
@@ -947,7 +1064,7 @@ impl Entity_schema_definition {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct Schema {
     pub schema_count: UnsignedInteger,
@@ -955,7 +1072,7 @@ pub struct Schema {
 }
 impl Schema {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -967,8 +1084,13 @@ impl Schema {
         let _ig = indent::IndentGuard::new();
         let mut schema_count: UnsignedInteger = Default::default();
         schema_count = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (schema_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut schemas: Vec<Entity_schema_definition> =
             Vec::with_capacity((schema_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(schema_count.value) {
             let element = Entity_schema_definition::from_reader(rdr, _ctx)?;
             schemas.push(element);
@@ -983,7 +1105,7 @@ impl Schema {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let schema_count = self.schema_count.clone();
         schema_count.to_writer(_w)?;
         let schemas = self.schemas.clone();
@@ -994,7 +1116,7 @@ impl Schema {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct UniqueId {
     pub unique_id0: UnsignedInteger,
@@ -1004,7 +1126,7 @@ pub struct UniqueId {
 }
 impl UniqueId {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -1034,7 +1156,7 @@ impl UniqueId {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let unique_id0 = self.unique_id0.clone();
         unique_id0.to_writer(_w)?;
         let unique_id1 = self.unique_id1.clone();
@@ -1047,7 +1169,7 @@ impl UniqueId {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct FontKey {
     pub font_size: UnsignedInteger,
@@ -1055,7 +1177,7 @@ pub struct FontKey {
 }
 impl FontKey {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -1079,7 +1201,7 @@ impl FontKey {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let font_size = self.font_size.clone();
         font_size.to_writer(_w)?;
         let font_attributes = self.font_attributes.clone();
@@ -1088,7 +1210,7 @@ impl FontKey {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct FontKeysSameFont {
     pub font_name: String,
@@ -1098,7 +1220,7 @@ pub struct FontKeysSameFont {
 }
 impl FontKeysSameFont {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -1114,7 +1236,12 @@ impl FontKeysSameFont {
         character_set = UnsignedInteger::from_reader(rdr)?;
         let mut key_count: UnsignedInteger = Default::default();
         key_count = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (key_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut font_key_list: Vec<FontKey> = Vec::with_capacity((key_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(key_count.value) {
             let element = FontKey::from_reader(rdr, _ctx)?;
             font_key_list.push(element);
@@ -1131,7 +1258,7 @@ impl FontKeysSameFont {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let font_name = self.font_name.clone();
         font_name.to_writer(_w)?;
         let character_set = self.character_set.clone();
@@ -1146,7 +1273,7 @@ impl FontKeysSameFont {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct MarkupSerializationHelper {
     pub default_font_family_name: String,
@@ -1155,7 +1282,7 @@ pub struct MarkupSerializationHelper {
 }
 impl MarkupSerializationHelper {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -1169,8 +1296,13 @@ impl MarkupSerializationHelper {
         default_font_family_name = String::from_reader(rdr)?;
         let mut font_keys_count: UnsignedInteger = Default::default();
         font_keys_count = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (font_keys_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut font_keys_of_font: Vec<FontKeysSameFont> =
             Vec::with_capacity((font_keys_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(font_keys_count.value) {
             let element = FontKeysSameFont::from_reader(rdr, _ctx)?;
             font_keys_of_font.push(element);
@@ -1186,7 +1318,7 @@ impl MarkupSerializationHelper {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let default_font_family_name = self.default_font_family_name.clone();
         default_font_family_name.to_writer(_w)?;
         let font_keys_count = self.font_keys_count.clone();
@@ -1199,7 +1331,7 @@ impl MarkupSerializationHelper {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct RgbColor {
     pub red: Double,
@@ -1208,7 +1340,7 @@ pub struct RgbColor {
 }
 impl RgbColor {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -1231,7 +1363,7 @@ impl RgbColor {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let red = self.red.clone();
         red.to_writer(_w)?;
         let green = self.green.clone();
@@ -1243,7 +1375,7 @@ impl RgbColor {
 }
 
 /// https://github.com/pdf-association/pdf-issues/issues/411
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_Picture {
     pub id: UnsignedInteger,
@@ -1253,9 +1385,28 @@ pub struct PRC_TYPE_GRAPH_Picture {
     pub pixel_width: UnsignedInteger,
     pub pixel_height: UnsignedInteger,
 }
+impl Default for PRC_TYPE_GRAPH_Picture {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_GRAPH_Picture as u32;
+        let mut base: ContentPRCBase = Default::default();
+        let mut format: UnsignedInteger = Default::default();
+        let mut biased_uncompressed_file_index: UnsignedInteger = Default::default();
+        let mut pixel_width: UnsignedInteger = Default::default();
+        let mut pixel_height: UnsignedInteger = Default::default();
+        Self {
+            id,
+            base,
+            format,
+            biased_uncompressed_file_index,
+            pixel_width,
+            pixel_height,
+        }
+    }
+}
 impl PRC_TYPE_GRAPH_Picture {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -1267,10 +1418,10 @@ impl PRC_TYPE_GRAPH_Picture {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_GRAPH_Picture) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_GRAPH_Picture) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_GRAPH_Picture"));
         }
-        assert_eq!(PRC_TYPE_GRAPH_Picture, PrcType::try_from(id.value).unwrap());
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
         let mut format: UnsignedInteger = Default::default();
@@ -1296,7 +1447,7 @@ impl PRC_TYPE_GRAPH_Picture {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -1313,7 +1464,7 @@ impl PRC_TYPE_GRAPH_Picture {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default, Copy)]
 #[allow(non_camel_case_types)]
 pub struct Vector2D {
     pub x: Double,
@@ -1321,7 +1472,7 @@ pub struct Vector2D {
 }
 impl Vector2D {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -1342,7 +1493,7 @@ impl Vector2D {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let x = self.x.clone();
         x.to_writer(_w)?;
         let y = self.y.clone();
@@ -1351,7 +1502,7 @@ impl Vector2D {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default, Copy)]
 #[allow(non_camel_case_types)]
 pub struct Vector3D {
     pub x: Double,
@@ -1360,7 +1511,7 @@ pub struct Vector3D {
 }
 impl Vector3D {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -1383,7 +1534,7 @@ impl Vector3D {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let x = self.x.clone();
         x.to_writer(_w)?;
         let y = self.y.clone();
@@ -1394,7 +1545,7 @@ impl Vector3D {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct Transformation2D {
     pub behavior: Character,
@@ -1407,7 +1558,7 @@ pub struct Transformation2D {
 }
 impl Transformation2D {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -1491,7 +1642,7 @@ impl Transformation2D {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let behavior = self.behavior.clone();
         behavior.to_writer(_w)?;
         let translation_cond = (behavior.value & PRC_TRANSFORMATION_Translate as i8) != 0;
@@ -1536,7 +1687,7 @@ impl Transformation2D {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct Transformation2DWithBit {
     pub has_transformation: Boolean,
@@ -1544,7 +1695,7 @@ pub struct Transformation2DWithBit {
 }
 impl Transformation2DWithBit {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -1575,7 +1726,7 @@ impl Transformation2DWithBit {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let has_transformation = self.has_transformation.clone();
         has_transformation.to_writer(_w)?;
         let transformation_cond = !!has_transformation;
@@ -1588,7 +1739,7 @@ impl Transformation2DWithBit {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct Transformation3D {
     pub behavior: Character,
@@ -1601,7 +1752,7 @@ pub struct Transformation3D {
 }
 impl Transformation3D {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -1687,7 +1838,7 @@ impl Transformation3D {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let behavior = self.behavior.clone();
         behavior.to_writer(_w)?;
         let translation_cond = (behavior.value as u8 & PRC_TRANSFORMATION_Translate as u8) != 0;
@@ -1733,7 +1884,7 @@ impl Transformation3D {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct Transformation3DWithBit {
     pub has_transformation: Boolean,
@@ -1741,7 +1892,7 @@ pub struct Transformation3DWithBit {
 }
 impl Transformation3DWithBit {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -1772,7 +1923,7 @@ impl Transformation3DWithBit {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let has_transformation = self.has_transformation.clone();
         has_transformation.to_writer(_w)?;
         let transformation_cond = !!has_transformation;
@@ -1785,15 +1936,23 @@ impl Transformation3DWithBit {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MISC_CartesianTransformation {
     pub id: UnsignedInteger,
     pub transform: Transformation3D,
 }
+impl Default for PRC_TYPE_MISC_CartesianTransformation {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_MISC_CartesianTransformation as u32;
+        let mut transform: Transformation3D = Default::default();
+        Self { id, transform }
+    }
+}
 impl PRC_TYPE_MISC_CartesianTransformation {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -1805,13 +1964,12 @@ impl PRC_TYPE_MISC_CartesianTransformation {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MISC_CartesianTransformation) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MISC_CartesianTransformation) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other(
+                "expected PRC_TYPE_MISC_CartesianTransformation",
+            ));
         }
-        assert_eq!(
-            PRC_TYPE_MISC_CartesianTransformation,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut transform: Transformation3D = Default::default();
         transform = Transformation3D::from_reader(rdr, _ctx)?;
         let _ = _ctx
@@ -1824,7 +1982,7 @@ impl PRC_TYPE_MISC_CartesianTransformation {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let transform = self.transform.clone();
@@ -1833,15 +1991,26 @@ impl PRC_TYPE_MISC_CartesianTransformation {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MISC_GeneralTransformation {
     pub id: UnsignedInteger,
     pub general_transform: [Double; 16],
 }
+impl Default for PRC_TYPE_MISC_GeneralTransformation {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_MISC_GeneralTransformation as u32;
+        let mut general_transform: [Double; 16] = Default::default();
+        Self {
+            id,
+            general_transform,
+        }
+    }
+}
 impl PRC_TYPE_MISC_GeneralTransformation {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -1853,13 +2022,10 @@ impl PRC_TYPE_MISC_GeneralTransformation {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MISC_GeneralTransformation) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MISC_GeneralTransformation) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_MISC_GeneralTransformation"));
         }
-        assert_eq!(
-            PRC_TYPE_MISC_GeneralTransformation,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut general_transform: [Double; 16] = [Default::default(); 16];
         for i in 0..16 {
             general_transform[i as usize] = Double::from_reader(rdr)?;
@@ -1877,7 +2043,7 @@ impl PRC_TYPE_MISC_GeneralTransformation {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let general_transform = self.general_transform.clone();
@@ -1888,7 +2054,7 @@ impl PRC_TYPE_MISC_GeneralTransformation {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_TextureTransformation {
     pub id: UnsignedInteger,
@@ -1897,9 +2063,30 @@ pub struct PRC_TYPE_GRAPH_TextureTransformation {
     pub transform_2d: Boolean,
     pub transform: Option<Transformation2D>,
 }
+impl Default for PRC_TYPE_GRAPH_TextureTransformation {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_GRAPH_TextureTransformation as u32;
+        let mut invert_s: Boolean = Default::default();
+        let mut invert_t: Boolean = Default::default();
+        let mut transform_2d: Boolean = Default::default();
+        let mut transform: Transformation2D = Default::default();
+        Self {
+            id,
+            invert_s,
+            invert_t,
+            transform_2d,
+            transform: if !!transform_2d {
+                Some(transform)
+            } else {
+                None
+            },
+        }
+    }
+}
 impl PRC_TYPE_GRAPH_TextureTransformation {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -1911,13 +2098,12 @@ impl PRC_TYPE_GRAPH_TextureTransformation {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_GRAPH_TextureTransformation) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_GRAPH_TextureTransformation) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other(
+                "expected PRC_TYPE_GRAPH_TextureTransformation",
+            ));
         }
-        assert_eq!(
-            PRC_TYPE_GRAPH_TextureTransformation,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut invert_s: Boolean = Default::default();
         invert_s = Boolean::from_reader(rdr)?;
         let mut invert_t: Boolean = Default::default();
@@ -1950,7 +2136,7 @@ impl PRC_TYPE_GRAPH_TextureTransformation {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let invert_s = self.invert_s.clone();
@@ -1969,7 +2155,7 @@ impl PRC_TYPE_GRAPH_TextureTransformation {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ContentPRCRefBase {
     pub base: ContentPRCBase,
@@ -1979,7 +2165,7 @@ pub struct ContentPRCRefBase {
 }
 impl ContentPRCRefBase {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -2009,7 +2195,7 @@ impl ContentPRCRefBase {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let base = self.base.clone();
         base.to_writer(_w, _ctx)?;
         let nonpersistent_id = self.nonpersistent_id.clone();
@@ -2023,7 +2209,7 @@ impl ContentPRCRefBase {
 }
 
 /// https://github.com/pdf-association/pdf-issues/issues/485
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_TextureDefinition {
     pub id: UnsignedInteger,
@@ -2054,9 +2240,137 @@ pub struct PRC_TYPE_GRAPH_TextureDefinition {
     pub has_texture_transformation: Boolean,
     pub texture_transformation: Option<PRC_TYPE_GRAPH_TextureTransformation>,
 }
+impl Default for PRC_TYPE_GRAPH_TextureDefinition {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_GRAPH_TextureDefinition as u32;
+        let mut base: ContentPRCRefBase = Default::default();
+        let mut biased_picture_index: UnsignedInteger = Default::default();
+        let mut texture_dimension: Character = Default::default();
+        let mut texture_mapping_type: Integer = Default::default();
+        let mut texture_mapping_operator: Integer = Default::default();
+        let mut has_transformation: Boolean = Default::default();
+        let mut transformation: PRC_TYPE_MISC_CartesianTransformation = Default::default();
+        let mut texture_mapping_attributes: UnsignedInteger = Default::default();
+        let mut number_of_texture_mapping_attributes_intensities: UnsignedInteger =
+            Default::default();
+        let mut texture_mapping_attributes_intensities: Vec<Double> = Default::default();
+        let mut number_of_texture_mapping_attributes_components: UnsignedInteger =
+            Default::default();
+        let mut texture_mapping_attributes_components: Vec<Character> = Default::default();
+        let mut texture_function: Integer = Default::default();
+        let mut blend_src: [Double; 4] = Default::default();
+        let mut blend_src_rgb: Integer = Default::default();
+        let mut blend_dst_rgb: Integer = Default::default();
+        let mut blend_src_alpha: Integer = Default::default();
+        let mut blend_dst_alpha: Integer = Default::default();
+        let mut texture_application_mode: Character = Default::default();
+        let mut alpha_test: Integer = Default::default();
+        let mut alpha_test_reference: Double = Default::default();
+        let mut texture_wrapping_mode_s: Integer = Default::default();
+        let mut texture_wrapping_mode_t: Integer = Default::default();
+        let mut texture_wrapping_mode_r: Integer = Default::default();
+        let mut has_texture_transformation: Boolean = Default::default();
+        let mut texture_transformation: PRC_TYPE_GRAPH_TextureTransformation = Default::default();
+        Self {
+            id,
+            base,
+            biased_picture_index,
+            texture_dimension,
+            texture_mapping_type,
+            texture_mapping_operator: if texture_mapping_type.value as i32
+                == TextureMappingType::Operator as i32
+            {
+                Some(texture_mapping_operator)
+            } else {
+                None
+            },
+            has_transformation: if texture_mapping_type.value == TextureMappingType::Operator as i32
+            {
+                Some(has_transformation)
+            } else {
+                None
+            },
+            transformation: if texture_mapping_type.value == TextureMappingType::Operator as i32
+                && !!has_transformation.value
+            {
+                Some(transformation)
+            } else {
+                None
+            },
+            texture_mapping_attributes,
+            number_of_texture_mapping_attributes_intensities,
+            texture_mapping_attributes_intensities:
+                if number_of_texture_mapping_attributes_intensities.value != 0 {
+                    Some(texture_mapping_attributes_intensities)
+                } else {
+                    None
+                },
+            number_of_texture_mapping_attributes_components,
+            texture_mapping_attributes_components:
+                if number_of_texture_mapping_attributes_components.value != 0 {
+                    Some(texture_mapping_attributes_components)
+                } else {
+                    None
+                },
+            texture_function,
+            blend_src: if texture_function.value as i32 == TextureFunction::Blend as i32 {
+                Some(blend_src)
+            } else {
+                None
+            },
+            blend_src_rgb,
+            blend_dst_rgb: if blend_src_rgb.value != 0 as i32 {
+                Some(blend_dst_rgb)
+            } else {
+                None
+            },
+            blend_src_alpha,
+            blend_dst_alpha: if blend_src_alpha.value != 0 as i32 {
+                Some(blend_dst_alpha)
+            } else {
+                None
+            },
+            texture_application_mode,
+            alpha_test: if (texture_application_mode.value as u16
+                & TextureApplicationMode::AlphaTest as u16)
+                != 0
+            {
+                Some(alpha_test)
+            } else {
+                None
+            },
+            alpha_test_reference: if (texture_application_mode.value as u16
+                & TextureApplicationMode::AlphaTest as u16)
+                != 0
+            {
+                Some(alpha_test_reference)
+            } else {
+                None
+            },
+            texture_wrapping_mode_s,
+            texture_wrapping_mode_t: if texture_dimension.value > 1 {
+                Some(texture_wrapping_mode_t)
+            } else {
+                None
+            },
+            texture_wrapping_mode_r: if texture_dimension.value > 2 {
+                Some(texture_wrapping_mode_r)
+            } else {
+                None
+            },
+            has_texture_transformation,
+            texture_transformation: if !!has_texture_transformation {
+                Some(texture_transformation)
+            } else {
+                None
+            },
+        }
+    }
+}
 impl PRC_TYPE_GRAPH_TextureDefinition {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -2068,13 +2382,10 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_GRAPH_TextureDefinition) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_GRAPH_TextureDefinition) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_GRAPH_TextureDefinition"));
         }
-        assert_eq!(
-            PRC_TYPE_GRAPH_TextureDefinition,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
         let mut biased_picture_index: UnsignedInteger = Default::default();
@@ -2113,9 +2424,14 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         );
         let texture_mapping_attributes_intensities_cond =
             number_of_texture_mapping_attributes_intensities.value != 0;
+        io_check_limit!(
+            (number_of_texture_mapping_attributes_intensities.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut texture_mapping_attributes_intensities: Vec<Double> =
             Vec::with_capacity((number_of_texture_mapping_attributes_intensities.value) as usize);
         if texture_mapping_attributes_intensities_cond {
+            #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(number_of_texture_mapping_attributes_intensities.value) {
                 let element = Double::from_reader(rdr)?;
                 texture_mapping_attributes_intensities.push(element);
@@ -2130,9 +2446,14 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         );
         let texture_mapping_attributes_components_cond =
             number_of_texture_mapping_attributes_components.value != 0;
+        io_check_limit!(
+            (number_of_texture_mapping_attributes_components.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut texture_mapping_attributes_components: Vec<Character> =
             Vec::with_capacity((number_of_texture_mapping_attributes_components.value) as usize);
         if texture_mapping_attributes_components_cond {
+            #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(number_of_texture_mapping_attributes_components.value) {
                 let element = Character::from_reader(rdr)?;
                 texture_mapping_attributes_components.push(element);
@@ -2287,7 +2608,7 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -2412,7 +2733,7 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_Material {
     pub id: UnsignedInteger,
@@ -2427,9 +2748,38 @@ pub struct PRC_TYPE_GRAPH_Material {
     pub emissive_alpha: Double,
     pub specular_alpha: Double,
 }
+impl Default for PRC_TYPE_GRAPH_Material {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_GRAPH_Material as u32;
+        let mut base: ContentPRCRefBase = Default::default();
+        let mut biased_ambient_index: UnsignedInteger = Default::default();
+        let mut biased_diffuse_index: UnsignedInteger = Default::default();
+        let mut biased_emissive_index: UnsignedInteger = Default::default();
+        let mut biased_specular_index: UnsignedInteger = Default::default();
+        let mut shininess: Double = Default::default();
+        let mut ambient_alpha: Double = Default::default();
+        let mut diffuse_alpha: Double = Default::default();
+        let mut emissive_alpha: Double = Default::default();
+        let mut specular_alpha: Double = Default::default();
+        Self {
+            id,
+            base,
+            biased_ambient_index,
+            biased_diffuse_index,
+            biased_emissive_index,
+            biased_specular_index,
+            shininess,
+            ambient_alpha,
+            diffuse_alpha,
+            emissive_alpha,
+            specular_alpha,
+        }
+    }
+}
 impl PRC_TYPE_GRAPH_Material {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -2441,13 +2791,10 @@ impl PRC_TYPE_GRAPH_Material {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_GRAPH_Material) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_GRAPH_Material) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_GRAPH_Material"));
         }
-        assert_eq!(
-            PRC_TYPE_GRAPH_Material,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
         let mut biased_ambient_index: UnsignedInteger = Default::default();
@@ -2488,7 +2835,7 @@ impl PRC_TYPE_GRAPH_Material {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -2515,7 +2862,7 @@ impl PRC_TYPE_GRAPH_Material {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_TextureApplication {
     pub id: UnsignedInteger,
@@ -2525,9 +2872,28 @@ pub struct PRC_TYPE_GRAPH_TextureApplication {
     pub biased_next_texture_index: UnsignedInteger,
     pub biased_uv_coordinates_index: UnsignedInteger,
 }
+impl Default for PRC_TYPE_GRAPH_TextureApplication {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_GRAPH_TextureApplication as u32;
+        let mut base: ContentPRCRefBase = Default::default();
+        let mut biased_material_generic_index: UnsignedInteger = Default::default();
+        let mut biased_texture_definition_index: UnsignedInteger = Default::default();
+        let mut biased_next_texture_index: UnsignedInteger = Default::default();
+        let mut biased_uv_coordinates_index: UnsignedInteger = Default::default();
+        Self {
+            id,
+            base,
+            biased_material_generic_index,
+            biased_texture_definition_index,
+            biased_next_texture_index,
+            biased_uv_coordinates_index,
+        }
+    }
+}
 impl PRC_TYPE_GRAPH_TextureApplication {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -2539,13 +2905,10 @@ impl PRC_TYPE_GRAPH_TextureApplication {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_GRAPH_TextureApplication) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_GRAPH_TextureApplication) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_GRAPH_TextureApplication"));
         }
-        assert_eq!(
-            PRC_TYPE_GRAPH_TextureApplication,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
         let mut biased_material_generic_index: UnsignedInteger = Default::default();
@@ -2573,7 +2936,7 @@ impl PRC_TYPE_GRAPH_TextureApplication {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -2590,14 +2953,14 @@ impl PRC_TYPE_GRAPH_TextureApplication {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct Material {
     pub id_concrete: Material_idConcrete,
 }
 impl Material {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -2610,19 +2973,24 @@ impl Material {
         let mut id_type_id: u32 = 0;
         let mut id_concrete: Material_idConcrete = Material_idConcrete::Invalid(id_type_id);
         id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
-        let id_tid: PrcType = PrcType::try_from(id_type_id).unwrap();
-        id_concrete = match id_tid {
+        let id_tid = PrcType::try_from(id_type_id);
+        if id_tid.is_err() {
+            return Err(Error::other(format!("Unrecognised type {}!", id_type_id)));
+        }
+        id_concrete = match id_tid.unwrap() {
             PrcType::PRC_TYPE_GRAPH_Material => {
                 Material_idConcrete::m(PRC_TYPE_GRAPH_Material::from_reader(rdr, _ctx)?)
             }
             PrcType::PRC_TYPE_GRAPH_TextureApplication => {
                 Material_idConcrete::ta(PRC_TYPE_GRAPH_TextureApplication::from_reader(rdr, _ctx)?)
             }
-            _ => panic!(
-                "Material: Unrecognized subtype: {}! bp={}",
-                id_type_id.to_string(),
-                rdr.position_in_bits()?
-            ),
+            _ => {
+                return Err(Error::other(format!(
+                    "Material: Unrecognized subtype: {}! bp={}",
+                    id_type_id.to_string(),
+                    rdr.position_in_bits()?
+                )));
+            }
         };
         let rv = Self { id_concrete };
         Ok(rv)
@@ -2631,11 +2999,16 @@ impl Material {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         match &self.id_concrete {
             Material_idConcrete::m(x) => &x.to_writer(_w, _ctx)?,
             Material_idConcrete::ta(x) => &x.to_writer(_w, _ctx)?,
-            Material_idConcrete::Invalid(x) => panic!("Material: Unrecognized subtype: {}!", x),
+            Material_idConcrete::Invalid(x) => {
+                return Err(Error::other(format!(
+                    "Material: Unrecognized subtype: {}!",
+                    x
+                )));
+            }
         };
         Ok(())
     }
@@ -2653,7 +3026,7 @@ impl Default for Material_idConcrete {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_LinePattern {
     pub id: UnsignedInteger,
@@ -2663,9 +3036,28 @@ pub struct PRC_TYPE_GRAPH_LinePattern {
     pub start_offset: Double,
     pub scale: Boolean,
 }
+impl Default for PRC_TYPE_GRAPH_LinePattern {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_GRAPH_LinePattern as u32;
+        let mut base: ContentPRCRefBase = Default::default();
+        let mut number_of_elements: UnsignedInteger = Default::default();
+        let mut length: Vec<Double> = Default::default();
+        let mut start_offset: Double = Default::default();
+        let mut scale: Boolean = Default::default();
+        Self {
+            id,
+            base,
+            number_of_elements,
+            length,
+            start_offset,
+            scale,
+        }
+    }
+}
 impl PRC_TYPE_GRAPH_LinePattern {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -2677,18 +3069,20 @@ impl PRC_TYPE_GRAPH_LinePattern {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_GRAPH_LinePattern) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_GRAPH_LinePattern) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_GRAPH_LinePattern"));
         }
-        assert_eq!(
-            PRC_TYPE_GRAPH_LinePattern,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
         let mut number_of_elements: UnsignedInteger = Default::default();
         number_of_elements = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_elements.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut length: Vec<Double> = Vec::with_capacity((number_of_elements.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_elements.value) {
             let element = Double::from_reader(rdr)?;
             length.push(element);
@@ -2714,7 +3108,7 @@ impl PRC_TYPE_GRAPH_LinePattern {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -2734,7 +3128,7 @@ impl PRC_TYPE_GRAPH_LinePattern {
 }
 
 /// https://github.com/pdf-association/pdf-issues/issues/738
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_Style {
     pub id: UnsignedInteger,
@@ -2754,9 +3148,62 @@ pub struct PRC_TYPE_GRAPH_Style {
     pub is_rendering_parameters3: Boolean,
     pub rendering_parameters3: Option<Character>,
 }
+impl Default for PRC_TYPE_GRAPH_Style {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_GRAPH_Style as u32;
+        let mut base: ContentPRCRefBase = Default::default();
+        let mut line_width: Double = Default::default();
+        let mut is_vpicture: Boolean = Default::default();
+        let mut biased_pattern_index: UnsignedInteger = Default::default();
+        let mut is_material: Boolean = Default::default();
+        let mut biased_color_index: UnsignedInteger = Default::default();
+        let mut is_transparency: Boolean = Default::default();
+        let mut transparency: Character = Default::default();
+        let mut is_rendering_parameters: Boolean = Default::default();
+        let mut rendering_parameters: Character = Default::default();
+        let mut is_rendering_parameters2: Boolean = Default::default();
+        let mut rendering_parameters2: Character = Default::default();
+        let mut is_rendering_parameters3: Boolean = Default::default();
+        let mut rendering_parameters3: Character = Default::default();
+        Self {
+            id,
+            base,
+            line_width,
+            is_vpicture,
+            biased_pattern_index,
+            is_material,
+            biased_color_index,
+            is_transparency,
+            transparency: if !!is_transparency {
+                Some(transparency)
+            } else {
+                None
+            },
+            is_rendering_parameters,
+            rendering_parameters: if !!is_rendering_parameters {
+                Some(rendering_parameters)
+            } else {
+                None
+            },
+            is_rendering_parameters2,
+            rendering_parameters2: if !!is_rendering_parameters2 {
+                Some(rendering_parameters2)
+            } else {
+                None
+            },
+            is_rendering_parameters3,
+            rendering_parameters3: if !!is_rendering_parameters3 {
+                Some(rendering_parameters3)
+            } else {
+                None
+            },
+        }
+    }
+}
 impl PRC_TYPE_GRAPH_Style {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -2768,10 +3215,10 @@ impl PRC_TYPE_GRAPH_Style {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_GRAPH_Style) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_GRAPH_Style) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_GRAPH_Style"));
         }
-        assert_eq!(PRC_TYPE_GRAPH_Style, PrcType::try_from(id.value).unwrap());
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
         let mut line_width: Double = Default::default();
@@ -2852,7 +3299,7 @@ impl PRC_TYPE_GRAPH_Style {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -2903,19 +3350,38 @@ impl PRC_TYPE_GRAPH_Style {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_DottingPattern {
     pub id: UnsignedInteger,
     pub base: ContentPRCRefBase,
-    pub basebiased_next_pattern_index: UnsignedInteger,
+    pub biased_next_pattern_index: UnsignedInteger,
     pub pitch: Double,
     pub is_offset: Boolean,
     pub biased_color_index: Integer,
 }
+impl Default for PRC_TYPE_GRAPH_DottingPattern {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_GRAPH_DottingPattern as u32;
+        let mut base: ContentPRCRefBase = Default::default();
+        let mut biased_next_pattern_index: UnsignedInteger = Default::default();
+        let mut pitch: Double = Default::default();
+        let mut is_offset: Boolean = Default::default();
+        let mut biased_color_index: Integer = Default::default();
+        Self {
+            id,
+            base,
+            biased_next_pattern_index,
+            pitch,
+            is_offset,
+            biased_color_index,
+        }
+    }
+}
 impl PRC_TYPE_GRAPH_DottingPattern {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -2927,17 +3393,14 @@ impl PRC_TYPE_GRAPH_DottingPattern {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_GRAPH_DottingPattern) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_GRAPH_DottingPattern) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_GRAPH_DottingPattern"));
         }
-        assert_eq!(
-            PRC_TYPE_GRAPH_DottingPattern,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
-        let mut basebiased_next_pattern_index: UnsignedInteger = Default::default();
-        basebiased_next_pattern_index = UnsignedInteger::from_reader(rdr)?;
+        let mut biased_next_pattern_index: UnsignedInteger = Default::default();
+        biased_next_pattern_index = UnsignedInteger::from_reader(rdr)?;
         let mut pitch: Double = Default::default();
         pitch = Double::from_reader(rdr)?;
         let mut is_offset: Boolean = Default::default();
@@ -2950,7 +3413,7 @@ impl PRC_TYPE_GRAPH_DottingPattern {
         let rv = Self {
             id,
             base,
-            basebiased_next_pattern_index,
+            biased_next_pattern_index,
             pitch,
             is_offset,
             biased_color_index,
@@ -2961,13 +3424,13 @@ impl PRC_TYPE_GRAPH_DottingPattern {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
         base.to_writer(_w, _ctx)?;
-        let basebiased_next_pattern_index = self.basebiased_next_pattern_index.clone();
-        basebiased_next_pattern_index.to_writer(_w)?;
+        let biased_next_pattern_index = self.biased_next_pattern_index.clone();
+        biased_next_pattern_index.to_writer(_w)?;
         let pitch = self.pitch.clone();
         pitch.to_writer(_w)?;
         let is_offset = self.is_offset.clone();
@@ -2978,7 +3441,7 @@ impl PRC_TYPE_GRAPH_DottingPattern {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct HatchingLine {
     pub start_point: Vector2D,
@@ -2988,7 +3451,7 @@ pub struct HatchingLine {
 }
 impl HatchingLine {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -3018,7 +3481,7 @@ impl HatchingLine {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let start_point = self.start_point.clone();
         start_point.to_writer(_w, _ctx)?;
         let end_point = self.end_point.clone();
@@ -3031,18 +3494,35 @@ impl HatchingLine {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_HatchingPattern {
     pub id: UnsignedInteger,
     pub base: ContentPRCRefBase,
-    pub basebiased_next_pattern_index: UnsignedInteger,
+    pub biased_next_pattern_index: UnsignedInteger,
     pub number_of_hatching_lines: UnsignedInteger,
     pub hatch: Vec<HatchingLine>,
 }
+impl Default for PRC_TYPE_GRAPH_HatchingPattern {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_GRAPH_HatchingPattern as u32;
+        let mut base: ContentPRCRefBase = Default::default();
+        let mut biased_next_pattern_index: UnsignedInteger = Default::default();
+        let mut number_of_hatching_lines: UnsignedInteger = Default::default();
+        let mut hatch: Vec<HatchingLine> = Default::default();
+        Self {
+            id,
+            base,
+            biased_next_pattern_index,
+            number_of_hatching_lines,
+            hatch,
+        }
+    }
+}
 impl PRC_TYPE_GRAPH_HatchingPattern {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -3054,21 +3534,23 @@ impl PRC_TYPE_GRAPH_HatchingPattern {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_GRAPH_HatchingPattern) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_GRAPH_HatchingPattern) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_GRAPH_HatchingPattern"));
         }
-        assert_eq!(
-            PRC_TYPE_GRAPH_HatchingPattern,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
-        let mut basebiased_next_pattern_index: UnsignedInteger = Default::default();
-        basebiased_next_pattern_index = UnsignedInteger::from_reader(rdr)?;
+        let mut biased_next_pattern_index: UnsignedInteger = Default::default();
+        biased_next_pattern_index = UnsignedInteger::from_reader(rdr)?;
         let mut number_of_hatching_lines: UnsignedInteger = Default::default();
         number_of_hatching_lines = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_hatching_lines.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut hatch: Vec<HatchingLine> =
             Vec::with_capacity((number_of_hatching_lines.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_hatching_lines.value) {
             let element = HatchingLine::from_reader(rdr, _ctx)?;
             hatch.push(element);
@@ -3079,7 +3561,7 @@ impl PRC_TYPE_GRAPH_HatchingPattern {
         let rv = Self {
             id,
             base,
-            basebiased_next_pattern_index,
+            biased_next_pattern_index,
             number_of_hatching_lines,
             hatch,
         };
@@ -3089,13 +3571,13 @@ impl PRC_TYPE_GRAPH_HatchingPattern {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
         base.to_writer(_w, _ctx)?;
-        let basebiased_next_pattern_index = self.basebiased_next_pattern_index.clone();
-        basebiased_next_pattern_index.to_writer(_w)?;
+        let biased_next_pattern_index = self.biased_next_pattern_index.clone();
+        biased_next_pattern_index.to_writer(_w)?;
         let number_of_hatching_lines = self.number_of_hatching_lines.clone();
         number_of_hatching_lines.to_writer(_w)?;
         let hatch = self.hatch.clone();
@@ -3106,19 +3588,46 @@ impl PRC_TYPE_GRAPH_HatchingPattern {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_SolidPattern {
     pub id: UnsignedInteger,
     pub base: ContentPRCRefBase,
-    pub basebiased_next_pattern_index: UnsignedInteger,
+    pub biased_next_pattern_index: UnsignedInteger,
     pub is_material: Boolean,
     pub biased_material_index: Option<UnsignedInteger>,
     pub biased_color_index: Option<UnsignedInteger>,
 }
+impl Default for PRC_TYPE_GRAPH_SolidPattern {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_GRAPH_SolidPattern as u32;
+        let mut base: ContentPRCRefBase = Default::default();
+        let mut biased_next_pattern_index: UnsignedInteger = Default::default();
+        let mut is_material: Boolean = Default::default();
+        let mut biased_material_index: UnsignedInteger = Default::default();
+        let mut biased_color_index: UnsignedInteger = Default::default();
+        Self {
+            id,
+            base,
+            biased_next_pattern_index,
+            is_material,
+            biased_material_index: if !!is_material {
+                Some(biased_material_index)
+            } else {
+                None
+            },
+            biased_color_index: if !is_material {
+                Some(biased_color_index)
+            } else {
+                None
+            },
+        }
+    }
+}
 impl PRC_TYPE_GRAPH_SolidPattern {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -3130,17 +3639,14 @@ impl PRC_TYPE_GRAPH_SolidPattern {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_GRAPH_SolidPattern) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_GRAPH_SolidPattern) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_GRAPH_SolidPattern"));
         }
-        assert_eq!(
-            PRC_TYPE_GRAPH_SolidPattern,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
-        let mut basebiased_next_pattern_index: UnsignedInteger = Default::default();
-        basebiased_next_pattern_index = UnsignedInteger::from_reader(rdr)?;
+        let mut biased_next_pattern_index: UnsignedInteger = Default::default();
+        biased_next_pattern_index = UnsignedInteger::from_reader(rdr)?;
         let mut is_material: Boolean = Default::default();
         is_material = Boolean::from_reader(rdr)?;
         let biased_material_index_cond = !!is_material;
@@ -3159,7 +3665,7 @@ impl PRC_TYPE_GRAPH_SolidPattern {
         let rv = Self {
             id,
             base,
-            basebiased_next_pattern_index,
+            biased_next_pattern_index,
             is_material,
             biased_material_index: if biased_material_index_cond {
                 Some(biased_material_index)
@@ -3178,13 +3684,13 @@ impl PRC_TYPE_GRAPH_SolidPattern {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
         base.to_writer(_w, _ctx)?;
-        let basebiased_next_pattern_index = self.basebiased_next_pattern_index.clone();
-        basebiased_next_pattern_index.to_writer(_w)?;
+        let biased_next_pattern_index = self.biased_next_pattern_index.clone();
+        biased_next_pattern_index.to_writer(_w)?;
         let is_material = self.is_material.clone();
         is_material.to_writer(_w)?;
         let biased_material_index_cond = !!is_material;
@@ -3203,7 +3709,7 @@ impl PRC_TYPE_GRAPH_SolidPattern {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ContentBaseTessData {
     pub is_calculated: Boolean,
@@ -3212,7 +3718,7 @@ pub struct ContentBaseTessData {
 }
 impl ContentBaseTessData {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -3226,8 +3732,13 @@ impl ContentBaseTessData {
         is_calculated = Boolean::from_reader(rdr)?;
         let mut number_of_coordinates: UnsignedInteger = Default::default();
         number_of_coordinates = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_coordinates.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut coordinates: Vec<Double> =
             Vec::with_capacity((number_of_coordinates.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_coordinates.value) {
             let element = Double::from_reader(rdr)?;
             coordinates.push(element);
@@ -3244,7 +3755,7 @@ impl ContentBaseTessData {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let is_calculated = self.is_calculated.clone();
         is_calculated.to_writer(_w)?;
         let number_of_coordinates = self.number_of_coordinates.clone();
@@ -3257,7 +3768,7 @@ impl ContentBaseTessData {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TESS_Markup {
     pub id: UnsignedInteger,
@@ -3269,9 +3780,32 @@ pub struct PRC_TYPE_TESS_Markup {
     pub tessellation_label: String,
     pub behavior: Character,
 }
+impl Default for PRC_TYPE_TESS_Markup {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_TESS_Markup as u32;
+        let mut tessellation_coordinates: ContentBaseTessData = Default::default();
+        let mut number_of_codes: UnsignedInteger = Default::default();
+        let mut code_numbers: Vec<UnsignedInteger> = Default::default();
+        let mut number_of_text_strings: UnsignedInteger = Default::default();
+        let mut text_strings: Vec<String> = Default::default();
+        let mut tessellation_label: String = Default::default();
+        let mut behavior: Character = Default::default();
+        Self {
+            id,
+            tessellation_coordinates,
+            number_of_codes,
+            code_numbers,
+            number_of_text_strings,
+            text_strings,
+            tessellation_label,
+            behavior,
+        }
+    }
+}
 impl PRC_TYPE_TESS_Markup {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -3283,24 +3817,34 @@ impl PRC_TYPE_TESS_Markup {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_TESS_Markup) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_TESS_Markup) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_TESS_Markup"));
         }
-        assert_eq!(PRC_TYPE_TESS_Markup, PrcType::try_from(id.value).unwrap());
         let mut tessellation_coordinates: ContentBaseTessData = Default::default();
         tessellation_coordinates = ContentBaseTessData::from_reader(rdr, _ctx)?;
         let mut number_of_codes: UnsignedInteger = Default::default();
         number_of_codes = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_codes.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut code_numbers: Vec<UnsignedInteger> =
             Vec::with_capacity((number_of_codes.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_codes.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
             code_numbers.push(element);
         }
         let mut number_of_text_strings: UnsignedInteger = Default::default();
         number_of_text_strings = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_text_strings.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut text_strings: Vec<String> =
             Vec::with_capacity((number_of_text_strings.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_text_strings.value) {
             let element = String::from_reader(rdr)?;
             text_strings.push(element);
@@ -3326,7 +3870,7 @@ impl PRC_TYPE_TESS_Markup {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let tessellation_coordinates = self.tessellation_coordinates.clone();
@@ -3352,7 +3896,7 @@ impl PRC_TYPE_TESS_Markup {
 }
 
 /// Vectorized picture pattern
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_VPicturePattern {
     pub id: UnsignedInteger,
@@ -3361,9 +3905,26 @@ pub struct PRC_TYPE_GRAPH_VPicturePattern {
     pub pattern_dimensions: [Double; 2],
     pub markup: PRC_TYPE_TESS_Markup,
 }
+impl Default for PRC_TYPE_GRAPH_VPicturePattern {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_GRAPH_VPicturePattern as u32;
+        let mut base: ContentPRCRefBase = Default::default();
+        let mut biased_next_pattern_index: UnsignedInteger = Default::default();
+        let mut pattern_dimensions: [Double; 2] = Default::default();
+        let mut markup: PRC_TYPE_TESS_Markup = Default::default();
+        Self {
+            id,
+            base,
+            biased_next_pattern_index,
+            pattern_dimensions,
+            markup,
+        }
+    }
+}
 impl PRC_TYPE_GRAPH_VPicturePattern {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -3375,13 +3936,10 @@ impl PRC_TYPE_GRAPH_VPicturePattern {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_GRAPH_VPicturePattern) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_GRAPH_VPicturePattern) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_GRAPH_VPicturePattern"));
         }
-        assert_eq!(
-            PRC_TYPE_GRAPH_VPicturePattern,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
         let mut biased_next_pattern_index: UnsignedInteger = Default::default();
@@ -3408,7 +3966,7 @@ impl PRC_TYPE_GRAPH_VPicturePattern {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -3425,14 +3983,14 @@ impl PRC_TYPE_GRAPH_VPicturePattern {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_FillPattern {
     pub data_concrete: PRC_TYPE_GRAPH_FillPattern_dataConcrete,
 }
 impl PRC_TYPE_GRAPH_FillPattern {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -3446,8 +4004,11 @@ impl PRC_TYPE_GRAPH_FillPattern {
         let mut data_concrete: PRC_TYPE_GRAPH_FillPattern_dataConcrete =
             PRC_TYPE_GRAPH_FillPattern_dataConcrete::Invalid(data_type_id);
         data_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
-        let data_tid: PrcType = PrcType::try_from(data_type_id).unwrap();
-        data_concrete = match data_tid {
+        let data_tid = PrcType::try_from(data_type_id);
+        if data_tid.is_err() {
+            return Err(Error::other(format!("Unrecognised type {}!", data_type_id)));
+        }
+        data_concrete = match data_tid.unwrap() {
             PrcType::PRC_TYPE_GRAPH_DottingPattern => PRC_TYPE_GRAPH_FillPattern_dataConcrete::dp(
                 PRC_TYPE_GRAPH_DottingPattern::from_reader(rdr, _ctx)?,
             ),
@@ -3462,11 +4023,13 @@ impl PRC_TYPE_GRAPH_FillPattern {
                     PRC_TYPE_GRAPH_VPicturePattern::from_reader(rdr, _ctx)?,
                 )
             }
-            _ => panic!(
-                "PRC_TYPE_GRAPH_FillPattern: Unrecognized subtype: {}! bp={}",
-                data_type_id.to_string(),
-                rdr.position_in_bits()?
-            ),
+            _ => {
+                return Err(Error::other(format!(
+                    "PRC_TYPE_GRAPH_FillPattern: Unrecognized subtype: {}! bp={}",
+                    data_type_id.to_string(),
+                    rdr.position_in_bits()?
+                )));
+            }
         };
         let _ = _ctx
             .se
@@ -3478,14 +4041,17 @@ impl PRC_TYPE_GRAPH_FillPattern {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         match &self.data_concrete {
             PRC_TYPE_GRAPH_FillPattern_dataConcrete::dp(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_GRAPH_FillPattern_dataConcrete::hp(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_GRAPH_FillPattern_dataConcrete::sp(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_GRAPH_FillPattern_dataConcrete::vpp(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_GRAPH_FillPattern_dataConcrete::Invalid(x) => {
-                panic!("PRC_TYPE_GRAPH_FillPattern: Unrecognized subtype: {}!", x)
+                return Err(Error::other(format!(
+                    "PRC_TYPE_GRAPH_FillPattern: Unrecognized subtype: {}!",
+                    x
+                )));
             }
         };
         Ok(())
@@ -3506,7 +4072,7 @@ impl Default for PRC_TYPE_GRAPH_FillPattern_dataConcrete {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct GraphicsContent {
     pub biased_layer_index: UnsignedInteger,
@@ -3515,7 +4081,7 @@ pub struct GraphicsContent {
 }
 impl GraphicsContent {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -3547,7 +4113,7 @@ impl GraphicsContent {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let biased_layer_index = self.biased_layer_index.clone();
         biased_layer_index.to_writer(_w)?;
         let biased_index_of_line_style = self.biased_index_of_line_style.clone();
@@ -3558,16 +4124,32 @@ impl GraphicsContent {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_ROOT_PRCBaseWithGraphics {
     pub base: ContentPRCRefBase,
     pub same_graphics: Boolean,
     pub graphics_content: Option<GraphicsContent>,
 }
+impl Default for PRC_TYPE_ROOT_PRCBaseWithGraphics {
+    fn default() -> Self {
+        let mut base: ContentPRCRefBase = Default::default();
+        let mut same_graphics: Boolean = Default::default();
+        let mut graphics_content: GraphicsContent = Default::default();
+        Self {
+            base,
+            same_graphics,
+            graphics_content: if !same_graphics {
+                Some(graphics_content)
+            } else {
+                None
+            },
+        }
+    }
+}
 impl PRC_TYPE_ROOT_PRCBaseWithGraphics {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -3604,7 +4186,7 @@ impl PRC_TYPE_ROOT_PRCBaseWithGraphics {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let base = self.base.clone();
         base.to_writer(_w, _ctx)?;
         let same_graphics = self.same_graphics.clone();
@@ -3619,16 +4201,16 @@ impl PRC_TYPE_ROOT_PRCBaseWithGraphics {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct RepresentationItemContent {
     pub base: PRC_TYPE_ROOT_PRCBaseWithGraphics,
     pub biased_index_local_coordinate_system: UnsignedInteger,
-    pub biased_index_tesselation: UnsignedInteger,
+    pub biased_index_tessellation: UnsignedInteger,
 }
 impl RepresentationItemContent {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -3642,12 +4224,12 @@ impl RepresentationItemContent {
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
         let mut biased_index_local_coordinate_system: UnsignedInteger = Default::default();
         biased_index_local_coordinate_system = UnsignedInteger::from_reader(rdr)?;
-        let mut biased_index_tesselation: UnsignedInteger = Default::default();
-        biased_index_tesselation = UnsignedInteger::from_reader(rdr)?;
+        let mut biased_index_tessellation: UnsignedInteger = Default::default();
+        biased_index_tessellation = UnsignedInteger::from_reader(rdr)?;
         let rv = Self {
             base,
             biased_index_local_coordinate_system,
-            biased_index_tesselation,
+            biased_index_tessellation,
         };
         Ok(rv)
     }
@@ -3655,19 +4237,19 @@ impl RepresentationItemContent {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let base = self.base.clone();
         base.to_writer(_w, _ctx)?;
         let biased_index_local_coordinate_system =
             self.biased_index_local_coordinate_system.clone();
         biased_index_local_coordinate_system.to_writer(_w)?;
-        let biased_index_tesselation = self.biased_index_tesselation.clone();
-        biased_index_tesselation.to_writer(_w)?;
+        let biased_index_tessellation = self.biased_index_tessellation.clone();
+        biased_index_tessellation.to_writer(_w)?;
         Ok(())
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_RI_CoordinateSystem {
     pub id: UnsignedInteger,
@@ -3675,9 +4257,25 @@ pub struct PRC_TYPE_RI_CoordinateSystem {
     pub transform_concrete: PRC_TYPE_RI_CoordinateSystem_transformConcrete,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_RI_CoordinateSystem {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_RI_CoordinateSystem as u32;
+        let mut item_content: RepresentationItemContent = Default::default();
+        let mut transform_concrete: PRC_TYPE_RI_CoordinateSystem_transformConcrete =
+            Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            item_content,
+            transform_concrete,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_RI_CoordinateSystem {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -3689,21 +4287,24 @@ impl PRC_TYPE_RI_CoordinateSystem {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_RI_CoordinateSystem) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_RI_CoordinateSystem) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_RI_CoordinateSystem"));
         }
-        assert_eq!(
-            PRC_TYPE_RI_CoordinateSystem,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
         let mut transform_type_id: u32 = 0;
         let mut transform_concrete: PRC_TYPE_RI_CoordinateSystem_transformConcrete =
             PRC_TYPE_RI_CoordinateSystem_transformConcrete::Invalid(transform_type_id);
         transform_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
-        let transform_tid: PrcType = PrcType::try_from(transform_type_id).unwrap();
-        transform_concrete = match transform_tid {
+        let transform_tid = PrcType::try_from(transform_type_id);
+        if transform_tid.is_err() {
+            return Err(Error::other(format!(
+                "Unrecognised type {}!",
+                transform_type_id
+            )));
+        }
+        transform_concrete = match transform_tid.unwrap() {
             PrcType::PRC_TYPE_MISC_GeneralTransformation => {
                 PRC_TYPE_RI_CoordinateSystem_transformConcrete::gt(
                     PRC_TYPE_MISC_GeneralTransformation::from_reader(rdr, _ctx)?,
@@ -3714,11 +4315,13 @@ impl PRC_TYPE_RI_CoordinateSystem {
                     PRC_TYPE_MISC_CartesianTransformation::from_reader(rdr, _ctx)?,
                 )
             }
-            _ => panic!(
-                "PRC_TYPE_RI_CoordinateSystem: Unrecognized subtype: {}! bp={}",
-                transform_type_id.to_string(),
-                rdr.position_in_bits()?
-            ),
+            _ => {
+                return Err(Error::other(format!(
+                    "PRC_TYPE_RI_CoordinateSystem: Unrecognized subtype: {}! bp={}",
+                    transform_type_id.to_string(),
+                    rdr.position_in_bits()?
+                )));
+            }
         };
         let _ = _ctx
             .se
@@ -3737,7 +4340,7 @@ impl PRC_TYPE_RI_CoordinateSystem {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let item_content = self.item_content.clone();
@@ -3746,7 +4349,10 @@ impl PRC_TYPE_RI_CoordinateSystem {
             PRC_TYPE_RI_CoordinateSystem_transformConcrete::gt(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_RI_CoordinateSystem_transformConcrete::ct(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_RI_CoordinateSystem_transformConcrete::Invalid(x) => {
-                panic!("PRC_TYPE_RI_CoordinateSystem: Unrecognized subtype: {}!", x)
+                return Err(Error::other(format!(
+                    "PRC_TYPE_RI_CoordinateSystem: Unrecognized subtype: {}!",
+                    x
+                )));
             }
         };
         let user_data = self.user_data.clone();
@@ -3767,7 +4373,7 @@ impl Default for PRC_TYPE_RI_CoordinateSystem_transformConcrete {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct FileStructureInternalGlobalData {
     pub tess_chord: Double,
@@ -3792,7 +4398,7 @@ pub struct FileStructureInternalGlobalData {
 }
 impl FileStructureInternalGlobalData {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -3810,62 +4416,102 @@ impl FileStructureInternalGlobalData {
         serialize_help = MarkupSerializationHelper::from_reader(rdr, _ctx)?;
         let mut color_count: UnsignedInteger = Default::default();
         color_count = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (color_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut colors: Vec<RgbColor> = Vec::with_capacity((color_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(color_count.value) {
             let element = RgbColor::from_reader(rdr, _ctx)?;
             colors.push(element);
         }
         let mut picture_count: UnsignedInteger = Default::default();
         picture_count = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (picture_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut pictures: Vec<PRC_TYPE_GRAPH_Picture> =
             Vec::with_capacity((picture_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(picture_count.value) {
             let element = PRC_TYPE_GRAPH_Picture::from_reader(rdr, _ctx)?;
             pictures.push(element);
         }
         let mut texture_count: UnsignedInteger = Default::default();
         texture_count = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (texture_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut textures: Vec<PRC_TYPE_GRAPH_TextureDefinition> =
             Vec::with_capacity((texture_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(texture_count.value) {
             let element = PRC_TYPE_GRAPH_TextureDefinition::from_reader(rdr, _ctx)?;
             textures.push(element);
         }
         let mut material_count: UnsignedInteger = Default::default();
         material_count = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (material_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut materials: Vec<Material> = Vec::with_capacity((material_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(material_count.value) {
             let element = Material::from_reader(rdr, _ctx)?;
             materials.push(element);
         }
         let mut line_pattern_count: UnsignedInteger = Default::default();
         line_pattern_count = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (line_pattern_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut line_patterns: Vec<PRC_TYPE_GRAPH_LinePattern> =
             Vec::with_capacity((line_pattern_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(line_pattern_count.value) {
             let element = PRC_TYPE_GRAPH_LinePattern::from_reader(rdr, _ctx)?;
             line_patterns.push(element);
         }
         let mut style_count: UnsignedInteger = Default::default();
         style_count = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (style_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut styles: Vec<PRC_TYPE_GRAPH_Style> =
             Vec::with_capacity((style_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(style_count.value) {
             let element = PRC_TYPE_GRAPH_Style::from_reader(rdr, _ctx)?;
             styles.push(element);
         }
         let mut fill_count: UnsignedInteger = Default::default();
         fill_count = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (fill_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut fills: Vec<PRC_TYPE_GRAPH_FillPattern> =
             Vec::with_capacity((fill_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(fill_count.value) {
             let element = PRC_TYPE_GRAPH_FillPattern::from_reader(rdr, _ctx)?;
             fills.push(element);
         }
         let mut ref_coord_count: UnsignedInteger = Default::default();
         ref_coord_count = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (ref_coord_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut ref_coords: Vec<PRC_TYPE_RI_CoordinateSystem> =
             Vec::with_capacity((ref_coord_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(ref_coord_count.value) {
             let element = PRC_TYPE_RI_CoordinateSystem::from_reader(rdr, _ctx)?;
             ref_coords.push(element);
@@ -3897,7 +4543,7 @@ impl FileStructureInternalGlobalData {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let tess_chord = self.tess_chord.clone();
         tess_chord.to_writer(_w)?;
         let tess_angle = self.tess_angle.clone();
@@ -3957,7 +4603,7 @@ impl FileStructureInternalGlobalData {
 }
 
 /// Globals: referenced file structures and colors, line styles, and coordinate systems for each tree entity of the file structure.
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_ASM_FileStructureGlobals {
     pub id: UnsignedInteger,
@@ -3967,9 +4613,28 @@ pub struct PRC_TYPE_ASM_FileStructureGlobals {
     pub global_data: FileStructureInternalGlobalData,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_ASM_FileStructureGlobals {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_ASM_FileStructureGlobals as u32;
+        let mut base: ContentPRCBase = Default::default();
+        let mut file_count: UnsignedInteger = Default::default();
+        let mut unique_ids: Vec<UniqueId> = Default::default();
+        let mut global_data: FileStructureInternalGlobalData = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            base,
+            file_count,
+            unique_ids,
+            global_data,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_ASM_FileStructureGlobals {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -3981,18 +4646,20 @@ impl PRC_TYPE_ASM_FileStructureGlobals {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_ASM_FileStructureGlobals) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_ASM_FileStructureGlobals) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_ASM_FileStructureGlobals"));
         }
-        assert_eq!(
-            PRC_TYPE_ASM_FileStructureGlobals,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
         let mut file_count: UnsignedInteger = Default::default();
         file_count = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (file_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut unique_ids: Vec<UniqueId> = Vec::with_capacity((file_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(file_count.value) {
             let element = UniqueId::from_reader(rdr, _ctx)?;
             unique_ids.push(element);
@@ -4018,7 +4685,7 @@ impl PRC_TYPE_ASM_FileStructureGlobals {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -4037,7 +4704,7 @@ impl PRC_TYPE_ASM_FileStructureGlobals {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ProductOccurrenceReference {
     pub unique_id: UniqueId,
@@ -4046,7 +4713,7 @@ pub struct ProductOccurrenceReference {
 }
 impl ProductOccurrenceReference {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -4073,7 +4740,7 @@ impl ProductOccurrenceReference {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let unique_id = self.unique_id.clone();
         unique_id.to_writer(_w, _ctx)?;
         let root_index = self.root_index.clone();
@@ -4085,7 +4752,7 @@ impl ProductOccurrenceReference {
 }
 
 /// A model file is typically created by importing a CAD file. A PRC file always handles a single ModelFile, which can be considered a document that contains all of the CAD file's objects. The model file contains product occurrences, which are split into different file structures.
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_ASM_ModelFile {
     pub id: UnsignedInteger,
@@ -4099,9 +4766,32 @@ pub struct PRC_TYPE_ASM_ModelFile {
     pub file_structure_index_in_model_file: Vec<UnsignedInteger>,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_ASM_ModelFile {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_ASM_ModelFile as u32;
+        let mut base: ContentPRCBase = Default::default();
+        let mut units_from_cad_file: Boolean = Default::default();
+        let mut units_in_mm: Double = Default::default();
+        let mut number_of_root_product_occurrences: UnsignedInteger = Default::default();
+        let mut product_occurrences: Vec<ProductOccurrenceReference> = Default::default();
+        let mut file_structure_index_in_model_file: Vec<UnsignedInteger> = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            base,
+            units_from_cad_file,
+            units_in_mm,
+            number_of_root_product_occurrences,
+            product_occurrences,
+            file_structure_index_in_model_file,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_ASM_ModelFile {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -4113,10 +4803,10 @@ impl PRC_TYPE_ASM_ModelFile {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_ASM_ModelFile) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_ASM_ModelFile) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_ASM_ModelFile"));
         }
-        assert_eq!(PRC_TYPE_ASM_ModelFile, PrcType::try_from(id.value).unwrap());
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
         let mut units_from_cad_file: Boolean = Default::default();
@@ -4125,15 +4815,25 @@ impl PRC_TYPE_ASM_ModelFile {
         units_in_mm = Double::from_reader(rdr)?;
         let mut number_of_root_product_occurrences: UnsignedInteger = Default::default();
         number_of_root_product_occurrences = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_root_product_occurrences.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut product_occurrences: Vec<ProductOccurrenceReference> =
             Vec::with_capacity((number_of_root_product_occurrences.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_root_product_occurrences.value) {
             let element = ProductOccurrenceReference::from_reader(rdr, _ctx)?;
             product_occurrences.push(element);
         }
+        io_check_limit!(
+            (_ctx.get_num_fsi()) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut file_structure_index_in_model_file: Vec<UnsignedInteger> =
-            Vec::with_capacity((_ctx.prc_parsed.fsi.len() as u32) as usize);
-        for _i in 0..(_ctx.prc_parsed.fsi.len() as u32) {
+            Vec::with_capacity((_ctx.get_num_fsi()) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
+        for _i in 0..(_ctx.get_num_fsi()) {
             let element = UnsignedInteger::from_reader(rdr)?;
             file_structure_index_in_model_file.push(element);
         }
@@ -4156,7 +4856,7 @@ impl PRC_TYPE_ASM_ModelFile {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -4181,7 +4881,7 @@ impl PRC_TYPE_ASM_ModelFile {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct BoundingBox {
     pub minimum_corner: Vector3D,
@@ -4189,7 +4889,7 @@ pub struct BoundingBox {
 }
 impl BoundingBox {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -4213,7 +4913,7 @@ impl BoundingBox {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let minimum_corner = self.minimum_corner.clone();
         minimum_corner.to_writer(_w, _ctx)?;
         let maximum_corner = self.maximum_corner.clone();
@@ -4222,7 +4922,7 @@ impl BoundingBox {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_RI_BrepModel {
     pub id: UnsignedInteger,
@@ -4233,9 +4933,38 @@ pub struct PRC_TYPE_RI_BrepModel {
     pub is_closed: Boolean,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_RI_BrepModel {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_RI_BrepModel as u32;
+        let mut item_content: RepresentationItemContent = Default::default();
+        let mut exact_geometry: Boolean = Default::default();
+        let mut index_topological_context: UnsignedInteger = Default::default();
+        let mut index_body: UnsignedInteger = Default::default();
+        let mut is_closed: Boolean = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            item_content,
+            exact_geometry,
+            index_topological_context: if !!exact_geometry {
+                Some(index_topological_context)
+            } else {
+                None
+            },
+            index_body: if !!exact_geometry {
+                Some(index_body)
+            } else {
+                None
+            },
+            is_closed,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_RI_BrepModel {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -4247,10 +4976,10 @@ impl PRC_TYPE_RI_BrepModel {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_RI_BrepModel) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_RI_BrepModel) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_RI_BrepModel"));
         }
-        assert_eq!(PRC_TYPE_RI_BrepModel, PrcType::try_from(id.value).unwrap());
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
         let mut exact_geometry: Boolean = Default::default();
@@ -4293,7 +5022,7 @@ impl PRC_TYPE_RI_BrepModel {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let item_content = self.item_content.clone();
@@ -4320,7 +5049,7 @@ impl PRC_TYPE_RI_BrepModel {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_RI_Curve {
     pub id: UnsignedInteger,
@@ -4330,9 +5059,36 @@ pub struct PRC_TYPE_RI_Curve {
     pub index_body: Option<UnsignedInteger>,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_RI_Curve {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_RI_Curve as u32;
+        let mut item_content: RepresentationItemContent = Default::default();
+        let mut exact_geometry: Boolean = Default::default();
+        let mut index_topological_context: UnsignedInteger = Default::default();
+        let mut index_body: UnsignedInteger = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            item_content,
+            exact_geometry,
+            index_topological_context: if !!exact_geometry {
+                Some(index_topological_context)
+            } else {
+                None
+            },
+            index_body: if !!exact_geometry {
+                Some(index_body)
+            } else {
+                None
+            },
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_RI_Curve {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -4344,10 +5100,10 @@ impl PRC_TYPE_RI_Curve {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_RI_Curve) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_RI_Curve) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_RI_Curve"));
         }
-        assert_eq!(PRC_TYPE_RI_Curve, PrcType::try_from(id.value).unwrap());
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
         let mut exact_geometry: Boolean = Default::default();
@@ -4387,7 +5143,7 @@ impl PRC_TYPE_RI_Curve {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let item_content = self.item_content.clone();
@@ -4412,7 +5168,7 @@ impl PRC_TYPE_RI_Curve {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_RI_Direction {
     pub id: UnsignedInteger,
@@ -4422,9 +5178,28 @@ pub struct PRC_TYPE_RI_Direction {
     pub direction: Vector3D,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_RI_Direction {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_RI_Direction as u32;
+        let mut item_content: RepresentationItemContent = Default::default();
+        let mut has_orgin: Boolean = Default::default();
+        let mut origin: Vector3D = Default::default();
+        let mut direction: Vector3D = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            item_content,
+            has_orgin,
+            origin: if !!has_orgin { Some(origin) } else { None },
+            direction,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_RI_Direction {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -4436,10 +5211,10 @@ impl PRC_TYPE_RI_Direction {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_RI_Direction) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_RI_Direction) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_RI_Direction"));
         }
-        assert_eq!(PRC_TYPE_RI_Direction, PrcType::try_from(id.value).unwrap());
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
         let mut has_orgin: Boolean = Default::default();
@@ -4468,7 +5243,7 @@ impl PRC_TYPE_RI_Direction {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let item_content = self.item_content.clone();
@@ -4489,7 +5264,7 @@ impl PRC_TYPE_RI_Direction {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_RI_Plane {
     pub id: UnsignedInteger,
@@ -4499,9 +5274,36 @@ pub struct PRC_TYPE_RI_Plane {
     pub index_body: Option<UnsignedInteger>,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_RI_Plane {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_RI_Plane as u32;
+        let mut item_content: RepresentationItemContent = Default::default();
+        let mut exact_geometry: Boolean = Default::default();
+        let mut index_topological_context: UnsignedInteger = Default::default();
+        let mut index_body: UnsignedInteger = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            item_content,
+            exact_geometry,
+            index_topological_context: if !!exact_geometry {
+                Some(index_topological_context)
+            } else {
+                None
+            },
+            index_body: if !!exact_geometry {
+                Some(index_body)
+            } else {
+                None
+            },
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_RI_Plane {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -4513,10 +5315,10 @@ impl PRC_TYPE_RI_Plane {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_RI_Plane) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_RI_Plane) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_RI_Plane"));
         }
-        assert_eq!(PRC_TYPE_RI_Plane, PrcType::try_from(id.value).unwrap());
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
         let mut exact_geometry: Boolean = Default::default();
@@ -4556,7 +5358,7 @@ impl PRC_TYPE_RI_Plane {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let item_content = self.item_content.clone();
@@ -4581,7 +5383,7 @@ impl PRC_TYPE_RI_Plane {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_RI_PointSet {
     pub id: UnsignedInteger,
@@ -4590,9 +5392,26 @@ pub struct PRC_TYPE_RI_PointSet {
     pub points: Vec<Vector3D>,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_RI_PointSet {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_RI_PointSet as u32;
+        let mut item_content: RepresentationItemContent = Default::default();
+        let mut number_of_points: UnsignedInteger = Default::default();
+        let mut points: Vec<Vector3D> = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            item_content,
+            number_of_points,
+            points,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_RI_PointSet {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -4604,15 +5423,20 @@ impl PRC_TYPE_RI_PointSet {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_RI_PointSet) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_RI_PointSet) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_RI_PointSet"));
         }
-        assert_eq!(PRC_TYPE_RI_PointSet, PrcType::try_from(id.value).unwrap());
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
         let mut number_of_points: UnsignedInteger = Default::default();
         number_of_points = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_points.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut points: Vec<Vector3D> = Vec::with_capacity((number_of_points.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_points.value) {
             let element = Vector3D::from_reader(rdr, _ctx)?;
             points.push(element);
@@ -4633,7 +5457,7 @@ impl PRC_TYPE_RI_PointSet {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let item_content = self.item_content.clone();
@@ -4650,7 +5474,7 @@ impl PRC_TYPE_RI_PointSet {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_RI_PolyBrepModel {
     pub id: UnsignedInteger,
@@ -4658,9 +5482,24 @@ pub struct PRC_TYPE_RI_PolyBrepModel {
     pub is_closed: Boolean,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_RI_PolyBrepModel {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_RI_PolyBrepModel as u32;
+        let mut item_content: RepresentationItemContent = Default::default();
+        let mut is_closed: Boolean = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            item_content,
+            is_closed,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_RI_PolyBrepModel {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -4672,13 +5511,10 @@ impl PRC_TYPE_RI_PolyBrepModel {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_RI_PolyBrepModel) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_RI_PolyBrepModel) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_RI_PolyBrepModel"));
         }
-        assert_eq!(
-            PRC_TYPE_RI_PolyBrepModel,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
         let mut is_closed: Boolean = Default::default();
@@ -4700,7 +5536,7 @@ impl PRC_TYPE_RI_PolyBrepModel {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let item_content = self.item_content.clone();
@@ -4713,16 +5549,29 @@ impl PRC_TYPE_RI_PolyBrepModel {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_RI_PolyWire {
     pub id: UnsignedInteger,
     pub item_content: RepresentationItemContent,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_RI_PolyWire {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_RI_PolyWire as u32;
+        let mut item_content: RepresentationItemContent = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            item_content,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_RI_PolyWire {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -4734,10 +5583,10 @@ impl PRC_TYPE_RI_PolyWire {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_RI_PolyWire) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_RI_PolyWire) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_RI_PolyWire"));
         }
-        assert_eq!(PRC_TYPE_RI_PolyWire, PrcType::try_from(id.value).unwrap());
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
         let _ = _ctx.se.eval(rdr, PRC_TYPE_RI_PolyWire as u32, false, 0);
@@ -4754,7 +5603,7 @@ impl PRC_TYPE_RI_PolyWire {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let item_content = self.item_content.clone();
@@ -4765,7 +5614,7 @@ impl PRC_TYPE_RI_PolyWire {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_RI_Set {
     pub id: UnsignedInteger,
@@ -4774,9 +5623,26 @@ pub struct PRC_TYPE_RI_Set {
     pub representation_items: Vec<PRC_TYPE_RI_RepresentationItem>,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_RI_Set {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_RI_Set as u32;
+        let mut item_content: RepresentationItemContent = Default::default();
+        let mut number_of_items: UnsignedInteger = Default::default();
+        let mut representation_items: Vec<PRC_TYPE_RI_RepresentationItem> = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            item_content,
+            number_of_items,
+            representation_items,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_RI_Set {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -4788,16 +5654,21 @@ impl PRC_TYPE_RI_Set {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_RI_Set) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_RI_Set) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_RI_Set"));
         }
-        assert_eq!(PRC_TYPE_RI_Set, PrcType::try_from(id.value).unwrap());
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
         let mut number_of_items: UnsignedInteger = Default::default();
         number_of_items = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_items.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut representation_items: Vec<PRC_TYPE_RI_RepresentationItem> =
             Vec::with_capacity((number_of_items.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_items.value) {
             let element = PRC_TYPE_RI_RepresentationItem::from_reader(rdr, _ctx)?;
             representation_items.push(element);
@@ -4818,7 +5689,7 @@ impl PRC_TYPE_RI_Set {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let item_content = self.item_content.clone();
@@ -4835,14 +5706,14 @@ impl PRC_TYPE_RI_Set {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_RI_RepresentationItem {
     pub data_concrete: PRC_TYPE_RI_RepresentationItem_dataConcrete,
 }
 impl PRC_TYPE_RI_RepresentationItem {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -4856,8 +5727,11 @@ impl PRC_TYPE_RI_RepresentationItem {
         let mut data_concrete: PRC_TYPE_RI_RepresentationItem_dataConcrete =
             PRC_TYPE_RI_RepresentationItem_dataConcrete::Invalid(data_type_id);
         data_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
-        let data_tid: PrcType = PrcType::try_from(data_type_id).unwrap();
-        data_concrete = match data_tid {
+        let data_tid = PrcType::try_from(data_type_id);
+        if data_tid.is_err() {
+            return Err(Error::other(format!("Unrecognised type {}!", data_type_id)));
+        }
+        data_concrete = match data_tid.unwrap() {
             PrcType::PRC_TYPE_RI_BrepModel => PRC_TYPE_RI_RepresentationItem_dataConcrete::bm(
                 PRC_TYPE_RI_BrepModel::from_reader(rdr, _ctx)?,
             ),
@@ -4887,11 +5761,13 @@ impl PRC_TYPE_RI_RepresentationItem {
                     PRC_TYPE_RI_CoordinateSystem::from_reader(rdr, _ctx)?,
                 )
             }
-            _ => panic!(
-                "PRC_TYPE_RI_RepresentationItem: Unrecognized subtype: {}! bp={}",
-                data_type_id.to_string(),
-                rdr.position_in_bits()?
-            ),
+            _ => {
+                return Err(Error::other(format!(
+                    "PRC_TYPE_RI_RepresentationItem: Unrecognized subtype: {}! bp={}",
+                    data_type_id.to_string(),
+                    rdr.position_in_bits()?
+                )));
+            }
         };
         let _ = _ctx
             .se
@@ -4903,7 +5779,7 @@ impl PRC_TYPE_RI_RepresentationItem {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         match &self.data_concrete {
             PRC_TYPE_RI_RepresentationItem_dataConcrete::bm(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_RI_RepresentationItem_dataConcrete::c(x) => &x.to_writer(_w, _ctx)?,
@@ -4914,10 +5790,12 @@ impl PRC_TYPE_RI_RepresentationItem {
             PRC_TYPE_RI_RepresentationItem_dataConcrete::pw(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_RI_RepresentationItem_dataConcrete::s(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_RI_RepresentationItem_dataConcrete::cs(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_RI_RepresentationItem_dataConcrete::Invalid(x) => panic!(
-                "PRC_TYPE_RI_RepresentationItem: Unrecognized subtype: {}!",
-                x
-            ),
+            PRC_TYPE_RI_RepresentationItem_dataConcrete::Invalid(x) => {
+                return Err(Error::other(format!(
+                    "PRC_TYPE_RI_RepresentationItem: Unrecognized subtype: {}!",
+                    x
+                )));
+            }
         };
         Ok(())
     }
@@ -4942,7 +5820,7 @@ impl Default for PRC_TYPE_RI_RepresentationItem_dataConcrete {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct AdditionalTargetData {
     pub flag: Boolean,
@@ -4954,7 +5832,7 @@ pub struct AdditionalTargetData {
 }
 impl AdditionalTargetData {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -4977,8 +5855,13 @@ impl AdditionalTargetData {
         index_of_body = UnsignedInteger::from_reader(rdr)?;
         let mut number_of_indices: UnsignedInteger = Default::default();
         number_of_indices = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_indices.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut indices: Vec<UnsignedInteger> =
             Vec::with_capacity((number_of_indices.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_indices.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
             indices.push(element);
@@ -5001,7 +5884,7 @@ impl AdditionalTargetData {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let flag = self.flag.clone();
         flag.to_writer(_w)?;
         let unique_id_cond = !flag;
@@ -5024,7 +5907,7 @@ impl AdditionalTargetData {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MISC_ReferenceOnTopology {
     pub id: UnsignedInteger,
@@ -5033,9 +5916,24 @@ pub struct PRC_TYPE_MISC_ReferenceOnTopology {
     pub flag: Boolean,
     pub data: Option<AdditionalTargetData>,
 }
+impl Default for PRC_TYPE_MISC_ReferenceOnTopology {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_MISC_ReferenceOnTopology as u32;
+        let mut type_of_entity: UnsignedInteger = Default::default();
+        let mut flag: Boolean = Default::default();
+        let mut data: AdditionalTargetData = Default::default();
+        Self {
+            id,
+            type_of_entity,
+            flag,
+            data: if !!flag { Some(data) } else { None },
+        }
+    }
+}
 impl PRC_TYPE_MISC_ReferenceOnTopology {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -5047,13 +5945,10 @@ impl PRC_TYPE_MISC_ReferenceOnTopology {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MISC_ReferenceOnTopology) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MISC_ReferenceOnTopology) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_MISC_ReferenceOnTopology"));
         }
-        assert_eq!(
-            PRC_TYPE_MISC_ReferenceOnTopology,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut type_of_entity: UnsignedInteger = Default::default();
         type_of_entity = UnsignedInteger::from_reader(rdr)?;
         assert!(
@@ -5084,7 +5979,7 @@ impl PRC_TYPE_MISC_ReferenceOnTopology {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let type_of_entity = self.type_of_entity.clone();
@@ -5101,7 +5996,7 @@ impl PRC_TYPE_MISC_ReferenceOnTopology {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MISC_ReferenceOnPRCBase {
     pub id: UnsignedInteger,
@@ -5110,9 +6005,30 @@ pub struct PRC_TYPE_MISC_ReferenceOnPRCBase {
     pub different_unique_id: Option<UniqueId>,
     pub unique_id: UnsignedInteger,
 }
+impl Default for PRC_TYPE_MISC_ReferenceOnPRCBase {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_MISC_ReferenceOnPRCBase as u32;
+        let mut type_of_entity: UnsignedInteger = Default::default();
+        let mut flag: Boolean = Default::default();
+        let mut different_unique_id: UniqueId = Default::default();
+        let mut unique_id: UnsignedInteger = Default::default();
+        Self {
+            id,
+            type_of_entity,
+            flag,
+            different_unique_id: if !flag {
+                Some(different_unique_id)
+            } else {
+                None
+            },
+            unique_id,
+        }
+    }
+}
 impl PRC_TYPE_MISC_ReferenceOnPRCBase {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -5124,13 +6040,10 @@ impl PRC_TYPE_MISC_ReferenceOnPRCBase {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MISC_ReferenceOnPRCBase) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MISC_ReferenceOnPRCBase) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_MISC_ReferenceOnPRCBase"));
         }
-        assert_eq!(
-            PRC_TYPE_MISC_ReferenceOnPRCBase,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut type_of_entity: UnsignedInteger = Default::default();
         type_of_entity = UnsignedInteger::from_reader(rdr)?;
         let mut flag: Boolean = Default::default();
@@ -5162,7 +6075,7 @@ impl PRC_TYPE_MISC_ReferenceOnPRCBase {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let type_of_entity = self.type_of_entity.clone();
@@ -5181,14 +6094,14 @@ impl PRC_TYPE_MISC_ReferenceOnPRCBase {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ReferenceData {
     pub data_concrete: ReferenceData_dataConcrete,
 }
 impl ReferenceData {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -5202,8 +6115,11 @@ impl ReferenceData {
         let mut data_concrete: ReferenceData_dataConcrete =
             ReferenceData_dataConcrete::Invalid(data_type_id);
         data_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
-        let data_tid: PrcType = PrcType::try_from(data_type_id).unwrap();
-        data_concrete = match data_tid {
+        let data_tid = PrcType::try_from(data_type_id);
+        if data_tid.is_err() {
+            return Err(Error::other(format!("Unrecognised type {}!", data_type_id)));
+        }
+        data_concrete = match data_tid.unwrap() {
             PrcType::PRC_TYPE_MISC_ReferenceOnTopology => {
                 ReferenceData_dataConcrete::topo_reference(
                     PRC_TYPE_MISC_ReferenceOnTopology::from_reader(rdr, _ctx)?,
@@ -5214,11 +6130,13 @@ impl ReferenceData {
                     PRC_TYPE_MISC_ReferenceOnPRCBase::from_reader(rdr, _ctx)?,
                 )
             }
-            _ => panic!(
-                "ReferenceData: Unrecognized subtype: {}! bp={}",
-                data_type_id.to_string(),
-                rdr.position_in_bits()?
-            ),
+            _ => {
+                return Err(Error::other(format!(
+                    "ReferenceData: Unrecognized subtype: {}! bp={}",
+                    data_type_id.to_string(),
+                    rdr.position_in_bits()?
+                )));
+            }
         };
         let rv = Self { data_concrete };
         Ok(rv)
@@ -5227,12 +6145,15 @@ impl ReferenceData {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         match &self.data_concrete {
             ReferenceData_dataConcrete::topo_reference(x) => &x.to_writer(_w, _ctx)?,
             ReferenceData_dataConcrete::non_topo_reference(x) => &x.to_writer(_w, _ctx)?,
             ReferenceData_dataConcrete::Invalid(x) => {
-                panic!("ReferenceData: Unrecognized subtype: {}!", x)
+                return Err(Error::other(format!(
+                    "ReferenceData: Unrecognized subtype: {}!",
+                    x
+                )));
             }
         };
         Ok(())
@@ -5251,7 +6172,7 @@ impl Default for ReferenceData_dataConcrete {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ContentEntityReference {
     pub base: PRC_TYPE_ROOT_PRCBaseWithGraphics,
@@ -5261,7 +6182,7 @@ pub struct ContentEntityReference {
 }
 impl ContentEntityReference {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -5298,7 +6219,7 @@ impl ContentEntityReference {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let base = self.base.clone();
         base.to_writer(_w, _ctx)?;
         let index_of_local_coordinate_system = self.index_of_local_coordinate_system.clone();
@@ -5315,7 +6236,7 @@ impl ContentEntityReference {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ContentExtendedEntityReference {
     pub content_entity_reference: ContentEntityReference,
@@ -5324,7 +6245,7 @@ pub struct ContentExtendedEntityReference {
 }
 impl ContentExtendedEntityReference {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -5358,7 +6279,7 @@ impl ContentExtendedEntityReference {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let content_entity_reference = self.content_entity_reference.clone();
         content_entity_reference.to_writer(_w, _ctx)?;
         let has_reference_data = self.has_reference_data.clone();
@@ -5373,7 +6294,7 @@ impl ContentExtendedEntityReference {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MISC_MarkupLinkedItem {
     pub id: UnsignedInteger,
@@ -5384,9 +6305,31 @@ pub struct PRC_TYPE_MISC_MarkupLinkedItem {
     pub delete_leader: Boolean,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_MISC_MarkupLinkedItem {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_MISC_MarkupLinkedItem as u32;
+        let mut content_extended_entity_reference: ContentExtendedEntityReference =
+            Default::default();
+        let mut show_markup: Boolean = Default::default();
+        let mut delete_markup: Boolean = Default::default();
+        let mut show_leader: Boolean = Default::default();
+        let mut delete_leader: Boolean = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            content_extended_entity_reference,
+            show_markup,
+            delete_markup,
+            show_leader,
+            delete_leader,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_MISC_MarkupLinkedItem {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -5398,13 +6341,10 @@ impl PRC_TYPE_MISC_MarkupLinkedItem {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MISC_MarkupLinkedItem) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MISC_MarkupLinkedItem) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_MISC_MarkupLinkedItem"));
         }
-        assert_eq!(
-            PRC_TYPE_MISC_MarkupLinkedItem,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut content_extended_entity_reference: ContentExtendedEntityReference =
             Default::default();
         content_extended_entity_reference = ContentExtendedEntityReference::from_reader(rdr, _ctx)?;
@@ -5436,7 +6376,7 @@ impl PRC_TYPE_MISC_MarkupLinkedItem {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let content_extended_entity_reference = self.content_extended_entity_reference.clone();
@@ -5456,7 +6396,7 @@ impl PRC_TYPE_MISC_MarkupLinkedItem {
 }
 
 /// https://github.com/pdf-association/pdf-issues/issues/698
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MKP_Leader {
     pub id: UnsignedInteger,
@@ -5465,12 +6405,43 @@ pub struct PRC_TYPE_MKP_Leader {
     pub first_linked_item: Option<PRC_TYPE_MISC_ReferenceOnPRCBase>,
     pub is_second_linked_item: Boolean,
     pub second_linked_item: Option<PRC_TYPE_MISC_ReferenceOnPRCBase>,
-    pub biased_index_tesselation: UnsignedInteger,
+    pub biased_index_tessellation: UnsignedInteger,
     pub user_data: UserData,
+}
+impl Default for PRC_TYPE_MKP_Leader {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_MKP_Leader as u32;
+        let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
+        let mut is_first_linked_item: Boolean = Default::default();
+        let mut first_linked_item: PRC_TYPE_MISC_ReferenceOnPRCBase = Default::default();
+        let mut is_second_linked_item: Boolean = Default::default();
+        let mut second_linked_item: PRC_TYPE_MISC_ReferenceOnPRCBase = Default::default();
+        let mut biased_index_tessellation: UnsignedInteger = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            base,
+            is_first_linked_item,
+            first_linked_item: if !!is_first_linked_item {
+                Some(first_linked_item)
+            } else {
+                None
+            },
+            is_second_linked_item,
+            second_linked_item: if !!is_second_linked_item {
+                Some(second_linked_item)
+            } else {
+                None
+            },
+            biased_index_tessellation,
+            user_data,
+        }
+    }
 }
 impl PRC_TYPE_MKP_Leader {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -5482,10 +6453,10 @@ impl PRC_TYPE_MKP_Leader {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MKP_Leader) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MKP_Leader) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_MKP_Leader"));
         }
-        assert_eq!(PRC_TYPE_MKP_Leader, PrcType::try_from(id.value).unwrap());
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
         let mut is_first_linked_item: Boolean = Default::default();
@@ -5502,8 +6473,8 @@ impl PRC_TYPE_MKP_Leader {
         if second_linked_item_cond {
             second_linked_item = PRC_TYPE_MISC_ReferenceOnPRCBase::from_reader(rdr, _ctx)?;
         }
-        let mut biased_index_tesselation: UnsignedInteger = Default::default();
-        biased_index_tesselation = UnsignedInteger::from_reader(rdr)?;
+        let mut biased_index_tessellation: UnsignedInteger = Default::default();
+        biased_index_tessellation = UnsignedInteger::from_reader(rdr)?;
         let _ = _ctx.se.eval(rdr, PRC_TYPE_MKP_Leader as u32, false, 0);
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
@@ -5522,7 +6493,7 @@ impl PRC_TYPE_MKP_Leader {
             } else {
                 None
             },
-            biased_index_tesselation,
+            biased_index_tessellation,
             user_data,
         };
         Ok(rv)
@@ -5531,7 +6502,7 @@ impl PRC_TYPE_MKP_Leader {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -5552,15 +6523,15 @@ impl PRC_TYPE_MKP_Leader {
             second_linked_item = self.second_linked_item.as_ref().unwrap();
             second_linked_item.to_writer(_w, _ctx)?;
         }
-        let biased_index_tesselation = self.biased_index_tesselation.clone();
-        biased_index_tesselation.to_writer(_w)?;
+        let biased_index_tessellation = self.biased_index_tessellation.clone();
+        biased_index_tessellation.to_writer(_w)?;
         let user_data = self.user_data.clone();
         user_data.to_writer(_w)?;
         Ok(())
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MKP_Markup {
     pub id: UnsignedInteger,
@@ -5571,12 +6542,39 @@ pub struct PRC_TYPE_MKP_Markup {
     pub linked_items: Vec<PRC_TYPE_MISC_ReferenceOnPRCBase>,
     pub number_of_leaders: UnsignedInteger,
     pub leaders: Vec<PRC_TYPE_MISC_ReferenceOnPRCBase>,
-    pub biased_index_tesselation: UnsignedInteger,
+    pub biased_index_tessellation: UnsignedInteger,
     pub user_data: UserData,
+}
+impl Default for PRC_TYPE_MKP_Markup {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_MKP_Markup as u32;
+        let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
+        let mut markup_type: UnsignedInteger = Default::default();
+        let mut markup_subtype: UnsignedInteger = Default::default();
+        let mut number_of_linked_items: UnsignedInteger = Default::default();
+        let mut linked_items: Vec<PRC_TYPE_MISC_ReferenceOnPRCBase> = Default::default();
+        let mut number_of_leaders: UnsignedInteger = Default::default();
+        let mut leaders: Vec<PRC_TYPE_MISC_ReferenceOnPRCBase> = Default::default();
+        let mut biased_index_tessellation: UnsignedInteger = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            base,
+            markup_type,
+            markup_subtype,
+            number_of_linked_items,
+            linked_items,
+            number_of_leaders,
+            leaders,
+            biased_index_tessellation,
+            user_data,
+        }
+    }
 }
 impl PRC_TYPE_MKP_Markup {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -5588,10 +6586,10 @@ impl PRC_TYPE_MKP_Markup {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MKP_Markup) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MKP_Markup) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_MKP_Markup"));
         }
-        assert_eq!(PRC_TYPE_MKP_Markup, PrcType::try_from(id.value).unwrap());
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
         let mut markup_type: UnsignedInteger = Default::default();
@@ -5600,22 +6598,32 @@ impl PRC_TYPE_MKP_Markup {
         markup_subtype = UnsignedInteger::from_reader(rdr)?;
         let mut number_of_linked_items: UnsignedInteger = Default::default();
         number_of_linked_items = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_linked_items.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut linked_items: Vec<PRC_TYPE_MISC_ReferenceOnPRCBase> =
             Vec::with_capacity((number_of_linked_items.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_linked_items.value) {
             let element = PRC_TYPE_MISC_ReferenceOnPRCBase::from_reader(rdr, _ctx)?;
             linked_items.push(element);
         }
         let mut number_of_leaders: UnsignedInteger = Default::default();
         number_of_leaders = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_leaders.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut leaders: Vec<PRC_TYPE_MISC_ReferenceOnPRCBase> =
             Vec::with_capacity((number_of_leaders.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_leaders.value) {
             let element = PRC_TYPE_MISC_ReferenceOnPRCBase::from_reader(rdr, _ctx)?;
             leaders.push(element);
         }
-        let mut biased_index_tesselation: UnsignedInteger = Default::default();
-        biased_index_tesselation = UnsignedInteger::from_reader(rdr)?;
+        let mut biased_index_tessellation: UnsignedInteger = Default::default();
+        biased_index_tessellation = UnsignedInteger::from_reader(rdr)?;
         let _ = _ctx.se.eval(rdr, PRC_TYPE_MKP_Markup as u32, false, 0);
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
@@ -5628,7 +6636,7 @@ impl PRC_TYPE_MKP_Markup {
             linked_items,
             number_of_leaders,
             leaders,
-            biased_index_tesselation,
+            biased_index_tessellation,
             user_data,
         };
         Ok(rv)
@@ -5637,7 +6645,7 @@ impl PRC_TYPE_MKP_Markup {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -5658,15 +6666,15 @@ impl PRC_TYPE_MKP_Markup {
         for i in &self.leaders {
             i.to_writer(_w, _ctx)?;
         }
-        let biased_index_tesselation = self.biased_index_tesselation.clone();
-        biased_index_tesselation.to_writer(_w)?;
+        let biased_index_tessellation = self.biased_index_tessellation.clone();
+        biased_index_tessellation.to_writer(_w)?;
         let user_data = self.user_data.clone();
         user_data.to_writer(_w)?;
         Ok(())
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MKP_AnnotationItem {
     pub id: UnsignedInteger,
@@ -5674,9 +6682,24 @@ pub struct PRC_TYPE_MKP_AnnotationItem {
     pub unique_id: PRC_TYPE_MISC_ReferenceOnPRCBase,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_MKP_AnnotationItem {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_MKP_AnnotationItem as u32;
+        let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
+        let mut unique_id: PRC_TYPE_MISC_ReferenceOnPRCBase = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            base,
+            unique_id,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_MKP_AnnotationItem {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -5688,13 +6711,10 @@ impl PRC_TYPE_MKP_AnnotationItem {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MKP_AnnotationItem) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MKP_AnnotationItem) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_MKP_AnnotationItem"));
         }
-        assert_eq!(
-            PRC_TYPE_MKP_AnnotationItem,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
         let mut unique_id: PRC_TYPE_MISC_ReferenceOnPRCBase = Default::default();
@@ -5716,7 +6736,7 @@ impl PRC_TYPE_MKP_AnnotationItem {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -5729,7 +6749,7 @@ impl PRC_TYPE_MKP_AnnotationItem {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MKP_AnnotationSet {
     pub id: UnsignedInteger,
@@ -5738,9 +6758,26 @@ pub struct PRC_TYPE_MKP_AnnotationSet {
     pub annotations: Vec<AnnotationEntity>,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_MKP_AnnotationSet {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_MKP_AnnotationSet as u32;
+        let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
+        let mut number_of_annotations: UnsignedInteger = Default::default();
+        let mut annotations: Vec<AnnotationEntity> = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            base,
+            number_of_annotations,
+            annotations,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_MKP_AnnotationSet {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -5752,19 +6789,21 @@ impl PRC_TYPE_MKP_AnnotationSet {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MKP_AnnotationSet) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MKP_AnnotationSet) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_MKP_AnnotationSet"));
         }
-        assert_eq!(
-            PRC_TYPE_MKP_AnnotationSet,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
         let mut number_of_annotations: UnsignedInteger = Default::default();
         number_of_annotations = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_annotations.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut annotations: Vec<AnnotationEntity> =
             Vec::with_capacity((number_of_annotations.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_annotations.value) {
             let element = AnnotationEntity::from_reader(rdr, _ctx)?;
             annotations.push(element);
@@ -5787,7 +6826,7 @@ impl PRC_TYPE_MKP_AnnotationSet {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -5804,7 +6843,7 @@ impl PRC_TYPE_MKP_AnnotationSet {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MKP_AnnotationReference {
     pub id: UnsignedInteger,
@@ -5813,9 +6852,26 @@ pub struct PRC_TYPE_MKP_AnnotationReference {
     pub linked_items: Vec<PRC_TYPE_MISC_ReferenceOnPRCBase>,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_MKP_AnnotationReference {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_MKP_AnnotationReference as u32;
+        let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
+        let mut number_of_linked_items: UnsignedInteger = Default::default();
+        let mut linked_items: Vec<PRC_TYPE_MISC_ReferenceOnPRCBase> = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            base,
+            number_of_linked_items,
+            linked_items,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_MKP_AnnotationReference {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -5827,19 +6883,21 @@ impl PRC_TYPE_MKP_AnnotationReference {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MKP_AnnotationReference) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MKP_AnnotationReference) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_MKP_AnnotationReference"));
         }
-        assert_eq!(
-            PRC_TYPE_MKP_AnnotationReference,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
         let mut number_of_linked_items: UnsignedInteger = Default::default();
         number_of_linked_items = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_linked_items.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut linked_items: Vec<PRC_TYPE_MISC_ReferenceOnPRCBase> =
             Vec::with_capacity((number_of_linked_items.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_linked_items.value) {
             let element = PRC_TYPE_MISC_ReferenceOnPRCBase::from_reader(rdr, _ctx)?;
             linked_items.push(element);
@@ -5862,7 +6920,7 @@ impl PRC_TYPE_MKP_AnnotationReference {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -5879,14 +6937,14 @@ impl PRC_TYPE_MKP_AnnotationReference {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct AnnotationEntity {
     pub data_concrete: AnnotationEntity_dataConcrete,
 }
 impl AnnotationEntity {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -5900,8 +6958,11 @@ impl AnnotationEntity {
         let mut data_concrete: AnnotationEntity_dataConcrete =
             AnnotationEntity_dataConcrete::Invalid(data_type_id);
         data_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
-        let data_tid: PrcType = PrcType::try_from(data_type_id).unwrap();
-        data_concrete = match data_tid {
+        let data_tid = PrcType::try_from(data_type_id);
+        if data_tid.is_err() {
+            return Err(Error::other(format!("Unrecognised type {}!", data_type_id)));
+        }
+        data_concrete = match data_tid.unwrap() {
             PrcType::PRC_TYPE_MKP_AnnotationItem => AnnotationEntity_dataConcrete::ai(
                 PRC_TYPE_MKP_AnnotationItem::from_reader(rdr, _ctx)?,
             ),
@@ -5911,11 +6972,13 @@ impl AnnotationEntity {
             PrcType::PRC_TYPE_MKP_AnnotationReference => AnnotationEntity_dataConcrete::ar(
                 PRC_TYPE_MKP_AnnotationReference::from_reader(rdr, _ctx)?,
             ),
-            _ => panic!(
-                "AnnotationEntity: Unrecognized subtype: {}! bp={}",
-                data_type_id.to_string(),
-                rdr.position_in_bits()?
-            ),
+            _ => {
+                return Err(Error::other(format!(
+                    "AnnotationEntity: Unrecognized subtype: {}! bp={}",
+                    data_type_id.to_string(),
+                    rdr.position_in_bits()?
+                )));
+            }
         };
         let rv = Self { data_concrete };
         Ok(rv)
@@ -5924,13 +6987,16 @@ impl AnnotationEntity {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         match &self.data_concrete {
             AnnotationEntity_dataConcrete::ai(x) => &x.to_writer(_w, _ctx)?,
             AnnotationEntity_dataConcrete::ans(x) => &x.to_writer(_w, _ctx)?,
             AnnotationEntity_dataConcrete::ar(x) => &x.to_writer(_w, _ctx)?,
             AnnotationEntity_dataConcrete::Invalid(x) => {
-                panic!("AnnotationEntity: Unrecognized subtype: {}!", x)
+                return Err(Error::other(format!(
+                    "AnnotationEntity: Unrecognized subtype: {}!",
+                    x
+                )));
             }
         };
         Ok(())
@@ -5950,7 +7016,7 @@ impl Default for AnnotationEntity_dataConcrete {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct MarkupData {
     pub number_of_linked_items: UnsignedInteger,
@@ -5964,7 +7030,7 @@ pub struct MarkupData {
 }
 impl MarkupData {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -5976,32 +7042,52 @@ impl MarkupData {
         let _ig = indent::IndentGuard::new();
         let mut number_of_linked_items: UnsignedInteger = Default::default();
         number_of_linked_items = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_linked_items.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut linked_items: Vec<PRC_TYPE_MISC_MarkupLinkedItem> =
             Vec::with_capacity((number_of_linked_items.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_linked_items.value) {
             let element = PRC_TYPE_MISC_MarkupLinkedItem::from_reader(rdr, _ctx)?;
             linked_items.push(element);
         }
         let mut number_of_leaders: UnsignedInteger = Default::default();
         number_of_leaders = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_leaders.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut leaders: Vec<PRC_TYPE_MKP_Leader> =
             Vec::with_capacity((number_of_leaders.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_leaders.value) {
             let element = PRC_TYPE_MKP_Leader::from_reader(rdr, _ctx)?;
             leaders.push(element);
         }
         let mut number_of_markups: UnsignedInteger = Default::default();
         number_of_markups = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_markups.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut markups: Vec<PRC_TYPE_MKP_Markup> =
             Vec::with_capacity((number_of_markups.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_markups.value) {
             let element = PRC_TYPE_MKP_Markup::from_reader(rdr, _ctx)?;
             markups.push(element);
         }
         let mut number_of_annotation_entities: UnsignedInteger = Default::default();
         number_of_annotation_entities = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_annotation_entities.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut annotation_entities: Vec<AnnotationEntity> =
             Vec::with_capacity((number_of_annotation_entities.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_annotation_entities.value) {
             let element = AnnotationEntity::from_reader(rdr, _ctx)?;
             annotation_entities.push(element);
@@ -6022,7 +7108,7 @@ impl MarkupData {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let number_of_linked_items = self.number_of_linked_items.clone();
         number_of_linked_items.to_writer(_w)?;
         let linked_items = self.linked_items.clone();
@@ -6051,7 +7137,7 @@ impl MarkupData {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ContentSurface {
     pub has_base_geometry: Boolean,
@@ -6063,7 +7149,7 @@ pub struct ContentSurface {
 }
 impl ContentSurface {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -6109,7 +7195,7 @@ impl ContentSurface {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let has_base_geometry = self.has_base_geometry.clone();
         has_base_geometry.to_writer(_w)?;
         let attribute_data_cond = !!has_base_geometry;
@@ -6136,7 +7222,7 @@ impl ContentSurface {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct Domain {
     pub min_uv: Vector2D,
@@ -6144,7 +7230,7 @@ pub struct Domain {
 }
 impl Domain {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -6165,7 +7251,7 @@ impl Domain {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let min_uv = self.min_uv.clone();
         min_uv.to_writer(_w, _ctx)?;
         let max_uv = self.max_uv.clone();
@@ -6174,7 +7260,7 @@ impl Domain {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_Plane {
     pub id: UnsignedInteger,
@@ -6187,9 +7273,32 @@ pub struct PRC_TYPE_SURF_Plane {
     pub u_parameter_coeff_b: Double,
     pub v_parameter_coeff_b: Double,
 }
+impl Default for PRC_TYPE_SURF_Plane {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_SURF_Plane as u32;
+        let mut curve_data: ContentSurface = Default::default();
+        let mut transform: Transformation3D = Default::default();
+        let mut parameterization: Domain = Default::default();
+        let mut u_parameter_coeff_a: Double = Default::default();
+        let mut v_parameter_coeff_a: Double = Default::default();
+        let mut u_parameter_coeff_b: Double = Default::default();
+        let mut v_parameter_coeff_b: Double = Default::default();
+        Self {
+            id,
+            curve_data,
+            transform,
+            parameterization,
+            u_parameter_coeff_a,
+            v_parameter_coeff_a,
+            u_parameter_coeff_b,
+            v_parameter_coeff_b,
+        }
+    }
+}
 impl PRC_TYPE_SURF_Plane {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -6201,10 +7310,10 @@ impl PRC_TYPE_SURF_Plane {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_SURF_Plane) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_SURF_Plane) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_SURF_Plane"));
         }
-        assert_eq!(PRC_TYPE_SURF_Plane, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
         let mut transform: Transformation3D = Default::default();
@@ -6236,7 +7345,7 @@ impl PRC_TYPE_SURF_Plane {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -6258,7 +7367,7 @@ impl PRC_TYPE_SURF_Plane {
 }
 
 /// TODO: according to adobe sdk 9, there is UserData in the tail
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_AmbientLight {
     pub id: UnsignedInteger,
@@ -6267,9 +7376,26 @@ pub struct PRC_TYPE_GRAPH_AmbientLight {
     pub biased_diffuse_index: UnsignedInteger,
     pub biased_specular_index: UnsignedInteger,
 }
+impl Default for PRC_TYPE_GRAPH_AmbientLight {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_GRAPH_AmbientLight as u32;
+        let mut base: ContentPRCRefBase = Default::default();
+        let mut biased_ambient_index: UnsignedInteger = Default::default();
+        let mut biased_diffuse_index: UnsignedInteger = Default::default();
+        let mut biased_specular_index: UnsignedInteger = Default::default();
+        Self {
+            id,
+            base,
+            biased_ambient_index,
+            biased_diffuse_index,
+            biased_specular_index,
+        }
+    }
+}
 impl PRC_TYPE_GRAPH_AmbientLight {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -6281,13 +7407,10 @@ impl PRC_TYPE_GRAPH_AmbientLight {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_GRAPH_AmbientLight) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_GRAPH_AmbientLight) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_GRAPH_AmbientLight"));
         }
-        assert_eq!(
-            PRC_TYPE_GRAPH_AmbientLight,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
         let mut biased_ambient_index: UnsignedInteger = Default::default();
@@ -6312,7 +7435,7 @@ impl PRC_TYPE_GRAPH_AmbientLight {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -6328,7 +7451,7 @@ impl PRC_TYPE_GRAPH_AmbientLight {
 }
 
 /// TODO: according to adobe sdk 9, there is UserData in the tail
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_PointLight {
     pub id: UnsignedInteger,
@@ -6341,9 +7464,34 @@ pub struct PRC_TYPE_GRAPH_PointLight {
     pub linear_attenuation_factor: Double,
     pub quadratic_attenuation_factor: Double,
 }
+impl Default for PRC_TYPE_GRAPH_PointLight {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_GRAPH_PointLight as u32;
+        let mut base: ContentPRCRefBase = Default::default();
+        let mut biased_ambient_index: UnsignedInteger = Default::default();
+        let mut biased_diffuse_index: UnsignedInteger = Default::default();
+        let mut biased_specular_index: UnsignedInteger = Default::default();
+        let mut location: Vector3D = Default::default();
+        let mut constant_attenuation_factor: Double = Default::default();
+        let mut linear_attenuation_factor: Double = Default::default();
+        let mut quadratic_attenuation_factor: Double = Default::default();
+        Self {
+            id,
+            base,
+            biased_ambient_index,
+            biased_diffuse_index,
+            biased_specular_index,
+            location,
+            constant_attenuation_factor,
+            linear_attenuation_factor,
+            quadratic_attenuation_factor,
+        }
+    }
+}
 impl PRC_TYPE_GRAPH_PointLight {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -6355,13 +7503,10 @@ impl PRC_TYPE_GRAPH_PointLight {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_GRAPH_PointLight) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_GRAPH_PointLight) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_GRAPH_PointLight"));
         }
-        assert_eq!(
-            PRC_TYPE_GRAPH_PointLight,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
         let mut biased_ambient_index: UnsignedInteger = Default::default();
@@ -6398,7 +7543,7 @@ impl PRC_TYPE_GRAPH_PointLight {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -6422,7 +7567,7 @@ impl PRC_TYPE_GRAPH_PointLight {
 }
 
 /// TODO: according to adobe sdk 9, there is UserData in the tail
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_DirectionalLight {
     pub id: UnsignedInteger,
@@ -6437,7 +7582,7 @@ pub struct PRC_TYPE_GRAPH_DirectionalLight {
 }
 impl PRC_TYPE_GRAPH_DirectionalLight {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -6449,13 +7594,10 @@ impl PRC_TYPE_GRAPH_DirectionalLight {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_GRAPH_DirectionalLight) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_GRAPH_DirectionalLight) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_GRAPH_DirectionalLight"));
         }
-        assert_eq!(
-            PRC_TYPE_GRAPH_DirectionalLight,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
         let mut biased_ambient_index: UnsignedInteger = Default::default();
@@ -6466,7 +7608,7 @@ impl PRC_TYPE_GRAPH_DirectionalLight {
         biased_specular_index = UnsignedInteger::from_reader(rdr)?;
         let mut direction: Vector3D = Default::default();
         direction = Vector3D::from_reader(rdr, _ctx)?;
-        let intensity_cond = _ctx.ver_authoring >= 8030;
+        let intensity_cond = _ctx.get_authoring_version() >= 8030;
         let mut intensity: Double = Default::default();
         if intensity_cond {
             intensity = Double::from_reader(rdr)?;
@@ -6493,7 +7635,7 @@ impl PRC_TYPE_GRAPH_DirectionalLight {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -6506,7 +7648,7 @@ impl PRC_TYPE_GRAPH_DirectionalLight {
         biased_specular_index.to_writer(_w)?;
         let direction = self.direction.clone();
         direction.to_writer(_w, _ctx)?;
-        let intensity_cond = _ctx.ver_authoring >= 8030;
+        let intensity_cond = _ctx.get_authoring_version() >= 8030;
         let mut intensity: &Double = &Default::default();
         if intensity_cond {
             intensity = self.intensity.as_ref().unwrap();
@@ -6517,7 +7659,7 @@ impl PRC_TYPE_GRAPH_DirectionalLight {
 }
 
 /// TODO: according to adobe sdk 9, there is UserData in the tail
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_SpotLight {
     pub id: UnsignedInteger,
@@ -6533,9 +7675,40 @@ pub struct PRC_TYPE_GRAPH_SpotLight {
     pub fall_off_angle: Double,
     pub fall_off_exponent: Double,
 }
+impl Default for PRC_TYPE_GRAPH_SpotLight {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_GRAPH_SpotLight as u32;
+        let mut base: ContentPRCRefBase = Default::default();
+        let mut biased_ambient_index: UnsignedInteger = Default::default();
+        let mut biased_diffuse_index: UnsignedInteger = Default::default();
+        let mut biased_specular_index: UnsignedInteger = Default::default();
+        let mut location: Vector3D = Default::default();
+        let mut constant_attenuation_factor: Double = Default::default();
+        let mut linear_attenuation_factor: Double = Default::default();
+        let mut quadratic_attenuation_factor: Double = Default::default();
+        let mut direction: Vector3D = Default::default();
+        let mut fall_off_angle: Double = Default::default();
+        let mut fall_off_exponent: Double = Default::default();
+        Self {
+            id,
+            base,
+            biased_ambient_index,
+            biased_diffuse_index,
+            biased_specular_index,
+            location,
+            constant_attenuation_factor,
+            linear_attenuation_factor,
+            quadratic_attenuation_factor,
+            direction,
+            fall_off_angle,
+            fall_off_exponent,
+        }
+    }
+}
 impl PRC_TYPE_GRAPH_SpotLight {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -6547,13 +7720,10 @@ impl PRC_TYPE_GRAPH_SpotLight {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_GRAPH_SpotLight) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_GRAPH_SpotLight) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_GRAPH_SpotLight"));
         }
-        assert_eq!(
-            PRC_TYPE_GRAPH_SpotLight,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
         let mut biased_ambient_index: UnsignedInteger = Default::default();
@@ -6597,7 +7767,7 @@ impl PRC_TYPE_GRAPH_SpotLight {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -6626,14 +7796,14 @@ impl PRC_TYPE_GRAPH_SpotLight {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct Light {
     pub id_concrete: Light_idConcrete,
 }
 impl Light {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -6646,8 +7816,11 @@ impl Light {
         let mut id_type_id: u32 = 0;
         let mut id_concrete: Light_idConcrete = Light_idConcrete::Invalid(id_type_id);
         id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
-        let id_tid: PrcType = PrcType::try_from(id_type_id).unwrap();
-        id_concrete = match id_tid {
+        let id_tid = PrcType::try_from(id_type_id);
+        if id_tid.is_err() {
+            return Err(Error::other(format!("Unrecognised type {}!", id_type_id)));
+        }
+        id_concrete = match id_tid.unwrap() {
             PrcType::PRC_TYPE_GRAPH_AmbientLight => {
                 Light_idConcrete::al(PRC_TYPE_GRAPH_AmbientLight::from_reader(rdr, _ctx)?)
             }
@@ -6660,11 +7833,13 @@ impl Light {
             PrcType::PRC_TYPE_GRAPH_SpotLight => {
                 Light_idConcrete::sl(PRC_TYPE_GRAPH_SpotLight::from_reader(rdr, _ctx)?)
             }
-            _ => panic!(
-                "Light: Unrecognized subtype: {}! bp={}",
-                id_type_id.to_string(),
-                rdr.position_in_bits()?
-            ),
+            _ => {
+                return Err(Error::other(format!(
+                    "Light: Unrecognized subtype: {}! bp={}",
+                    id_type_id.to_string(),
+                    rdr.position_in_bits()?
+                )));
+            }
         };
         let rv = Self { id_concrete };
         Ok(rv)
@@ -6673,13 +7848,15 @@ impl Light {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         match &self.id_concrete {
             Light_idConcrete::al(x) => &x.to_writer(_w, _ctx)?,
             Light_idConcrete::pl(x) => &x.to_writer(_w, _ctx)?,
             Light_idConcrete::dl(x) => &x.to_writer(_w, _ctx)?,
             Light_idConcrete::sl(x) => &x.to_writer(_w, _ctx)?,
-            Light_idConcrete::Invalid(x) => panic!("Light: Unrecognized subtype: {}!", x),
+            Light_idConcrete::Invalid(x) => {
+                return Err(Error::other(format!("Light: Unrecognized subtype: {}!", x)));
+            }
         };
         Ok(())
     }
@@ -6699,7 +7876,7 @@ impl Default for Light_idConcrete {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_Camera {
     pub id: UnsignedInteger,
@@ -6715,9 +7892,40 @@ pub struct PRC_TYPE_GRAPH_Camera {
     pub clip_far: Double,
     pub zoom: Double,
 }
+impl Default for PRC_TYPE_GRAPH_Camera {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_GRAPH_Camera as u32;
+        let mut base: ContentPRCRefBase = Default::default();
+        let mut is_orthographic: Boolean = Default::default();
+        let mut position: Vector3D = Default::default();
+        let mut look: Vector3D = Default::default();
+        let mut up: Vector3D = Default::default();
+        let mut x: Double = Default::default();
+        let mut y: Double = Default::default();
+        let mut ratio: Double = Default::default();
+        let mut clip_near: Double = Default::default();
+        let mut clip_far: Double = Default::default();
+        let mut zoom: Double = Default::default();
+        Self {
+            id,
+            base,
+            is_orthographic,
+            position,
+            look,
+            up,
+            x,
+            y,
+            ratio,
+            clip_near,
+            clip_far,
+            zoom,
+        }
+    }
+}
 impl PRC_TYPE_GRAPH_Camera {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -6729,10 +7937,10 @@ impl PRC_TYPE_GRAPH_Camera {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_GRAPH_Camera) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_GRAPH_Camera) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_GRAPH_Camera"));
         }
-        assert_eq!(PRC_TYPE_GRAPH_Camera, PrcType::try_from(id.value).unwrap());
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
         let mut is_orthographic: Boolean = Default::default();
@@ -6776,7 +7984,7 @@ impl PRC_TYPE_GRAPH_Camera {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -6805,7 +8013,7 @@ impl PRC_TYPE_GRAPH_Camera {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_GRAPH_SceneDisplayParameters {
     pub id: UnsignedInteger,
@@ -6827,7 +8035,7 @@ pub struct PRC_TYPE_GRAPH_SceneDisplayParameters {
 }
 impl PRC_TYPE_GRAPH_SceneDisplayParameters {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -6839,20 +8047,24 @@ impl PRC_TYPE_GRAPH_SceneDisplayParameters {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_GRAPH_SceneDisplayParameters) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_GRAPH_SceneDisplayParameters) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other(
+                "expected PRC_TYPE_GRAPH_SceneDisplayParameters",
+            ));
         }
-        assert_eq!(
-            PRC_TYPE_GRAPH_SceneDisplayParameters,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
         let mut is_active: Boolean = Default::default();
         is_active = Boolean::from_reader(rdr)?;
         let mut number_of_lights: UnsignedInteger = Default::default();
         number_of_lights = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_lights.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut lights: Vec<Light> = Vec::with_capacity((number_of_lights.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_lights.value) {
             let element = Light::from_reader(rdr, _ctx)?;
             lights.push(element);
@@ -6873,8 +8085,13 @@ impl PRC_TYPE_GRAPH_SceneDisplayParameters {
         }
         let mut number_of_clipping_planes: UnsignedInteger = Default::default();
         number_of_clipping_planes = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_clipping_planes.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut clipping_planes: Vec<PRC_TYPE_SURF_Plane> =
             Vec::with_capacity((number_of_clipping_planes.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_clipping_planes.value) {
             let element = PRC_TYPE_SURF_Plane::from_reader(rdr, _ctx)?;
             clipping_planes.push(element);
@@ -6885,13 +8102,18 @@ impl PRC_TYPE_GRAPH_SceneDisplayParameters {
         biased_index_of_line_style_default = UnsignedInteger::from_reader(rdr)?;
         let mut number_default_styles: UnsignedInteger = Default::default();
         number_default_styles = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (2 * number_default_styles.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut styles: Vec<UnsignedInteger> =
             Vec::with_capacity((2 * number_default_styles.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(2 * number_default_styles.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
             styles.push(element);
         }
-        let is_absolute_cond = _ctx.ver_authoring >= 8137;
+        let is_absolute_cond = _ctx.get_authoring_version() >= 8137;
         let mut is_absolute: Boolean = Default::default();
         if is_absolute_cond {
             is_absolute = Boolean::from_reader(rdr)?;
@@ -6931,7 +8153,7 @@ impl PRC_TYPE_GRAPH_SceneDisplayParameters {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -6977,7 +8199,7 @@ impl PRC_TYPE_GRAPH_SceneDisplayParameters {
         for i in &self.styles {
             i.to_writer(_w)?;
         }
-        let is_absolute_cond = _ctx.ver_authoring >= 8137;
+        let is_absolute_cond = _ctx.get_authoring_version() >= 8137;
         let mut is_absolute: &Boolean = &Default::default();
         if is_absolute_cond {
             is_absolute = self.is_absolute.as_ref().unwrap();
@@ -6987,7 +8209,7 @@ impl PRC_TYPE_GRAPH_SceneDisplayParameters {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ContentLayerFilterItems {
     pub b_is_inclusive: Boolean,
@@ -6996,7 +8218,7 @@ pub struct ContentLayerFilterItems {
 }
 impl ContentLayerFilterItems {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -7010,8 +8232,13 @@ impl ContentLayerFilterItems {
         b_is_inclusive = Boolean::from_reader(rdr)?;
         let mut number_of_layers: UnsignedInteger = Default::default();
         number_of_layers = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_layers.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut layers: Vec<UnsignedInteger> =
             Vec::with_capacity((number_of_layers.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_layers.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
             layers.push(element);
@@ -7027,7 +8254,7 @@ impl ContentLayerFilterItems {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let b_is_inclusive = self.b_is_inclusive.clone();
         b_is_inclusive.to_writer(_w)?;
         let number_of_layers = self.number_of_layers.clone();
@@ -7040,16 +8267,29 @@ impl ContentLayerFilterItems {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MISC_EntityReference {
     pub id: UnsignedInteger,
     pub content_entity_reference: ContentEntityReference,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_MISC_EntityReference {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_MISC_EntityReference as u32;
+        let mut content_entity_reference: ContentEntityReference = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            content_entity_reference,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_MISC_EntityReference {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -7061,13 +8301,10 @@ impl PRC_TYPE_MISC_EntityReference {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MISC_EntityReference) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MISC_EntityReference) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_MISC_EntityReference"));
         }
-        assert_eq!(
-            PRC_TYPE_MISC_EntityReference,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut content_entity_reference: ContentEntityReference = Default::default();
         content_entity_reference = ContentEntityReference::from_reader(rdr, _ctx)?;
         let _ = _ctx
@@ -7086,7 +8323,7 @@ impl PRC_TYPE_MISC_EntityReference {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let content_entity_reference = self.content_entity_reference.clone();
@@ -7097,7 +8334,7 @@ impl PRC_TYPE_MISC_EntityReference {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ContentEntityFilterItems {
     pub b_is_inclusive: Boolean,
@@ -7106,7 +8343,7 @@ pub struct ContentEntityFilterItems {
 }
 impl ContentEntityFilterItems {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -7120,8 +8357,13 @@ impl ContentEntityFilterItems {
         b_is_inclusive = Boolean::from_reader(rdr)?;
         let mut number_of_entities: UnsignedInteger = Default::default();
         number_of_entities = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_entities.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut entities: Vec<PRC_TYPE_MISC_EntityReference> =
             Vec::with_capacity((number_of_entities.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_entities.value) {
             let element = PRC_TYPE_MISC_EntityReference::from_reader(rdr, _ctx)?;
             entities.push(element);
@@ -7137,7 +8379,7 @@ impl ContentEntityFilterItems {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let b_is_inclusive = self.b_is_inclusive.clone();
         b_is_inclusive.to_writer(_w)?;
         let number_of_entities = self.number_of_entities.clone();
@@ -7150,7 +8392,7 @@ impl ContentEntityFilterItems {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_ASM_Filter {
     pub id: UnsignedInteger,
@@ -7160,9 +8402,28 @@ pub struct PRC_TYPE_ASM_Filter {
     pub entity_filter: ContentEntityFilterItems,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_ASM_Filter {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_ASM_Filter as u32;
+        let mut base: ContentPRCRefBase = Default::default();
+        let mut is_active: Boolean = Default::default();
+        let mut layer_filter: ContentLayerFilterItems = Default::default();
+        let mut entity_filter: ContentEntityFilterItems = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            base,
+            is_active,
+            layer_filter,
+            entity_filter,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_ASM_Filter {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -7174,10 +8435,10 @@ impl PRC_TYPE_ASM_Filter {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_ASM_Filter) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_ASM_Filter) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_ASM_Filter"));
         }
-        assert_eq!(PRC_TYPE_ASM_Filter, PrcType::try_from(id.value).unwrap());
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
         let mut is_active: Boolean = Default::default();
@@ -7203,7 +8464,7 @@ impl PRC_TYPE_ASM_Filter {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -7220,7 +8481,7 @@ impl PRC_TYPE_ASM_Filter {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MKP_View {
     pub id: UnsignedInteger,
@@ -7241,7 +8502,7 @@ pub struct PRC_TYPE_MKP_View {
 }
 impl PRC_TYPE_MKP_View {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -7253,16 +8514,21 @@ impl PRC_TYPE_MKP_View {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MKP_View) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MKP_View) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_MKP_View"));
         }
-        assert_eq!(PRC_TYPE_MKP_View, PrcType::try_from(id.value).unwrap());
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
         let mut number_of_annotations: UnsignedInteger = Default::default();
         number_of_annotations = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_annotations.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut annotations: Vec<PRC_TYPE_MISC_ReferenceOnPRCBase> =
             Vec::with_capacity((number_of_annotations.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_annotations.value) {
             let element = PRC_TYPE_MISC_ReferenceOnPRCBase::from_reader(rdr, _ctx)?;
             annotations.push(element);
@@ -7278,44 +8544,54 @@ impl PRC_TYPE_MKP_View {
             scene_display_parameters =
                 PRC_TYPE_GRAPH_SceneDisplayParameters::from_reader(rdr, _ctx)?;
         }
-        let is_annotation_view_cond = _ctx.ver_authoring >= 8137;
+        let is_annotation_view_cond = _ctx.get_authoring_version() >= 8137;
         let mut is_annotation_view: Boolean = Default::default();
         if is_annotation_view_cond {
             is_annotation_view = Boolean::from_reader(rdr)?;
         }
-        let is_default_view_cond = _ctx.ver_authoring >= 8137;
+        let is_default_view_cond = _ctx.get_authoring_version() >= 8137;
         let mut is_default_view: Boolean = Default::default();
         if is_default_view_cond {
             is_default_view = Boolean::from_reader(rdr)?;
         }
-        let is_direction_cond = _ctx.ver_authoring >= 8137;
+        let is_direction_cond = _ctx.get_authoring_version() >= 8137;
         let mut is_direction: Boolean = Default::default();
         if is_direction_cond {
             is_direction = Boolean::from_reader(rdr)?;
         }
-        let number_of_linked_items_cond = _ctx.ver_authoring >= 8137;
+        let number_of_linked_items_cond = _ctx.get_authoring_version() >= 8137;
         let mut number_of_linked_items: UnsignedInteger = Default::default();
         if number_of_linked_items_cond {
             number_of_linked_items = UnsignedInteger::from_reader(rdr)?;
         }
-        let linked_items_cond = _ctx.ver_authoring >= 8137;
+        let linked_items_cond = _ctx.get_authoring_version() >= 8137;
+        io_check_limit!(
+            (number_of_linked_items.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut linked_items: Vec<PRC_TYPE_MISC_ReferenceOnPRCBase> =
             Vec::with_capacity((number_of_linked_items.value) as usize);
         if linked_items_cond {
+            #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(number_of_linked_items.value) {
                 let element = PRC_TYPE_MISC_ReferenceOnPRCBase::from_reader(rdr, _ctx)?;
                 linked_items.push(element);
             }
         }
-        let number_of_filters_cond = _ctx.ver_authoring >= 8137;
+        let number_of_filters_cond = _ctx.get_authoring_version() >= 8137;
         let mut number_of_filters: UnsignedInteger = Default::default();
         if number_of_filters_cond {
             number_of_filters = UnsignedInteger::from_reader(rdr)?;
         }
-        let filters_cond = _ctx.ver_authoring >= 8137;
+        let filters_cond = _ctx.get_authoring_version() >= 8137;
+        io_check_limit!(
+            (number_of_filters.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut filters: Vec<PRC_TYPE_ASM_Filter> =
             Vec::with_capacity((number_of_filters.value) as usize);
         if filters_cond {
+            #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(number_of_filters.value) {
                 let element = PRC_TYPE_ASM_Filter::from_reader(rdr, _ctx)?;
                 filters.push(element);
@@ -7375,7 +8651,7 @@ impl PRC_TYPE_MKP_View {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -7397,44 +8673,44 @@ impl PRC_TYPE_MKP_View {
             scene_display_parameters = self.scene_display_parameters.as_ref().unwrap();
             scene_display_parameters.to_writer(_w, _ctx)?;
         }
-        let is_annotation_view_cond = _ctx.ver_authoring >= 8137;
+        let is_annotation_view_cond = _ctx.get_authoring_version() >= 8137;
         let mut is_annotation_view: &Boolean = &Default::default();
         if is_annotation_view_cond {
             is_annotation_view = self.is_annotation_view.as_ref().unwrap();
             is_annotation_view.to_writer(_w)?;
         }
-        let is_default_view_cond = _ctx.ver_authoring >= 8137;
+        let is_default_view_cond = _ctx.get_authoring_version() >= 8137;
         let mut is_default_view: &Boolean = &Default::default();
         if is_default_view_cond {
             is_default_view = self.is_default_view.as_ref().unwrap();
             is_default_view.to_writer(_w)?;
         }
-        let is_direction_cond = _ctx.ver_authoring >= 8137;
+        let is_direction_cond = _ctx.get_authoring_version() >= 8137;
         let mut is_direction: &Boolean = &Default::default();
         if is_direction_cond {
             is_direction = self.is_direction.as_ref().unwrap();
             is_direction.to_writer(_w)?;
         }
-        let number_of_linked_items_cond = _ctx.ver_authoring >= 8137;
+        let number_of_linked_items_cond = _ctx.get_authoring_version() >= 8137;
         let mut number_of_linked_items: &UnsignedInteger = &Default::default();
         if number_of_linked_items_cond {
             number_of_linked_items = self.number_of_linked_items.as_ref().unwrap();
             number_of_linked_items.to_writer(_w)?;
         }
         let linked_items = self.linked_items.clone();
-        if _ctx.ver_authoring >= 8137 {
+        if _ctx.get_authoring_version() >= 8137 {
             for i in self.linked_items.as_ref().unwrap() {
                 i.to_writer(_w, _ctx)?;
             }
         }
-        let number_of_filters_cond = _ctx.ver_authoring >= 8137;
+        let number_of_filters_cond = _ctx.get_authoring_version() >= 8137;
         let mut number_of_filters: &UnsignedInteger = &Default::default();
         if number_of_filters_cond {
             number_of_filters = self.number_of_filters.as_ref().unwrap();
             number_of_filters.to_writer(_w)?;
         }
         let filters = self.filters.clone();
-        if _ctx.ver_authoring >= 8137 {
+        if _ctx.get_authoring_version() >= 8137 {
             for i in self.filters.as_ref().unwrap() {
                 i.to_writer(_w, _ctx)?;
             }
@@ -7445,7 +8721,7 @@ impl PRC_TYPE_MKP_View {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_ASM_PartDefinition {
     pub id: UnsignedInteger,
@@ -7458,9 +8734,34 @@ pub struct PRC_TYPE_ASM_PartDefinition {
     pub views: Vec<PRC_TYPE_MKP_View>,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_ASM_PartDefinition {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_ASM_PartDefinition as u32;
+        let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
+        let mut bounding_box: BoundingBox = Default::default();
+        let mut number_of_representation_items: UnsignedInteger = Default::default();
+        let mut representation_items: Vec<PRC_TYPE_RI_RepresentationItem> = Default::default();
+        let mut markups: MarkupData = Default::default();
+        let mut number_of_views: UnsignedInteger = Default::default();
+        let mut views: Vec<PRC_TYPE_MKP_View> = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            base,
+            bounding_box,
+            number_of_representation_items,
+            representation_items,
+            markups,
+            number_of_views,
+            views,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_ASM_PartDefinition {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -7472,21 +8773,23 @@ impl PRC_TYPE_ASM_PartDefinition {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_ASM_PartDefinition) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_ASM_PartDefinition) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_ASM_PartDefinition"));
         }
-        assert_eq!(
-            PRC_TYPE_ASM_PartDefinition,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
         let mut bounding_box: BoundingBox = Default::default();
         bounding_box = BoundingBox::from_reader(rdr, _ctx)?;
         let mut number_of_representation_items: UnsignedInteger = Default::default();
         number_of_representation_items = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_representation_items.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut representation_items: Vec<PRC_TYPE_RI_RepresentationItem> =
             Vec::with_capacity((number_of_representation_items.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_representation_items.value) {
             let element = PRC_TYPE_RI_RepresentationItem::from_reader(rdr, _ctx)?;
             representation_items.push(element);
@@ -7495,8 +8798,13 @@ impl PRC_TYPE_ASM_PartDefinition {
         markups = MarkupData::from_reader(rdr, _ctx)?;
         let mut number_of_views: UnsignedInteger = Default::default();
         number_of_views = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_views.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut views: Vec<PRC_TYPE_MKP_View> =
             Vec::with_capacity((number_of_views.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_views.value) {
             let element = PRC_TYPE_MKP_View::from_reader(rdr, _ctx)?;
             views.push(element);
@@ -7523,7 +8831,7 @@ impl PRC_TYPE_ASM_PartDefinition {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -7550,7 +8858,7 @@ impl PRC_TYPE_ASM_PartDefinition {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct FileIdentifier {
     pub flag: Boolean,
@@ -7558,7 +8866,7 @@ pub struct FileIdentifier {
 }
 impl FileIdentifier {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -7589,7 +8897,7 @@ impl FileIdentifier {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let flag = self.flag.clone();
         flag.to_writer(_w)?;
         let unique_id_cond = !flag;
@@ -7602,7 +8910,7 @@ impl FileIdentifier {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ReferencesOfProductOccurrence {
     pub biased_index_part: UnsignedInteger,
@@ -7615,7 +8923,7 @@ pub struct ReferencesOfProductOccurrence {
 }
 impl ReferencesOfProductOccurrence {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -7643,8 +8951,13 @@ impl ReferencesOfProductOccurrence {
         }
         let mut number_of_child_product_occurrences: UnsignedInteger = Default::default();
         number_of_child_product_occurrences = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_child_product_occurrences.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut index_child_occurrence: Vec<UnsignedInteger> =
             Vec::with_capacity((number_of_child_product_occurrences.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_child_product_occurrences.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
             index_child_occurrence.push(element);
@@ -7672,7 +8985,7 @@ impl ReferencesOfProductOccurrence {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let biased_index_part = self.biased_index_part.clone();
         biased_index_part.to_writer(_w)?;
         let biased_index_prototype = self.biased_index_prototype.clone();
@@ -7703,7 +9016,7 @@ impl ReferencesOfProductOccurrence {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ProductInformation {
     pub unit_from_cad_file: Boolean,
@@ -7713,7 +9026,7 @@ pub struct ProductInformation {
 }
 impl ProductInformation {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -7743,7 +9056,7 @@ impl ProductInformation {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let unit_from_cad_file = self.unit_from_cad_file.clone();
         unit_from_cad_file.to_writer(_w)?;
         let unit = self.unit.clone();
@@ -7756,7 +9069,7 @@ impl ProductInformation {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_ASM_ProductOccurrence {
     pub id: UnsignedInteger,
@@ -7781,7 +9094,7 @@ pub struct PRC_TYPE_ASM_ProductOccurrence {
 }
 impl PRC_TYPE_ASM_ProductOccurrence {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -7793,13 +9106,10 @@ impl PRC_TYPE_ASM_ProductOccurrence {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_ASM_ProductOccurrence) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_ASM_ProductOccurrence) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_ASM_ProductOccurrence"));
         }
-        assert_eq!(
-            PRC_TYPE_ASM_ProductOccurrence,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
         let mut references_product_occurrence: ReferencesOfProductOccurrence = Default::default();
@@ -7816,8 +9126,14 @@ impl PRC_TYPE_ASM_ProductOccurrence {
             PRC_TYPE_ASM_ProductOccurrence_locationConcrete::Invalid(location_type_id);
         if !!has_transformation {
             location_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
-            let location_tid: PrcType = PrcType::try_from(location_type_id).unwrap();
-            location_concrete = match location_tid {
+            let location_tid = PrcType::try_from(location_type_id);
+            if location_tid.is_err() {
+                return Err(Error::other(format!(
+                    "Unrecognised type {}!",
+                    location_type_id
+                )));
+            }
+            location_concrete = match location_tid.unwrap() {
                 PrcType::PRC_TYPE_MISC_CartesianTransformation => {
                     PRC_TYPE_ASM_ProductOccurrence_locationConcrete::ct(
                         PRC_TYPE_MISC_CartesianTransformation::from_reader(rdr, _ctx)?,
@@ -7828,17 +9144,24 @@ impl PRC_TYPE_ASM_ProductOccurrence {
                         PRC_TYPE_MISC_GeneralTransformation::from_reader(rdr, _ctx)?,
                     )
                 }
-                _ => panic!(
-                    "PRC_TYPE_ASM_ProductOccurrence: Unrecognized subtype: {}! bp={}",
-                    location_type_id.to_string(),
-                    rdr.position_in_bits()?
-                ),
+                _ => {
+                    return Err(Error::other(format!(
+                        "PRC_TYPE_ASM_ProductOccurrence: Unrecognized subtype: {}! bp={}",
+                        location_type_id.to_string(),
+                        rdr.position_in_bits()?
+                    )));
+                }
             };
         }
         let mut entity_ref_count: UnsignedInteger = Default::default();
         entity_ref_count = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (entity_ref_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut entity_reference: Vec<PRC_TYPE_MISC_EntityReference> =
             Vec::with_capacity((entity_ref_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(entity_ref_count.value) {
             let element = PRC_TYPE_MISC_EntityReference::from_reader(rdr, _ctx)?;
             entity_reference.push(element);
@@ -7847,8 +9170,13 @@ impl PRC_TYPE_ASM_ProductOccurrence {
         markups = MarkupData::from_reader(rdr, _ctx)?;
         let mut number_of_views: UnsignedInteger = Default::default();
         number_of_views = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_views.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut views: Vec<PRC_TYPE_MKP_View> =
             Vec::with_capacity((number_of_views.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_views.value) {
             let element = PRC_TYPE_MKP_View::from_reader(rdr, _ctx)?;
             views.push(element);
@@ -7862,16 +9190,26 @@ impl PRC_TYPE_ASM_ProductOccurrence {
         }
         let mut number_of_display_filters: UnsignedInteger = Default::default();
         number_of_display_filters = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_display_filters.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut display_filters: Vec<PRC_TYPE_ASM_Filter> =
             Vec::with_capacity((number_of_display_filters.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_display_filters.value) {
             let element = PRC_TYPE_ASM_Filter::from_reader(rdr, _ctx)?;
             display_filters.push(element);
         }
         let mut number_of_scene_parameters: UnsignedInteger = Default::default();
         number_of_scene_parameters = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_scene_parameters.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut scene_display_parameters: Vec<PRC_TYPE_GRAPH_SceneDisplayParameters> =
             Vec::with_capacity((number_of_scene_parameters.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_scene_parameters.value) {
             let element = PRC_TYPE_GRAPH_SceneDisplayParameters::from_reader(rdr, _ctx)?;
             scene_display_parameters.push(element);
@@ -7912,7 +9250,7 @@ impl PRC_TYPE_ASM_ProductOccurrence {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -7929,10 +9267,12 @@ impl PRC_TYPE_ASM_ProductOccurrence {
             match &self.location_concrete {
                 PRC_TYPE_ASM_ProductOccurrence_locationConcrete::ct(x) => &x.to_writer(_w, _ctx)?,
                 PRC_TYPE_ASM_ProductOccurrence_locationConcrete::gt(x) => &x.to_writer(_w, _ctx)?,
-                PRC_TYPE_ASM_ProductOccurrence_locationConcrete::Invalid(x) => panic!(
-                    "PRC_TYPE_ASM_ProductOccurrence: Unrecognized subtype: {}!",
-                    x
-                ),
+                PRC_TYPE_ASM_ProductOccurrence_locationConcrete::Invalid(x) => {
+                    return Err(Error::other(format!(
+                        "PRC_TYPE_ASM_ProductOccurrence: Unrecognized subtype: {}!",
+                        x
+                    )));
+                }
             };
         }
         let entity_ref_count = self.entity_ref_count.clone();
@@ -7987,7 +9327,7 @@ impl Default for PRC_TYPE_ASM_ProductOccurrence_locationConcrete {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_ASM_FileStructure {
     pub id: UnsignedInteger,
@@ -7995,9 +9335,24 @@ pub struct PRC_TYPE_ASM_FileStructure {
     pub next_available_index: UnsignedInteger,
     pub index_product_occurrence: UnsignedInteger,
 }
+impl Default for PRC_TYPE_ASM_FileStructure {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_ASM_FileStructure as u32;
+        let mut base: ContentPRCBase = Default::default();
+        let mut next_available_index: UnsignedInteger = Default::default();
+        let mut index_product_occurrence: UnsignedInteger = Default::default();
+        Self {
+            id,
+            base,
+            next_available_index,
+            index_product_occurrence,
+        }
+    }
+}
 impl PRC_TYPE_ASM_FileStructure {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -8009,13 +9364,10 @@ impl PRC_TYPE_ASM_FileStructure {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_ASM_FileStructure) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_ASM_FileStructure) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_ASM_FileStructure"));
         }
-        assert_eq!(
-            PRC_TYPE_ASM_FileStructure,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
         let mut next_available_index: UnsignedInteger = Default::default();
@@ -8037,7 +9389,7 @@ impl PRC_TYPE_ASM_FileStructure {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -8051,7 +9403,7 @@ impl PRC_TYPE_ASM_FileStructure {
 }
 
 /// Tree: a description of the tree of items (product occurrences, part definitions, representation items, and markup).
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_ASM_FileStructureTree {
     pub id: UnsignedInteger,
@@ -8063,9 +9415,32 @@ pub struct PRC_TYPE_ASM_FileStructureTree {
     pub internal_data: PRC_TYPE_ASM_FileStructure,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_ASM_FileStructureTree {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_ASM_FileStructureTree as u32;
+        let mut base: ContentPRCBase = Default::default();
+        let mut part_count: UnsignedInteger = Default::default();
+        let mut parts: Vec<PRC_TYPE_ASM_PartDefinition> = Default::default();
+        let mut product_count: UnsignedInteger = Default::default();
+        let mut products: Vec<PRC_TYPE_ASM_ProductOccurrence> = Default::default();
+        let mut internal_data: PRC_TYPE_ASM_FileStructure = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            base,
+            part_count,
+            parts,
+            product_count,
+            products,
+            internal_data,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_ASM_FileStructureTree {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -8077,27 +9452,34 @@ impl PRC_TYPE_ASM_FileStructureTree {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_ASM_FileStructureTree) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_ASM_FileStructureTree) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_ASM_FileStructureTree"));
         }
-        assert_eq!(
-            PRC_TYPE_ASM_FileStructureTree,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
         let mut part_count: UnsignedInteger = Default::default();
         part_count = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (part_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut parts: Vec<PRC_TYPE_ASM_PartDefinition> =
             Vec::with_capacity((part_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(part_count.value) {
             let element = PRC_TYPE_ASM_PartDefinition::from_reader(rdr, _ctx)?;
             parts.push(element);
         }
         let mut product_count: UnsignedInteger = Default::default();
         product_count = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (product_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut products: Vec<PRC_TYPE_ASM_ProductOccurrence> =
             Vec::with_capacity((product_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(product_count.value) {
             let element = PRC_TYPE_ASM_ProductOccurrence::from_reader(rdr, _ctx)?;
             products.push(element);
@@ -8125,7 +9507,7 @@ impl PRC_TYPE_ASM_FileStructureTree {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -8150,14 +9532,14 @@ impl PRC_TYPE_ASM_FileStructureTree {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ColorRGB {
     pub color: [UnsignedCharacter; 3],
 }
 impl ColorRGB {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -8178,7 +9560,7 @@ impl ColorRGB {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let color = self.color.clone();
         for i in &self.color {
             i.to_writer(_w)?;
@@ -8187,14 +9569,14 @@ impl ColorRGB {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ColorRGBA {
     pub color: [UnsignedCharacter; 4],
 }
 impl ColorRGBA {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -8215,7 +9597,7 @@ impl ColorRGBA {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let color = self.color.clone();
         for i in &self.color {
             i.to_writer(_w)?;
@@ -8224,7 +9606,7 @@ impl ColorRGBA {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ColorDataRemainderRGB {
     pub is_same: Boolean,
@@ -8232,7 +9614,7 @@ pub struct ColorDataRemainderRGB {
 }
 impl ColorDataRemainderRGB {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -8259,7 +9641,7 @@ impl ColorDataRemainderRGB {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let is_same = self.is_same.clone();
         is_same.to_writer(_w)?;
         let color_cond = !is_same;
@@ -8272,7 +9654,7 @@ impl ColorDataRemainderRGB {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ColorDataRemainderRGBA {
     pub is_same: Boolean,
@@ -8280,7 +9662,7 @@ pub struct ColorDataRemainderRGBA {
 }
 impl ColorDataRemainderRGBA {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -8307,7 +9689,7 @@ impl ColorDataRemainderRGBA {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let is_same = self.is_same.clone();
         is_same.to_writer(_w)?;
         let color_cond = !is_same;
@@ -8323,7 +9705,7 @@ impl ColorDataRemainderRGBA {
 /// The number_of_colors stored in the color_data must be calculated from the number of point indices
 /// - found in the wire_indexes array in the case of a PRC_TYPE_TESS_3D_Wire
 /// - found in the sizes_triangulated in the case of a PRC_TYPE_TESS_Face
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct VertexColors {
     pub is_rgba: Boolean,
@@ -8337,7 +9719,7 @@ pub struct VertexColors {
 }
 impl VertexColors {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -8369,9 +9751,14 @@ impl VertexColors {
             color_data_rgb_first_vertex = ColorRGB::from_reader(rdr, _ctx)?;
         }
         let color_data_rgb_remaining_vertices_cond = !b_optimized && !is_rgba;
+        io_check_limit!(
+            (_ctx.VertexColors_get_number_of_colors() - 1) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut color_data_rgb_remaining_vertices: Vec<ColorDataRemainderRGB> =
             Vec::with_capacity((_ctx.VertexColors_get_number_of_colors() - 1) as usize);
         if color_data_rgb_remaining_vertices_cond {
+            #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(_ctx.VertexColors_get_number_of_colors() - 1) {
                 let element = ColorDataRemainderRGB::from_reader(rdr, _ctx)?;
                 color_data_rgb_remaining_vertices.push(element);
@@ -8383,9 +9770,14 @@ impl VertexColors {
             color_data_rgba_first_vertex = ColorRGBA::from_reader(rdr, _ctx)?;
         }
         let color_data_rgba_remaining_vertices_cond = !b_optimized && !!is_rgba;
+        io_check_limit!(
+            (_ctx.VertexColors_get_number_of_colors() - 1) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut color_data_rgba_remaining_vertices: Vec<ColorDataRemainderRGBA> =
             Vec::with_capacity((_ctx.VertexColors_get_number_of_colors() - 1) as usize);
         if color_data_rgba_remaining_vertices_cond {
+            #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(_ctx.VertexColors_get_number_of_colors() - 1) {
                 let element = ColorDataRemainderRGBA::from_reader(rdr, _ctx)?;
                 color_data_rgba_remaining_vertices.push(element);
@@ -8426,7 +9818,7 @@ impl VertexColors {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let is_rgba = self.is_rgba.clone();
         is_rgba.to_writer(_w)?;
         let is_segment_color_cond = _ctx.TESS_3D_Wire__is_inside();
@@ -8465,7 +9857,7 @@ impl VertexColors {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TESS_Face {
     pub id: UnsignedInteger,
@@ -8483,9 +9875,52 @@ pub struct PRC_TYPE_TESS_Face {
     pub vertex_color_data: Option<VertexColors>,
     pub behavior: Option<UnsignedInteger>,
 }
+impl Default for PRC_TYPE_TESS_Face {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_TESS_Face as u32;
+        let mut size_of_line_attributes: UnsignedInteger = Default::default();
+        let mut line_attributes: Vec<UnsignedInteger> = Default::default();
+        let mut start_of_wire_data: UnsignedInteger = Default::default();
+        let mut size_of_sizes_wire: UnsignedInteger = Default::default();
+        let mut sizes_wire: Vec<UnsignedInteger> = Default::default();
+        let mut used_entities_flag: UnsignedInteger = Default::default();
+        let mut start_triangulated: UnsignedInteger = Default::default();
+        let mut size_of_triangulateddata: UnsignedInteger = Default::default();
+        let mut triangulateddata: Vec<UnsignedInteger> = Default::default();
+        let mut number_of_textured_coordinate_indices: UnsignedInteger = Default::default();
+        let mut has_vertex_colors: Boolean = Default::default();
+        let mut vertex_color_data: VertexColors = Default::default();
+        let mut behavior: UnsignedInteger = Default::default();
+        Self {
+            id,
+            size_of_line_attributes,
+            line_attributes,
+            start_of_wire_data,
+            size_of_sizes_wire,
+            sizes_wire,
+            used_entities_flag,
+            start_triangulated,
+            size_of_triangulateddata,
+            triangulateddata,
+            number_of_textured_coordinate_indices,
+            has_vertex_colors,
+            vertex_color_data: if !!has_vertex_colors {
+                Some(vertex_color_data)
+            } else {
+                None
+            },
+            behavior: if size_of_line_attributes.value > 0 {
+                Some(behavior)
+            } else {
+                None
+            },
+        }
+    }
+}
 impl PRC_TYPE_TESS_Face {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -8497,14 +9932,19 @@ impl PRC_TYPE_TESS_Face {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_TESS_Face) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_TESS_Face) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_TESS_Face"));
         }
-        assert_eq!(PRC_TYPE_TESS_Face, PrcType::try_from(id.value).unwrap());
         let mut size_of_line_attributes: UnsignedInteger = Default::default();
         size_of_line_attributes = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (size_of_line_attributes.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut line_attributes: Vec<UnsignedInteger> =
             Vec::with_capacity((size_of_line_attributes.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(size_of_line_attributes.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
             line_attributes.push(element);
@@ -8513,8 +9953,13 @@ impl PRC_TYPE_TESS_Face {
         start_of_wire_data = UnsignedInteger::from_reader(rdr)?;
         let mut size_of_sizes_wire: UnsignedInteger = Default::default();
         size_of_sizes_wire = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (size_of_sizes_wire.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut sizes_wire: Vec<UnsignedInteger> =
             Vec::with_capacity((size_of_sizes_wire.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(size_of_sizes_wire.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
             sizes_wire.push(element);
@@ -8523,7 +9968,7 @@ impl PRC_TYPE_TESS_Face {
         used_entities_flag = UnsignedInteger::from_reader(rdr)?;
         debug!(
             "used_entities_flag: {:?}",
-            PrcTesselationBitField::from_bytes(used_entities_flag.value.to_le_bytes())
+            PrcTessellationBitField::from_bytes(used_entities_flag.value.to_le_bytes())
         );
         let mut start_triangulated: UnsignedInteger = Default::default();
         start_triangulated = UnsignedInteger::from_reader(rdr)?;
@@ -8534,8 +9979,13 @@ impl PRC_TYPE_TESS_Face {
             indent::get(),
             &size_of_triangulateddata
         );
+        io_check_limit!(
+            (size_of_triangulateddata.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut triangulateddata: Vec<UnsignedInteger> =
             Vec::with_capacity((size_of_triangulateddata.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(size_of_triangulateddata.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
             triangulateddata.push(element);
@@ -8598,7 +10048,7 @@ impl PRC_TYPE_TESS_Face {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let size_of_line_attributes = self.size_of_line_attributes.clone();
@@ -8646,7 +10096,7 @@ impl PRC_TYPE_TESS_Face {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TESS_3D {
     pub id: UnsignedInteger,
@@ -8674,7 +10124,7 @@ pub struct PRC_TYPE_TESS_3D {
 }
 impl PRC_TYPE_TESS_3D {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -8686,55 +10136,71 @@ impl PRC_TYPE_TESS_3D {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_TESS_3D) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_TESS_3D) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_TESS_3D"));
         }
-        assert_eq!(PRC_TYPE_TESS_3D, PrcType::try_from(id.value).unwrap());
         let mut tessellation_coordinates: ContentBaseTessData = Default::default();
         tessellation_coordinates = ContentBaseTessData::from_reader(rdr, _ctx)?;
         let mut has_faces: Boolean = Default::default();
         has_faces = Boolean::from_reader(rdr)?;
-        let has_loops_cond = _ctx.ver_authoring >= 7039;
+        let has_loops_cond = _ctx.get_authoring_version() >= 7039;
         let mut has_loops: Boolean = Default::default();
         if has_loops_cond {
             has_loops = Boolean::from_reader(rdr)?;
         }
-        let must_calculate_normals_cond = _ctx.ver_authoring >= 7047;
+        let must_calculate_normals_cond = _ctx.get_authoring_version() >= 7047;
         let mut must_calculate_normals: Boolean = Default::default();
         if must_calculate_normals_cond {
             must_calculate_normals = Boolean::from_reader(rdr)?;
         }
         let normal_recalculation_flags_cond =
-            !!must_calculate_normals.value && _ctx.ver_authoring >= 7047;
+            !!must_calculate_normals.value && _ctx.get_authoring_version() >= 7047;
         let mut normal_recalculation_flags: Character = Default::default();
         if normal_recalculation_flags_cond {
             normal_recalculation_flags = Character::from_reader(rdr)?;
         }
-        let crease_angle_cond = !!must_calculate_normals.value && _ctx.ver_authoring >= 7047;
+        let crease_angle_cond =
+            !!must_calculate_normals.value && _ctx.get_authoring_version() >= 7047;
         let mut crease_angle: Double = Default::default();
         if crease_angle_cond {
             crease_angle = Double::from_reader(rdr)?;
         }
         let mut number_of_normal_coordinates: UnsignedInteger = Default::default();
         number_of_normal_coordinates = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_normal_coordinates.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut normal_coordinates: Vec<Double> =
             Vec::with_capacity((number_of_normal_coordinates.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_normal_coordinates.value) {
             let element = Double::from_reader(rdr)?;
             normal_coordinates.push(element);
         }
         let mut number_of_wire_indices: UnsignedInteger = Default::default();
         number_of_wire_indices = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_wire_indices.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut wire_indices: Vec<UnsignedInteger> =
             Vec::with_capacity((number_of_wire_indices.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_wire_indices.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
             wire_indices.push(element);
         }
         let mut number_of_triangulated_indicies: UnsignedInteger = Default::default();
         number_of_triangulated_indicies = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_triangulated_indicies.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut triangulated_index_array: Vec<UnsignedInteger> =
             Vec::with_capacity((number_of_triangulated_indicies.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_triangulated_indicies.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
             triangulated_index_array.push(element);
@@ -8746,14 +10212,24 @@ impl PRC_TYPE_TESS_3D {
             indent::get(),
             &number_of_face_tessellation
         );
+        io_check_limit!(
+            (number_of_face_tessellation.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut face_tessellation_data: Vec<PRC_TYPE_TESS_Face> =
             Vec::with_capacity((number_of_face_tessellation.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_face_tessellation.value) {
+            trace!(
+                "reading PRC_TYPE_TESS_Face[{} of {}]",
+                &_i, number_of_face_tessellation.value
+            );
             let element = PRC_TYPE_TESS_Face::from_reader(rdr, _ctx)?;
             trace!(
-                "{}PRC_TYPE_TESS_3D.face_tessellation_data[{}]: {:#?}",
+                "{}PRC_TYPE_TESS_3D.face_tessellation_data[{} of {}]: {:#?}",
                 indent::get(),
                 &_i,
+                number_of_face_tessellation.value,
                 &element
             );
             face_tessellation_data.push(element);
@@ -8765,8 +10241,13 @@ impl PRC_TYPE_TESS_3D {
             indent::get(),
             &number_of_texture_coordinates
         );
+        io_check_limit!(
+            (number_of_texture_coordinates.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut texture_coordinates: Vec<Double> =
             Vec::with_capacity((number_of_texture_coordinates.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_texture_coordinates.value) {
             let element = Double::from_reader(rdr)?;
             texture_coordinates.push(element);
@@ -8813,33 +10294,34 @@ impl PRC_TYPE_TESS_3D {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let tessellation_coordinates = self.tessellation_coordinates.clone();
         tessellation_coordinates.to_writer(_w, _ctx)?;
         let has_faces = self.has_faces.clone();
         has_faces.to_writer(_w)?;
-        let has_loops_cond = _ctx.ver_authoring >= 7039;
+        let has_loops_cond = _ctx.get_authoring_version() >= 7039;
         let mut has_loops: &Boolean = &Default::default();
         if has_loops_cond {
             has_loops = self.has_loops.as_ref().unwrap();
             has_loops.to_writer(_w)?;
         }
-        let must_calculate_normals_cond = _ctx.ver_authoring >= 7047;
+        let must_calculate_normals_cond = _ctx.get_authoring_version() >= 7047;
         let mut must_calculate_normals: &Boolean = &Default::default();
         if must_calculate_normals_cond {
             must_calculate_normals = self.must_calculate_normals.as_ref().unwrap();
             must_calculate_normals.to_writer(_w)?;
         }
         let normal_recalculation_flags_cond =
-            !!must_calculate_normals.value && _ctx.ver_authoring >= 7047;
+            !!must_calculate_normals.value && _ctx.get_authoring_version() >= 7047;
         let mut normal_recalculation_flags: &Character = &Default::default();
         if normal_recalculation_flags_cond {
             normal_recalculation_flags = self.normal_recalculation_flags.as_ref().unwrap();
             normal_recalculation_flags.to_writer(_w)?;
         }
-        let crease_angle_cond = !!must_calculate_normals.value && _ctx.ver_authoring >= 7047;
+        let crease_angle_cond =
+            !!must_calculate_normals.value && _ctx.get_authoring_version() >= 7047;
         let mut crease_angle: &Double = &Default::default();
         if crease_angle_cond {
             crease_angle = self.crease_angle.as_ref().unwrap();
@@ -8879,19 +10361,42 @@ impl PRC_TYPE_TESS_3D {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TESS_3D_Wire {
     pub id: UnsignedInteger,
     pub tessellation_coordinates: ContentBaseTessData,
     pub number_of_wire_indexes: UnsignedInteger,
-    pub wire_indexes: Vec<Integer>,
+    pub wire_indexes: Vec<UnsignedInteger>,
     pub has_vertex_colors: Boolean,
     pub vertex_color_data: Option<VertexColors>,
 }
+impl Default for PRC_TYPE_TESS_3D_Wire {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_TESS_3D_Wire as u32;
+        let mut tessellation_coordinates: ContentBaseTessData = Default::default();
+        let mut number_of_wire_indexes: UnsignedInteger = Default::default();
+        let mut wire_indexes: Vec<UnsignedInteger> = Default::default();
+        let mut has_vertex_colors: Boolean = Default::default();
+        let mut vertex_color_data: VertexColors = Default::default();
+        Self {
+            id,
+            tessellation_coordinates,
+            number_of_wire_indexes,
+            wire_indexes,
+            has_vertex_colors,
+            vertex_color_data: if !!has_vertex_colors {
+                Some(vertex_color_data)
+            } else {
+                None
+            },
+        }
+    }
+}
 impl PRC_TYPE_TESS_3D_Wire {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -8904,18 +10409,23 @@ impl PRC_TYPE_TESS_3D_Wire {
         _ctx.TESS_3D_Wire__enter();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_TESS_3D_Wire) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_TESS_3D_Wire) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_TESS_3D_Wire"));
         }
-        assert_eq!(PRC_TYPE_TESS_3D_Wire, PrcType::try_from(id.value).unwrap());
         let mut tessellation_coordinates: ContentBaseTessData = Default::default();
         tessellation_coordinates = ContentBaseTessData::from_reader(rdr, _ctx)?;
         let mut number_of_wire_indexes: UnsignedInteger = Default::default();
         number_of_wire_indexes = UnsignedInteger::from_reader(rdr)?;
-        let mut wire_indexes: Vec<Integer> =
+        io_check_limit!(
+            (number_of_wire_indexes.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
+        let mut wire_indexes: Vec<UnsignedInteger> =
             Vec::with_capacity((number_of_wire_indexes.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_wire_indexes.value) {
-            let element = Integer::from_reader(rdr)?;
+            let element = UnsignedInteger::from_reader(rdr)?;
             wire_indexes.push(element);
         }
         _ctx.t3dw
@@ -8952,7 +10462,7 @@ impl PRC_TYPE_TESS_3D_Wire {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let tessellation_coordinates = self.tessellation_coordinates.clone();
@@ -8975,7 +10485,7 @@ impl PRC_TYPE_TESS_3D_Wire {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct BinaryTextureData {
     pub texture_binary_data_size: UnsignedInteger,
@@ -8984,7 +10494,7 @@ pub struct BinaryTextureData {
 }
 impl BinaryTextureData {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -8996,9 +10506,14 @@ impl BinaryTextureData {
         let _ig = indent::IndentGuard::new();
         let mut texture_binary_data_size: UnsignedInteger = Default::default();
         texture_binary_data_size = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (texture_binary_data_size.value as usize * 4usize) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut texture_binary_data: Vec<UnsignedCharacter> =
-            Vec::with_capacity((texture_binary_data_size.value * 4) as usize);
-        for _i in 0..(texture_binary_data_size.value * 4) {
+            Vec::with_capacity((texture_binary_data_size.value as usize * 4usize) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
+        for _i in 0..(texture_binary_data_size.value as usize * 4usize) {
             let element = UnsignedCharacter::from_reader(rdr)?;
             texture_binary_data.push(element);
         }
@@ -9009,10 +10524,11 @@ impl BinaryTextureData {
             indent::get(),
             &last_integer_used_bit_number
         );
-        assert!(
-            /*last_integer_used_bit_number.value >= 0 &&*/
-            last_integer_used_bit_number.value <= 32
-        );
+        if last_integer_used_bit_number.value > 32 {
+            return Err(std::io::Error::other(
+                "last_integer_used_bit_number.value > 32 failed!",
+            ));
+        };
         let rv = Self {
             texture_binary_data_size,
             texture_binary_data,
@@ -9024,7 +10540,7 @@ impl BinaryTextureData {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let texture_binary_data_size = self.texture_binary_data_size.clone();
         texture_binary_data_size.to_writer(_w)?;
         let texture_binary_data = self.texture_binary_data.clone();
@@ -9037,7 +10553,7 @@ impl BinaryTextureData {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct CompressedTextureParameter {
     pub binary_texture_data: BinaryTextureData,
@@ -9050,7 +10566,7 @@ pub struct CompressedTextureParameter {
 }
 impl CompressedTextureParameter {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -9064,18 +10580,36 @@ impl CompressedTextureParameter {
         binary_texture_data = BinaryTextureData::from_reader(rdr, _ctx)?;
         let mut reference_array_size: UnsignedInteger = Default::default();
         reference_array_size = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (reference_array_size.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut reference_array: Vec<NumberOfBitsThenUnsignedInteger> =
             Vec::with_capacity((reference_array_size.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(reference_array_size.value) {
             let element = NumberOfBitsThenUnsignedInteger::from_reader(rdr)?;
             reference_array.push(element);
         }
         let mut texture_parameters_tolerance: Double = Default::default();
         texture_parameters_tolerance = Double::from_reader(rdr)?;
+        if texture_parameters_tolerance.value < 0.0 || texture_parameters_tolerance.value > 1.0 {
+            return Err(std::io::Error::other(
+                "OOB value in texture_parameters_tolerance",
+            ));
+        };
         let mut texture_parameters_size: UnsignedInteger = Default::default();
         texture_parameters_size = UnsignedInteger::from_reader(rdr)?;
+        if texture_parameters_size.value == 0 {
+            return Err(std::io::Error::other("texture_parameters_size==0"));
+        };
+        io_check_limit!(
+            (texture_parameters_size.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut texture_parameters: Vec<FloatAsBytes> =
             Vec::with_capacity((texture_parameters_size.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(texture_parameters_size.value) {
             let element = FloatAsBytes::from_reader(rdr)?;
             texture_parameters.push(element);
@@ -9094,7 +10628,7 @@ impl CompressedTextureParameter {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let binary_texture_data = self.binary_texture_data.clone();
         binary_texture_data.to_writer(_w, _ctx)?;
         let reference_array_size = self.reference_array_size.clone();
@@ -9116,7 +10650,7 @@ impl CompressedTextureParameter {
 }
 
 /// https://github.com/pdf-association/pdf-issues/issues/727
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TESS_3D_Compressed {
     pub id: UnsignedInteger,
@@ -9153,10 +10687,12 @@ pub struct PRC_TYPE_TESS_3D_Compressed {
     pub is_point_color: Boolean,
     /// above size if wrong, SPECBUG not in spec
     pub is_point_color_on_face: Option<UncompressedBoolArray>,
+    /// point_color_array describes colors on vertices for each triangle. For each triangle vertex with point color, 5 characters are stored. The first character describe if the vertex has got RGB or RGBA components. Then 4 components are used to stored R, G, B, and alpha.
     pub point_color_array: Option<CharacterArray>,
     pub is_multiple_line_attribute: Boolean,
     /// above size if wrong, SPECBUG not in spec
     pub is_multiple_line_attribute_on_face: Option<UncompressedBoolArray>,
+    /// line_attribute_array describe indexes in a graphic array. If a face contains multiple attributes, one index per triangle is added in line_attribute_array. Otherwise, one index per face is added, when encountering the first triangle of this face.
     pub line_attribute_array: ShortArray,
     pub no_texture: Boolean,
     pub texture_data: Option<CompressedTextureParameter>,
@@ -9168,7 +10704,7 @@ pub struct PRC_TYPE_TESS_3D_Compressed {
 }
 impl PRC_TYPE_TESS_3D_Compressed {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -9181,13 +10717,10 @@ impl PRC_TYPE_TESS_3D_Compressed {
         _ctx.t3dc.enter();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_TESS_3D_Compressed) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_TESS_3D_Compressed) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_TESS_3D_Compressed"));
         }
-        assert_eq!(
-            PRC_TYPE_TESS_3D_Compressed,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut is_calculated: Boolean = Default::default();
         is_calculated = Boolean::from_reader(rdr)?;
         let mut has_faces: Boolean = Default::default();
@@ -9196,7 +10729,7 @@ impl PRC_TYPE_TESS_3D_Compressed {
         let mut tolerance: Double = Default::default();
         tolerance = Double::from_reader(rdr)?;
         trace!("{}tolerance: {:?}", indent::get(), &tolerance);
-        let origin_array_cond = _ctx.ver_authoring >= 7031;
+        let origin_array_cond = _ctx.get_authoring_version() >= 7031;
         let mut origin_array: [FloatAsBytes; 3] = [Default::default(); 3];
         if origin_array_cond {
             for i in 0..3 {
@@ -9233,6 +10766,12 @@ impl PRC_TYPE_TESS_3D_Compressed {
             "{}reference_array_size: {:?}",
             indent::get(),
             &reference_array_size
+        );
+        let num_disjoint_shells2 = reference_array_size.value - triangle_face_array.a.len() as u32;
+        debug!(
+            "num_disjoint_shells={} num_disjoint_shells2={}",
+            num_disjoint_shells2 / 2,
+            num_disjoint_shells2
         );
         let mut point_is_reference_array: UncompressedBoolArray = Default::default();
         point_is_reference_array =
@@ -9405,6 +10944,7 @@ impl PRC_TYPE_TESS_3D_Compressed {
                 &point_color_array
             );
         }
+        _ctx.t3dc.on_point_color(&point_color_array.a);
         let mut is_multiple_line_attribute: Boolean = Default::default();
         is_multiple_line_attribute = Boolean::from_reader(rdr)?;
         trace!(
@@ -9424,11 +10964,6 @@ impl PRC_TYPE_TESS_3D_Compressed {
                     .number_of_faces_stored_in_mesh(&triangle_face_array.a),
             )?;
         }
-        debug!(
-            "{}is_multiple_line_attribute_on_face: {}",
-            indent::get(),
-            format(&is_multiple_line_attribute_on_face.a)
-        );
         let mut line_attribute_array: ShortArray = Default::default();
         line_attribute_array = ShortArray::from_reader(rdr, 16)?;
         trace!(
@@ -9586,7 +11121,7 @@ impl PRC_TYPE_TESS_3D_Compressed {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let is_calculated = self.is_calculated.clone();
@@ -9596,7 +11131,7 @@ impl PRC_TYPE_TESS_3D_Compressed {
         let tolerance = self.tolerance.clone();
         tolerance.to_writer(_w)?;
         let origin_array = self.origin_array.clone();
-        if _ctx.ver_authoring >= 7031 {
+        if _ctx.get_authoring_version() >= 7031 {
             for i in self.origin_array.as_ref().unwrap() {
                 i.to_writer(_w)?;
             }
@@ -9741,14 +11276,14 @@ impl PRC_TYPE_TESS_3D_Compressed {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TESS {
     pub id_concrete: PRC_TYPE_TESS_idConcrete,
 }
 impl PRC_TYPE_TESS {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -9762,8 +11297,11 @@ impl PRC_TYPE_TESS {
         let mut id_concrete: PRC_TYPE_TESS_idConcrete =
             PRC_TYPE_TESS_idConcrete::Invalid(id_type_id);
         id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
-        let id_tid: PrcType = PrcType::try_from(id_type_id).unwrap();
-        id_concrete = match id_tid {
+        let id_tid = PrcType::try_from(id_type_id);
+        if id_tid.is_err() {
+            return Err(Error::other(format!("Unrecognised type {}!", id_type_id)));
+        }
+        id_concrete = match id_tid.unwrap() {
             PrcType::PRC_TYPE_TESS_3D => {
                 PRC_TYPE_TESS_idConcrete::tess_3d(PRC_TYPE_TESS_3D::from_reader(rdr, _ctx)?)
             }
@@ -9776,11 +11314,13 @@ impl PRC_TYPE_TESS {
             PrcType::PRC_TYPE_TESS_3D_Compressed => PRC_TYPE_TESS_idConcrete::tess_3d_compressed(
                 PRC_TYPE_TESS_3D_Compressed::from_reader(rdr, _ctx)?,
             ),
-            _ => panic!(
-                "PRC_TYPE_TESS: Unrecognized subtype: {}! bp={}",
-                id_type_id.to_string(),
-                rdr.position_in_bits()?
-            ),
+            _ => {
+                return Err(Error::other(format!(
+                    "PRC_TYPE_TESS: Unrecognized subtype: {}! bp={}",
+                    id_type_id.to_string(),
+                    rdr.position_in_bits()?
+                )));
+            }
         };
         let _ = _ctx.se.eval(rdr, PRC_TYPE_TESS as u32, false, 0);
         let rv = Self { id_concrete };
@@ -9790,14 +11330,17 @@ impl PRC_TYPE_TESS {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         match &self.id_concrete {
             PRC_TYPE_TESS_idConcrete::tess_3d(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_TESS_idConcrete::tess_3d_wire(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_TESS_idConcrete::tess_markup(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_TESS_idConcrete::tess_3d_compressed(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_TESS_idConcrete::Invalid(x) => {
-                panic!("PRC_TYPE_TESS: Unrecognized subtype: {}!", x)
+                return Err(Error::other(format!(
+                    "PRC_TYPE_TESS: Unrecognized subtype: {}!",
+                    x
+                )));
             }
         };
         Ok(())
@@ -9819,7 +11362,7 @@ impl Default for PRC_TYPE_TESS_idConcrete {
 }
 
 /// Tessellation: all tessellated (triangulated) data in the leaf entities of the tree (representation items and markups).
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_ASM_FileStructureTessellation {
     pub id: UnsignedInteger,
@@ -9828,9 +11371,26 @@ pub struct PRC_TYPE_ASM_FileStructureTessellation {
     pub tess: Vec<PRC_TYPE_TESS>,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_ASM_FileStructureTessellation {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_ASM_FileStructureTessellation as u32;
+        let mut base: ContentPRCBase = Default::default();
+        let mut tess_count: UnsignedInteger = Default::default();
+        let mut tess: Vec<PRC_TYPE_TESS> = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            base,
+            tess_count,
+            tess,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_ASM_FileStructureTessellation {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -9842,21 +11402,33 @@ impl PRC_TYPE_ASM_FileStructureTessellation {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_ASM_FileStructureTessellation) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_ASM_FileStructureTessellation) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other(
+                "expected PRC_TYPE_ASM_FileStructureTessellation",
+            ));
         }
-        assert_eq!(
-            PRC_TYPE_ASM_FileStructureTessellation,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
         let mut tess_count: UnsignedInteger = Default::default();
         tess_count = UnsignedInteger::from_reader(rdr)?;
         trace!("{}tess_count: {:?}", indent::get(), &tess_count);
+        io_check_limit!(
+            (tess_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut tess: Vec<PRC_TYPE_TESS> = Vec::with_capacity((tess_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(tess_count.value) {
+            trace!("reading PRC_TYPE_TESS[{} of {}]", &_i, tess_count.value);
             let element = PRC_TYPE_TESS::from_reader(rdr, _ctx)?;
+            trace!(
+                "{}PRC_TYPE_ASM_FileStructureTessellation.tess[{} of {}]: {:#?}",
+                indent::get(),
+                &_i,
+                tess_count.value,
+                &element
+            );
             tess.push(element);
         }
         let _ = _ctx
@@ -9877,7 +11449,7 @@ impl PRC_TYPE_ASM_FileStructureTessellation {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -9894,7 +11466,7 @@ impl PRC_TYPE_ASM_FileStructureTessellation {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct BaseTopology {
     pub has_base: Boolean,
@@ -9904,7 +11476,7 @@ pub struct BaseTopology {
 }
 impl BaseTopology {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -9947,7 +11519,7 @@ impl BaseTopology {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let has_base = self.has_base.clone();
         has_base.to_writer(_w)?;
         let attribute_data_cond = !!has_base;
@@ -9972,7 +11544,7 @@ impl BaseTopology {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ContentBody {
     pub base: BaseTopology,
@@ -9980,7 +11552,7 @@ pub struct ContentBody {
 }
 impl ContentBody {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -10011,7 +11583,7 @@ impl ContentBody {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let base = self.base.clone();
         base.to_writer(_w, _ctx)?;
         let bounding_box_behavior = self.bounding_box_behavior.clone();
@@ -10020,7 +11592,7 @@ impl ContentBody {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_MultipleVertex {
     pub id: UnsignedInteger,
@@ -10028,9 +11600,24 @@ pub struct PRC_TYPE_TOPO_MultipleVertex {
     pub number_of_points: UnsignedInteger,
     pub points: Vec<Vector3D>,
 }
+impl Default for PRC_TYPE_TOPO_MultipleVertex {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_TOPO_MultipleVertex as u32;
+        let mut base: BaseTopology = Default::default();
+        let mut number_of_points: UnsignedInteger = Default::default();
+        let mut points: Vec<Vector3D> = Default::default();
+        Self {
+            id,
+            base,
+            number_of_points,
+            points,
+        }
+    }
+}
 impl PRC_TYPE_TOPO_MultipleVertex {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -10042,18 +11629,20 @@ impl PRC_TYPE_TOPO_MultipleVertex {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_TOPO_MultipleVertex) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_TOPO_MultipleVertex) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_TOPO_MultipleVertex"));
         }
-        assert_eq!(
-            PRC_TYPE_TOPO_MultipleVertex,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: BaseTopology = Default::default();
         base = BaseTopology::from_reader(rdr, _ctx)?;
         let mut number_of_points: UnsignedInteger = Default::default();
         number_of_points = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_points.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut points: Vec<Vector3D> = Vec::with_capacity((number_of_points.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_points.value) {
             let element = Vector3D::from_reader(rdr, _ctx)?;
             points.push(element);
@@ -10073,7 +11662,7 @@ impl PRC_TYPE_TOPO_MultipleVertex {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -10088,7 +11677,7 @@ impl PRC_TYPE_TOPO_MultipleVertex {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_UniqueVertex {
     pub id: UnsignedInteger,
@@ -10097,9 +11686,30 @@ pub struct PRC_TYPE_TOPO_UniqueVertex {
     pub has_tolerance: Boolean,
     pub tolerance: Option<Double>,
 }
+impl Default for PRC_TYPE_TOPO_UniqueVertex {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_TOPO_UniqueVertex as u32;
+        let mut base: BaseTopology = Default::default();
+        let mut vertex: Vector3D = Default::default();
+        let mut has_tolerance: Boolean = Default::default();
+        let mut tolerance: Double = Default::default();
+        Self {
+            id,
+            base,
+            vertex,
+            has_tolerance,
+            tolerance: if !!has_tolerance {
+                Some(tolerance)
+            } else {
+                None
+            },
+        }
+    }
+}
 impl PRC_TYPE_TOPO_UniqueVertex {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -10111,13 +11721,10 @@ impl PRC_TYPE_TOPO_UniqueVertex {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_TOPO_UniqueVertex) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_TOPO_UniqueVertex) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_TOPO_UniqueVertex"));
         }
-        assert_eq!(
-            PRC_TYPE_TOPO_UniqueVertex,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: BaseTopology = Default::default();
         base = BaseTopology::from_reader(rdr, _ctx)?;
         let mut vertex: Vector3D = Default::default();
@@ -10149,7 +11756,7 @@ impl PRC_TYPE_TOPO_UniqueVertex {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -10168,7 +11775,7 @@ impl PRC_TYPE_TOPO_UniqueVertex {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct Interval {
     pub min_value: Double,
@@ -10176,7 +11783,7 @@ pub struct Interval {
 }
 impl Interval {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -10200,7 +11807,7 @@ impl Interval {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let min_value = self.min_value.clone();
         min_value.to_writer(_w)?;
         let max_value = self.max_value.clone();
@@ -10209,7 +11816,7 @@ impl Interval {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct Parameterization {
     pub trim_interval: Interval,
@@ -10218,7 +11825,7 @@ pub struct Parameterization {
 }
 impl Parameterization {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -10245,7 +11852,7 @@ impl Parameterization {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let trim_interval = self.trim_interval.clone();
         trim_interval.to_writer(_w, _ctx)?;
         let coeff_a = self.coeff_a.clone();
@@ -10256,7 +11863,7 @@ impl Parameterization {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct UVParameterization {
     pub swap_uv: Boolean,
@@ -10268,7 +11875,7 @@ pub struct UVParameterization {
 }
 impl UVParameterization {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -10304,7 +11911,7 @@ impl UVParameterization {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let swap_uv = self.swap_uv.clone();
         swap_uv.to_writer(_w)?;
         let suface_domain = self.suface_domain.clone();
@@ -10321,7 +11928,7 @@ impl UVParameterization {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ContentCurve {
     pub has_base_geometry: Boolean,
@@ -10333,7 +11940,7 @@ pub struct ContentCurve {
 }
 impl ContentCurve {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -10383,7 +11990,7 @@ impl ContentCurve {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let has_base_geometry = self.has_base_geometry.clone();
         has_base_geometry.to_writer(_w)?;
         let attribute_data_cond = !!has_base_geometry;
@@ -10412,14 +12019,14 @@ impl ContentCurve {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_CRV_Blend02Boundary {
     pub id: UnsignedInteger,
     pub curve_data: ContentCurve,
     pub transform2d: Option<Transformation2DWithBit>,
     pub transform3d: Option<Transformation3DWithBit>,
-    pub paramaterization: Parameterization,
+    pub parameterization: Parameterization,
     pub surface: PtrSurface,
     pub bound: Integer,
     pub number_of_crossing_points: UnsignedInteger,
@@ -10439,7 +12046,7 @@ pub struct PRC_TYPE_CRV_Blend02Boundary {
 }
 impl PRC_TYPE_CRV_Blend02Boundary {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -10451,13 +12058,10 @@ impl PRC_TYPE_CRV_Blend02Boundary {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_CRV_Blend02Boundary) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_CRV_Blend02Boundary) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_CRV_Blend02Boundary"));
         }
-        assert_eq!(
-            PRC_TYPE_CRV_Blend02Boundary,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
         assert_eq!(true, curve_data.is_3d_flag.value);
@@ -10471,16 +12075,21 @@ impl PRC_TYPE_CRV_Blend02Boundary {
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
         }
-        let mut paramaterization: Parameterization = Default::default();
-        paramaterization = Parameterization::from_reader(rdr, _ctx)?;
+        let mut parameterization: Parameterization = Default::default();
+        parameterization = Parameterization::from_reader(rdr, _ctx)?;
         let mut surface: PtrSurface = Default::default();
         surface = PtrSurface::from_reader(rdr, _ctx)?;
         let mut bound: Integer = Default::default();
         bound = Integer::from_reader(rdr)?;
         let mut number_of_crossing_points: UnsignedInteger = Default::default();
         number_of_crossing_points = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_crossing_points.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut crossing_points: Vec<Vector3D> =
             Vec::with_capacity((number_of_crossing_points.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_crossing_points.value) {
             let element = Vector3D::from_reader(rdr, _ctx)?;
             crossing_points.push(element);
@@ -10525,7 +12134,7 @@ impl PRC_TYPE_CRV_Blend02Boundary {
             } else {
                 None
             },
-            paramaterization,
+            parameterization,
             surface,
             bound,
             number_of_crossing_points,
@@ -10549,7 +12158,7 @@ impl PRC_TYPE_CRV_Blend02Boundary {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -10566,8 +12175,8 @@ impl PRC_TYPE_CRV_Blend02Boundary {
             transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
-        let paramaterization = self.paramaterization.clone();
-        paramaterization.to_writer(_w, _ctx)?;
+        let parameterization = self.parameterization.clone();
+        parameterization.to_writer(_w, _ctx)?;
         let surface = self.surface.clone();
         surface.to_writer(_w, _ctx)?;
         let bound = self.bound.clone();
@@ -10606,7 +12215,7 @@ impl PRC_TYPE_CRV_Blend02Boundary {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ControlPointsNurbsCrv {
     pub x: Double,
@@ -10616,7 +12225,7 @@ pub struct ControlPointsNurbsCrv {
 }
 impl ControlPointsNurbsCrv {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -10652,7 +12261,7 @@ impl ControlPointsNurbsCrv {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let x = self.x.clone();
         x.to_writer(_w)?;
         let y = self.y.clone();
@@ -10673,7 +12282,7 @@ impl ControlPointsNurbsCrv {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_CRV_NURBS {
     pub id: UnsignedInteger,
@@ -10687,9 +12296,36 @@ pub struct PRC_TYPE_CRV_NURBS {
     pub knot_type: UnsignedInteger,
     pub curve_form: UnsignedInteger,
 }
+impl Default for PRC_TYPE_CRV_NURBS {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_CRV_NURBS as u32;
+        let mut curve_data: ContentCurve = Default::default();
+        let mut is_rational: Boolean = Default::default();
+        let mut degree: UnsignedInteger = Default::default();
+        let mut highest_index_of_control_points: UnsignedInteger = Default::default();
+        let mut highest_index_of_knots: UnsignedInteger = Default::default();
+        let mut p: Vec<ControlPointsNurbsCrv> = Default::default();
+        let mut u: Vec<Double> = Default::default();
+        let mut knot_type: UnsignedInteger = Default::default();
+        let mut curve_form: UnsignedInteger = Default::default();
+        Self {
+            id,
+            curve_data,
+            is_rational,
+            degree,
+            highest_index_of_control_points,
+            highest_index_of_knots,
+            p,
+            u,
+            knot_type,
+            curve_form,
+        }
+    }
+}
 impl PRC_TYPE_CRV_NURBS {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -10701,10 +12337,10 @@ impl PRC_TYPE_CRV_NURBS {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_CRV_NURBS) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_CRV_NURBS) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_CRV_NURBS"));
         }
-        assert_eq!(PRC_TYPE_CRV_NURBS, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
         let mut is_rational: Boolean = Default::default();
@@ -10716,13 +12352,23 @@ impl PRC_TYPE_CRV_NURBS {
         highest_index_of_control_points = UnsignedInteger::from_reader(rdr)?;
         let mut highest_index_of_knots: UnsignedInteger = Default::default();
         highest_index_of_knots = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (highest_index_of_control_points.value + 1) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut p: Vec<ControlPointsNurbsCrv> =
             Vec::with_capacity((highest_index_of_control_points.value + 1) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(highest_index_of_control_points.value + 1) {
             let element = ControlPointsNurbsCrv::from_reader(rdr, _ctx)?;
             p.push(element);
         }
+        io_check_limit!(
+            (highest_index_of_knots.value + 1) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut u: Vec<Double> = Vec::with_capacity((highest_index_of_knots.value + 1) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(highest_index_of_knots.value + 1) {
             let element = Double::from_reader(rdr)?;
             u.push(element);
@@ -10754,7 +12400,7 @@ impl PRC_TYPE_CRV_NURBS {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -10783,19 +12429,19 @@ impl PRC_TYPE_CRV_NURBS {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_CRV_Circle {
     pub id: UnsignedInteger,
     pub curve_data: ContentCurve,
     pub transform2d: Option<Transformation2DWithBit>,
     pub transform3d: Option<Transformation3DWithBit>,
-    pub paramaterization: Parameterization,
+    pub parameterization: Parameterization,
     pub radius: Double,
 }
 impl PRC_TYPE_CRV_Circle {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -10807,10 +12453,10 @@ impl PRC_TYPE_CRV_Circle {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_CRV_Circle) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_CRV_Circle) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_CRV_Circle"));
         }
-        assert_eq!(PRC_TYPE_CRV_Circle, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
@@ -10823,8 +12469,8 @@ impl PRC_TYPE_CRV_Circle {
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
         }
-        let mut paramaterization: Parameterization = Default::default();
-        paramaterization = Parameterization::from_reader(rdr, _ctx)?;
+        let mut parameterization: Parameterization = Default::default();
+        parameterization = Parameterization::from_reader(rdr, _ctx)?;
         let mut radius: Double = Default::default();
         radius = Double::from_reader(rdr)?;
         let _ = _ctx.se.eval(rdr, PRC_TYPE_CRV_Circle as u32, false, 0);
@@ -10841,7 +12487,7 @@ impl PRC_TYPE_CRV_Circle {
             } else {
                 None
             },
-            paramaterization,
+            parameterization,
             radius,
         };
         Ok(rv)
@@ -10850,7 +12496,7 @@ impl PRC_TYPE_CRV_Circle {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -10867,15 +12513,15 @@ impl PRC_TYPE_CRV_Circle {
             transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
-        let paramaterization = self.paramaterization.clone();
-        paramaterization.to_writer(_w, _ctx)?;
+        let parameterization = self.parameterization.clone();
+        parameterization.to_writer(_w, _ctx)?;
         let radius = self.radius.clone();
         radius.to_writer(_w)?;
         Ok(())
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct CompositeSubCurve {
     pub subcurve: PtrCurve,
@@ -10883,7 +12529,7 @@ pub struct CompositeSubCurve {
 }
 impl CompositeSubCurve {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -10904,7 +12550,7 @@ impl CompositeSubCurve {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let subcurve = self.subcurve.clone();
         subcurve.to_writer(_w, _ctx)?;
         let sense = self.sense.clone();
@@ -10913,21 +12559,21 @@ impl CompositeSubCurve {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_CRV_Composite {
     pub id: UnsignedInteger,
     pub curve_data: ContentCurve,
     pub transform2d: Option<Transformation2DWithBit>,
     pub transform3d: Option<Transformation3DWithBit>,
-    pub paramaterization: Parameterization,
+    pub parameterization: Parameterization,
     pub number_of_subcurves: UnsignedInteger,
     pub subcurves: Vec<CompositeSubCurve>,
     pub is_closed: Boolean,
 }
 impl PRC_TYPE_CRV_Composite {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -10939,10 +12585,10 @@ impl PRC_TYPE_CRV_Composite {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_CRV_Composite) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_CRV_Composite) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_CRV_Composite"));
         }
-        assert_eq!(PRC_TYPE_CRV_Composite, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
@@ -10955,12 +12601,17 @@ impl PRC_TYPE_CRV_Composite {
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
         }
-        let mut paramaterization: Parameterization = Default::default();
-        paramaterization = Parameterization::from_reader(rdr, _ctx)?;
+        let mut parameterization: Parameterization = Default::default();
+        parameterization = Parameterization::from_reader(rdr, _ctx)?;
         let mut number_of_subcurves: UnsignedInteger = Default::default();
         number_of_subcurves = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_subcurves.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut subcurves: Vec<CompositeSubCurve> =
             Vec::with_capacity((number_of_subcurves.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_subcurves.value) {
             let element = CompositeSubCurve::from_reader(rdr, _ctx)?;
             subcurves.push(element);
@@ -10981,7 +12632,7 @@ impl PRC_TYPE_CRV_Composite {
             } else {
                 None
             },
-            paramaterization,
+            parameterization,
             number_of_subcurves,
             subcurves,
             is_closed,
@@ -10992,7 +12643,7 @@ impl PRC_TYPE_CRV_Composite {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -11009,8 +12660,8 @@ impl PRC_TYPE_CRV_Composite {
             transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
-        let paramaterization = self.paramaterization.clone();
-        paramaterization.to_writer(_w, _ctx)?;
+        let parameterization = self.parameterization.clone();
+        parameterization.to_writer(_w, _ctx)?;
         let number_of_subcurves = self.number_of_subcurves.clone();
         number_of_subcurves.to_writer(_w)?;
         let subcurves = self.subcurves.clone();
@@ -11023,14 +12674,14 @@ impl PRC_TYPE_CRV_Composite {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_CRV_OnSurf {
     pub id: UnsignedInteger,
     pub curve_data: ContentCurve,
     pub transform2d: Option<Transformation2DWithBit>,
     pub transform3d: Option<Transformation3DWithBit>,
-    pub paramaterization: Parameterization,
+    pub parameterization: Parameterization,
     pub tolerance: Double,
     pub uv_curve: PtrCurve,
     pub surface: PtrSurface,
@@ -11038,7 +12689,7 @@ pub struct PRC_TYPE_CRV_OnSurf {
 }
 impl PRC_TYPE_CRV_OnSurf {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -11050,10 +12701,10 @@ impl PRC_TYPE_CRV_OnSurf {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_CRV_OnSurf) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_CRV_OnSurf) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_CRV_OnSurf"));
         }
-        assert_eq!(PRC_TYPE_CRV_OnSurf, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
@@ -11066,8 +12717,8 @@ impl PRC_TYPE_CRV_OnSurf {
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
         }
-        let mut paramaterization: Parameterization = Default::default();
-        paramaterization = Parameterization::from_reader(rdr, _ctx)?;
+        let mut parameterization: Parameterization = Default::default();
+        parameterization = Parameterization::from_reader(rdr, _ctx)?;
         let mut tolerance: Double = Default::default();
         tolerance = Double::from_reader(rdr)?;
         let mut uv_curve: PtrCurve = Default::default();
@@ -11090,7 +12741,7 @@ impl PRC_TYPE_CRV_OnSurf {
             } else {
                 None
             },
-            paramaterization,
+            parameterization,
             tolerance,
             uv_curve,
             surface,
@@ -11102,7 +12753,7 @@ impl PRC_TYPE_CRV_OnSurf {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -11119,8 +12770,8 @@ impl PRC_TYPE_CRV_OnSurf {
             transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
-        let paramaterization = self.paramaterization.clone();
-        paramaterization.to_writer(_w, _ctx)?;
+        let parameterization = self.parameterization.clone();
+        parameterization.to_writer(_w, _ctx)?;
         let tolerance = self.tolerance.clone();
         tolerance.to_writer(_w)?;
         let uv_curve = self.uv_curve.clone();
@@ -11133,20 +12784,20 @@ impl PRC_TYPE_CRV_OnSurf {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_CRV_Ellipse {
     pub id: UnsignedInteger,
     pub curve_data: ContentCurve,
     pub transform2d: Option<Transformation2DWithBit>,
     pub transform3d: Option<Transformation3DWithBit>,
-    pub paramaterization: Parameterization,
+    pub parameterization: Parameterization,
     pub rx: Double,
     pub ry: Double,
 }
 impl PRC_TYPE_CRV_Ellipse {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -11158,10 +12809,10 @@ impl PRC_TYPE_CRV_Ellipse {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_CRV_Ellipse) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_CRV_Ellipse) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_CRV_Ellipse"));
         }
-        assert_eq!(PRC_TYPE_CRV_Ellipse, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
@@ -11174,8 +12825,8 @@ impl PRC_TYPE_CRV_Ellipse {
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
         }
-        let mut paramaterization: Parameterization = Default::default();
-        paramaterization = Parameterization::from_reader(rdr, _ctx)?;
+        let mut parameterization: Parameterization = Default::default();
+        parameterization = Parameterization::from_reader(rdr, _ctx)?;
         let mut rx: Double = Default::default();
         rx = Double::from_reader(rdr)?;
         let mut ry: Double = Default::default();
@@ -11194,7 +12845,7 @@ impl PRC_TYPE_CRV_Ellipse {
             } else {
                 None
             },
-            paramaterization,
+            parameterization,
             rx,
             ry,
         };
@@ -11204,7 +12855,7 @@ impl PRC_TYPE_CRV_Ellipse {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -11221,8 +12872,8 @@ impl PRC_TYPE_CRV_Ellipse {
             transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
-        let paramaterization = self.paramaterization.clone();
-        paramaterization.to_writer(_w, _ctx)?;
+        let parameterization = self.parameterization.clone();
+        parameterization.to_writer(_w, _ctx)?;
         let rx = self.rx.clone();
         rx.to_writer(_w)?;
         let ry = self.ry.clone();
@@ -11231,16 +12882,29 @@ impl PRC_TYPE_CRV_Ellipse {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MATH_FCT_1D_Polynom {
     pub id: UnsignedInteger,
     pub number_of_coefficients: UnsignedInteger,
     pub coefficient: Vec<Double>,
 }
+impl Default for PRC_TYPE_MATH_FCT_1D_Polynom {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_MATH_FCT_1D_Polynom as u32;
+        let mut number_of_coefficients: UnsignedInteger = Default::default();
+        let mut coefficient: Vec<Double> = Default::default();
+        Self {
+            id,
+            number_of_coefficients,
+            coefficient,
+        }
+    }
+}
 impl PRC_TYPE_MATH_FCT_1D_Polynom {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -11252,17 +12916,19 @@ impl PRC_TYPE_MATH_FCT_1D_Polynom {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MATH_FCT_1D_Polynom) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MATH_FCT_1D_Polynom) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_MATH_FCT_1D_Polynom"));
         }
-        assert_eq!(
-            PRC_TYPE_MATH_FCT_1D_Polynom,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut number_of_coefficients: UnsignedInteger = Default::default();
         number_of_coefficients = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_coefficients.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut coefficient: Vec<Double> =
             Vec::with_capacity((number_of_coefficients.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_coefficients.value) {
             let element = Double::from_reader(rdr)?;
             coefficient.push(element);
@@ -11281,7 +12947,7 @@ impl PRC_TYPE_MATH_FCT_1D_Polynom {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let number_of_coefficients = self.number_of_coefficients.clone();
@@ -11294,7 +12960,7 @@ impl PRC_TYPE_MATH_FCT_1D_Polynom {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MATH_FCT_1D_Trigonometric {
     pub id: UnsignedInteger,
@@ -11303,9 +12969,26 @@ pub struct PRC_TYPE_MATH_FCT_1D_Trigonometric {
     pub freq: Double,
     pub dc_offset: Double,
 }
+impl Default for PRC_TYPE_MATH_FCT_1D_Trigonometric {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_MATH_FCT_1D_Trigonometric as u32;
+        let mut amplitude: Double = Default::default();
+        let mut phase: Double = Default::default();
+        let mut freq: Double = Default::default();
+        let mut dc_offset: Double = Default::default();
+        Self {
+            id,
+            amplitude,
+            phase,
+            freq,
+            dc_offset,
+        }
+    }
+}
 impl PRC_TYPE_MATH_FCT_1D_Trigonometric {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -11317,13 +13000,10 @@ impl PRC_TYPE_MATH_FCT_1D_Trigonometric {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MATH_FCT_1D_Trigonometric) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MATH_FCT_1D_Trigonometric) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_MATH_FCT_1D_Trigonometric"));
         }
-        assert_eq!(
-            PRC_TYPE_MATH_FCT_1D_Trigonometric,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut amplitude: Double = Default::default();
         amplitude = Double::from_reader(rdr)?;
         let mut phase: Double = Default::default();
@@ -11348,7 +13028,7 @@ impl PRC_TYPE_MATH_FCT_1D_Trigonometric {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let amplitude = self.amplitude.clone();
@@ -11363,7 +13043,7 @@ impl PRC_TYPE_MATH_FCT_1D_Trigonometric {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MATH_FCT_1D_Fraction {
     pub id: UnsignedInteger,
@@ -11372,7 +13052,7 @@ pub struct PRC_TYPE_MATH_FCT_1D_Fraction {
 }
 impl PRC_TYPE_MATH_FCT_1D_Fraction {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -11384,13 +13064,10 @@ impl PRC_TYPE_MATH_FCT_1D_Fraction {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MATH_FCT_1D_Fraction) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MATH_FCT_1D_Fraction) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_MATH_FCT_1D_Fraction"));
         }
-        assert_eq!(
-            PRC_TYPE_MATH_FCT_1D_Fraction,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut numerator: Box<PRC_TYPE_MATH_FCT_1D> = Box::new(Default::default());
         numerator = Box::from(PRC_TYPE_MATH_FCT_1D::from_reader(rdr, _ctx)?);
         let mut denominator: Box<PRC_TYPE_MATH_FCT_1D> = Box::new(Default::default());
@@ -11409,7 +13086,7 @@ impl PRC_TYPE_MATH_FCT_1D_Fraction {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let numerator = self.numerator.clone();
@@ -11420,7 +13097,7 @@ impl PRC_TYPE_MATH_FCT_1D_Fraction {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MATH_FCT_1D_ArctanCos {
     pub id: UnsignedInteger,
@@ -11430,9 +13107,28 @@ pub struct PRC_TYPE_MATH_FCT_1D_ArctanCos {
     pub phase: Double,
     pub e: Double,
 }
+impl Default for PRC_TYPE_MATH_FCT_1D_ArctanCos {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_MATH_FCT_1D_ArctanCos as u32;
+        let mut a: Double = Default::default();
+        let mut amplitude: Double = Default::default();
+        let mut frequency: Double = Default::default();
+        let mut phase: Double = Default::default();
+        let mut e: Double = Default::default();
+        Self {
+            id,
+            a,
+            amplitude,
+            frequency,
+            phase,
+            e,
+        }
+    }
+}
 impl PRC_TYPE_MATH_FCT_1D_ArctanCos {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -11444,13 +13140,10 @@ impl PRC_TYPE_MATH_FCT_1D_ArctanCos {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MATH_FCT_1D_ArctanCos) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MATH_FCT_1D_ArctanCos) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_MATH_FCT_1D_ArctanCos"));
         }
-        assert_eq!(
-            PRC_TYPE_MATH_FCT_1D_ArctanCos,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut a: Double = Default::default();
         a = Double::from_reader(rdr)?;
         let mut amplitude: Double = Default::default();
@@ -11478,7 +13171,7 @@ impl PRC_TYPE_MATH_FCT_1D_ArctanCos {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let a = self.a.clone();
@@ -11495,7 +13188,7 @@ impl PRC_TYPE_MATH_FCT_1D_ArctanCos {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct CombinationFunctions {
     pub coefficient: Double,
@@ -11503,7 +13196,7 @@ pub struct CombinationFunctions {
 }
 impl CombinationFunctions {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -11527,7 +13220,7 @@ impl CombinationFunctions {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let coefficient = self.coefficient.clone();
         coefficient.to_writer(_w)?;
         let function = self.function.clone();
@@ -11536,16 +13229,29 @@ impl CombinationFunctions {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MATH_FCT_1D_Combination {
     pub id: UnsignedInteger,
     pub number_of_coefficients: UnsignedInteger,
     pub coefficient: Vec<CombinationFunctions>,
 }
+impl Default for PRC_TYPE_MATH_FCT_1D_Combination {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_MATH_FCT_1D_Combination as u32;
+        let mut number_of_coefficients: UnsignedInteger = Default::default();
+        let mut coefficient: Vec<CombinationFunctions> = Default::default();
+        Self {
+            id,
+            number_of_coefficients,
+            coefficient,
+        }
+    }
+}
 impl PRC_TYPE_MATH_FCT_1D_Combination {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -11557,17 +13263,19 @@ impl PRC_TYPE_MATH_FCT_1D_Combination {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MATH_FCT_1D_Combination) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MATH_FCT_1D_Combination) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_MATH_FCT_1D_Combination"));
         }
-        assert_eq!(
-            PRC_TYPE_MATH_FCT_1D_Combination,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut number_of_coefficients: UnsignedInteger = Default::default();
         number_of_coefficients = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_coefficients.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut coefficient: Vec<CombinationFunctions> =
             Vec::with_capacity((number_of_coefficients.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_coefficients.value) {
             let element = CombinationFunctions::from_reader(rdr, _ctx)?;
             coefficient.push(element);
@@ -11586,7 +13294,7 @@ impl PRC_TYPE_MATH_FCT_1D_Combination {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let number_of_coefficients = self.number_of_coefficients.clone();
@@ -11599,14 +13307,14 @@ impl PRC_TYPE_MATH_FCT_1D_Combination {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MATH_FCT_1D {
     pub id_concrete: PRC_TYPE_MATH_FCT_1D_idConcrete,
 }
 impl PRC_TYPE_MATH_FCT_1D {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -11620,8 +13328,11 @@ impl PRC_TYPE_MATH_FCT_1D {
         let mut id_concrete: PRC_TYPE_MATH_FCT_1D_idConcrete =
             PRC_TYPE_MATH_FCT_1D_idConcrete::Invalid(id_type_id);
         id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
-        let id_tid: PrcType = PrcType::try_from(id_type_id).unwrap();
-        id_concrete = match id_tid {
+        let id_tid = PrcType::try_from(id_type_id);
+        if id_tid.is_err() {
+            return Err(Error::other(format!("Unrecognised type {}!", id_type_id)));
+        }
+        id_concrete = match id_tid.unwrap() {
             PrcType::PRC_TYPE_MATH_FCT_1D_Polynom => PRC_TYPE_MATH_FCT_1D_idConcrete::poly(
                 PRC_TYPE_MATH_FCT_1D_Polynom::from_reader(rdr, _ctx)?,
             ),
@@ -11637,11 +13348,13 @@ impl PRC_TYPE_MATH_FCT_1D {
             PrcType::PRC_TYPE_MATH_FCT_1D_Combination => PRC_TYPE_MATH_FCT_1D_idConcrete::comb(
                 PRC_TYPE_MATH_FCT_1D_Combination::from_reader(rdr, _ctx)?,
             ),
-            _ => panic!(
-                "PRC_TYPE_MATH_FCT_1D: Unrecognized subtype: {}! bp={}",
-                id_type_id.to_string(),
-                rdr.position_in_bits()?
-            ),
+            _ => {
+                return Err(Error::other(format!(
+                    "PRC_TYPE_MATH_FCT_1D: Unrecognized subtype: {}! bp={}",
+                    id_type_id.to_string(),
+                    rdr.position_in_bits()?
+                )));
+            }
         };
         let _ = _ctx.se.eval(rdr, PRC_TYPE_MATH_FCT_1D as u32, false, 0);
         let rv = Self { id_concrete };
@@ -11651,7 +13364,7 @@ impl PRC_TYPE_MATH_FCT_1D {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         match &self.id_concrete {
             PRC_TYPE_MATH_FCT_1D_idConcrete::poly(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_MATH_FCT_1D_idConcrete::trigon(x) => &x.to_writer(_w, _ctx)?,
@@ -11659,7 +13372,10 @@ impl PRC_TYPE_MATH_FCT_1D {
             PRC_TYPE_MATH_FCT_1D_idConcrete::arctancos(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_MATH_FCT_1D_idConcrete::comb(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_MATH_FCT_1D_idConcrete::Invalid(x) => {
-                panic!("PRC_TYPE_MATH_FCT_1D: Unrecognized subtype: {}!", x)
+                return Err(Error::other(format!(
+                    "PRC_TYPE_MATH_FCT_1D: Unrecognized subtype: {}!",
+                    x
+                )));
             }
         };
         Ok(())
@@ -11681,16 +13397,25 @@ impl Default for PRC_TYPE_MATH_FCT_1D_idConcrete {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MATH_FCT_3D_Linear {
     pub id: UnsignedInteger,
     pub mat: [Vector3D; 3],
     pub vect: Vector3D,
 }
+impl Default for PRC_TYPE_MATH_FCT_3D_Linear {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_MATH_FCT_3D_Linear as u32;
+        let mut mat: [Vector3D; 3] = Default::default();
+        let mut vect: Vector3D = Default::default();
+        Self { id, mat, vect }
+    }
+}
 impl PRC_TYPE_MATH_FCT_3D_Linear {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -11702,13 +13427,10 @@ impl PRC_TYPE_MATH_FCT_3D_Linear {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MATH_FCT_3D_Linear) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MATH_FCT_3D_Linear) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_MATH_FCT_3D_Linear"));
         }
-        assert_eq!(
-            PRC_TYPE_MATH_FCT_3D_Linear,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut mat: [Vector3D; 3] = [Default::default(); 3];
         for i in 0..3 {
             mat[i as usize] = Vector3D::from_reader(rdr, _ctx)?;
@@ -11725,7 +13447,7 @@ impl PRC_TYPE_MATH_FCT_3D_Linear {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let mat = self.mat.clone();
@@ -11738,7 +13460,7 @@ impl PRC_TYPE_MATH_FCT_3D_Linear {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MATH_FCT_3D_NonLinear {
     pub id: UnsignedInteger,
@@ -11752,7 +13474,7 @@ pub struct PRC_TYPE_MATH_FCT_3D_NonLinear {
 }
 impl PRC_TYPE_MATH_FCT_3D_NonLinear {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -11764,13 +13486,10 @@ impl PRC_TYPE_MATH_FCT_3D_NonLinear {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_MATH_FCT_3D_NonLinear) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_MATH_FCT_3D_NonLinear) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_MATH_FCT_3D_NonLinear"));
         }
-        assert_eq!(
-            PRC_TYPE_MATH_FCT_3D_NonLinear,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut left_transformation: Box<PRC_TYPE_MATH_FCT_3D> = Box::new(Default::default());
         left_transformation = Box::from(PRC_TYPE_MATH_FCT_3D::from_reader(rdr, _ctx)?);
         let mut right_transformation: Box<PRC_TYPE_MATH_FCT_3D> = Box::new(Default::default());
@@ -11804,7 +13523,7 @@ impl PRC_TYPE_MATH_FCT_3D_NonLinear {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let left_transformation = self.left_transformation.clone();
@@ -11825,14 +13544,14 @@ impl PRC_TYPE_MATH_FCT_3D_NonLinear {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MATH_FCT_3D {
     pub id_concrete: PRC_TYPE_MATH_FCT_3D_idConcrete,
 }
 impl PRC_TYPE_MATH_FCT_3D {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -11846,19 +13565,24 @@ impl PRC_TYPE_MATH_FCT_3D {
         let mut id_concrete: PRC_TYPE_MATH_FCT_3D_idConcrete =
             PRC_TYPE_MATH_FCT_3D_idConcrete::Invalid(id_type_id);
         id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
-        let id_tid: PrcType = PrcType::try_from(id_type_id).unwrap();
-        id_concrete = match id_tid {
+        let id_tid = PrcType::try_from(id_type_id);
+        if id_tid.is_err() {
+            return Err(Error::other(format!("Unrecognised type {}!", id_type_id)));
+        }
+        id_concrete = match id_tid.unwrap() {
             PrcType::PRC_TYPE_MATH_FCT_3D_Linear => PRC_TYPE_MATH_FCT_3D_idConcrete::lin(
                 PRC_TYPE_MATH_FCT_3D_Linear::from_reader(rdr, _ctx)?,
             ),
             PrcType::PRC_TYPE_MATH_FCT_3D_NonLinear => PRC_TYPE_MATH_FCT_3D_idConcrete::nonlin(
                 PRC_TYPE_MATH_FCT_3D_NonLinear::from_reader(rdr, _ctx)?,
             ),
-            _ => panic!(
-                "PRC_TYPE_MATH_FCT_3D: Unrecognized subtype: {}! bp={}",
-                id_type_id.to_string(),
-                rdr.position_in_bits()?
-            ),
+            _ => {
+                return Err(Error::other(format!(
+                    "PRC_TYPE_MATH_FCT_3D: Unrecognized subtype: {}! bp={}",
+                    id_type_id.to_string(),
+                    rdr.position_in_bits()?
+                )));
+            }
         };
         let _ = _ctx.se.eval(rdr, PRC_TYPE_MATH_FCT_3D as u32, false, 0);
         let rv = Self { id_concrete };
@@ -11868,12 +13592,15 @@ impl PRC_TYPE_MATH_FCT_3D {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         match &self.id_concrete {
             PRC_TYPE_MATH_FCT_3D_idConcrete::lin(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_MATH_FCT_3D_idConcrete::nonlin(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_MATH_FCT_3D_idConcrete::Invalid(x) => {
-                panic!("PRC_TYPE_MATH_FCT_3D: Unrecognized subtype: {}!", x)
+                return Err(Error::other(format!(
+                    "PRC_TYPE_MATH_FCT_3D: Unrecognized subtype: {}!",
+                    x
+                )));
             }
         };
         Ok(())
@@ -11892,14 +13619,14 @@ impl Default for PRC_TYPE_MATH_FCT_3D_idConcrete {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_CRV_Equation {
     pub id: UnsignedInteger,
     pub curve_data: ContentCurve,
     pub transform2d: Option<Transformation2DWithBit>,
     pub transform3d: Option<Transformation3DWithBit>,
-    pub paramaterization: Parameterization,
+    pub parameterization: Parameterization,
     pub interval: Interval,
     pub x_function: PRC_TYPE_MATH_FCT_1D,
     pub y_function: PRC_TYPE_MATH_FCT_1D,
@@ -11907,7 +13634,7 @@ pub struct PRC_TYPE_CRV_Equation {
 }
 impl PRC_TYPE_CRV_Equation {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -11919,10 +13646,10 @@ impl PRC_TYPE_CRV_Equation {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_CRV_Equation) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_CRV_Equation) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_CRV_Equation"));
         }
-        assert_eq!(PRC_TYPE_CRV_Equation, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
@@ -11935,8 +13662,8 @@ impl PRC_TYPE_CRV_Equation {
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
         }
-        let mut paramaterization: Parameterization = Default::default();
-        paramaterization = Parameterization::from_reader(rdr, _ctx)?;
+        let mut parameterization: Parameterization = Default::default();
+        parameterization = Parameterization::from_reader(rdr, _ctx)?;
         let mut interval: Interval = Default::default();
         interval = Interval::from_reader(rdr, _ctx)?;
         let mut x_function: PRC_TYPE_MATH_FCT_1D = Default::default();
@@ -11962,7 +13689,7 @@ impl PRC_TYPE_CRV_Equation {
             } else {
                 None
             },
-            paramaterization,
+            parameterization,
             interval,
             x_function,
             y_function,
@@ -11978,7 +13705,7 @@ impl PRC_TYPE_CRV_Equation {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -11995,8 +13722,8 @@ impl PRC_TYPE_CRV_Equation {
             transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
-        let paramaterization = self.paramaterization.clone();
-        paramaterization.to_writer(_w, _ctx)?;
+        let parameterization = self.parameterization.clone();
+        parameterization.to_writer(_w, _ctx)?;
         let interval = self.interval.clone();
         interval.to_writer(_w, _ctx)?;
         let x_function = self.x_function.clone();
@@ -12013,7 +13740,7 @@ impl PRC_TYPE_CRV_Equation {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct Type0HelixData {
     pub origin0: Double,
@@ -12027,7 +13754,7 @@ pub struct Type0HelixData {
 }
 impl Type0HelixData {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -12069,7 +13796,7 @@ impl Type0HelixData {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let origin0 = self.origin0.clone();
         origin0.to_writer(_w)?;
         let direction0 = self.direction0.clone();
@@ -12090,7 +13817,7 @@ impl Type0HelixData {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct Type1HelixData {
     pub unit_z0: Double,
@@ -12106,7 +13833,7 @@ pub struct Type1HelixData {
 }
 impl Type1HelixData {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -12156,7 +13883,7 @@ impl Type1HelixData {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let unit_z0 = self.unit_z0.clone();
         unit_z0.to_writer(_w)?;
         let unit_u0 = self.unit_u0.clone();
@@ -12183,14 +13910,14 @@ impl Type1HelixData {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_CRV_Helix {
     pub id: UnsignedInteger,
     pub curve_data: ContentCurve,
     pub transform2d: Option<Transformation2DWithBit>,
     pub transform3d: Option<Transformation3DWithBit>,
-    pub paramaterization: Parameterization,
+    pub parameterization: Parameterization,
     pub _type: Character,
     pub orientation: Boolean,
     pub start: Vector3D,
@@ -12199,7 +13926,7 @@ pub struct PRC_TYPE_CRV_Helix {
 }
 impl PRC_TYPE_CRV_Helix {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -12211,10 +13938,10 @@ impl PRC_TYPE_CRV_Helix {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_CRV_Helix) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_CRV_Helix) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_CRV_Helix"));
         }
-        assert_eq!(PRC_TYPE_CRV_Helix, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
@@ -12227,8 +13954,8 @@ impl PRC_TYPE_CRV_Helix {
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
         }
-        let mut paramaterization: Parameterization = Default::default();
-        paramaterization = Parameterization::from_reader(rdr, _ctx)?;
+        let mut parameterization: Parameterization = Default::default();
+        parameterization = Parameterization::from_reader(rdr, _ctx)?;
         let mut _type: Character = Default::default();
         _type = Character::from_reader(rdr)?;
         assert!(_type.value == 0 || _type.value == 1);
@@ -12254,7 +13981,7 @@ impl PRC_TYPE_CRV_Helix {
             } else {
                 None
             },
-            paramaterization,
+            parameterization,
             _type,
             orientation,
             start,
@@ -12267,7 +13994,7 @@ impl PRC_TYPE_CRV_Helix {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -12284,8 +14011,8 @@ impl PRC_TYPE_CRV_Helix {
             transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
-        let paramaterization = self.paramaterization.clone();
-        paramaterization.to_writer(_w, _ctx)?;
+        let parameterization = self.parameterization.clone();
+        parameterization.to_writer(_w, _ctx)?;
         let _type = self._type.clone();
         _type.to_writer(_w)?;
         let orientation = self.orientation.clone();
@@ -12300,21 +14027,21 @@ impl PRC_TYPE_CRV_Helix {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_CRV_Hyperbola {
     pub id: UnsignedInteger,
     pub curve_data: ContentCurve,
     pub transform2d: Option<Transformation2DWithBit>,
     pub transform3d: Option<Transformation3DWithBit>,
-    pub paramaterization: Parameterization,
+    pub parameterization: Parameterization,
     pub semi_axis: Double,
     pub semi_image_axis: Double,
     pub _type: Character,
 }
 impl PRC_TYPE_CRV_Hyperbola {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -12326,10 +14053,10 @@ impl PRC_TYPE_CRV_Hyperbola {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_CRV_Hyperbola) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_CRV_Hyperbola) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_CRV_Hyperbola"));
         }
-        assert_eq!(PRC_TYPE_CRV_Hyperbola, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
@@ -12342,8 +14069,8 @@ impl PRC_TYPE_CRV_Hyperbola {
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
         }
-        let mut paramaterization: Parameterization = Default::default();
-        paramaterization = Parameterization::from_reader(rdr, _ctx)?;
+        let mut parameterization: Parameterization = Default::default();
+        parameterization = Parameterization::from_reader(rdr, _ctx)?;
         let mut semi_axis: Double = Default::default();
         semi_axis = Double::from_reader(rdr)?;
         let mut semi_image_axis: Double = Default::default();
@@ -12365,7 +14092,7 @@ impl PRC_TYPE_CRV_Hyperbola {
             } else {
                 None
             },
-            paramaterization,
+            parameterization,
             semi_axis,
             semi_image_axis,
             _type,
@@ -12376,7 +14103,7 @@ impl PRC_TYPE_CRV_Hyperbola {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -12393,8 +14120,8 @@ impl PRC_TYPE_CRV_Hyperbola {
             transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
-        let paramaterization = self.paramaterization.clone();
-        paramaterization.to_writer(_w, _ctx)?;
+        let parameterization = self.parameterization.clone();
+        parameterization.to_writer(_w, _ctx)?;
         let semi_axis = self.semi_axis.clone();
         semi_axis.to_writer(_w)?;
         let semi_image_axis = self.semi_image_axis.clone();
@@ -12405,7 +14132,7 @@ impl PRC_TYPE_CRV_Hyperbola {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct CrossingPointsCrvIntersection {
     pub position: Vector3D,
@@ -12418,7 +14145,7 @@ pub struct CrossingPointsCrvIntersection {
 }
 impl CrossingPointsCrvIntersection {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -12457,7 +14184,7 @@ impl CrossingPointsCrvIntersection {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let position = self.position.clone();
         position.to_writer(_w, _ctx)?;
         let uv_surface_1 = self.uv_surface_1.clone();
@@ -12476,14 +14203,14 @@ impl CrossingPointsCrvIntersection {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_CRV_Intersection {
     pub id: UnsignedInteger,
     pub curve_data: ContentCurve,
     pub transform2d: Option<Transformation2DWithBit>,
     pub transform3d: Option<Transformation3DWithBit>,
-    pub paramaterization: Parameterization,
+    pub parameterization: Parameterization,
     pub surface_1: PtrSurface,
     pub surface_2: PtrSurface,
     pub sense_1: Boolean,
@@ -12501,7 +14228,7 @@ pub struct PRC_TYPE_CRV_Intersection {
 }
 impl PRC_TYPE_CRV_Intersection {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -12513,13 +14240,10 @@ impl PRC_TYPE_CRV_Intersection {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_CRV_Intersection) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_CRV_Intersection) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_CRV_Intersection"));
         }
-        assert_eq!(
-            PRC_TYPE_CRV_Intersection,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
@@ -12532,8 +14256,8 @@ impl PRC_TYPE_CRV_Intersection {
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
         }
-        let mut paramaterization: Parameterization = Default::default();
-        paramaterization = Parameterization::from_reader(rdr, _ctx)?;
+        let mut parameterization: Parameterization = Default::default();
+        parameterization = Parameterization::from_reader(rdr, _ctx)?;
         let mut surface_1: PtrSurface = Default::default();
         surface_1 = PtrSurface::from_reader(rdr, _ctx)?;
         let mut surface_2: PtrSurface = Default::default();
@@ -12546,8 +14270,13 @@ impl PRC_TYPE_CRV_Intersection {
         sense_cross = Boolean::from_reader(rdr)?;
         let mut number_of_crossings: UnsignedInteger = Default::default();
         number_of_crossings = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_crossings.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut crossings: Vec<CrossingPointsCrvIntersection> =
             Vec::with_capacity((number_of_crossings.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_crossings.value) {
             let element = CrossingPointsCrvIntersection::from_reader(rdr, _ctx)?;
             crossings.push(element);
@@ -12582,7 +14311,7 @@ impl PRC_TYPE_CRV_Intersection {
             } else {
                 None
             },
-            paramaterization,
+            parameterization,
             surface_1,
             surface_2,
             sense_1,
@@ -12604,7 +14333,7 @@ impl PRC_TYPE_CRV_Intersection {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -12621,8 +14350,8 @@ impl PRC_TYPE_CRV_Intersection {
             transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
-        let paramaterization = self.paramaterization.clone();
-        paramaterization.to_writer(_w, _ctx)?;
+        let parameterization = self.parameterization.clone();
+        parameterization.to_writer(_w, _ctx)?;
         let surface_1 = self.surface_1.clone();
         surface_1.to_writer(_w, _ctx)?;
         let surface_2 = self.surface_2.clone();
@@ -12657,18 +14386,18 @@ impl PRC_TYPE_CRV_Intersection {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_CRV_Line {
     pub id: UnsignedInteger,
     pub curve_data: ContentCurve,
     pub transform2d: Option<Transformation2DWithBit>,
     pub transform3d: Option<Transformation3DWithBit>,
-    pub paramaterization: Parameterization,
+    pub parameterization: Parameterization,
 }
 impl PRC_TYPE_CRV_Line {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -12680,10 +14409,10 @@ impl PRC_TYPE_CRV_Line {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_CRV_Line) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_CRV_Line) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_CRV_Line"));
         }
-        assert_eq!(PRC_TYPE_CRV_Line, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
@@ -12696,8 +14425,8 @@ impl PRC_TYPE_CRV_Line {
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
         }
-        let mut paramaterization: Parameterization = Default::default();
-        paramaterization = Parameterization::from_reader(rdr, _ctx)?;
+        let mut parameterization: Parameterization = Default::default();
+        parameterization = Parameterization::from_reader(rdr, _ctx)?;
         let _ = _ctx.se.eval(rdr, PRC_TYPE_CRV_Line as u32, false, 0);
         let rv = Self {
             id,
@@ -12712,7 +14441,7 @@ impl PRC_TYPE_CRV_Line {
             } else {
                 None
             },
-            paramaterization,
+            parameterization,
         };
         Ok(rv)
     }
@@ -12720,7 +14449,7 @@ impl PRC_TYPE_CRV_Line {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -12737,27 +14466,27 @@ impl PRC_TYPE_CRV_Line {
             transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
-        let paramaterization = self.paramaterization.clone();
-        paramaterization.to_writer(_w, _ctx)?;
+        let parameterization = self.parameterization.clone();
+        parameterization.to_writer(_w, _ctx)?;
         Ok(())
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_CRV_Offset {
     pub id: UnsignedInteger,
     pub curve_data: ContentCurve,
     pub transform2d: Option<Transformation2DWithBit>,
     pub transform3d: Option<Transformation3DWithBit>,
-    pub paramaterization: Parameterization,
+    pub parameterization: Parameterization,
     pub base_curve: PtrCurve,
     pub offset_plane_normal: Vector3D,
     pub offset: Double,
 }
 impl PRC_TYPE_CRV_Offset {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -12769,10 +14498,10 @@ impl PRC_TYPE_CRV_Offset {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_CRV_Offset) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_CRV_Offset) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_CRV_Offset"));
         }
-        assert_eq!(PRC_TYPE_CRV_Offset, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
         assert_eq!(true, curve_data.is_3d_flag.value);
@@ -12786,8 +14515,8 @@ impl PRC_TYPE_CRV_Offset {
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
         }
-        let mut paramaterization: Parameterization = Default::default();
-        paramaterization = Parameterization::from_reader(rdr, _ctx)?;
+        let mut parameterization: Parameterization = Default::default();
+        parameterization = Parameterization::from_reader(rdr, _ctx)?;
         let mut base_curve: PtrCurve = Default::default();
         base_curve = PtrCurve::from_reader(rdr, _ctx)?;
         let mut offset_plane_normal: Vector3D = Default::default();
@@ -12808,7 +14537,7 @@ impl PRC_TYPE_CRV_Offset {
             } else {
                 None
             },
-            paramaterization,
+            parameterization,
             base_curve,
             offset_plane_normal,
             offset,
@@ -12819,7 +14548,7 @@ impl PRC_TYPE_CRV_Offset {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -12836,8 +14565,8 @@ impl PRC_TYPE_CRV_Offset {
             transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
-        let paramaterization = self.paramaterization.clone();
-        paramaterization.to_writer(_w, _ctx)?;
+        let parameterization = self.parameterization.clone();
+        parameterization.to_writer(_w, _ctx)?;
         let base_curve = self.base_curve.clone();
         base_curve.to_writer(_w, _ctx)?;
         let offset_plane_normal = self.offset_plane_normal.clone();
@@ -12848,20 +14577,20 @@ impl PRC_TYPE_CRV_Offset {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_CRV_Parabola {
     pub id: UnsignedInteger,
     pub curve_data: ContentCurve,
     pub transform2d: Option<Transformation2DWithBit>,
     pub transform3d: Option<Transformation3DWithBit>,
-    pub paramaterization: Parameterization,
+    pub parameterization: Parameterization,
     pub focal_length: Double,
     pub _type: Character,
 }
 impl PRC_TYPE_CRV_Parabola {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -12873,10 +14602,10 @@ impl PRC_TYPE_CRV_Parabola {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_CRV_Parabola) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_CRV_Parabola) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_CRV_Parabola"));
         }
-        assert_eq!(PRC_TYPE_CRV_Parabola, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
@@ -12889,8 +14618,8 @@ impl PRC_TYPE_CRV_Parabola {
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
         }
-        let mut paramaterization: Parameterization = Default::default();
-        paramaterization = Parameterization::from_reader(rdr, _ctx)?;
+        let mut parameterization: Parameterization = Default::default();
+        parameterization = Parameterization::from_reader(rdr, _ctx)?;
         let mut focal_length: Double = Default::default();
         focal_length = Double::from_reader(rdr)?;
         let mut _type: Character = Default::default();
@@ -12910,7 +14639,7 @@ impl PRC_TYPE_CRV_Parabola {
             } else {
                 None
             },
-            paramaterization,
+            parameterization,
             focal_length,
             _type,
         };
@@ -12920,7 +14649,7 @@ impl PRC_TYPE_CRV_Parabola {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -12937,8 +14666,8 @@ impl PRC_TYPE_CRV_Parabola {
             transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
-        let paramaterization = self.paramaterization.clone();
-        paramaterization.to_writer(_w, _ctx)?;
+        let parameterization = self.parameterization.clone();
+        parameterization.to_writer(_w, _ctx)?;
         let focal_length = self.focal_length.clone();
         focal_length.to_writer(_w)?;
         let _type = self._type.clone();
@@ -12947,21 +14676,21 @@ impl PRC_TYPE_CRV_Parabola {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_CRV_PolyLine {
     pub id: UnsignedInteger,
     pub curve_data: ContentCurve,
     pub transform2d: Option<Transformation2DWithBit>,
     pub transform3d: Option<Transformation3DWithBit>,
-    pub paramaterization: Parameterization,
+    pub parameterization: Parameterization,
     pub number_of_points: UnsignedInteger,
     pub points_3d: Option<Vec<Vector3D>>,
     pub points_2d: Option<Vec<Vector2D>>,
 }
 impl PRC_TYPE_CRV_PolyLine {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -12973,10 +14702,10 @@ impl PRC_TYPE_CRV_PolyLine {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_CRV_PolyLine) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_CRV_PolyLine) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_CRV_PolyLine"));
         }
-        assert_eq!(PRC_TYPE_CRV_PolyLine, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
@@ -12989,21 +14718,31 @@ impl PRC_TYPE_CRV_PolyLine {
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
         }
-        let mut paramaterization: Parameterization = Default::default();
-        paramaterization = Parameterization::from_reader(rdr, _ctx)?;
+        let mut parameterization: Parameterization = Default::default();
+        parameterization = Parameterization::from_reader(rdr, _ctx)?;
         let mut number_of_points: UnsignedInteger = Default::default();
         number_of_points = UnsignedInteger::from_reader(rdr)?;
         let points_3d_cond = curve_data.is_3d_flag.value;
+        io_check_limit!(
+            (number_of_points.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut points_3d: Vec<Vector3D> = Vec::with_capacity((number_of_points.value) as usize);
         if points_3d_cond {
+            #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(number_of_points.value) {
                 let element = Vector3D::from_reader(rdr, _ctx)?;
                 points_3d.push(element);
             }
         }
         let points_2d_cond = !curve_data.is_3d_flag.value;
+        io_check_limit!(
+            (number_of_points.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut points_2d: Vec<Vector2D> = Vec::with_capacity((number_of_points.value) as usize);
         if points_2d_cond {
+            #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(number_of_points.value) {
                 let element = Vector2D::from_reader(rdr, _ctx)?;
                 points_2d.push(element);
@@ -13023,7 +14762,7 @@ impl PRC_TYPE_CRV_PolyLine {
             } else {
                 None
             },
-            paramaterization,
+            parameterization,
             number_of_points,
             points_3d: if points_3d_cond {
                 Some(points_3d)
@@ -13042,7 +14781,7 @@ impl PRC_TYPE_CRV_PolyLine {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -13059,8 +14798,8 @@ impl PRC_TYPE_CRV_PolyLine {
             transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
-        let paramaterization = self.paramaterization.clone();
-        paramaterization.to_writer(_w, _ctx)?;
+        let parameterization = self.parameterization.clone();
+        parameterization.to_writer(_w, _ctx)?;
         let number_of_points = self.number_of_points.clone();
         number_of_points.to_writer(_w)?;
         let points_3d = self.points_3d.clone();
@@ -13079,20 +14818,20 @@ impl PRC_TYPE_CRV_PolyLine {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_CRV_Transform {
     pub id: UnsignedInteger,
     pub curve_data: ContentCurve,
     pub transform2d: Option<Transformation2DWithBit>,
     pub transform3d: Option<Transformation3DWithBit>,
-    pub paramaterization: Parameterization,
+    pub parameterization: Parameterization,
     pub base_curve: PtrCurve,
     pub math_transformation: PRC_TYPE_MATH_FCT_3D,
 }
 impl PRC_TYPE_CRV_Transform {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -13104,10 +14843,10 @@ impl PRC_TYPE_CRV_Transform {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_CRV_Transform) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_CRV_Transform) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_CRV_Transform"));
         }
-        assert_eq!(PRC_TYPE_CRV_Transform, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
@@ -13120,8 +14859,8 @@ impl PRC_TYPE_CRV_Transform {
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
         }
-        let mut paramaterization: Parameterization = Default::default();
-        paramaterization = Parameterization::from_reader(rdr, _ctx)?;
+        let mut parameterization: Parameterization = Default::default();
+        parameterization = Parameterization::from_reader(rdr, _ctx)?;
         let mut base_curve: PtrCurve = Default::default();
         base_curve = PtrCurve::from_reader(rdr, _ctx)?;
         let mut math_transformation: PRC_TYPE_MATH_FCT_3D = Default::default();
@@ -13140,7 +14879,7 @@ impl PRC_TYPE_CRV_Transform {
             } else {
                 None
             },
-            paramaterization,
+            parameterization,
             base_curve,
             math_transformation,
         };
@@ -13150,7 +14889,7 @@ impl PRC_TYPE_CRV_Transform {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -13167,8 +14906,8 @@ impl PRC_TYPE_CRV_Transform {
             transform3d = self.transform3d.as_ref().unwrap();
             transform3d.to_writer(_w, _ctx)?;
         }
-        let paramaterization = self.paramaterization.clone();
-        paramaterization.to_writer(_w, _ctx)?;
+        let parameterization = self.parameterization.clone();
+        parameterization.to_writer(_w, _ctx)?;
         let base_curve = self.base_curve.clone();
         base_curve.to_writer(_w, _ctx)?;
         let math_transformation = self.math_transformation.clone();
@@ -13177,14 +14916,14 @@ impl PRC_TYPE_CRV_Transform {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_CRV {
     pub id_concrete: PRC_TYPE_CRV_idConcrete,
 }
 impl PRC_TYPE_CRV {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -13197,8 +14936,11 @@ impl PRC_TYPE_CRV {
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_CRV_idConcrete = PRC_TYPE_CRV_idConcrete::Invalid(id_type_id);
         id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
-        let id_tid: PrcType = PrcType::try_from(id_type_id).unwrap();
-        id_concrete = match id_tid {
+        let id_tid = PrcType::try_from(id_type_id);
+        if id_tid.is_err() {
+            return Err(Error::other(format!("Unrecognised type {}!", id_type_id)));
+        }
+        id_concrete = match id_tid.unwrap() {
             PrcType::PRC_TYPE_ROOT => {
                 PRC_TYPE_CRV_idConcrete::empty(PRC_TYPE_ROOT::from_reader(rdr, _ctx)?)
             }
@@ -13247,11 +14989,13 @@ impl PRC_TYPE_CRV {
             PrcType::PRC_TYPE_CRV_Transform => {
                 PRC_TYPE_CRV_idConcrete::tr(PRC_TYPE_CRV_Transform::from_reader(rdr, _ctx)?)
             }
-            _ => panic!(
-                "PRC_TYPE_CRV: Unrecognized subtype: {}! bp={}",
-                id_type_id.to_string(),
-                rdr.position_in_bits()?
-            ),
+            _ => {
+                return Err(Error::other(format!(
+                    "PRC_TYPE_CRV: Unrecognized subtype: {}! bp={}",
+                    id_type_id.to_string(),
+                    rdr.position_in_bits()?
+                )));
+            }
         };
         let _ = _ctx.se.eval(rdr, PRC_TYPE_CRV as u32, false, 0);
         let rv = Self { id_concrete };
@@ -13261,7 +15005,7 @@ impl PRC_TYPE_CRV {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         match &self.id_concrete {
             PRC_TYPE_CRV_idConcrete::empty(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_CRV_idConcrete::b02b(x) => &x.to_writer(_w, _ctx)?,
@@ -13280,7 +15024,10 @@ impl PRC_TYPE_CRV {
             PRC_TYPE_CRV_idConcrete::poly(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_CRV_idConcrete::tr(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_CRV_idConcrete::Invalid(x) => {
-                panic!("PRC_TYPE_CRV: Unrecognized subtype: {}!", x)
+                return Err(Error::other(format!(
+                    "PRC_TYPE_CRV: Unrecognized subtype: {}!",
+                    x
+                )));
             }
         };
         Ok(())
@@ -13313,7 +15060,7 @@ impl Default for PRC_TYPE_CRV_idConcrete {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PtrCurve {
     pub is_referenced: Boolean,
@@ -13322,7 +15069,7 @@ pub struct PtrCurve {
 }
 impl PtrCurve {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -13359,7 +15106,7 @@ impl PtrCurve {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let is_referenced = self.is_referenced.clone();
         is_referenced.to_writer(_w)?;
         let curve_cond = !is_referenced;
@@ -13379,7 +15126,7 @@ impl PtrCurve {
 }
 
 /// proe neu
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_Blend01 {
     pub id: UnsignedInteger,
@@ -13390,9 +15137,30 @@ pub struct PRC_TYPE_SURF_Blend01 {
     pub orgin_cruve: PtrCurve,
     pub tangent_curve: PtrCurve,
 }
+impl Default for PRC_TYPE_SURF_Blend01 {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_SURF_Blend01 as u32;
+        let mut curve_data: ContentSurface = Default::default();
+        let mut tranform: Transformation3DWithBit = Default::default();
+        let mut parameterization: UVParameterization = Default::default();
+        let mut center_curve: PtrCurve = Default::default();
+        let mut orgin_cruve: PtrCurve = Default::default();
+        let mut tangent_curve: PtrCurve = Default::default();
+        Self {
+            id,
+            curve_data,
+            tranform,
+            parameterization,
+            center_curve,
+            orgin_cruve,
+            tangent_curve,
+        }
+    }
+}
 impl PRC_TYPE_SURF_Blend01 {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -13404,10 +15172,10 @@ impl PRC_TYPE_SURF_Blend01 {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_SURF_Blend01) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_SURF_Blend01) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_SURF_Blend01"));
         }
-        assert_eq!(PRC_TYPE_SURF_Blend01, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
         let mut tranform: Transformation3DWithBit = Default::default();
@@ -13436,7 +15204,7 @@ impl PRC_TYPE_SURF_Blend01 {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -13456,7 +15224,7 @@ impl PRC_TYPE_SURF_Blend01 {
 }
 
 /// xt
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_Blend02 {
     pub id: UnsignedInteger,
@@ -13477,9 +15245,50 @@ pub struct PRC_TYPE_SURF_Blend02 {
     pub cliff_surface_1: PtrSurface,
     pub parameterization_type: Character,
 }
+impl Default for PRC_TYPE_SURF_Blend02 {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_SURF_Blend02 as u32;
+        let mut curve_data: ContentSurface = Default::default();
+        let mut tranform: Transformation3DWithBit = Default::default();
+        let mut parameterization: UVParameterization = Default::default();
+        let mut bound_surface_0: PtrSurface = Default::default();
+        let mut bound_curve_0: PtrCurve = Default::default();
+        let mut bound_surface_1: PtrSurface = Default::default();
+        let mut bound_curve_1: PtrCurve = Default::default();
+        let mut center_curve: PtrCurve = Default::default();
+        let mut center_curve_sense: Boolean = Default::default();
+        let mut bound_surface_0_sense: Boolean = Default::default();
+        let mut bound_surface_1_sense: Boolean = Default::default();
+        let mut radius_0: Double = Default::default();
+        let mut radius_1: Double = Default::default();
+        let mut cliff_suface_0: PtrSurface = Default::default();
+        let mut cliff_surface_1: PtrSurface = Default::default();
+        let mut parameterization_type: Character = Default::default();
+        Self {
+            id,
+            curve_data,
+            tranform,
+            parameterization,
+            bound_surface_0,
+            bound_curve_0,
+            bound_surface_1,
+            bound_curve_1,
+            center_curve,
+            center_curve_sense,
+            bound_surface_0_sense,
+            bound_surface_1_sense,
+            radius_0,
+            radius_1,
+            cliff_suface_0,
+            cliff_surface_1,
+            parameterization_type,
+        }
+    }
+}
 impl PRC_TYPE_SURF_Blend02 {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -13491,10 +15300,10 @@ impl PRC_TYPE_SURF_Blend02 {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_SURF_Blend02) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_SURF_Blend02) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_SURF_Blend02"));
         }
-        assert_eq!(PRC_TYPE_SURF_Blend02, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
         let mut tranform: Transformation3DWithBit = Default::default();
@@ -13553,7 +15362,7 @@ impl PRC_TYPE_SURF_Blend02 {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -13594,7 +15403,7 @@ impl PRC_TYPE_SURF_Blend02 {
 
 /// Catia fillet surface defined by three curves. points, tangents, and second_derivatives arrays should be declared as Array<Vector3d>[number_of_elements * 3] size.
 /// https://github.com/pdf-association/pdf-issues/issues/651
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_Blend03 {
     pub id: UnsignedInteger,
@@ -13620,9 +15429,56 @@ pub struct PRC_TYPE_SURF_Blend03 {
     pub number_of_supplimental_doubles: UnsignedInteger,
     pub supplimental_doubles: Vec<Double>,
 }
+impl Default for PRC_TYPE_SURF_Blend03 {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_SURF_Blend03 as u32;
+        let mut curve_data: ContentSurface = Default::default();
+        let mut transform: Transformation3DWithBit = Default::default();
+        let mut parameterization: UVParameterization = Default::default();
+        let mut number_of_elements: UnsignedInteger = Default::default();
+        let mut parameters: Vec<Double> = Default::default();
+        let mut multiplicities: Vec<Integer> = Default::default();
+        let mut points: Vec<Vector3D> = Default::default();
+        let mut rail_2_angles_v: Vec<Double> = Default::default();
+        let mut tangents: Vec<Vector3D> = Default::default();
+        let mut rail_2_derivatives_v: Vec<Double> = Default::default();
+        let mut second_derivatives: Vec<Vector3D> = Default::default();
+        let mut rail_2_second_derivatives: Vec<Double> = Default::default();
+        let mut rail_2_parameter_v: Double = Default::default();
+        let mut trim_v_min: Double = Default::default();
+        let mut trim_v_max: Double = Default::default();
+        let mut reserved_int: [Integer; 6] = Default::default();
+        let mut reserved_char: [Character; 3] = Default::default();
+        let mut number_of_supplimental_doubles: UnsignedInteger = Default::default();
+        let mut supplimental_doubles: Vec<Double> = Default::default();
+        Self {
+            id,
+            curve_data,
+            transform,
+            parameterization,
+            number_of_elements,
+            parameters,
+            multiplicities,
+            points,
+            rail_2_angles_v,
+            tangents,
+            rail_2_derivatives_v,
+            second_derivatives,
+            rail_2_second_derivatives,
+            rail_2_parameter_v,
+            trim_v_min,
+            trim_v_max,
+            reserved_int,
+            reserved_char,
+            number_of_supplimental_doubles,
+            supplimental_doubles,
+        }
+    }
+}
 impl PRC_TYPE_SURF_Blend03 {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -13634,10 +15490,10 @@ impl PRC_TYPE_SURF_Blend03 {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_SURF_Blend03) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_SURF_Blend03) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_SURF_Blend03"));
         }
-        assert_eq!(PRC_TYPE_SURF_Blend03, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
         let mut transform: Transformation3DWithBit = Default::default();
@@ -13646,48 +15502,88 @@ impl PRC_TYPE_SURF_Blend03 {
         parameterization = UVParameterization::from_reader(rdr, _ctx)?;
         let mut number_of_elements: UnsignedInteger = Default::default();
         number_of_elements = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_elements.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut parameters: Vec<Double> = Vec::with_capacity((number_of_elements.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_elements.value) {
             let element = Double::from_reader(rdr)?;
             parameters.push(element);
         }
+        io_check_limit!(
+            (number_of_elements.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut multiplicities: Vec<Integer> =
             Vec::with_capacity((number_of_elements.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_elements.value) {
             let element = Integer::from_reader(rdr)?;
             multiplicities.push(element);
         }
+        io_check_limit!(
+            (number_of_elements.value * 3) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut points: Vec<Vector3D> = Vec::with_capacity((number_of_elements.value * 3) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_elements.value * 3) {
             let element = Vector3D::from_reader(rdr, _ctx)?;
             points.push(element);
         }
+        io_check_limit!(
+            (number_of_elements.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut rail_2_angles_v: Vec<Double> =
             Vec::with_capacity((number_of_elements.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_elements.value) {
             let element = Double::from_reader(rdr)?;
             rail_2_angles_v.push(element);
         }
+        io_check_limit!(
+            (number_of_elements.value * 3) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut tangents: Vec<Vector3D> =
             Vec::with_capacity((number_of_elements.value * 3) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_elements.value * 3) {
             let element = Vector3D::from_reader(rdr, _ctx)?;
             tangents.push(element);
         }
+        io_check_limit!(
+            (number_of_elements.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut rail_2_derivatives_v: Vec<Double> =
             Vec::with_capacity((number_of_elements.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_elements.value) {
             let element = Double::from_reader(rdr)?;
             rail_2_derivatives_v.push(element);
         }
+        io_check_limit!(
+            (number_of_elements.value * 3) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut second_derivatives: Vec<Vector3D> =
             Vec::with_capacity((number_of_elements.value * 3) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_elements.value * 3) {
             let element = Vector3D::from_reader(rdr, _ctx)?;
             second_derivatives.push(element);
         }
+        io_check_limit!(
+            (number_of_elements.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut rail_2_second_derivatives: Vec<Double> =
             Vec::with_capacity((number_of_elements.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_elements.value) {
             let element = Double::from_reader(rdr)?;
             rail_2_second_derivatives.push(element);
@@ -13708,8 +15604,13 @@ impl PRC_TYPE_SURF_Blend03 {
         }
         let mut number_of_supplimental_doubles: UnsignedInteger = Default::default();
         number_of_supplimental_doubles = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_supplimental_doubles.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut supplimental_doubles: Vec<Double> =
             Vec::with_capacity((number_of_supplimental_doubles.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_supplimental_doubles.value) {
             let element = Double::from_reader(rdr)?;
             supplimental_doubles.push(element);
@@ -13743,7 +15644,7 @@ impl PRC_TYPE_SURF_Blend03 {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -13810,7 +15711,7 @@ impl PRC_TYPE_SURF_Blend03 {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ControlPointsNurbsSurf3 {
     pub x: Double,
@@ -13819,7 +15720,7 @@ pub struct ControlPointsNurbsSurf3 {
 }
 impl ControlPointsNurbsSurf3 {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -13842,7 +15743,7 @@ impl ControlPointsNurbsSurf3 {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let x = self.x.clone();
         x.to_writer(_w)?;
         let y = self.y.clone();
@@ -13853,7 +15754,7 @@ impl ControlPointsNurbsSurf3 {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ControlPointsNurbsSurf4 {
     pub x: Double,
@@ -13863,7 +15764,7 @@ pub struct ControlPointsNurbsSurf4 {
 }
 impl ControlPointsNurbsSurf4 {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -13888,7 +15789,7 @@ impl ControlPointsNurbsSurf4 {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let x = self.x.clone();
         x.to_writer(_w)?;
         let y = self.y.clone();
@@ -13901,7 +15802,7 @@ impl ControlPointsNurbsSurf4 {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_NURBS {
     pub id: UnsignedInteger,
@@ -13920,9 +15821,46 @@ pub struct PRC_TYPE_SURF_NURBS {
     pub knot_type: UnsignedInteger,
     pub surface_form: UnsignedInteger,
 }
+impl Default for PRC_TYPE_SURF_NURBS {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_SURF_NURBS as u32;
+        let mut curve_data: ContentSurface = Default::default();
+        let mut is_rational: Boolean = Default::default();
+        let mut du: UnsignedInteger = Default::default();
+        let mut dv: UnsignedInteger = Default::default();
+        let mut highest_index_of_control_points_in_u: UnsignedInteger = Default::default();
+        let mut highest_index_of_control_points_in_v: UnsignedInteger = Default::default();
+        let mut highest_index_of_knots_in_u: UnsignedInteger = Default::default();
+        let mut highest_index_of_knots_in_v: UnsignedInteger = Default::default();
+        let mut p3: Vec<ControlPointsNurbsSurf3> = Default::default();
+        let mut p4: Vec<ControlPointsNurbsSurf4> = Default::default();
+        let mut ku: Vec<Double> = Default::default();
+        let mut kv: Vec<Double> = Default::default();
+        let mut knot_type: UnsignedInteger = Default::default();
+        let mut surface_form: UnsignedInteger = Default::default();
+        Self {
+            id,
+            curve_data,
+            is_rational,
+            du,
+            dv,
+            highest_index_of_control_points_in_u,
+            highest_index_of_control_points_in_v,
+            highest_index_of_knots_in_u,
+            highest_index_of_knots_in_v,
+            p3: if !is_rational { Some(p3) } else { None },
+            p4: if !!is_rational { Some(p4) } else { None },
+            ku,
+            kv,
+            knot_type,
+            surface_form,
+        }
+    }
+}
 impl PRC_TYPE_SURF_NURBS {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -13934,10 +15872,10 @@ impl PRC_TYPE_SURF_NURBS {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_SURF_NURBS) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_SURF_NURBS) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_SURF_NURBS"));
         }
-        assert_eq!(PRC_TYPE_SURF_NURBS, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
         let mut is_rational: Boolean = Default::default();
@@ -13955,11 +15893,17 @@ impl PRC_TYPE_SURF_NURBS {
         let mut highest_index_of_knots_in_v: UnsignedInteger = Default::default();
         highest_index_of_knots_in_v = UnsignedInteger::from_reader(rdr)?;
         let p3_cond = !is_rational;
+        io_check_limit!(
+            ((highest_index_of_control_points_in_u.value + 1)
+                * (highest_index_of_control_points_in_v.value + 1)) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut p3: Vec<ControlPointsNurbsSurf3> = Vec::with_capacity(
             ((highest_index_of_control_points_in_u.value + 1)
                 * (highest_index_of_control_points_in_v.value + 1)) as usize,
         );
         if p3_cond {
+            #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..((highest_index_of_control_points_in_u.value + 1)
                 * (highest_index_of_control_points_in_v.value + 1))
             {
@@ -13968,11 +15912,17 @@ impl PRC_TYPE_SURF_NURBS {
             }
         }
         let p4_cond = !!is_rational;
+        io_check_limit!(
+            ((highest_index_of_control_points_in_u.value + 1)
+                * (highest_index_of_control_points_in_v.value + 1)) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut p4: Vec<ControlPointsNurbsSurf4> = Vec::with_capacity(
             ((highest_index_of_control_points_in_u.value + 1)
                 * (highest_index_of_control_points_in_v.value + 1)) as usize,
         );
         if p4_cond {
+            #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..((highest_index_of_control_points_in_u.value + 1)
                 * (highest_index_of_control_points_in_v.value + 1))
             {
@@ -13980,14 +15930,24 @@ impl PRC_TYPE_SURF_NURBS {
                 p4.push(element);
             }
         }
+        io_check_limit!(
+            (highest_index_of_knots_in_u.value + 1) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut ku: Vec<Double> =
             Vec::with_capacity((highest_index_of_knots_in_u.value + 1) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(highest_index_of_knots_in_u.value + 1) {
             let element = Double::from_reader(rdr)?;
             ku.push(element);
         }
+        io_check_limit!(
+            (highest_index_of_knots_in_v.value + 1) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut kv: Vec<Double> =
             Vec::with_capacity((highest_index_of_knots_in_v.value + 1) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(highest_index_of_knots_in_v.value + 1) {
             let element = Double::from_reader(rdr)?;
             kv.push(element);
@@ -14020,7 +15980,7 @@ impl PRC_TYPE_SURF_NURBS {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -14069,7 +16029,7 @@ impl PRC_TYPE_SURF_NURBS {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_Cone {
     pub id: UnsignedInteger,
@@ -14079,9 +16039,28 @@ pub struct PRC_TYPE_SURF_Cone {
     pub radius: Double,
     pub semi_angle: Double,
 }
+impl Default for PRC_TYPE_SURF_Cone {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_SURF_Cone as u32;
+        let mut curve_data: ContentSurface = Default::default();
+        let mut transform: Transformation3DWithBit = Default::default();
+        let mut parameterization: UVParameterization = Default::default();
+        let mut radius: Double = Default::default();
+        let mut semi_angle: Double = Default::default();
+        Self {
+            id,
+            curve_data,
+            transform,
+            parameterization,
+            radius,
+            semi_angle,
+        }
+    }
+}
 impl PRC_TYPE_SURF_Cone {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -14093,10 +16072,10 @@ impl PRC_TYPE_SURF_Cone {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_SURF_Cone) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_SURF_Cone) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_SURF_Cone"));
         }
-        assert_eq!(PRC_TYPE_SURF_Cone, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
         let mut transform: Transformation3DWithBit = Default::default();
@@ -14122,7 +16101,7 @@ impl PRC_TYPE_SURF_Cone {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -14139,7 +16118,7 @@ impl PRC_TYPE_SURF_Cone {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_Cylinder {
     pub id: UnsignedInteger,
@@ -14148,9 +16127,26 @@ pub struct PRC_TYPE_SURF_Cylinder {
     pub parameterization: UVParameterization,
     pub radius: Double,
 }
+impl Default for PRC_TYPE_SURF_Cylinder {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_SURF_Cylinder as u32;
+        let mut curve_data: ContentSurface = Default::default();
+        let mut transform: Transformation3DWithBit = Default::default();
+        let mut parameterization: UVParameterization = Default::default();
+        let mut radius: Double = Default::default();
+        Self {
+            id,
+            curve_data,
+            transform,
+            parameterization,
+            radius,
+        }
+    }
+}
 impl PRC_TYPE_SURF_Cylinder {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -14162,10 +16158,10 @@ impl PRC_TYPE_SURF_Cylinder {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_SURF_Cylinder) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_SURF_Cylinder) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_SURF_Cylinder"));
         }
-        assert_eq!(PRC_TYPE_SURF_Cylinder, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
         let mut transform: Transformation3DWithBit = Default::default();
@@ -14188,7 +16184,7 @@ impl PRC_TYPE_SURF_Cylinder {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -14203,7 +16199,7 @@ impl PRC_TYPE_SURF_Cylinder {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_Cylindrical {
     pub id: UnsignedInteger,
@@ -14213,9 +16209,28 @@ pub struct PRC_TYPE_SURF_Cylindrical {
     pub base_surface: PtrSurface,
     pub tolerance: Double,
 }
+impl Default for PRC_TYPE_SURF_Cylindrical {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_SURF_Cylindrical as u32;
+        let mut curve_data: ContentSurface = Default::default();
+        let mut transform: Transformation3DWithBit = Default::default();
+        let mut parameterization: UVParameterization = Default::default();
+        let mut base_surface: PtrSurface = Default::default();
+        let mut tolerance: Double = Default::default();
+        Self {
+            id,
+            curve_data,
+            transform,
+            parameterization,
+            base_surface,
+            tolerance,
+        }
+    }
+}
 impl PRC_TYPE_SURF_Cylindrical {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -14227,13 +16242,10 @@ impl PRC_TYPE_SURF_Cylindrical {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_SURF_Cylindrical) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_SURF_Cylindrical) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_SURF_Cylindrical"));
         }
-        assert_eq!(
-            PRC_TYPE_SURF_Cylindrical,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
         let mut transform: Transformation3DWithBit = Default::default();
@@ -14261,7 +16273,7 @@ impl PRC_TYPE_SURF_Cylindrical {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -14278,7 +16290,7 @@ impl PRC_TYPE_SURF_Cylindrical {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_Offset {
     pub id: UnsignedInteger,
@@ -14288,9 +16300,28 @@ pub struct PRC_TYPE_SURF_Offset {
     pub base_surface: PtrSurface,
     pub offset_distance: Double,
 }
+impl Default for PRC_TYPE_SURF_Offset {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_SURF_Offset as u32;
+        let mut curve_data: ContentSurface = Default::default();
+        let mut transform: Transformation3DWithBit = Default::default();
+        let mut parameterization: UVParameterization = Default::default();
+        let mut base_surface: PtrSurface = Default::default();
+        let mut offset_distance: Double = Default::default();
+        Self {
+            id,
+            curve_data,
+            transform,
+            parameterization,
+            base_surface,
+            offset_distance,
+        }
+    }
+}
 impl PRC_TYPE_SURF_Offset {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -14302,10 +16333,10 @@ impl PRC_TYPE_SURF_Offset {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_SURF_Offset) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_SURF_Offset) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_SURF_Offset"));
         }
-        assert_eq!(PRC_TYPE_SURF_Offset, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
         let mut transform: Transformation3DWithBit = Default::default();
@@ -14331,7 +16362,7 @@ impl PRC_TYPE_SURF_Offset {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -14348,7 +16379,7 @@ impl PRC_TYPE_SURF_Offset {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_Pipe {
     pub id: UnsignedInteger,
@@ -14359,9 +16390,30 @@ pub struct PRC_TYPE_SURF_Pipe {
     pub orgin_curve: PtrCurve,
     pub radius: Double,
 }
+impl Default for PRC_TYPE_SURF_Pipe {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_SURF_Pipe as u32;
+        let mut curve_data: ContentSurface = Default::default();
+        let mut transform: Transformation3DWithBit = Default::default();
+        let mut parameterization: UVParameterization = Default::default();
+        let mut center_curve: PtrCurve = Default::default();
+        let mut orgin_curve: PtrCurve = Default::default();
+        let mut radius: Double = Default::default();
+        Self {
+            id,
+            curve_data,
+            transform,
+            parameterization,
+            center_curve,
+            orgin_curve,
+            radius,
+        }
+    }
+}
 impl PRC_TYPE_SURF_Pipe {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -14373,10 +16425,10 @@ impl PRC_TYPE_SURF_Pipe {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_SURF_Pipe) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_SURF_Pipe) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_SURF_Pipe"));
         }
-        assert_eq!(PRC_TYPE_SURF_Pipe, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
         let mut transform: Transformation3DWithBit = Default::default();
@@ -14405,7 +16457,7 @@ impl PRC_TYPE_SURF_Pipe {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -14424,7 +16476,7 @@ impl PRC_TYPE_SURF_Pipe {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_Ruled {
     pub id: UnsignedInteger,
@@ -14434,9 +16486,28 @@ pub struct PRC_TYPE_SURF_Ruled {
     pub first_curve: PtrCurve,
     pub second_curve: PtrCurve,
 }
+impl Default for PRC_TYPE_SURF_Ruled {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_SURF_Ruled as u32;
+        let mut curve_data: ContentSurface = Default::default();
+        let mut transform: Transformation3DWithBit = Default::default();
+        let mut parameterization: UVParameterization = Default::default();
+        let mut first_curve: PtrCurve = Default::default();
+        let mut second_curve: PtrCurve = Default::default();
+        Self {
+            id,
+            curve_data,
+            transform,
+            parameterization,
+            first_curve,
+            second_curve,
+        }
+    }
+}
 impl PRC_TYPE_SURF_Ruled {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -14448,10 +16519,10 @@ impl PRC_TYPE_SURF_Ruled {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_SURF_Ruled) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_SURF_Ruled) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_SURF_Ruled"));
         }
-        assert_eq!(PRC_TYPE_SURF_Ruled, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
         let mut transform: Transformation3DWithBit = Default::default();
@@ -14477,7 +16548,7 @@ impl PRC_TYPE_SURF_Ruled {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -14494,7 +16565,7 @@ impl PRC_TYPE_SURF_Ruled {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_Sphere {
     pub id: UnsignedInteger,
@@ -14503,9 +16574,26 @@ pub struct PRC_TYPE_SURF_Sphere {
     pub parameterization: UVParameterization,
     pub radius: Double,
 }
+impl Default for PRC_TYPE_SURF_Sphere {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_SURF_Sphere as u32;
+        let mut curve_data: ContentSurface = Default::default();
+        let mut transform: Transformation3DWithBit = Default::default();
+        let mut parameterization: UVParameterization = Default::default();
+        let mut radius: Double = Default::default();
+        Self {
+            id,
+            curve_data,
+            transform,
+            parameterization,
+            radius,
+        }
+    }
+}
 impl PRC_TYPE_SURF_Sphere {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -14517,10 +16605,10 @@ impl PRC_TYPE_SURF_Sphere {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_SURF_Sphere) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_SURF_Sphere) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_SURF_Sphere"));
         }
-        assert_eq!(PRC_TYPE_SURF_Sphere, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
         let mut transform: Transformation3DWithBit = Default::default();
@@ -14543,7 +16631,7 @@ impl PRC_TYPE_SURF_Sphere {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -14558,7 +16646,7 @@ impl PRC_TYPE_SURF_Sphere {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_Revolution {
     pub id: UnsignedInteger,
@@ -14571,9 +16659,34 @@ pub struct PRC_TYPE_SURF_Revolution {
     pub y_axis: Vector3D,
     pub base_curve: PtrCurve,
 }
+impl Default for PRC_TYPE_SURF_Revolution {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_SURF_Revolution as u32;
+        let mut curve_data: ContentSurface = Default::default();
+        let mut transform: Transformation3DWithBit = Default::default();
+        let mut parameterization: UVParameterization = Default::default();
+        let mut tolerance: Double = Default::default();
+        let mut origin: Vector3D = Default::default();
+        let mut x_axis: Vector3D = Default::default();
+        let mut y_axis: Vector3D = Default::default();
+        let mut base_curve: PtrCurve = Default::default();
+        Self {
+            id,
+            curve_data,
+            transform,
+            parameterization,
+            tolerance,
+            origin,
+            x_axis,
+            y_axis,
+            base_curve,
+        }
+    }
+}
 impl PRC_TYPE_SURF_Revolution {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -14585,13 +16698,10 @@ impl PRC_TYPE_SURF_Revolution {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_SURF_Revolution) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_SURF_Revolution) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_SURF_Revolution"));
         }
-        assert_eq!(
-            PRC_TYPE_SURF_Revolution,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
         let mut transform: Transformation3DWithBit = Default::default();
@@ -14626,7 +16736,7 @@ impl PRC_TYPE_SURF_Revolution {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -14649,7 +16759,7 @@ impl PRC_TYPE_SURF_Revolution {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_Extrusion {
     pub id: UnsignedInteger,
@@ -14659,9 +16769,28 @@ pub struct PRC_TYPE_SURF_Extrusion {
     pub sweep_vector: Vector3D,
     pub base_curve: PtrCurve,
 }
+impl Default for PRC_TYPE_SURF_Extrusion {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_SURF_Extrusion as u32;
+        let mut curve_data: ContentSurface = Default::default();
+        let mut transform: Transformation3DWithBit = Default::default();
+        let mut parameterization: UVParameterization = Default::default();
+        let mut sweep_vector: Vector3D = Default::default();
+        let mut base_curve: PtrCurve = Default::default();
+        Self {
+            id,
+            curve_data,
+            transform,
+            parameterization,
+            sweep_vector,
+            base_curve,
+        }
+    }
+}
 impl PRC_TYPE_SURF_Extrusion {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -14673,13 +16802,10 @@ impl PRC_TYPE_SURF_Extrusion {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_SURF_Extrusion) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_SURF_Extrusion) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_SURF_Extrusion"));
         }
-        assert_eq!(
-            PRC_TYPE_SURF_Extrusion,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
         let mut transform: Transformation3DWithBit = Default::default();
@@ -14705,7 +16831,7 @@ impl PRC_TYPE_SURF_Extrusion {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -14722,7 +16848,7 @@ impl PRC_TYPE_SURF_Extrusion {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_FromCurves {
     pub id: UnsignedInteger,
@@ -14733,9 +16859,30 @@ pub struct PRC_TYPE_SURF_FromCurves {
     pub first_curve: PtrCurve,
     pub second_curve: PtrCurve,
 }
+impl Default for PRC_TYPE_SURF_FromCurves {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_SURF_FromCurves as u32;
+        let mut curve_data: ContentSurface = Default::default();
+        let mut transform: Transformation3DWithBit = Default::default();
+        let mut parameterization: UVParameterization = Default::default();
+        let mut origin: Vector3D = Default::default();
+        let mut first_curve: PtrCurve = Default::default();
+        let mut second_curve: PtrCurve = Default::default();
+        Self {
+            id,
+            curve_data,
+            transform,
+            parameterization,
+            origin,
+            first_curve,
+            second_curve,
+        }
+    }
+}
 impl PRC_TYPE_SURF_FromCurves {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -14747,13 +16894,10 @@ impl PRC_TYPE_SURF_FromCurves {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_SURF_FromCurves) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_SURF_FromCurves) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_SURF_FromCurves"));
         }
-        assert_eq!(
-            PRC_TYPE_SURF_FromCurves,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
         let mut transform: Transformation3DWithBit = Default::default();
@@ -14782,7 +16926,7 @@ impl PRC_TYPE_SURF_FromCurves {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -14801,7 +16945,7 @@ impl PRC_TYPE_SURF_FromCurves {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_Torus {
     pub id: UnsignedInteger,
@@ -14811,9 +16955,28 @@ pub struct PRC_TYPE_SURF_Torus {
     pub major_radius: Double,
     pub minor_radius: Double,
 }
+impl Default for PRC_TYPE_SURF_Torus {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_SURF_Torus as u32;
+        let mut curve_data: ContentSurface = Default::default();
+        let mut transform: Transformation3DWithBit = Default::default();
+        let mut parameterization: UVParameterization = Default::default();
+        let mut major_radius: Double = Default::default();
+        let mut minor_radius: Double = Default::default();
+        Self {
+            id,
+            curve_data,
+            transform,
+            parameterization,
+            major_radius,
+            minor_radius,
+        }
+    }
+}
 impl PRC_TYPE_SURF_Torus {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -14825,10 +16988,10 @@ impl PRC_TYPE_SURF_Torus {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_SURF_Torus) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_SURF_Torus) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_SURF_Torus"));
         }
-        assert_eq!(PRC_TYPE_SURF_Torus, PrcType::try_from(id.value).unwrap());
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
         let mut transform: Transformation3DWithBit = Default::default();
@@ -14854,7 +17017,7 @@ impl PRC_TYPE_SURF_Torus {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -14871,7 +17034,7 @@ impl PRC_TYPE_SURF_Torus {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_Transform {
     pub id: UnsignedInteger,
@@ -14881,9 +17044,28 @@ pub struct PRC_TYPE_SURF_Transform {
     pub base_surface: PtrSurface,
     pub math_transformation: PRC_TYPE_MATH_FCT_3D,
 }
+impl Default for PRC_TYPE_SURF_Transform {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_SURF_Transform as u32;
+        let mut curve_data: ContentSurface = Default::default();
+        let mut transform: Transformation3DWithBit = Default::default();
+        let mut parameterization: UVParameterization = Default::default();
+        let mut base_surface: PtrSurface = Default::default();
+        let mut math_transformation: PRC_TYPE_MATH_FCT_3D = Default::default();
+        Self {
+            id,
+            curve_data,
+            transform,
+            parameterization,
+            base_surface,
+            math_transformation,
+        }
+    }
+}
 impl PRC_TYPE_SURF_Transform {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -14895,13 +17077,10 @@ impl PRC_TYPE_SURF_Transform {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_SURF_Transform) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_SURF_Transform) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_SURF_Transform"));
         }
-        assert_eq!(
-            PRC_TYPE_SURF_Transform,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
         let mut transform: Transformation3DWithBit = Default::default();
@@ -14927,7 +17106,7 @@ impl PRC_TYPE_SURF_Transform {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve_data = self.curve_data.clone();
@@ -14944,12 +17123,12 @@ impl PRC_TYPE_SURF_Transform {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF_Blend04 {}
 impl PRC_TYPE_SURF_Blend04 {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -14967,19 +17146,19 @@ impl PRC_TYPE_SURF_Blend04 {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         Ok(())
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_SURF {
     pub id_concrete: PRC_TYPE_SURF_idConcrete,
 }
 impl PRC_TYPE_SURF {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -14993,8 +17172,11 @@ impl PRC_TYPE_SURF {
         let mut id_concrete: PRC_TYPE_SURF_idConcrete =
             PRC_TYPE_SURF_idConcrete::Invalid(id_type_id);
         id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
-        let id_tid: PrcType = PrcType::try_from(id_type_id).unwrap();
-        id_concrete = match id_tid {
+        let id_tid = PrcType::try_from(id_type_id);
+        if id_tid.is_err() {
+            return Err(Error::other(format!("Unrecognised type {}!", id_type_id)));
+        }
+        id_concrete = match id_tid.unwrap() {
             PrcType::PRC_TYPE_ROOT => {
                 PRC_TYPE_SURF_idConcrete::empty(PRC_TYPE_ROOT::from_reader(rdr, _ctx)?)
             }
@@ -15052,11 +17234,13 @@ impl PRC_TYPE_SURF {
             PrcType::PRC_TYPE_SURF_Blend04 => {
                 PRC_TYPE_SURF_idConcrete::b04(PRC_TYPE_SURF_Blend04::from_reader(rdr, _ctx)?)
             }
-            _ => panic!(
-                "PRC_TYPE_SURF: Unrecognized subtype: {}! bp={}",
-                id_type_id.to_string(),
-                rdr.position_in_bits()?
-            ),
+            _ => {
+                return Err(Error::other(format!(
+                    "PRC_TYPE_SURF: Unrecognized subtype: {}! bp={}",
+                    id_type_id.to_string(),
+                    rdr.position_in_bits()?
+                )));
+            }
         };
         let _ = _ctx.se.eval(rdr, PRC_TYPE_SURF as u32, false, 0);
         let rv = Self { id_concrete };
@@ -15066,7 +17250,7 @@ impl PRC_TYPE_SURF {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         match &self.id_concrete {
             PRC_TYPE_SURF_idConcrete::empty(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_SURF_idConcrete::b01(x) => &x.to_writer(_w, _ctx)?,
@@ -15088,7 +17272,10 @@ impl PRC_TYPE_SURF {
             PRC_TYPE_SURF_idConcrete::tr(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_SURF_idConcrete::b04(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_SURF_idConcrete::Invalid(x) => {
-                panic!("PRC_TYPE_SURF: Unrecognized subtype: {}!", x)
+                return Err(Error::other(format!(
+                    "PRC_TYPE_SURF: Unrecognized subtype: {}!",
+                    x
+                )));
             }
         };
         Ok(())
@@ -15124,7 +17311,7 @@ impl Default for PRC_TYPE_SURF_idConcrete {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PtrSurface {
     pub is_referenced: Boolean,
@@ -15133,7 +17320,7 @@ pub struct PtrSurface {
 }
 impl PtrSurface {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -15170,7 +17357,7 @@ impl PtrSurface {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let is_referenced = self.is_referenced.clone();
         is_referenced.to_writer(_w)?;
         let surface_cond = !is_referenced;
@@ -15189,7 +17376,7 @@ impl PtrSurface {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ContentWireEdge {
     pub base: BaseTopology,
@@ -15199,7 +17386,7 @@ pub struct ContentWireEdge {
 }
 impl ContentWireEdge {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -15236,7 +17423,7 @@ impl ContentWireEdge {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let base = self.base.clone();
         base.to_writer(_w, _ctx)?;
         let ptr_curve = self.ptr_curve.clone();
@@ -15253,15 +17440,23 @@ impl ContentWireEdge {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_WireEdge {
     pub id: UnsignedInteger,
     pub curve: ContentWireEdge,
 }
+impl Default for PRC_TYPE_TOPO_WireEdge {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_TOPO_WireEdge as u32;
+        let mut curve: ContentWireEdge = Default::default();
+        Self { id, curve }
+    }
+}
 impl PRC_TYPE_TOPO_WireEdge {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -15273,10 +17468,10 @@ impl PRC_TYPE_TOPO_WireEdge {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_TOPO_WireEdge) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_TOPO_WireEdge) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_TOPO_WireEdge"));
         }
-        assert_eq!(PRC_TYPE_TOPO_WireEdge, PrcType::try_from(id.value).unwrap());
         let mut curve: ContentWireEdge = Default::default();
         curve = ContentWireEdge::from_reader(rdr, _ctx)?;
         let _ = _ctx.se.eval(rdr, PRC_TYPE_TOPO_WireEdge as u32, false, 0);
@@ -15287,7 +17482,7 @@ impl PRC_TYPE_TOPO_WireEdge {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let curve = self.curve.clone();
@@ -15296,7 +17491,7 @@ impl PRC_TYPE_TOPO_WireEdge {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_Edge {
     pub id: UnsignedInteger,
@@ -15306,9 +17501,32 @@ pub struct PRC_TYPE_TOPO_Edge {
     pub has_tolerance: Boolean,
     pub tolerance: Option<Double>,
 }
+impl Default for PRC_TYPE_TOPO_Edge {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_TOPO_Edge as u32;
+        let mut wire_edge: ContentWireEdge = Default::default();
+        let mut start_vertex: PtrTopology = Default::default();
+        let mut end_vertex: PtrTopology = Default::default();
+        let mut has_tolerance: Boolean = Default::default();
+        let mut tolerance: Double = Default::default();
+        Self {
+            id,
+            wire_edge,
+            start_vertex,
+            end_vertex,
+            has_tolerance,
+            tolerance: if !!has_tolerance {
+                Some(tolerance)
+            } else {
+                None
+            },
+        }
+    }
+}
 impl PRC_TYPE_TOPO_Edge {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -15320,10 +17538,10 @@ impl PRC_TYPE_TOPO_Edge {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_TOPO_Edge) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_TOPO_Edge) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_TOPO_Edge"));
         }
-        assert_eq!(PRC_TYPE_TOPO_Edge, PrcType::try_from(id.value).unwrap());
         let mut wire_edge: ContentWireEdge = Default::default();
         wire_edge = ContentWireEdge::from_reader(rdr, _ctx)?;
         let mut start_vertex: PtrTopology = Default::default();
@@ -15356,7 +17574,7 @@ impl PRC_TYPE_TOPO_Edge {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let wire_edge = self.wire_edge.clone();
@@ -15377,7 +17595,7 @@ impl PRC_TYPE_TOPO_Edge {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_CoEdge {
     pub id: UnsignedInteger,
@@ -15387,9 +17605,28 @@ pub struct PRC_TYPE_TOPO_CoEdge {
     pub coedge_orientation: Character,
     pub uv_orientation: Character,
 }
+impl Default for PRC_TYPE_TOPO_CoEdge {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_TOPO_CoEdge as u32;
+        let mut base_tolopogy: BaseTopology = Default::default();
+        let mut ptr_topology: PtrTopology = Default::default();
+        let mut ptr_curves: PtrCurve = Default::default();
+        let mut coedge_orientation: Character = Default::default();
+        let mut uv_orientation: Character = Default::default();
+        Self {
+            id,
+            base_tolopogy,
+            ptr_topology,
+            ptr_curves,
+            coedge_orientation,
+            uv_orientation,
+        }
+    }
+}
 impl PRC_TYPE_TOPO_CoEdge {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -15401,10 +17638,10 @@ impl PRC_TYPE_TOPO_CoEdge {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_TOPO_CoEdge) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_TOPO_CoEdge) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_TOPO_CoEdge"));
         }
-        assert_eq!(PRC_TYPE_TOPO_CoEdge, PrcType::try_from(id.value).unwrap());
         let mut base_tolopogy: BaseTopology = Default::default();
         base_tolopogy = BaseTopology::from_reader(rdr, _ctx)?;
         let mut ptr_topology: PtrTopology = Default::default();
@@ -15430,7 +17667,7 @@ impl PRC_TYPE_TOPO_CoEdge {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base_tolopogy = self.base_tolopogy.clone();
@@ -15447,7 +17684,7 @@ impl PRC_TYPE_TOPO_CoEdge {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct CoedgeInLoop {
     pub next_coedge: PtrTopology,
@@ -15455,7 +17692,7 @@ pub struct CoedgeInLoop {
 }
 impl CoedgeInLoop {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -15479,7 +17716,7 @@ impl CoedgeInLoop {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let next_coedge = self.next_coedge.clone();
         next_coedge.to_writer(_w, _ctx)?;
         let neighbor_index = self.neighbor_index.clone();
@@ -15488,7 +17725,7 @@ impl CoedgeInLoop {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_Loop {
     pub id: UnsignedInteger,
@@ -15497,9 +17734,26 @@ pub struct PRC_TYPE_TOPO_Loop {
     pub number_of_coedges: UnsignedInteger,
     pub coedge: Vec<CoedgeInLoop>,
 }
+impl Default for PRC_TYPE_TOPO_Loop {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_TOPO_Loop as u32;
+        let mut base_tolopogy: BaseTopology = Default::default();
+        let mut loop_orientation: Character = Default::default();
+        let mut number_of_coedges: UnsignedInteger = Default::default();
+        let mut coedge: Vec<CoedgeInLoop> = Default::default();
+        Self {
+            id,
+            base_tolopogy,
+            loop_orientation,
+            number_of_coedges,
+            coedge,
+        }
+    }
+}
 impl PRC_TYPE_TOPO_Loop {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -15511,17 +17765,22 @@ impl PRC_TYPE_TOPO_Loop {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_TOPO_Loop) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_TOPO_Loop) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_TOPO_Loop"));
         }
-        assert_eq!(PRC_TYPE_TOPO_Loop, PrcType::try_from(id.value).unwrap());
         let mut base_tolopogy: BaseTopology = Default::default();
         base_tolopogy = BaseTopology::from_reader(rdr, _ctx)?;
         let mut loop_orientation: Character = Default::default();
         loop_orientation = Character::from_reader(rdr)?;
         let mut number_of_coedges: UnsignedInteger = Default::default();
         number_of_coedges = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_coedges.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut coedge: Vec<CoedgeInLoop> = Vec::with_capacity((number_of_coedges.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_coedges.value) {
             let element = CoedgeInLoop::from_reader(rdr, _ctx)?;
             coedge.push(element);
@@ -15540,7 +17799,7 @@ impl PRC_TYPE_TOPO_Loop {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base_tolopogy = self.base_tolopogy.clone();
@@ -15557,7 +17816,7 @@ impl PRC_TYPE_TOPO_Loop {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_Face {
     pub id: UnsignedInteger,
@@ -15571,9 +17830,44 @@ pub struct PRC_TYPE_TOPO_Face {
     pub index_of_outer_loop: Integer,
     pub loops: Vec<PtrTopology>,
 }
+impl Default for PRC_TYPE_TOPO_Face {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_TOPO_Face as u32;
+        let mut base_tolopogy: BaseTopology = Default::default();
+        let mut surface_geometry: PtrSurface = Default::default();
+        let mut is_trimmed: Boolean = Default::default();
+        let mut trimmed_surface: Domain = Default::default();
+        let mut has_tolerance: Boolean = Default::default();
+        let mut tolerance: Double = Default::default();
+        let mut number_of_loops: UnsignedInteger = Default::default();
+        let mut index_of_outer_loop: Integer = Default::default();
+        let mut loops: Vec<PtrTopology> = Default::default();
+        Self {
+            id,
+            base_tolopogy,
+            surface_geometry,
+            is_trimmed,
+            trimmed_surface: if !!is_trimmed {
+                Some(trimmed_surface)
+            } else {
+                None
+            },
+            has_tolerance,
+            tolerance: if !!has_tolerance {
+                Some(tolerance)
+            } else {
+                None
+            },
+            number_of_loops,
+            index_of_outer_loop,
+            loops,
+        }
+    }
+}
 impl PRC_TYPE_TOPO_Face {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -15585,10 +17879,10 @@ impl PRC_TYPE_TOPO_Face {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_TOPO_Face) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_TOPO_Face) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_TOPO_Face"));
         }
-        assert_eq!(PRC_TYPE_TOPO_Face, PrcType::try_from(id.value).unwrap());
         let mut base_tolopogy: BaseTopology = Default::default();
         base_tolopogy = BaseTopology::from_reader(rdr, _ctx)?;
         let mut surface_geometry: PtrSurface = Default::default();
@@ -15611,7 +17905,12 @@ impl PRC_TYPE_TOPO_Face {
         number_of_loops = UnsignedInteger::from_reader(rdr)?;
         let mut index_of_outer_loop: Integer = Default::default();
         index_of_outer_loop = Integer::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_loops.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut loops: Vec<PtrTopology> = Vec::with_capacity((number_of_loops.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_loops.value) {
             let element = PtrTopology::from_reader(rdr, _ctx)?;
             loops.push(element);
@@ -15643,7 +17942,7 @@ impl PRC_TYPE_TOPO_Face {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base_tolopogy = self.base_tolopogy.clone();
@@ -15678,7 +17977,7 @@ impl PRC_TYPE_TOPO_Face {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct FacesInShell {
     pub face: PtrTopology,
@@ -15686,7 +17985,7 @@ pub struct FacesInShell {
 }
 impl FacesInShell {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -15707,7 +18006,7 @@ impl FacesInShell {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let face = self.face.clone();
         face.to_writer(_w, _ctx)?;
         let orientation = self.orientation.clone();
@@ -15716,7 +18015,7 @@ impl FacesInShell {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_Shell {
     pub id: UnsignedInteger,
@@ -15725,9 +18024,26 @@ pub struct PRC_TYPE_TOPO_Shell {
     pub number_of_faces: UnsignedInteger,
     pub faces: Vec<FacesInShell>,
 }
+impl Default for PRC_TYPE_TOPO_Shell {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_TOPO_Shell as u32;
+        let mut base_tolopogy: BaseTopology = Default::default();
+        let mut is_closed: Boolean = Default::default();
+        let mut number_of_faces: UnsignedInteger = Default::default();
+        let mut faces: Vec<FacesInShell> = Default::default();
+        Self {
+            id,
+            base_tolopogy,
+            is_closed,
+            number_of_faces,
+            faces,
+        }
+    }
+}
 impl PRC_TYPE_TOPO_Shell {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -15739,17 +18055,22 @@ impl PRC_TYPE_TOPO_Shell {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_TOPO_Shell) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_TOPO_Shell) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_TOPO_Shell"));
         }
-        assert_eq!(PRC_TYPE_TOPO_Shell, PrcType::try_from(id.value).unwrap());
         let mut base_tolopogy: BaseTopology = Default::default();
         base_tolopogy = BaseTopology::from_reader(rdr, _ctx)?;
         let mut is_closed: Boolean = Default::default();
         is_closed = Boolean::from_reader(rdr)?;
         let mut number_of_faces: UnsignedInteger = Default::default();
         number_of_faces = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_faces.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut faces: Vec<FacesInShell> = Vec::with_capacity((number_of_faces.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_faces.value) {
             let element = FacesInShell::from_reader(rdr, _ctx)?;
             faces.push(element);
@@ -15768,7 +18089,7 @@ impl PRC_TYPE_TOPO_Shell {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base_tolopogy = self.base_tolopogy.clone();
@@ -15785,7 +18106,7 @@ impl PRC_TYPE_TOPO_Shell {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_Connex {
     pub id: UnsignedInteger,
@@ -15793,9 +18114,24 @@ pub struct PRC_TYPE_TOPO_Connex {
     pub number_of_shells: UnsignedInteger,
     pub shells: Vec<PtrTopology>,
 }
+impl Default for PRC_TYPE_TOPO_Connex {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_TOPO_Connex as u32;
+        let mut base_tolopogy: BaseTopology = Default::default();
+        let mut number_of_shells: UnsignedInteger = Default::default();
+        let mut shells: Vec<PtrTopology> = Default::default();
+        Self {
+            id,
+            base_tolopogy,
+            number_of_shells,
+            shells,
+        }
+    }
+}
 impl PRC_TYPE_TOPO_Connex {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -15807,15 +18143,20 @@ impl PRC_TYPE_TOPO_Connex {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_TOPO_Connex) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_TOPO_Connex) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_TOPO_Connex"));
         }
-        assert_eq!(PRC_TYPE_TOPO_Connex, PrcType::try_from(id.value).unwrap());
         let mut base_tolopogy: BaseTopology = Default::default();
         base_tolopogy = BaseTopology::from_reader(rdr, _ctx)?;
         let mut number_of_shells: UnsignedInteger = Default::default();
         number_of_shells = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_shells.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut shells: Vec<PtrTopology> = Vec::with_capacity((number_of_shells.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_shells.value) {
             let element = PtrTopology::from_reader(rdr, _ctx)?;
             shells.push(element);
@@ -15833,7 +18174,7 @@ impl PRC_TYPE_TOPO_Connex {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base_tolopogy = self.base_tolopogy.clone();
@@ -15848,14 +18189,21 @@ impl PRC_TYPE_TOPO_Connex {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_ROOT {
     pub id: UnsignedInteger,
 }
+impl Default for PRC_TYPE_ROOT {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_ROOT as u32;
+        Self { id }
+    }
+}
 impl PRC_TYPE_ROOT {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -15867,10 +18215,10 @@ impl PRC_TYPE_ROOT {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_ROOT) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_ROOT) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_ROOT"));
         }
-        assert_eq!(PRC_TYPE_ROOT, PrcType::try_from(id.value).unwrap());
         let _ = _ctx.se.eval(rdr, PRC_TYPE_ROOT as u32, false, 0);
         let rv = Self { id };
         Ok(rv)
@@ -15879,21 +18227,21 @@ impl PRC_TYPE_ROOT {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         Ok(())
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO {
     pub id_concrete: PRC_TYPE_TOPO_idConcrete,
 }
 impl PRC_TYPE_TOPO {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -15907,8 +18255,11 @@ impl PRC_TYPE_TOPO {
         let mut id_concrete: PRC_TYPE_TOPO_idConcrete =
             PRC_TYPE_TOPO_idConcrete::Invalid(id_type_id);
         id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
-        let id_tid: PrcType = PrcType::try_from(id_type_id).unwrap();
-        id_concrete = match id_tid {
+        let id_tid = PrcType::try_from(id_type_id);
+        if id_tid.is_err() {
+            return Err(Error::other(format!("Unrecognised type {}!", id_type_id)));
+        }
+        id_concrete = match id_tid.unwrap() {
             PrcType::PRC_TYPE_ROOT => {
                 PRC_TYPE_TOPO_idConcrete::empty(PRC_TYPE_ROOT::from_reader(rdr, _ctx)?)
             }
@@ -15939,11 +18290,13 @@ impl PRC_TYPE_TOPO {
             PrcType::PRC_TYPE_TOPO_Connex => {
                 PRC_TYPE_TOPO_idConcrete::c(PRC_TYPE_TOPO_Connex::from_reader(rdr, _ctx)?)
             }
-            _ => panic!(
-                "PRC_TYPE_TOPO: Unrecognized subtype: {}! bp={}",
-                id_type_id.to_string(),
-                rdr.position_in_bits()?
-            ),
+            _ => {
+                return Err(Error::other(format!(
+                    "PRC_TYPE_TOPO: Unrecognized subtype: {}! bp={}",
+                    id_type_id.to_string(),
+                    rdr.position_in_bits()?
+                )));
+            }
         };
         let _ = _ctx.se.eval(rdr, PRC_TYPE_TOPO as u32, false, 0);
         let rv = Self { id_concrete };
@@ -15953,7 +18306,7 @@ impl PRC_TYPE_TOPO {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         match &self.id_concrete {
             PRC_TYPE_TOPO_idConcrete::empty(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_TOPO_idConcrete::mv(x) => &x.to_writer(_w, _ctx)?,
@@ -15966,7 +18319,10 @@ impl PRC_TYPE_TOPO {
             PRC_TYPE_TOPO_idConcrete::s(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_TOPO_idConcrete::c(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_TOPO_idConcrete::Invalid(x) => {
-                panic!("PRC_TYPE_TOPO: Unrecognized subtype: {}!", x)
+                return Err(Error::other(format!(
+                    "PRC_TYPE_TOPO: Unrecognized subtype: {}!",
+                    x
+                )));
             }
         };
         Ok(())
@@ -15993,7 +18349,7 @@ impl Default for PRC_TYPE_TOPO_idConcrete {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PtrTopology {
     pub is_stored: Boolean,
@@ -16002,7 +18358,7 @@ pub struct PtrTopology {
 }
 impl PtrTopology {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -16039,7 +18395,7 @@ impl PtrTopology {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let is_stored = self.is_stored.clone();
         is_stored.to_writer(_w)?;
         let topo_cond = !is_stored;
@@ -16058,16 +18414,29 @@ impl PtrTopology {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_SingleWireBody {
     pub id: UnsignedInteger,
     pub base: ContentBody,
     pub wire_body: PtrTopology,
 }
+impl Default for PRC_TYPE_TOPO_SingleWireBody {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_TOPO_SingleWireBody as u32;
+        let mut base: ContentBody = Default::default();
+        let mut wire_body: PtrTopology = Default::default();
+        Self {
+            id,
+            base,
+            wire_body,
+        }
+    }
+}
 impl PRC_TYPE_TOPO_SingleWireBody {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -16079,13 +18448,10 @@ impl PRC_TYPE_TOPO_SingleWireBody {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_TOPO_SingleWireBody) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_TOPO_SingleWireBody) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_TOPO_SingleWireBody"));
         }
-        assert_eq!(
-            PRC_TYPE_TOPO_SingleWireBody,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentBody = Default::default();
         base = ContentBody::from_reader(rdr, _ctx)?;
         let mut wire_body: PtrTopology = Default::default();
@@ -16104,7 +18470,7 @@ impl PRC_TYPE_TOPO_SingleWireBody {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -16115,7 +18481,7 @@ impl PRC_TYPE_TOPO_SingleWireBody {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_BrepData {
     pub id: UnsignedInteger,
@@ -16127,7 +18493,7 @@ pub struct PRC_TYPE_TOPO_BrepData {
 }
 impl PRC_TYPE_TOPO_BrepData {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -16139,15 +18505,20 @@ impl PRC_TYPE_TOPO_BrepData {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_TOPO_BrepData) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_TOPO_BrepData) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_TOPO_BrepData"));
         }
-        assert_eq!(PRC_TYPE_TOPO_BrepData, PrcType::try_from(id.value).unwrap());
         let mut base: ContentBody = Default::default();
         base = ContentBody::from_reader(rdr, _ctx)?;
         let mut number_of_connex: UnsignedInteger = Default::default();
         number_of_connex = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_connex.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut connex: Vec<PtrTopology> = Vec::with_capacity((number_of_connex.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_connex.value) {
             let element = PtrTopology::from_reader(rdr, _ctx)?;
             connex.push(element);
@@ -16175,7 +18546,7 @@ impl PRC_TYPE_TOPO_BrepData {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -16196,7 +18567,7 @@ impl PRC_TYPE_TOPO_BrepData {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default, Copy)]
 #[allow(non_camel_case_types)]
 pub struct CompressedVertex {
     pub already_stored: Boolean,
@@ -16205,7 +18576,7 @@ pub struct CompressedVertex {
 }
 impl CompressedVertex {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -16257,7 +18628,7 @@ impl CompressedVertex {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let already_stored = self.already_stored.clone();
         already_stored.to_writer(_w)?;
         let point_index_cond = !already_stored.value;
@@ -16276,7 +18647,7 @@ impl CompressedVertex {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default, Copy)]
 #[allow(non_camel_case_types)]
 pub struct ParticularCircle {
     /// adobe sdk 9 says: start_point == end_point
@@ -16288,7 +18659,7 @@ pub struct ParticularCircle {
 }
 impl ParticularCircle {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -16344,7 +18715,7 @@ impl ParticularCircle {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let full_circle = self.full_circle.clone();
         full_circle.to_writer(_w)?;
         let start_end_data_cond = !_ctx.is_compressed_iso_spline();
@@ -16375,7 +18746,7 @@ impl ParticularCircle {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default, Copy)]
 #[allow(non_camel_case_types)]
 pub struct GeneralCircle {
     pub start_end_data: Option<StartEndData>,
@@ -16385,7 +18756,7 @@ pub struct GeneralCircle {
 }
 impl GeneralCircle {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -16419,7 +18790,7 @@ impl GeneralCircle {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let start_end_data_cond = !_ctx.is_compressed_iso_spline();
         let mut start_end_data: &StartEndData = &Default::default();
         if start_end_data_cond {
@@ -16434,7 +18805,7 @@ impl GeneralCircle {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default, Copy)]
 #[allow(non_camel_case_types)]
 pub struct StartEndData {
     pub start_vertex: Option<CompressedVertex>,
@@ -16444,7 +18815,7 @@ pub struct StartEndData {
 }
 impl StartEndData {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -16504,7 +18875,7 @@ impl StartEndData {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let start_vertex_cond = !!_ctx.is_curve_trimming_face();
         let mut start_vertex: &CompressedVertex = &Default::default();
         if start_vertex_cond {
@@ -16534,7 +18905,7 @@ impl StartEndData {
 }
 
 /// called CompressedLine (in 2014 spec) inside IsoNurbsTrimCrv
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default, Copy)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_Line {
     pub id: CompressedEntityType,
@@ -16542,7 +18913,7 @@ pub struct PRC_HCG_Line {
 }
 impl PRC_HCG_Line {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -16554,13 +18925,10 @@ impl PRC_HCG_Line {
         let _ig = indent::IndentGuard::new();
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        if (PRC_HCG_Line) != (PrcCompressedCurveType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_HCG_Line) != (PrcCompressedCurveType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_HCG_Line"));
         }
-        assert_eq!(
-            PRC_HCG_Line,
-            PrcCompressedCurveType::try_from(id.value).unwrap()
-        );
         let mut start_end_data: StartEndData = Default::default();
         start_end_data = StartEndData::from_reader(rdr, _ctx)?;
         let rv = Self { id, start_end_data };
@@ -16570,7 +18938,7 @@ impl PRC_HCG_Line {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let start_end_data = self.start_end_data.clone();
@@ -16580,7 +18948,7 @@ impl PRC_HCG_Line {
 }
 
 /// called CompressedCircle (in 2014 spec) inside IsoNurbsTrimCrv
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default, Copy)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_Circle {
     /// this field is OPTIONAL
@@ -16591,7 +18959,7 @@ pub struct PRC_HCG_Circle {
 }
 impl PRC_HCG_Circle {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -16605,13 +18973,10 @@ impl PRC_HCG_Circle {
         let mut id: CompressedEntityType = Default::default();
         if id_cond {
             id = CompressedEntityType::from_reader(rdr)?;
-            if (PRC_HCG_Circle) != (PrcCompressedCurveType::try_from(id.value).unwrap()) {
-                warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+            if Ok(PRC_HCG_Circle) != (PrcCompressedCurveType::try_from(id.value)) {
+                /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+                return Err(Error::other("expected PRC_HCG_Circle"));
             }
-            assert_eq!(
-                PRC_HCG_Circle,
-                PrcCompressedCurveType::try_from(id.value).unwrap()
-            );
         }
         let mut is_particular_circle: Boolean = Default::default();
         is_particular_circle = Boolean::from_reader(rdr)?;
@@ -16645,7 +19010,7 @@ impl PRC_HCG_Circle {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id_cond = !_ctx.is_compressed_iso_spline();
         let mut id: &CompressedEntityType = &Default::default();
         if id_cond {
@@ -16670,7 +19035,7 @@ impl PRC_HCG_Circle {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_BSplineHermiteCurve {
     pub id: CompressedEntityType,
@@ -16687,7 +19052,7 @@ pub struct PRC_HCG_BSplineHermiteCurve {
 }
 impl PRC_HCG_BSplineHermiteCurve {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -16699,13 +19064,10 @@ impl PRC_HCG_BSplineHermiteCurve {
         let _ig = indent::IndentGuard::new();
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        if (PRC_HCG_BSplineHermiteCurve) != (PrcCompressedCurveType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_HCG_BSplineHermiteCurve) != (PrcCompressedCurveType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_HCG_BSplineHermiteCurve"));
         }
-        assert_eq!(
-            PRC_HCG_BSplineHermiteCurve,
-            PrcCompressedCurveType::try_from(id.value).unwrap()
-        );
         let mut start_end_data: StartEndData = Default::default();
         start_end_data = StartEndData::from_reader(rdr, _ctx)?;
         let mut number_bits: UnsignedIntegerWithVariableBitNumber = Default::default();
@@ -16715,17 +19077,27 @@ impl PRC_HCG_BSplineHermiteCurve {
         let mut point_number_bits: UnsignedIntegerWithVariableBitNumber = Default::default();
         point_number_bits = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 6)?;
         let points_cond = point_number_bits.value > 30;
+        io_check_limit!(
+            (number_points.value - 2) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut points: Vec<Vector3D> = Vec::with_capacity((number_points.value - 2) as usize);
         if points_cond {
+            #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(number_points.value - 2) {
                 let element = Vector3D::from_reader(rdr, _ctx)?;
                 points.push(element);
             }
         }
         let compressed_points_cond = point_number_bits.value <= 30;
+        io_check_limit!(
+            (number_points.value - 2) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut compressed_points: Vec<Point3DWithVariableBitNumber> =
             Vec::with_capacity((number_points.value - 2) as usize);
         if compressed_points_cond {
+            #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(number_points.value - 2) {
                 let element = Point3DWithVariableBitNumber::from_reader(
                     rdr,
@@ -16738,17 +19110,27 @@ impl PRC_HCG_BSplineHermiteCurve {
         let mut tangent_number_bits: UnsignedIntegerWithVariableBitNumber = Default::default();
         tangent_number_bits = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 6)?;
         let tangents_cond = tangent_number_bits.value > 30;
+        io_check_limit!(
+            (number_points.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut tangents: Vec<Vector3D> = Vec::with_capacity((number_points.value) as usize);
         if tangents_cond {
+            #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(number_points.value) {
                 let element = Vector3D::from_reader(rdr, _ctx)?;
                 tangents.push(element);
             }
         }
         let compressed_tangents_cond = tangent_number_bits.value <= 30;
+        io_check_limit!(
+            (number_points.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut compressed_tangents: Vec<Point3DWithVariableBitNumber> =
             Vec::with_capacity((number_points.value) as usize);
         if compressed_tangents_cond {
+            #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(number_points.value) {
                 let element = Point3DWithVariableBitNumber::from_reader(
                     rdr,
@@ -16784,7 +19166,7 @@ impl PRC_HCG_BSplineHermiteCurve {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let start_end_data = self.start_end_data.clone();
@@ -16833,7 +19215,7 @@ impl PRC_HCG_BSplineHermiteCurve {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_CompositeCurve {
     pub id: CompressedEntityType,
@@ -16845,7 +19227,7 @@ pub struct PRC_HCG_CompositeCurve {
 }
 impl PRC_HCG_CompositeCurve {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -16857,13 +19239,10 @@ impl PRC_HCG_CompositeCurve {
         let _ig = indent::IndentGuard::new();
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        if (PRC_HCG_CompositeCurve) != (PrcCompressedCurveType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_HCG_CompositeCurve) != (PrcCompressedCurveType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_HCG_CompositeCurve"));
         }
-        assert_eq!(
-            PRC_HCG_CompositeCurve,
-            PrcCompressedCurveType::try_from(id.value).unwrap()
-        );
         let mut start_end_data: StartEndData = Default::default();
         start_end_data = StartEndData::from_reader(rdr, _ctx)?;
         let mut dimension: UnsignedInteger = Default::default();
@@ -16872,8 +19251,13 @@ impl PRC_HCG_CompositeCurve {
         is_closed = Boolean::from_reader(rdr)?;
         let mut number_of_curves: UnsignedInteger = Default::default();
         number_of_curves = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_curves.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut curves: Vec<RefOrCompressedCurve> =
             Vec::with_capacity((number_of_curves.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_curves.value) {
             let element = RefOrCompressedCurve::from_reader(rdr, _ctx)?;
             curves.push(element);
@@ -16892,7 +19276,7 @@ impl PRC_HCG_CompositeCurve {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let start_end_data = self.start_end_data.clone();
@@ -16911,14 +19295,14 @@ impl PRC_HCG_CompositeCurve {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_Ellipse {
     pub id: CompressedEntityType,
 }
 impl PRC_HCG_Ellipse {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -16931,13 +19315,10 @@ impl PRC_HCG_Ellipse {
         unimplemented!("PRC_HCG_Ellipse: not implemented");
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        if (PRC_HCG_Ellipse) != (PrcCompressedCurveType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_HCG_Ellipse) != (PrcCompressedCurveType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_HCG_Ellipse"));
         }
-        assert_eq!(
-            PRC_HCG_Ellipse,
-            PrcCompressedCurveType::try_from(id.value).unwrap()
-        );
         let rv = Self { id };
         Ok(rv)
     }
@@ -16945,14 +19326,14 @@ impl PRC_HCG_Ellipse {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         Ok(())
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct CompressedCurve {
     /// PRC_HCG_Line, PRC_HCG_Circle, PRC_HCG_BSplineHermiteCurve or PRC_HCG_CompositeCurve. The curve type PRC_HCG_Ellipse is reserved for future use.
@@ -16960,7 +19341,7 @@ pub struct CompressedCurve {
 }
 impl CompressedCurve {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -16974,8 +19355,11 @@ impl CompressedCurve {
         let mut id_concrete: CompressedCurve_idConcrete =
             CompressedCurve_idConcrete::Invalid(id_type_id);
         id_type_id = CompressedEntityType::from_reader_and_seek_back(rdr)?.value as u32;
-        let id_tid: PrcCompressedCurveType = PrcCompressedCurveType::try_from(id_type_id).unwrap();
-        id_concrete = match id_tid {
+        let id_tid = PrcCompressedCurveType::try_from(id_type_id);
+        if id_tid.is_err() {
+            return Err(Error::other(format!("Unrecognised type {}!", id_type_id)));
+        }
+        id_concrete = match id_tid.unwrap() {
             PrcCompressedCurveType::PRC_HCG_Line => {
                 CompressedCurve_idConcrete::line(PRC_HCG_Line::from_reader(rdr, _ctx)?)
             }
@@ -16993,11 +19377,13 @@ impl CompressedCurve {
             PrcCompressedCurveType::PRC_HCG_Ellipse => {
                 CompressedCurve_idConcrete::ellipse(PRC_HCG_Ellipse::from_reader(rdr, _ctx)?)
             }
-            _ => panic!(
-                "CompressedCurve: Unrecognized subtype: {}! bp={}",
-                id_type_id.to_string(),
-                rdr.position_in_bits()?
-            ),
+            _ => {
+                return Err(Error::other(format!(
+                    "CompressedCurve: Unrecognized subtype: {}! bp={}",
+                    id_type_id.to_string(),
+                    rdr.position_in_bits()?
+                )));
+            }
         };
         let rv = Self { id_concrete };
         Ok(rv)
@@ -17006,7 +19392,7 @@ impl CompressedCurve {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         match &self.id_concrete {
             CompressedCurve_idConcrete::line(x) => &x.to_writer(_w, _ctx)?,
             CompressedCurve_idConcrete::circ(x) => &x.to_writer(_w, _ctx)?,
@@ -17014,7 +19400,10 @@ impl CompressedCurve {
             CompressedCurve_idConcrete::compcrv(x) => &x.to_writer(_w, _ctx)?,
             CompressedCurve_idConcrete::ellipse(x) => &x.to_writer(_w, _ctx)?,
             CompressedCurve_idConcrete::Invalid(x) => {
-                panic!("CompressedCurve: Unrecognized subtype: {}!", x)
+                return Err(Error::other(format!(
+                    "CompressedCurve: Unrecognized subtype: {}!",
+                    x
+                )));
             }
         };
         Ok(())
@@ -17036,7 +19425,7 @@ impl Default for CompressedCurve_idConcrete {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ContentCompressedIsoFace {
     pub orientation_loop_with_surface: Boolean,
@@ -17050,7 +19439,7 @@ pub struct ContentCompressedIsoFace {
 }
 impl ContentCompressedIsoFace {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -17120,7 +19509,7 @@ impl ContentCompressedIsoFace {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let orientation_loop_with_surface = self.orientation_loop_with_surface.clone();
         orientation_loop_with_surface.to_writer(_w)?;
         let first_trim_curve = self.first_trim_curve.clone();
@@ -17156,7 +19545,7 @@ impl ContentCompressedIsoFace {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct RefOrCompressedCurve {
     pub curve_is_not_already_stored: Boolean,
@@ -17165,7 +19554,7 @@ pub struct RefOrCompressedCurve {
 }
 impl RefOrCompressedCurve {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -17209,7 +19598,7 @@ impl RefOrCompressedCurve {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let curve_is_not_already_stored = self.curve_is_not_already_stored.clone();
         curve_is_not_already_stored.to_writer(_w)?;
         let index_compressed_curve_cond = !curve_is_not_already_stored.value;
@@ -17229,7 +19618,7 @@ impl RefOrCompressedCurve {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct AnaFaceTrimLoop {
     pub loop_surface_orientation: Boolean,
@@ -17237,7 +19626,7 @@ pub struct AnaFaceTrimLoop {
 }
 impl AnaFaceTrimLoop {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -17249,7 +19638,9 @@ impl AnaFaceTrimLoop {
         let _ig = indent::IndentGuard::new();
         let mut loop_surface_orientation: Boolean = Default::default();
         loop_surface_orientation = Boolean::from_reader(rdr)?;
+        io_check_limit!((0) as u32, crate::limits::MAX_NUM_ARRAY_ELEMENTS);
         let mut curves: Vec<RefOrCompressedCurve> = Vec::with_capacity((0) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(0) {
             let element = RefOrCompressedCurve::from_reader(rdr, _ctx)?;
             curves.push(element);
@@ -17264,7 +19655,7 @@ impl AnaFaceTrimLoop {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let loop_surface_orientation = self.loop_surface_orientation.clone();
         loop_surface_orientation.to_writer(_w)?;
         let curves = self.curves.clone();
@@ -17275,7 +19666,7 @@ impl AnaFaceTrimLoop {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ContentCompressedAnaFace {
     pub is_trimmed: Boolean,
@@ -17284,7 +19675,7 @@ pub struct ContentCompressedAnaFace {
 }
 impl ContentCompressedAnaFace {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -17298,8 +19689,10 @@ impl ContentCompressedAnaFace {
         is_trimmed = Boolean::from_reader(rdr)?;
         trace!("{}is_trimmed: {:?}", indent::get(), &is_trimmed);
         let trim_loop_cond = !!is_trimmed.value;
+        io_check_limit!((0) as u32, crate::limits::MAX_NUM_ARRAY_ELEMENTS);
         let mut trim_loop: Vec<AnaFaceTrimLoop> = Vec::with_capacity((0) as usize);
         if trim_loop_cond {
+            #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(0) {
                 let element = AnaFaceTrimLoop::from_reader(rdr, _ctx)?;
                 trim_loop.push(element);
@@ -17335,15 +19728,16 @@ impl ContentCompressedAnaFace {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let is_trimmed = self.is_trimmed.clone();
         is_trimmed.to_writer(_w)?;
-        let trim_loop = self.trim_loop.clone();
         if !!is_trimmed.value {
-            for i in self.trim_loop.as_ref().unwrap() {
-                i.to_writer(_w, _ctx)?;
-            }
-        }
+            AnaFaceTrimLoop::to_writer_loops(
+                _w,
+                _ctx,
+                self.trim_loop.as_ref().unwrap().as_slice(),
+            )?;
+        };
         let point_on_torus_cond =
             _ctx.ContentCompressedAnaFace_has_point_on_torus(is_trimmed.value);
         let mut point_on_torus: &CompressedPoint = &Default::default();
@@ -17356,7 +19750,7 @@ impl ContentCompressedAnaFace {
 }
 
 /// https://github.com/pdf-association/pdf-issues/issues/705
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct ContentCompressedFace {
     pub orientation_surface_with_shell: Boolean,
@@ -17365,7 +19759,7 @@ pub struct ContentCompressedFace {
 }
 impl ContentCompressedFace {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -17398,7 +19792,7 @@ impl ContentCompressedFace {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let orientation_surface_with_shell = self.orientation_surface_with_shell.clone();
         orientation_surface_with_shell.to_writer(_w)?;
         let iso_face_cond = _ctx.ContentCompressedFace_owner_is_an_iso_face();
@@ -17417,7 +19811,7 @@ impl ContentCompressedFace {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_IsoPlane {
     pub id: CompressedEntityType,
@@ -17428,7 +19822,7 @@ pub struct PRC_HCG_IsoPlane {
 }
 impl PRC_HCG_IsoPlane {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -17441,13 +19835,10 @@ impl PRC_HCG_IsoPlane {
         _ctx.ContentCompressedFace_owner_enter(true);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        if (PRC_HCG_IsoPlane) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_HCG_IsoPlane) != (PrcCompressedFaceType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_HCG_IsoPlane"));
         }
-        assert_eq!(
-            PRC_HCG_IsoPlane,
-            PrcCompressedFaceType::try_from(id.value).unwrap()
-        );
         _ctx.push_face_type(id);
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
@@ -17472,7 +19863,7 @@ impl PRC_HCG_IsoPlane {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let x = self.x.clone();
@@ -17487,7 +19878,7 @@ impl PRC_HCG_IsoPlane {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_IsoCylinder {
     pub id: CompressedEntityType,
@@ -17495,7 +19886,7 @@ pub struct PRC_HCG_IsoCylinder {
 }
 impl PRC_HCG_IsoCylinder {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -17508,13 +19899,10 @@ impl PRC_HCG_IsoCylinder {
         _ctx.ContentCompressedFace_owner_enter(true);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        if (PRC_HCG_IsoCylinder) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_HCG_IsoCylinder) != (PrcCompressedFaceType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_HCG_IsoCylinder"));
         }
-        assert_eq!(
-            PRC_HCG_IsoCylinder,
-            PrcCompressedFaceType::try_from(id.value).unwrap()
-        );
         _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
@@ -17527,7 +19915,7 @@ impl PRC_HCG_IsoCylinder {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let face = self.face.clone();
@@ -17536,7 +19924,7 @@ impl PRC_HCG_IsoCylinder {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_IsoTorus {
     pub id: CompressedEntityType,
@@ -17545,7 +19933,7 @@ pub struct PRC_HCG_IsoTorus {
 }
 impl PRC_HCG_IsoTorus {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -17558,13 +19946,10 @@ impl PRC_HCG_IsoTorus {
         _ctx.ContentCompressedFace_owner_enter(true);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        if (PRC_HCG_IsoTorus) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_HCG_IsoTorus) != (PrcCompressedFaceType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_HCG_IsoTorus"));
         }
-        assert_eq!(
-            PRC_HCG_IsoTorus,
-            PrcCompressedFaceType::try_from(id.value).unwrap()
-        );
         _ctx.push_face_type(id);
         let mut is_major_radius: Boolean = Default::default();
         is_major_radius = Boolean::from_reader(rdr)?;
@@ -17583,7 +19968,7 @@ impl PRC_HCG_IsoTorus {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let is_major_radius = self.is_major_radius.clone();
@@ -17594,7 +19979,7 @@ impl PRC_HCG_IsoTorus {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_IsoSphere {
     pub id: CompressedEntityType,
@@ -17602,7 +19987,7 @@ pub struct PRC_HCG_IsoSphere {
 }
 impl PRC_HCG_IsoSphere {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -17615,13 +20000,10 @@ impl PRC_HCG_IsoSphere {
         _ctx.ContentCompressedFace_owner_enter(true);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        if (PRC_HCG_IsoSphere) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_HCG_IsoSphere) != (PrcCompressedFaceType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_HCG_IsoSphere"));
         }
-        assert_eq!(
-            PRC_HCG_IsoSphere,
-            PrcCompressedFaceType::try_from(id.value).unwrap()
-        );
         _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
@@ -17634,7 +20016,7 @@ impl PRC_HCG_IsoSphere {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let face = self.face.clone();
@@ -17643,7 +20025,7 @@ impl PRC_HCG_IsoSphere {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_IsoCone {
     pub id: CompressedEntityType,
@@ -17651,7 +20033,7 @@ pub struct PRC_HCG_IsoCone {
 }
 impl PRC_HCG_IsoCone {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -17664,13 +20046,10 @@ impl PRC_HCG_IsoCone {
         _ctx.ContentCompressedFace_owner_enter(true);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        if (PRC_HCG_IsoCone) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_HCG_IsoCone) != (PrcCompressedFaceType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_HCG_IsoCone"));
         }
-        assert_eq!(
-            PRC_HCG_IsoCone,
-            PrcCompressedFaceType::try_from(id.value).unwrap()
-        );
         _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
@@ -17683,7 +20062,7 @@ impl PRC_HCG_IsoCone {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let face = self.face.clone();
@@ -17692,7 +20071,7 @@ impl PRC_HCG_IsoCone {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_AnaPlane {
     pub id: CompressedEntityType,
@@ -17703,7 +20082,7 @@ pub struct PRC_HCG_AnaPlane {
 }
 impl PRC_HCG_AnaPlane {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -17716,13 +20095,10 @@ impl PRC_HCG_AnaPlane {
         _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        if (PRC_HCG_AnaPlane) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_HCG_AnaPlane) != (PrcCompressedFaceType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_HCG_AnaPlane"));
         }
-        assert_eq!(
-            PRC_HCG_AnaPlane,
-            PrcCompressedFaceType::try_from(id.value).unwrap()
-        );
         _ctx.push_face_type(id);
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
@@ -17747,7 +20123,7 @@ impl PRC_HCG_AnaPlane {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let x = self.x.clone();
@@ -17762,7 +20138,7 @@ impl PRC_HCG_AnaPlane {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_AnaCylinder {
     pub id: CompressedEntityType,
@@ -17772,7 +20148,7 @@ pub struct PRC_HCG_AnaCylinder {
 }
 impl PRC_HCG_AnaCylinder {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -17785,13 +20161,10 @@ impl PRC_HCG_AnaCylinder {
         _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        if (PRC_HCG_AnaCylinder) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_HCG_AnaCylinder) != (PrcCompressedFaceType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_HCG_AnaCylinder"));
         }
-        assert_eq!(
-            PRC_HCG_AnaCylinder,
-            PrcCompressedFaceType::try_from(id.value).unwrap()
-        );
         _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
@@ -17813,7 +20186,7 @@ impl PRC_HCG_AnaCylinder {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let face = self.face.clone();
@@ -17826,7 +20199,7 @@ impl PRC_HCG_AnaCylinder {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_AnaTorus {
     pub id: CompressedEntityType,
@@ -17837,7 +20210,7 @@ pub struct PRC_HCG_AnaTorus {
 }
 impl PRC_HCG_AnaTorus {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -17850,13 +20223,10 @@ impl PRC_HCG_AnaTorus {
         _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        if (PRC_HCG_AnaTorus) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_HCG_AnaTorus) != (PrcCompressedFaceType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_HCG_AnaTorus"));
         }
-        assert_eq!(
-            PRC_HCG_AnaTorus,
-            PrcCompressedFaceType::try_from(id.value).unwrap()
-        );
         _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
@@ -17884,7 +20254,7 @@ impl PRC_HCG_AnaTorus {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let face = self.face.clone();
@@ -17899,7 +20269,7 @@ impl PRC_HCG_AnaTorus {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_AnaSphere {
     pub id: CompressedEntityType,
@@ -17908,7 +20278,7 @@ pub struct PRC_HCG_AnaSphere {
 }
 impl PRC_HCG_AnaSphere {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -17921,13 +20291,10 @@ impl PRC_HCG_AnaSphere {
         _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        if (PRC_HCG_AnaSphere) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_HCG_AnaSphere) != (PrcCompressedFaceType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_HCG_AnaSphere"));
         }
-        assert_eq!(
-            PRC_HCG_AnaSphere,
-            PrcCompressedFaceType::try_from(id.value).unwrap()
-        );
         _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
@@ -17947,7 +20314,7 @@ impl PRC_HCG_AnaSphere {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let face = self.face.clone();
@@ -17958,7 +20325,7 @@ impl PRC_HCG_AnaSphere {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_AnaCone {
     pub id: CompressedEntityType,
@@ -17968,7 +20335,7 @@ pub struct PRC_HCG_AnaCone {
 }
 impl PRC_HCG_AnaCone {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -17981,13 +20348,10 @@ impl PRC_HCG_AnaCone {
         _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        if (PRC_HCG_AnaCone) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_HCG_AnaCone) != (PrcCompressedFaceType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_HCG_AnaCone"));
         }
-        assert_eq!(
-            PRC_HCG_AnaCone,
-            PrcCompressedFaceType::try_from(id.value).unwrap()
-        );
         _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
@@ -18011,7 +20375,7 @@ impl PRC_HCG_AnaCone {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let face = self.face.clone();
@@ -18024,7 +20388,7 @@ impl PRC_HCG_AnaCone {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_AnaNurbs {
     pub id: CompressedEntityType,
@@ -18033,7 +20397,7 @@ pub struct PRC_HCG_AnaNurbs {
 }
 impl PRC_HCG_AnaNurbs {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -18046,13 +20410,10 @@ impl PRC_HCG_AnaNurbs {
         _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        if (PRC_HCG_AnaNurbs) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_HCG_AnaNurbs) != (PrcCompressedFaceType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_HCG_AnaNurbs"));
         }
-        assert_eq!(
-            PRC_HCG_AnaNurbs,
-            PrcCompressedFaceType::try_from(id.value).unwrap()
-        );
         _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
@@ -18071,7 +20432,7 @@ impl PRC_HCG_AnaNurbs {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let face = self.face.clone();
@@ -18082,7 +20443,7 @@ impl PRC_HCG_AnaNurbs {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_AnaGenericFace {
     pub id: CompressedEntityType,
@@ -18091,7 +20452,7 @@ pub struct PRC_HCG_AnaGenericFace {
 }
 impl PRC_HCG_AnaGenericFace {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -18104,13 +20465,10 @@ impl PRC_HCG_AnaGenericFace {
         _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        if (PRC_HCG_AnaGenericFace) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_HCG_AnaGenericFace) != (PrcCompressedFaceType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_HCG_AnaGenericFace"));
         }
-        assert_eq!(
-            PRC_HCG_AnaGenericFace,
-            PrcCompressedFaceType::try_from(id.value).unwrap()
-        );
         _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
@@ -18129,7 +20487,7 @@ impl PRC_HCG_AnaGenericFace {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let face = self.face.clone();
@@ -18140,7 +20498,7 @@ impl PRC_HCG_AnaGenericFace {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct CompressedMultiplicitiesU {
     pub multiplicity_is_not_stored: Boolean,
@@ -18149,7 +20507,7 @@ pub struct CompressedMultiplicitiesU {
 }
 impl CompressedMultiplicitiesU {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -18183,7 +20541,7 @@ impl CompressedMultiplicitiesU {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let multiplicity_is_not_stored = self.multiplicity_is_not_stored.clone();
         multiplicity_is_not_stored.to_writer(_w)?;
         let multiplicity_cond = !multiplicity_is_not_stored;
@@ -18196,7 +20554,7 @@ impl CompressedMultiplicitiesU {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct CompressedMultiplicitiesV {
     pub multiplicity_is_not_stored: Boolean,
@@ -18205,7 +20563,7 @@ pub struct CompressedMultiplicitiesV {
 }
 impl CompressedMultiplicitiesV {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -18239,7 +20597,7 @@ impl CompressedMultiplicitiesV {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let multiplicity_is_not_stored = self.multiplicity_is_not_stored.clone();
         multiplicity_is_not_stored.to_writer(_w)?;
         let multiplicity_cond = !multiplicity_is_not_stored;
@@ -18252,7 +20610,7 @@ impl CompressedMultiplicitiesV {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct InteriorCompressedControlPoints {
     pub _type: UnsignedIntegerWithVariableBitNumber,
@@ -18265,7 +20623,7 @@ pub struct InteriorCompressedControlPoints {
 }
 impl InteriorCompressedControlPoints {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -18346,7 +20704,7 @@ impl InteriorCompressedControlPoints {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let _type = self._type.clone();
         _type.to_writer(_w, 2)?;
         let p1z_cond = _type.value == 1;
@@ -18413,7 +20771,7 @@ impl InteriorCompressedControlPoints {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct CompressedControlPoints {
     pub p00: Vector3D,
@@ -18423,7 +20781,7 @@ pub struct CompressedControlPoints {
 }
 impl CompressedControlPoints {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -18435,8 +20793,13 @@ impl CompressedControlPoints {
         let _ig = indent::IndentGuard::new();
         let mut p00: Vector3D = Default::default();
         p00 = Vector3D::from_reader(rdr, _ctx)?;
+        io_check_limit!(
+            (_ctx.compressed_nurbs.number_ccpt_in_v - 1) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut ccpt_in_v: Vec<Point3DWithVariableBitNumber> =
             Vec::with_capacity((_ctx.compressed_nurbs.number_ccpt_in_v - 1) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(_ctx.compressed_nurbs.number_ccpt_in_v - 1) {
             let element = Point3DWithVariableBitNumber::from_reader(
                 rdr,
@@ -18445,8 +20808,13 @@ impl CompressedControlPoints {
             )?;
             ccpt_in_v.push(element);
         }
+        io_check_limit!(
+            (_ctx.compressed_nurbs.number_ccpt_in_u - 1) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut ccpt_in_u: Vec<Point3DWithVariableBitNumber> =
             Vec::with_capacity((_ctx.compressed_nurbs.number_ccpt_in_u - 1) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(_ctx.compressed_nurbs.number_ccpt_in_u - 1) {
             let element = Point3DWithVariableBitNumber::from_reader(
                 rdr,
@@ -18455,10 +20823,16 @@ impl CompressedControlPoints {
             )?;
             ccpt_in_u.push(element);
         }
+        io_check_limit!(
+            ((_ctx.compressed_nurbs.number_ccpt_in_v - 1)
+                * (_ctx.compressed_nurbs.number_ccpt_in_u - 1)) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut ccpt_interior: Vec<InteriorCompressedControlPoints> = Vec::with_capacity(
             ((_ctx.compressed_nurbs.number_ccpt_in_v - 1)
                 * (_ctx.compressed_nurbs.number_ccpt_in_u - 1)) as usize,
         );
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..((_ctx.compressed_nurbs.number_ccpt_in_v - 1)
             * (_ctx.compressed_nurbs.number_ccpt_in_u - 1))
         {
@@ -18477,7 +20851,7 @@ impl CompressedControlPoints {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let p00 = self.p00.clone();
         p00.to_writer(_w, _ctx)?;
         let ccpt_in_v = self.ccpt_in_v.clone();
@@ -18504,7 +20878,7 @@ impl CompressedControlPoints {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct CompressedKnot {
     pub knot: Option<Double>,
@@ -18512,7 +20886,7 @@ pub struct CompressedKnot {
 }
 impl CompressedKnot {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -18546,7 +20920,7 @@ impl CompressedKnot {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let knot_cond = _ctx.compressed_nurbs.number_bit_parameter > 30;
         let mut knot: &Double = &Default::default();
         if knot_cond {
@@ -18567,7 +20941,7 @@ impl CompressedKnot {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct CompressedKnotsU {
     pub is_unknown_form: Boolean,
@@ -18578,7 +20952,7 @@ pub struct CompressedKnotsU {
 }
 impl CompressedKnotsU {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -18600,6 +20974,14 @@ impl CompressedKnotsU {
         _ctx.compressed_nurbs.number_bit_parameter = number_bit_parameter.value;
         _ctx.compressed_nurbs.tolerance_parameter =
             1.0_f64 / 2.0_f64.powi(number_bit_parameter.value as i32 - 1);
+        io_check_limit!(
+            (if is_pseudo_uniform.value {
+                2
+            } else {
+                _ctx.compressed_nurbs.number_of_knots_in_u
+            }) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut compressed_knots: Vec<CompressedKnot> = Vec::with_capacity(
             (if is_pseudo_uniform.value {
                 2
@@ -18607,6 +20989,7 @@ impl CompressedKnotsU {
                 _ctx.compressed_nurbs.number_of_knots_in_u
             }) as usize,
         );
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(if is_pseudo_uniform.value {
             2
         } else {
@@ -18631,7 +21014,7 @@ impl CompressedKnotsU {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let is_unknown_form = self.is_unknown_form.clone();
         is_unknown_form.to_writer(_w)?;
         let is_pseudo_uniform_cond = !is_unknown_form.value;
@@ -18650,7 +21033,7 @@ impl CompressedKnotsU {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct CompressedKnotsV {
     pub is_unknown_form: Boolean,
@@ -18661,7 +21044,7 @@ pub struct CompressedKnotsV {
 }
 impl CompressedKnotsV {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -18683,6 +21066,14 @@ impl CompressedKnotsV {
         _ctx.compressed_nurbs.number_bit_parameter = number_bit_parameter.value;
         _ctx.compressed_nurbs.tolerance_parameter =
             1.0_f64 / 2.0_f64.powi(number_bit_parameter.value as i32 - 1);
+        io_check_limit!(
+            (if is_pseudo_uniform.value {
+                2
+            } else {
+                _ctx.compressed_nurbs.number_of_knots_in_v
+            }) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut compressed_knots: Vec<CompressedKnot> = Vec::with_capacity(
             (if is_pseudo_uniform.value {
                 2
@@ -18690,6 +21081,7 @@ impl CompressedKnotsV {
                 _ctx.compressed_nurbs.number_of_knots_in_v
             }) as usize,
         );
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(if is_pseudo_uniform.value {
             2
         } else {
@@ -18714,7 +21106,7 @@ impl CompressedKnotsV {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let is_unknown_form = self.is_unknown_form.clone();
         is_unknown_form.to_writer(_w)?;
         let is_pseudo_uniform_cond = !is_unknown_form.value;
@@ -18734,7 +21126,7 @@ impl CompressedKnotsV {
 }
 
 /// https://github.com/pdf-association/pdf-issues/issues/692#issuecomment-3590921789
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct CompressedKnotVectorU {
     pub is_uniform: Boolean,
@@ -18742,7 +21134,7 @@ pub struct CompressedKnotVectorU {
 }
 impl CompressedKnotVectorU {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -18769,7 +21161,7 @@ impl CompressedKnotVectorU {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let is_uniform = self.is_uniform.clone();
         is_uniform.to_writer(_w)?;
         let knots_cond = !is_uniform.value;
@@ -18783,7 +21175,7 @@ impl CompressedKnotVectorU {
 }
 
 /// https://github.com/pdf-association/pdf-issues/issues/692#issuecomment-3590921789
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct CompressedKnotVectorV {
     pub is_uniform: Boolean,
@@ -18791,7 +21183,7 @@ pub struct CompressedKnotVectorV {
 }
 impl CompressedKnotVectorV {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -18818,7 +21210,7 @@ impl CompressedKnotVectorV {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let is_uniform = self.is_uniform.clone();
         is_uniform.to_writer(_w)?;
         let knots_cond = !is_uniform.value;
@@ -18831,7 +21223,7 @@ impl CompressedKnotVectorV {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct CompressedWeights {
     pub number_bit_weight: UnsignedIntegerWithVariableBitNumber,
@@ -18841,7 +21233,7 @@ pub struct CompressedWeights {
 }
 impl CompressedWeights {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -18854,11 +21246,17 @@ impl CompressedWeights {
         let mut number_bit_weight: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_bit_weight = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 6)?;
         let weights_cond = number_bit_weight.value > 30;
+        io_check_limit!(
+            (_ctx.compressed_nurbs.number_ccpt_in_u * _ctx.compressed_nurbs.number_ccpt_in_v)
+                as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut weights: Vec<Double> = Vec::with_capacity(
             (_ctx.compressed_nurbs.number_ccpt_in_u * _ctx.compressed_nurbs.number_ccpt_in_v)
                 as usize,
         );
         if weights_cond {
+            #[allow(clippy::reversed_empty_ranges)]
             for _i in
                 0..(_ctx.compressed_nurbs.number_ccpt_in_u * _ctx.compressed_nurbs.number_ccpt_in_v)
             {
@@ -18872,11 +21270,17 @@ impl CompressedWeights {
             weight_tolerance = Double::from_reader(rdr)?;
         }
         let compressed_weights_cond = number_bit_weight.value <= 30;
+        io_check_limit!(
+            (_ctx.compressed_nurbs.number_ccpt_in_u * _ctx.compressed_nurbs.number_ccpt_in_v)
+                as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut compressed_weights: Vec<DoubleWithVariableBitNumber> = Vec::with_capacity(
             (_ctx.compressed_nurbs.number_ccpt_in_u * _ctx.compressed_nurbs.number_ccpt_in_v)
                 as usize,
         );
         if compressed_weights_cond {
+            #[allow(clippy::reversed_empty_ranges)]
             for _i in
                 0..(_ctx.compressed_nurbs.number_ccpt_in_u * _ctx.compressed_nurbs.number_ccpt_in_v)
             {
@@ -18908,7 +21312,7 @@ impl CompressedWeights {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let number_bit_weight = self.number_bit_weight.clone();
         number_bit_weight.to_writer(_w, 6)?;
         let weights = self.weights.clone();
@@ -18933,7 +21337,7 @@ impl CompressedWeights {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct CompressedNurbs {
     pub degree_in_u: UnsignedIntegerWithVariableBitNumber,
@@ -18956,7 +21360,7 @@ pub struct CompressedNurbs {
 }
 impl CompressedNurbs {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -18977,8 +21381,13 @@ impl CompressedNurbs {
             degree_in_v.value,
             number_stored_knots_in_u.value,
         );
+        io_check_limit!(
+            (number_stored_knots_in_u.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut mult_u: Vec<CompressedMultiplicitiesU> =
             Vec::with_capacity((number_stored_knots_in_u.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_stored_knots_in_u.value) {
             let element = CompressedMultiplicitiesU::from_reader(rdr, _ctx)?;
             mult_u.push(element);
@@ -18987,8 +21396,13 @@ impl CompressedNurbs {
         number_stored_knots_in_v = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 16)?;
         _ctx.compressed_nurbs
             .set1(&mult_u, number_stored_knots_in_v.value);
+        io_check_limit!(
+            (number_stored_knots_in_v.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut mult_v: Vec<CompressedMultiplicitiesV> =
             Vec::with_capacity((number_stored_knots_in_v.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_stored_knots_in_v.value) {
             let element = CompressedMultiplicitiesV::from_reader(rdr, _ctx)?;
             mult_v.push(element);
@@ -19049,7 +21463,7 @@ impl CompressedNurbs {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let degree_in_u = self.degree_in_u.clone();
         degree_in_u.to_writer(_w, 5)?;
         let degree_in_v = self.degree_in_v.clone();
@@ -19093,7 +21507,7 @@ impl CompressedNurbs {
 }
 
 /// https://github.com/pdf-association/pdf-issues/issues/666
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct IsoNurbsTrimCrv {
     pub iso_boundary: Boolean,
@@ -19102,7 +21516,7 @@ pub struct IsoNurbsTrimCrv {
 }
 impl IsoNurbsTrimCrv {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -19146,7 +21560,7 @@ impl IsoNurbsTrimCrv {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let iso_boundary = self.iso_boundary.clone();
         iso_boundary.to_writer(_w)?;
         let is_a_circle_cond = !iso_boundary.value;
@@ -19165,7 +21579,7 @@ impl IsoNurbsTrimCrv {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct IsoNurbsTrimCurve {
     pub is_referenced: Boolean,
@@ -19174,7 +21588,7 @@ pub struct IsoNurbsTrimCurve {
 }
 impl IsoNurbsTrimCurve {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -19218,7 +21632,7 @@ impl IsoNurbsTrimCurve {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let is_referenced = self.is_referenced.clone();
         is_referenced.to_writer(_w)?;
         let trim_curve_index_cond = is_referenced.value;
@@ -19238,7 +21652,7 @@ impl IsoNurbsTrimCurve {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_HCG_IsoNurbs {
     pub id: CompressedEntityType,
@@ -19257,7 +21671,7 @@ pub struct PRC_HCG_IsoNurbs {
 }
 impl PRC_HCG_IsoNurbs {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -19271,13 +21685,10 @@ impl PRC_HCG_IsoNurbs {
         _ctx.ContentCompressedFace_owner_enter(true);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
-        if (PRC_HCG_IsoNurbs) != (PrcCompressedFaceType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_HCG_IsoNurbs) != (PrcCompressedFaceType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_HCG_IsoNurbs"));
         }
-        assert_eq!(
-            PRC_HCG_IsoNurbs,
-            PrcCompressedFaceType::try_from(id.value).unwrap()
-        );
         _ctx.push_face_type(id);
         let mut orientation_surface_with_shell: Boolean = Default::default();
         orientation_surface_with_shell = Boolean::from_reader(rdr)?;
@@ -19365,7 +21776,7 @@ impl PRC_HCG_IsoNurbs {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let orientation_surface_with_shell = self.orientation_surface_with_shell.clone();
@@ -19414,14 +21825,14 @@ impl PRC_HCG_IsoNurbs {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct CompressedFace {
     pub id_concrete: CompressedFace_idConcrete,
 }
 impl CompressedFace {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -19435,8 +21846,11 @@ impl CompressedFace {
         let mut id_concrete: CompressedFace_idConcrete =
             CompressedFace_idConcrete::Invalid(id_type_id);
         id_type_id = CompressedEntityType::from_reader_and_seek_back(rdr)?.value as u32;
-        let id_tid: PrcCompressedFaceType = PrcCompressedFaceType::try_from(id_type_id).unwrap();
-        id_concrete = match id_tid {
+        let id_tid = PrcCompressedFaceType::try_from(id_type_id);
+        if id_tid.is_err() {
+            return Err(Error::other(format!("Unrecognised type {}!", id_type_id)));
+        }
+        id_concrete = match id_tid.unwrap() {
             PrcCompressedFaceType::PRC_HCG_IsoPlane => {
                 CompressedFace_idConcrete::ip(PRC_HCG_IsoPlane::from_reader(rdr, _ctx)?)
             }
@@ -19476,11 +21890,13 @@ impl CompressedFace {
             PrcCompressedFaceType::PRC_HCG_AnaGenericFace => {
                 CompressedFace_idConcrete::agf(PRC_HCG_AnaGenericFace::from_reader(rdr, _ctx)?)
             }
-            _ => panic!(
-                "CompressedFace: Unrecognized subtype: {}! bp={}",
-                id_type_id.to_string(),
-                rdr.position_in_bits()?
-            ),
+            _ => {
+                return Err(Error::other(format!(
+                    "CompressedFace: Unrecognized subtype: {}! bp={}",
+                    id_type_id.to_string(),
+                    rdr.position_in_bits()?
+                )));
+            }
         };
         let rv = Self { id_concrete };
         Ok(rv)
@@ -19489,7 +21905,7 @@ impl CompressedFace {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         match &self.id_concrete {
             CompressedFace_idConcrete::ip(x) => &x.to_writer(_w, _ctx)?,
             CompressedFace_idConcrete::icy(x) => &x.to_writer(_w, _ctx)?,
@@ -19505,7 +21921,10 @@ impl CompressedFace {
             CompressedFace_idConcrete::an(x) => &x.to_writer(_w, _ctx)?,
             CompressedFace_idConcrete::agf(x) => &x.to_writer(_w, _ctx)?,
             CompressedFace_idConcrete::Invalid(x) => {
-                panic!("CompressedFace: Unrecognized subtype: {}!", x)
+                return Err(Error::other(format!(
+                    "CompressedFace: Unrecognized subtype: {}!",
+                    x
+                )));
             }
         };
         Ok(())
@@ -19535,7 +21954,7 @@ impl Default for CompressedFace_idConcrete {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct CompressedShell {
     pub single_face: Boolean,
@@ -19546,7 +21965,7 @@ pub struct CompressedShell {
 }
 impl CompressedShell {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -19568,6 +21987,14 @@ impl CompressedShell {
         } else {
             number_of_faces.value
         });
+        io_check_limit!(
+            (if !!single_face {
+                1
+            } else {
+                number_of_faces.value
+            }) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut faces: Vec<CompressedFace> = Vec::with_capacity(
             (if !!single_face {
                 1
@@ -19575,6 +22002,7 @@ impl CompressedShell {
                 number_of_faces.value
             }) as usize,
         );
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(if !!single_face {
             1
         } else {
@@ -19583,6 +22011,14 @@ impl CompressedShell {
             let element = CompressedFace::from_reader(rdr, _ctx)?;
             faces.push(element);
         }
+        io_check_limit!(
+            (if !!single_face {
+                1
+            } else {
+                number_of_faces.value
+            }) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut is_an_iso_face: Vec<Boolean> = Vec::with_capacity(
             (if !!single_face {
                 1
@@ -19590,6 +22026,7 @@ impl CompressedShell {
                 number_of_faces.value
             }) as usize,
         );
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(if !!single_face {
             1
         } else {
@@ -19615,7 +22052,7 @@ impl CompressedShell {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let single_face = self.single_face.clone();
         single_face.to_writer(_w)?;
         let number_of_faces_cond = !single_face;
@@ -19636,7 +22073,7 @@ impl CompressedShell {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct CompressedConnex {
     pub number_of_shells: NumberOfBitsThenUnsignedInteger,
@@ -19644,7 +22081,7 @@ pub struct CompressedConnex {
 }
 impl CompressedConnex {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -19656,8 +22093,13 @@ impl CompressedConnex {
         let _ig = indent::IndentGuard::new();
         let mut number_of_shells: NumberOfBitsThenUnsignedInteger = Default::default();
         number_of_shells = NumberOfBitsThenUnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_shells.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut shells: Vec<CompressedShell> =
             Vec::with_capacity((number_of_shells.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_shells.value) {
             let element = CompressedShell::from_reader(rdr, _ctx)?;
             shells.push(element);
@@ -19672,7 +22114,7 @@ impl CompressedConnex {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let number_of_shells = self.number_of_shells.clone();
         number_of_shells.to_writer(_w)?;
         let shells = self.shells.clone();
@@ -19683,7 +22125,7 @@ impl CompressedConnex {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct MultipleCompressedConnex {
     pub number_of_connex: NumberOfBitsThenUnsignedInteger,
@@ -19691,7 +22133,7 @@ pub struct MultipleCompressedConnex {
 }
 impl MultipleCompressedConnex {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -19703,8 +22145,13 @@ impl MultipleCompressedConnex {
         let _ig = indent::IndentGuard::new();
         let mut number_of_connex: NumberOfBitsThenUnsignedInteger = Default::default();
         number_of_connex = NumberOfBitsThenUnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_connex.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut connex: Vec<CompressedConnex> =
             Vec::with_capacity((number_of_connex.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_connex.value) {
             let element = CompressedConnex::from_reader(rdr, _ctx)?;
             connex.push(element);
@@ -19719,7 +22166,7 @@ impl MultipleCompressedConnex {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let number_of_connex = self.number_of_connex.clone();
         number_of_connex.to_writer(_w)?;
         let connex = self.connex.clone();
@@ -19731,7 +22178,7 @@ impl MultipleCompressedConnex {
 }
 
 /// https://github.com/pdf-association/pdf-issues/issues/753
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_SingleWireBodyCompress {
     pub id: UnsignedInteger,
@@ -19744,7 +22191,7 @@ pub struct PRC_TYPE_TOPO_SingleWireBodyCompress {
 }
 impl PRC_TYPE_TOPO_SingleWireBodyCompress {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -19757,13 +22204,12 @@ impl PRC_TYPE_TOPO_SingleWireBodyCompress {
         assert!(!_ctx.is_curve_trimming_face());
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_TOPO_SingleWireBodyCompress) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_TOPO_SingleWireBodyCompress) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other(
+                "expected PRC_TYPE_TOPO_SingleWireBodyCompress",
+            ));
         }
-        assert_eq!(
-            PRC_TYPE_TOPO_SingleWireBodyCompress,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentBody = Default::default();
         base = ContentBody::from_reader(rdr, _ctx)?;
         let mut curve_tolerance: Double = Default::default();
@@ -19790,7 +22236,7 @@ impl PRC_TYPE_TOPO_SingleWireBodyCompress {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -19805,7 +22251,7 @@ impl PRC_TYPE_TOPO_SingleWireBodyCompress {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_BrepDataCompress {
     pub id: UnsignedInteger,
@@ -19823,7 +22269,7 @@ pub struct PRC_TYPE_TOPO_BrepDataCompress {
 }
 impl PRC_TYPE_TOPO_BrepDataCompress {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -19836,13 +22282,10 @@ impl PRC_TYPE_TOPO_BrepDataCompress {
         _ctx.BrepDataCompress_enter();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_TOPO_BrepDataCompress) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_TOPO_BrepDataCompress) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_TOPO_BrepDataCompress"));
         }
-        assert_eq!(
-            PRC_TYPE_TOPO_BrepDataCompress,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentBody = Default::default();
         base = ContentBody::from_reader(rdr, _ctx)?;
         let mut brep_data_compressed_tolerance: Double = Default::default();
@@ -19876,8 +22319,13 @@ impl PRC_TYPE_TOPO_BrepDataCompress {
         if multi_cond {
             multi = MultipleCompressedConnex::from_reader(rdr, _ctx)?;
         }
+        io_check_limit!(
+            (_ctx.BrepDataCompress_get_sum_num_faces()) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut base_topology_data: Vec<BaseTopology> =
             Vec::with_capacity((_ctx.BrepDataCompress_get_sum_num_faces()) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(_ctx.BrepDataCompress_get_sum_num_faces()) {
             let element = BaseTopology::from_reader(rdr, _ctx)?;
             base_topology_data.push(element);
@@ -19904,7 +22352,7 @@ impl PRC_TYPE_TOPO_BrepDataCompress {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -19939,14 +22387,14 @@ impl PRC_TYPE_TOPO_BrepDataCompress {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_Body {
     pub id_concrete: PRC_TYPE_TOPO_Body_idConcrete,
 }
 impl PRC_TYPE_TOPO_Body {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -19960,8 +22408,11 @@ impl PRC_TYPE_TOPO_Body {
         let mut id_concrete: PRC_TYPE_TOPO_Body_idConcrete =
             PRC_TYPE_TOPO_Body_idConcrete::Invalid(id_type_id);
         id_type_id = UnsignedInteger::from_reader_and_seek_back(rdr)?.value as u32;
-        let id_tid: PrcType = PrcType::try_from(id_type_id).unwrap();
-        id_concrete = match id_tid {
+        let id_tid = PrcType::try_from(id_type_id);
+        if id_tid.is_err() {
+            return Err(Error::other(format!("Unrecognised type {}!", id_type_id)));
+        }
+        id_concrete = match id_tid.unwrap() {
             PrcType::PRC_TYPE_TOPO_SingleWireBody => PRC_TYPE_TOPO_Body_idConcrete::topo_swb(
                 PRC_TYPE_TOPO_SingleWireBody::from_reader(rdr, _ctx)?,
             ),
@@ -19976,11 +22427,13 @@ impl PRC_TYPE_TOPO_Body {
             PrcType::PRC_TYPE_TOPO_BrepDataCompress => PRC_TYPE_TOPO_Body_idConcrete::topo_bdc(
                 PRC_TYPE_TOPO_BrepDataCompress::from_reader(rdr, _ctx)?,
             ),
-            _ => panic!(
-                "PRC_TYPE_TOPO_Body: Unrecognized subtype: {}! bp={}",
-                id_type_id.to_string(),
-                rdr.position_in_bits()?
-            ),
+            _ => {
+                return Err(Error::other(format!(
+                    "PRC_TYPE_TOPO_Body: Unrecognized subtype: {}! bp={}",
+                    id_type_id.to_string(),
+                    rdr.position_in_bits()?
+                )));
+            }
         };
         let _ = _ctx.se.eval(rdr, PRC_TYPE_TOPO_Body as u32, false, 0);
         let rv = Self { id_concrete };
@@ -19990,14 +22443,17 @@ impl PRC_TYPE_TOPO_Body {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         match &self.id_concrete {
             PRC_TYPE_TOPO_Body_idConcrete::topo_swb(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_TOPO_Body_idConcrete::topo_bd(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_TOPO_Body_idConcrete::topo_swbc(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_TOPO_Body_idConcrete::topo_bdc(x) => &x.to_writer(_w, _ctx)?,
             PRC_TYPE_TOPO_Body_idConcrete::Invalid(x) => {
-                panic!("PRC_TYPE_TOPO_Body: Unrecognized subtype: {}!", x)
+                return Err(Error::other(format!(
+                    "PRC_TYPE_TOPO_Body: Unrecognized subtype: {}!",
+                    x
+                )));
             }
         };
         Ok(())
@@ -20019,7 +22475,7 @@ impl Default for PRC_TYPE_TOPO_Body_idConcrete {
 }
 
 /// https://github.com/pdf-association/pdf-issues/issues/532
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_Context {
     pub id: UnsignedInteger,
@@ -20034,9 +22490,42 @@ pub struct PRC_TYPE_TOPO_Context {
     pub number_of_bodies: UnsignedInteger,
     pub bodies: Vec<PRC_TYPE_TOPO_Body>,
 }
+impl Default for PRC_TYPE_TOPO_Context {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_TOPO_Context as u32;
+        let mut base: ContentPRCBase = Default::default();
+        let mut behavior: Character = Default::default();
+        let mut granularity: Double = Default::default();
+        let mut tolerance: Double = Default::default();
+        let mut has_face_thickness: Boolean = Default::default();
+        let mut face_thicknes: Double = Default::default();
+        let mut has_scale: Boolean = Default::default();
+        let mut scale: Double = Default::default();
+        let mut number_of_bodies: UnsignedInteger = Default::default();
+        let mut bodies: Vec<PRC_TYPE_TOPO_Body> = Default::default();
+        Self {
+            id,
+            base,
+            behavior,
+            granularity,
+            tolerance,
+            has_face_thickness,
+            face_thicknes: if !!has_face_thickness {
+                Some(face_thicknes)
+            } else {
+                None
+            },
+            has_scale,
+            scale: if !!has_scale { Some(scale) } else { None },
+            number_of_bodies,
+            bodies,
+        }
+    }
+}
 impl PRC_TYPE_TOPO_Context {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -20048,10 +22537,10 @@ impl PRC_TYPE_TOPO_Context {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_TOPO_Context) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_TOPO_Context) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_TOPO_Context"));
         }
-        assert_eq!(PRC_TYPE_TOPO_Context, PrcType::try_from(id.value).unwrap());
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
         let mut behavior: Character = Default::default();
@@ -20076,8 +22565,13 @@ impl PRC_TYPE_TOPO_Context {
         }
         let mut number_of_bodies: UnsignedInteger = Default::default();
         number_of_bodies = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (number_of_bodies.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut bodies: Vec<PRC_TYPE_TOPO_Body> =
             Vec::with_capacity((number_of_bodies.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_bodies.value) {
             let element = PRC_TYPE_TOPO_Body::from_reader(rdr, _ctx)?;
             bodies.push(element);
@@ -20106,7 +22600,7 @@ impl PRC_TYPE_TOPO_Context {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -20143,7 +22637,7 @@ impl PRC_TYPE_TOPO_Context {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct FileStructureExactGeometry {
     pub topo_context_count: UnsignedInteger,
@@ -20152,7 +22646,7 @@ pub struct FileStructureExactGeometry {
 }
 impl FileStructureExactGeometry {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -20164,14 +22658,24 @@ impl FileStructureExactGeometry {
         let _ig = indent::IndentGuard::new();
         let mut topo_context_count: UnsignedInteger = Default::default();
         topo_context_count = UnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (topo_context_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut topo_contexts: Vec<PRC_TYPE_TOPO_Context> =
             Vec::with_capacity((topo_context_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(topo_context_count.value) {
+            trace!(
+                "reading PRC_TYPE_TOPO_Context[{} of {}]",
+                &_i, topo_context_count.value
+            );
             let element = PRC_TYPE_TOPO_Context::from_reader(rdr, _ctx)?;
             trace!(
-                "{}FileStructureExactGeometry.topo_contexts[{}]: {:#?}",
+                "{}FileStructureExactGeometry.topo_contexts[{} of {}]: {:#?}",
                 indent::get(),
                 &_i,
+                topo_context_count.value,
                 &element
             );
             topo_contexts.push(element);
@@ -20186,7 +22690,7 @@ impl FileStructureExactGeometry {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let topo_context_count = self.topo_context_count.clone();
         topo_context_count.to_writer(_w)?;
         let topo_contexts = self.topo_contexts.clone();
@@ -20198,7 +22702,7 @@ impl FileStructureExactGeometry {
 }
 
 /// Geometry: all exact geometry and topology data of the leaf entities of the tree (representation items).
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_ASM_FileStructureGeometry {
     pub id: UnsignedInteger,
@@ -20206,9 +22710,24 @@ pub struct PRC_TYPE_ASM_FileStructureGeometry {
     pub exact_geometry: FileStructureExactGeometry,
     pub user_data: UserData,
 }
+impl Default for PRC_TYPE_ASM_FileStructureGeometry {
+    fn default() -> Self {
+        let mut id: UnsignedInteger = Default::default();
+        id.value = PrcType::PRC_TYPE_ASM_FileStructureGeometry as u32;
+        let mut base: ContentPRCBase = Default::default();
+        let mut exact_geometry: FileStructureExactGeometry = Default::default();
+        let mut user_data: UserData = Default::default();
+        Self {
+            id,
+            base,
+            exact_geometry,
+            user_data,
+        }
+    }
+}
 impl PRC_TYPE_ASM_FileStructureGeometry {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+    pub fn from_reader<R: Read + Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -20220,13 +22739,10 @@ impl PRC_TYPE_ASM_FileStructureGeometry {
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
-        if (PRC_TYPE_ASM_FileStructureGeometry) != (PrcType::try_from(id.value).unwrap()) {
-            warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);
+        if Ok(PRC_TYPE_ASM_FileStructureGeometry) != (PrcType::try_from(id.value)) {
+            /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
+            return Err(Error::other("expected PRC_TYPE_ASM_FileStructureGeometry"));
         }
-        assert_eq!(
-            PRC_TYPE_ASM_FileStructureGeometry,
-            PrcType::try_from(id.value).unwrap()
-        );
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
         let mut exact_geometry: FileStructureExactGeometry = Default::default();
@@ -20248,7 +22764,7 @@ impl PRC_TYPE_ASM_FileStructureGeometry {
         &self,
         _w: &mut W,
         _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(_w)?;
         let base = self.base.clone();
@@ -20261,14 +22777,14 @@ impl PRC_TYPE_ASM_FileStructureGeometry {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct UncompressedUniqueId {
     pub unique_id: [UncompressedUnsignedInteger; 4],
 }
 impl UncompressedUniqueId {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek>(
+    pub fn from_reader<R: Read + Seek>(
         rdr: &mut R,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -20285,11 +22801,7 @@ impl UncompressedUniqueId {
         let rv = Self { unique_id };
         Ok(rv)
     }
-    pub fn to_writer<W: Write>(
-        &self,
-        _w: &mut W,
-        _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    pub fn to_writer<W: Write>(&self, _w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {
         let unique_id = self.unique_id.clone();
         for i in &self.unique_id {
             i.to_writer(_w)?;
@@ -20298,7 +22810,7 @@ impl UncompressedUniqueId {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct UncompressedBlock {
     pub block_size: UncompressedUnsignedInteger,
@@ -20306,7 +22818,7 @@ pub struct UncompressedBlock {
 }
 impl UncompressedBlock {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek>(
+    pub fn from_reader<R: Read + Seek>(
         rdr: &mut R,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -20323,11 +22835,7 @@ impl UncompressedBlock {
         let rv = Self { block_size, block };
         Ok(rv)
     }
-    pub fn to_writer<W: Write>(
-        &self,
-        _w: &mut W,
-        _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    pub fn to_writer<W: Write>(&self, _w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {
         let block_size = self.block_size.clone();
         block_size.to_writer(_w)?;
         let block = self.block.clone();
@@ -20336,7 +22844,7 @@ impl UncompressedBlock {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct UncompressedFileStructureHeader {
     pub magic: UncompressedByteArray,
@@ -20349,7 +22857,7 @@ pub struct UncompressedFileStructureHeader {
 }
 impl UncompressedFileStructureHeader {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek>(
+    pub fn from_reader<R: Read + Seek>(
         rdr: &mut R,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -20361,9 +22869,15 @@ impl UncompressedFileStructureHeader {
         let _ig = indent::IndentGuard::new();
         let mut magic: UncompressedByteArray = Default::default();
         magic = UncompressedByteArray::from_reader(rdr, 3)?;
-        assert_eq!(b"PRC", magic.a.as_slice());
+        if b"PRC" != magic.a.as_slice() {
+            return Err(std::io::Error::other("Invalid magic bytes!"));
+        };
         let mut minimal_version_for_read: UncompressedUnsignedInteger = Default::default();
         minimal_version_for_read = UncompressedUnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            minimal_version_for_read.value,
+            crate::LIBPRC_PRC_SPEC_VERSION
+        );
         let mut authoring_version: UncompressedUnsignedInteger = Default::default();
         authoring_version = UncompressedUnsignedInteger::from_reader(rdr)?;
         let mut unique_id_file: UncompressedUniqueId = Default::default();
@@ -20372,7 +22886,12 @@ impl UncompressedFileStructureHeader {
         unique_id_application = UncompressedUniqueId::from_reader(rdr, _ctx)?;
         let mut file_count: UncompressedUnsignedInteger = Default::default();
         file_count = UncompressedUnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (file_count.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut files: Vec<UncompressedBlock> = Vec::with_capacity((file_count.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(file_count.value) {
             let element = UncompressedBlock::from_reader(rdr, _ctx)?;
             files.push(element);
@@ -20388,11 +22907,7 @@ impl UncompressedFileStructureHeader {
         };
         Ok(rv)
     }
-    pub fn to_writer<W: Write>(
-        &self,
-        _w: &mut W,
-        _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    pub fn to_writer<W: Write>(&self, _w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {
         let magic = self.magic.clone();
         magic.to_writer(_w, 3)?;
         let minimal_version_for_read = self.minimal_version_for_read.clone();
@@ -20413,7 +22928,7 @@ impl UncompressedFileStructureHeader {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct UncompressedFileStructureDescription {
     pub unique_id: UncompressedUniqueId,
@@ -20428,7 +22943,7 @@ pub struct UncompressedFileStructureDescription {
 }
 impl UncompressedFileStructureDescription {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek>(
+    pub fn from_reader<R: Read + Seek>(
         rdr: &mut R,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -20444,7 +22959,9 @@ impl UncompressedFileStructureDescription {
         reserved = UncompressedUnsignedInteger::from_reader(rdr)?;
         let mut section_count: UncompressedUnsignedInteger = Default::default();
         section_count = UncompressedUnsignedInteger::from_reader(rdr)?;
-        assert_eq!(section_count.value, 6);
+        if section_count.value != 6 {
+            return Err(std::io::Error::other("Expected 6 sections!"));
+        };
         let mut header_start_offset: UncompressedUnsignedInteger = Default::default();
         header_start_offset = UncompressedUnsignedInteger::from_reader(rdr)?;
         let mut glob_start_offset: UncompressedUnsignedInteger = Default::default();
@@ -20470,11 +22987,7 @@ impl UncompressedFileStructureDescription {
         };
         Ok(rv)
     }
-    pub fn to_writer<W: Write>(
-        &self,
-        _w: &mut W,
-        _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    pub fn to_writer<W: Write>(&self, _w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {
         let unique_id = self.unique_id.clone();
         unique_id.to_writer(_w, _ctx)?;
         let reserved = self.reserved.clone();
@@ -20497,7 +23010,7 @@ impl UncompressedFileStructureDescription {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 #[allow(non_camel_case_types)]
 pub struct UncompressedFileHeader {
     pub magic: UncompressedByteArray,
@@ -20506,7 +23019,7 @@ pub struct UncompressedFileHeader {
     pub unique_id_file: UncompressedUniqueId,
     pub unique_id_application: UncompressedUniqueId,
     pub num_file_structs: UncompressedUnsignedInteger,
-    pub fsi: Vec<UncompressedFileStructureDescription>,
+    pub ufsd: Vec<UncompressedFileStructureDescription>,
     pub mf_start_offset: UncompressedUnsignedInteger,
     pub mf_end_offset: UncompressedUnsignedInteger,
     pub num_uncompr_files: UncompressedUnsignedInteger,
@@ -20514,7 +23027,7 @@ pub struct UncompressedFileHeader {
 }
 impl UncompressedFileHeader {
     #[allow(unused_assignments)]
-    pub fn from_reader<R: std::io::Read + std::io::Seek>(
+    pub fn from_reader<R: Read + Seek>(
         rdr: &mut R,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<Self> {
@@ -20526,9 +23039,15 @@ impl UncompressedFileHeader {
         let _ig = indent::IndentGuard::new();
         let mut magic: UncompressedByteArray = Default::default();
         magic = UncompressedByteArray::from_reader(rdr, 3)?;
-        assert_eq!(b"PRC", magic.a.as_slice());
+        if b"PRC" != magic.a.as_slice() {
+            return Err(std::io::Error::other("Invalid magic bytes!"));
+        };
         let mut minimal_version_for_read: UncompressedUnsignedInteger = Default::default();
         minimal_version_for_read = UncompressedUnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            minimal_version_for_read.value,
+            crate::LIBPRC_PRC_SPEC_VERSION
+        );
         let mut authoring_version: UncompressedUnsignedInteger = Default::default();
         authoring_version = UncompressedUnsignedInteger::from_reader(rdr)?;
         let mut unique_id_file: UncompressedUniqueId = Default::default();
@@ -20537,11 +23056,16 @@ impl UncompressedFileHeader {
         unique_id_application = UncompressedUniqueId::from_reader(rdr, _ctx)?;
         let mut num_file_structs: UncompressedUnsignedInteger = Default::default();
         num_file_structs = UncompressedUnsignedInteger::from_reader(rdr)?;
-        let mut fsi: Vec<UncompressedFileStructureDescription> =
+        io_check_limit!(
+            (num_file_structs.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
+        let mut ufsd: Vec<UncompressedFileStructureDescription> =
             Vec::with_capacity((num_file_structs.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(num_file_structs.value) {
             let element = UncompressedFileStructureDescription::from_reader(rdr, _ctx)?;
-            fsi.push(element);
+            ufsd.push(element);
         }
         let mut mf_start_offset: UncompressedUnsignedInteger = Default::default();
         mf_start_offset = UncompressedUnsignedInteger::from_reader(rdr)?;
@@ -20549,8 +23073,13 @@ impl UncompressedFileHeader {
         mf_end_offset = UncompressedUnsignedInteger::from_reader(rdr)?;
         let mut num_uncompr_files: UncompressedUnsignedInteger = Default::default();
         num_uncompr_files = UncompressedUnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(
+            (num_uncompr_files.value) as u32,
+            crate::limits::MAX_NUM_ARRAY_ELEMENTS
+        );
         let mut uncompressed_files: Vec<UncompressedBlock> =
             Vec::with_capacity((num_uncompr_files.value) as usize);
+        #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(num_uncompr_files.value) {
             let element = UncompressedBlock::from_reader(rdr, _ctx)?;
             uncompressed_files.push(element);
@@ -20562,7 +23091,7 @@ impl UncompressedFileHeader {
             unique_id_file,
             unique_id_application,
             num_file_structs,
-            fsi,
+            ufsd,
             mf_start_offset,
             mf_end_offset,
             num_uncompr_files,
@@ -20570,11 +23099,7 @@ impl UncompressedFileHeader {
         };
         Ok(rv)
     }
-    pub fn to_writer<W: Write>(
-        &self,
-        _w: &mut W,
-        _ctx: &mut PrcParsingContext,
-    ) -> std::io::Result<()> {
+    pub fn to_writer<W: Write>(&self, _w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {
         let magic = self.magic.clone();
         magic.to_writer(_w, 3)?;
         let minimal_version_for_read = self.minimal_version_for_read.clone();
@@ -20587,8 +23112,8 @@ impl UncompressedFileHeader {
         unique_id_application.to_writer(_w, _ctx)?;
         let num_file_structs = self.num_file_structs.clone();
         num_file_structs.to_writer(_w)?;
-        let fsi = self.fsi.clone();
-        for i in &self.fsi {
+        let ufsd = self.ufsd.clone();
+        for i in &self.ufsd {
             i.to_writer(_w, _ctx)?;
         }
         let mf_start_offset = self.mf_start_offset.clone();

@@ -12,6 +12,7 @@ use modular_bitfield::bitfield;
 use modular_bitfield::prelude::{B1, B11, B20};
 use std::cmp::Ordering;
 use std::io;
+use std::io::Error;
 use std::mem;
 //use std::fmt::Debug;
 
@@ -241,7 +242,11 @@ pub fn read_double_from_reader<R: BitRead>(rdr: &mut R) -> io::Result<f64> {
             }
             //println!("u64={:064b} d={}", unsafe { value.u }, unsafe { value.d } );
         } else {
-            let offset: u8 = read_bits(rdr, 3)? & 0x07;
+            //let offset: u8 = rdr.read::<3, u8>()? & 0x07;
+            let mut offset: u8 = read_bits(rdr, 3)? & 0x07;
+            // offset |= ((read_bits(rdr, 1)?&0x01)<<2);
+            // offset |= ((read_bits(rdr, 1)?&0x01)<<1);
+            // offset |= ((read_bits(rdr, 1)?&0x01)<<0);
             //println!("offset={}", offset);
             if offset == 0 {
                 let b = unsafe { value.bytes[cbi as usize + 1] };
@@ -275,6 +280,9 @@ pub fn read_double_from_reader<R: BitRead>(rdr: &mut R) -> io::Result<f64> {
                 //println!("u64={:064b} d={}", unsafe { value.u }, unsafe { value.d } );
                 break;
             } else {
+                if (cbi + offset as i8) >= 8 {
+                    return Err(std::io::Error::other("OOB read in prc double"));
+                }
                 //assert!((cbi + offset as i8) < 8);
                 unsafe {
                     value.bytes[cbi as usize] = value.bytes[cbi as usize + offset as usize];
@@ -396,6 +404,9 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
     unsafe {
         while _value.bytes[stop] == _value.bytes[stop + 1] {
             stop += 1;
+            if stop >= 7 {
+                return Err(Error::other("Failed to write double!"));
+            }
         }
 
         let mut result: usize = 0;
@@ -2570,7 +2581,7 @@ const ACOFDOE: [C; N] = [
 
 #[cfg(test)]
 mod tests {
-    use crate::test_common::tests::*;
+    use crate::test_common::*;
     use bitstream_io::BitWriter;
     use std::io::Cursor;
 

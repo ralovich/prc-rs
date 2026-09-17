@@ -5,6 +5,8 @@
 // SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026.
 // All rights reserved.
 
+#![allow(unused)]
+
 use std::fmt;
 use std::fmt::Display;
 use std::fmt::Formatter;
@@ -29,6 +31,20 @@ impl Vec3 {
     }
     pub fn z(&self) -> f64 {
         self.a[2]
+    }
+    pub fn length2(&self) -> f64 {
+        self.x() * self.x() + self.y() * self.y() + self.z() * self.z()
+    }
+    pub fn length(&self) -> f64 {
+        self.length2().sqrt()
+    }
+    pub fn normalized(&self) -> Vec3 {
+        let len = self.length();
+        if len != 0.0 {
+            Self::new(self.x() / len, self.y() / len, self.z() / len)
+        } else {
+            *self
+        }
     }
 }
 
@@ -62,6 +78,16 @@ impl Mul<f64> for Vec3 {
         Self {
             a: [self.x() * rhs, self.y() * rhs, self.z() * rhs],
         }
+    }
+}
+impl From<[f64; 3]> for Vec3 {
+    fn from(value: [f64; 3]) -> Self {
+        Vec3 { a: value }
+    }
+}
+impl Into<[f64; 3]> for Vec3 {
+    fn into(self) -> [f64; 3] {
+        self.a
     }
 }
 
