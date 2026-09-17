@@ -48,7 +48,7 @@ jobs:
         choco install ugrep
 
     - name: Checkout sources
-      uses: actions/checkout@v5
+      uses: actions/checkout@v7
 
     - name: Verify codegen up-to-date
       if: runner.os != 'Windows'
@@ -67,7 +67,7 @@ jobs:
         #cargo build --verbose --profile=${{env.BUILD_TYPE}} --tests
 
     - name: Checkout test data
-      uses: actions/checkout@v5
+      uses: actions/checkout@v7
       with:
         repository: ralovich/prc-db
         path: prc-db
