@@ -1,0 +1,31 @@
+[package]
+name = "prc-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[workspace]
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+bitstream-io = "4.10.0"
+
+[dependencies.prc]
+path = ".."
+
+[[bin]]
+name = "fuzz-target-1"
+path = "fuzz_targets/fuzz-target-1.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz-target-2"
+path = "fuzz_targets/fuzz-target-2.rs"
+test = false
+doc = false
+bench = false
