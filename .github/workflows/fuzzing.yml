@@ -13,7 +13,7 @@ env:
   CARGO_FUZZ_VERSION: 0.13.2
 
 jobs:
-  fuzz:
+  cargo-fuzz:
     strategy:
       fail-fast: false
       matrix:
