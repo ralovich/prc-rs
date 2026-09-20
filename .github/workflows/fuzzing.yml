@@ -1,15 +1,15 @@
 name: Fuzzing
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+#  push:
+#    branches: [ "main" ]
+#  pull_request:
+#    branches: [ "main" ]
   schedule:
     - cron: '30 5 * * *' # the workflow runs every day at 5:30 UTC.
 
 env:
-  FUZZ_TIME: 30
+  FUZZ_TIME: 1000
   CARGO_FUZZ_VERSION: 0.13.2
 
 jobs:
