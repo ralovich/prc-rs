@@ -51,14 +51,14 @@ jobs:
     - run: RUST_BACKTRACE=1 cargo fuzz run ${{ matrix.fuzz_target }} fuzz/corpus -- -max_total_time=${{ env.FUZZ_TIME }} -fork=$(nproc)
     - run: ls -las1 fuzz/corpus
 
-   - id: ts
-     run: echo "ts=$(date +%s)" >> "$GITHUB_OUTPUT"
+    - id: ts
+      run: echo "ts=$(date +%s)" >> "$GITHUB_OUTPUT"
 
-   - name: Save merged corpus to cache
-     uses: actions/cache/save@v6
-     with:
-       path: fuzz/corpus
-       key: cargo-fuzz-bin-${{ env.CARGO_FUZZ_VERSION }}-${{ matrix.fuzz_target }}-${{ steps.ts.outputs.ts }}
+    - name: Save merged corpus to cache
+      uses: actions/cache/save@v6
+      with:
+        path: fuzz/corpus
+        key: cargo-fuzz-bin-${{ env.CARGO_FUZZ_VERSION }}-${{ matrix.fuzz_target }}-${{ steps.ts.outputs.ts }}
 
     # Upload fuzzing artifacts on failure for post-mortem debugging.
     - name: Capture positive fuzzing artifacts
