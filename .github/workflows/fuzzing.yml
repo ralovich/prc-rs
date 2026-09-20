@@ -12,6 +12,7 @@ env:
   FUZZ_TIME: 30
   CARGO_FUZZ_VERSION: 0.13.2
 
+
 jobs:
   cargo-fuzz:
     strategy:
