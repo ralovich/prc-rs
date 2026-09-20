@@ -66,3 +66,4 @@ jobs:
       with:
         name: fuzzing-artifacts-${{ matrix.fuzz_target }}-${{ github.sha }}
         path: fuzz/artifacts
+
