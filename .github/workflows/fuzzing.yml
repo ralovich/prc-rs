@@ -5,13 +5,13 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  # schedule:
-  #   - cron: '30 5 * * *' # the workflow runs every day at 5:30 UTC.
-
+#  schedule:
+#    - cron: '30 5 * * *' # the workflow runs every day at 5:30 UTC.
+#
 env:
   FUZZ_TIME: 30
   CARGO_FUZZ_VERSION: 0.13.2
-
+#
 
 jobs:
   cargo-fuzz:
