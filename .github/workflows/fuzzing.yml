@@ -6,7 +6,7 @@ on:
 #  pull_request:
 #    branches: [ "main" ]
   schedule:
-    - cron: '*/15 * * * *' # the workflow runs every day at 5:30 UTC.
+    - cron: '*/15 * * * *'
 
 env:
   FUZZ_TIME: 600
