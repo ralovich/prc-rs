@@ -17138,7 +17138,7 @@ impl PRC_TYPE_SURF_Blend04 {
             rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
-        panic!("PRC_TYPE_SURF_Blend04 not implemented");
+        return Err(Error::other("PRC_TYPE_SURF_Blend04 not implemented"));
         let rv = Self {};
         Ok(rv)
     }

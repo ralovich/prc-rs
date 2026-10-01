@@ -378,13 +378,6 @@ impl PrcParsingContext {
         }
         Some(self.current_face_type[self.current_face_type.len() - 1])
     }
-
-    //pub fn on_brep_data_compress(&mut self, _bdc: &PRC_TYPE_TOPO_BrepDataCompress) {
-    //    self.nurbs_tolerance = self.brep_data_compressed_tolerance / 5.0;
-    //    //self.number_stored_knots_in_u = bdc.number_of_knots_in_u ‐ 2;
-    //    panic!("Not implemented!");
-    //}
-
     pub fn BrepDataCompress_enter(&mut self) {
         self.BrepDataCompress_CompressedVertex_array
             .push(Vec::new());
@@ -848,32 +841,6 @@ impl PrcParsingContext {
         );
 
         Ok(())
-    }
-
-    /// Helper for generating PRC sections from a stream of bytes.
-    /// Used for fuzzing.
-    #[allow(unused)]
-    pub fn mutate_section(
-        &mut self,
-        section: PrcSectionKind,
-        data: &[u8],
-    ) -> std::io::Result<Vec<u8>> {
-        if section == PrcSectionKind::Global {
-            let mut parsed = ParsedPrc::default();
-            parsed.verread = crate::LIBPRC_PRC_SPEC_VERSION;
-            parsed.verauth = crate::LIBPRC_PRC_SPEC_VERSION;
-            parsed.fsi.push(ParsedPrcFileStructure::default());
-            parsed.fsi[0].header.magic.a = b"PRC".to_vec();
-            parsed.fsi[0].header.minimal_version_for_read.value = crate::LIBPRC_PRC_SPEC_VERSION;
-            parsed.fsi[0].header.authoring_version.value = crate::LIBPRC_PRC_SPEC_VERSION;
-
-            let mut bytes: Vec<u8> = vec![];
-            UncompressedFileHeader::compress_and_write_override_globals(
-                &mut bytes, &parsed, self, data,
-            )?;
-            return Ok(bytes);
-        }
-        return Ok(vec![]);
     }
 }
 

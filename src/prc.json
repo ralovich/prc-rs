@@ -5687,7 +5687,7 @@
                 ]
             },
             "PRC_TYPE_SURF_Blend04": {
-                "on_enter": "panic!(\"PRC_TYPE_SURF_Blend04 not implemented\")",
+                "on_enter": "return Err(Error::other(\"PRC_TYPE_SURF_Blend04 not implemented\"));",
                 "fields": [
                 ]
             },

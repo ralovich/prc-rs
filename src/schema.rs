@@ -9,7 +9,7 @@ use crate::common::PrcParsingContext;
 use crate::constants::PrcType;
 use crate::prc_gen::Entity_schema_definition;
 use bitstream_io::BitReader;
-use log::debug;
+use log::{debug, warn};
 use num_enum::TryFromPrimitive;
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -160,7 +160,10 @@ impl VariableKind {
             VariableKind::Char(x) => *x as f64,
             VariableKind::Unsigned(x) => *x as f64,
             VariableKind::Integer(x) => *x as f64,
-            _ => panic!("not a scalar!"),
+            _ => {
+                warn!("not a scalar!");
+                f64::NAN
+            }
         }
     }
 }
@@ -179,7 +182,10 @@ impl PartialEq for VariableKind {
             (VariableKind::Vector3D(x1, x2, x3), VariableKind::Vector3D(y1, y2, y3)) => {
                 x1 == y1 && x2 == y2 && x3 == y3
             }
-            _ => panic!("not implemented to handle non-scalar equality!"),
+            _ => {
+                warn!("not implemented to handle non-scalar equality!");
+                false
+            }
         }
     }
 }
@@ -373,8 +379,7 @@ impl SchemaEvaluator {
                     debug!("{}FATHER {}", s.i(), father_type_id);
                     let mut nested = self.clone();
                     let _ = nested.eval(rdr, father_type_id, skip, s.indent);
-                    self.merge_from(&mut nested);
-                    //panic!("EPRCSchema_Father_Type not yet implemented!");
+                    self.merge_from(&nested);
                 }
             }
             val if val == EPRCSchema_Vector_2D as u32 || val == EPRCSchema_Extent_1D as u32 => {
@@ -471,12 +476,14 @@ impl SchemaEvaluator {
                     let n = match s.dstack.pop().unwrap() {
                         VariableKind::Integer(i) => i,
                         VariableKind::Unsigned(u) => u as i32,
-                        _ => panic!("EPRCSchema_For unsupported iteration limit type!"),
+                        _ => {
+                            warn!("EPRCSchema_For unsupported iteration limit type!");
+                            0
+                        }
                     };
                     debug!("{}FOR {:?}", s.i(), n);
                     // eval next instruction or block N times in a loop
                     for _i in 0..n - 1 {
-                        //panic!("EPRCSchema_For not yet implemented!");
                         let mut s_tmp = VmState {
                             indent: s.indent,
                             opstack: s.opstack.clone(),
@@ -503,7 +510,6 @@ impl SchemaEvaluator {
                     debug!("{}SIMPLEFOR {}", s.i(), n);
                     // eval next instruction or block N times in a loop
                     for _i in 0..n - 1 {
-                        //panic!("EPRCSchema_For not yet implemented!");
                         let mut s_tmp = VmState {
                             indent: s.indent,
                             opstack: s.opstack.clone(),
@@ -539,7 +545,10 @@ impl SchemaEvaluator {
                         VariableKind::Char(c) => c != 0,
                         VariableKind::Integer(i) => i != 0,
                         VariableKind::Unsigned(u) => u != 0,
-                        _ => panic!("EPRCSchema_If conditional must be a scalar expression!"),
+                        _ => {
+                            warn!("EPRCSchema_If conditional must be a scalar expression!");
+                            false
+                        }
                     };
                     if cond_is_true {
                         debug!("{}THEN branch", s.i());
@@ -673,7 +682,7 @@ impl SchemaEvaluator {
                 // skip/swallow the next token
                 s.opstack.pop();
             }
-            _x => panic!("SchemaEvaluator::do_eval(): Unhandled token: {}!", _x),
+            _x => warn!("SchemaEvaluator::do_eval(): Unhandled token: {}!", _x),
         }
         s.indent -= 1;
     }

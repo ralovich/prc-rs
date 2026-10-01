@@ -114,6 +114,9 @@ impl UncompressedFileHeader {
         // decompress arrays
         let mut mf_decompressed: Vec<u8> = Vec::new();
         if all || _modelfile {
+            if self.mf_end_offset.value <= self.mf_start_offset.value {
+                return Err(std::io::Error::other("invalid mf offset"));
+            }
             let mf_size = self.mf_end_offset.value - self.mf_start_offset.value;
             // trace!(
             //     "mf compressed offset: [{},{}], size: {}",
@@ -144,6 +147,9 @@ impl UncompressedFileHeader {
             rdr.read_exact(&mut section)?;
             sections_decompressed[i][PrcSectionKind::Header as usize] = section;
 
+            if fs.tree_start_offset.value <= fs.glob_start_offset.value {
+                return Err(std::io::Error::other("invalid glob offset"));
+            }
             let section_size = fs.tree_start_offset.value - fs.glob_start_offset.value;
             let mut section_compr: Vec<u8> = vec![0; section_size as usize];
             rdr.seek(std::io::SeekFrom::Start(fs.glob_start_offset.value as u64))?;
@@ -152,6 +158,9 @@ impl UncompressedFileHeader {
             sections_decompressed[i][PrcSectionKind::Global as usize] = glob;
 
             if all || _tree {
+                if fs.tess_start_offset.value <= fs.tree_start_offset.value {
+                    return Err(std::io::Error::other("invalid tree offset"));
+                }
                 let section_size = fs.tess_start_offset.value - fs.tree_start_offset.value;
                 let mut section_compr: Vec<u8> = vec![0; section_size as usize];
                 rdr.seek(std::io::SeekFrom::Start(fs.tree_start_offset.value as u64))?;
@@ -161,6 +170,9 @@ impl UncompressedFileHeader {
             }
 
             if all || _tess {
+                if fs.geom_start_offset.value <= fs.tess_start_offset.value {
+                    return Err(std::io::Error::other("invalid tess offset"));
+                }
                 let section_size = fs.geom_start_offset.value - fs.tess_start_offset.value;
                 let mut section_compr: Vec<u8> = vec![0; section_size as usize];
                 rdr.seek(std::io::SeekFrom::Start(fs.tess_start_offset.value as u64))?;
@@ -170,6 +182,9 @@ impl UncompressedFileHeader {
             }
 
             if all || _geom {
+                if fs.extg_start_offset.value <= fs.geom_start_offset.value {
+                    return Err(std::io::Error::other("invalid geom offset"));
+                }
                 let section_size = fs.extg_start_offset.value - fs.geom_start_offset.value;
                 let mut section_compr: Vec<u8> = vec![0; section_size as usize];
                 rdr.seek(std::io::SeekFrom::Start(fs.geom_start_offset.value as u64))?;
@@ -179,6 +194,11 @@ impl UncompressedFileHeader {
             }
 
             if all || _extgeom {
+                if std::cmp::min(self.mf_start_offset.value, file_size_bytes as u32)
+                    <= fs.extg_start_offset.value
+                {
+                    return Err(std::io::Error::other("invalid extg offset"));
+                }
                 let section_size =
                     std::cmp::min(self.mf_start_offset.value, file_size_bytes as u32)
                         - fs.extg_start_offset.value;
@@ -560,162 +580,6 @@ impl UncompressedFileHeader {
 
         Ok(file_header)
     }
-
-    pub fn compress_and_write_override_globals<W: Write>(
-        w: &mut W,
-        parsed_prc: &ParsedPrc,
-        ctx: &mut PrcParsingContext,
-        data_globals_override: &[u8],
-    ) -> std::io::Result<Self> {
-        let mut w_ctx = ctx.clone();
-
-        let mut mf_compressed = vec![];
-        {
-            let mut mf_uncompressed = vec![];
-            let mut w = BitWriter::endian(Cursor::new(&mut mf_uncompressed), ENDIAN);
-            parsed_prc.mf_schema.to_writer(&mut w, &mut w_ctx)?;
-            parsed_prc.mf.to_writer(&mut w, &mut w_ctx)?;
-            w.byte_align()?;
-            mf_compressed = compress(mf_uncompressed.as_slice()).unwrap();
-        }
-
-        let mut fsi: Vec<UncompressedFileStructureDescription> =
-            vec![Default::default(); parsed_prc.fsi.len()];
-        let mut sections_compressed: Vec<[Vec<u8>; 6]> =
-            vec![Default::default(); parsed_prc.fsi.len()];
-
-        let mut mf_start_offset = 0;
-
-        for i in 0..parsed_prc.fsi.len() {
-            let fs = &parsed_prc.fsi[i];
-
-            fs.header.to_writer(
-                &mut sections_compressed[i][PrcSectionKind::Header as usize],
-                &mut w_ctx,
-            )?;
-            assert_eq!(
-                47,
-                sections_compressed[i][PrcSectionKind::Header as usize].len()
-            );
-
-            let mut section_uncompressed = vec![];
-            let mut w = BitWriter::endian(Cursor::new(&mut section_uncompressed), ENDIAN);
-            //fs.schema.to_writer(&mut w, &mut w_ctx)?;
-            //fs.glob.to_writer(&mut w, &mut w_ctx)?;
-            w.write_bytes(data_globals_override)?;
-            w.byte_align()?;
-            sections_compressed[i][PrcSectionKind::Global as usize] =
-                compress(section_uncompressed.as_slice()).unwrap();
-
-            let mut section_uncompressed = vec![];
-            let mut w = BitWriter::endian(Cursor::new(&mut section_uncompressed), ENDIAN);
-            fs.tree.to_writer(&mut w, &mut w_ctx)?;
-            w.byte_align()?;
-            sections_compressed[i][PrcSectionKind::Tree as usize] =
-                compress(section_uncompressed.as_slice()).unwrap();
-
-            let mut section_uncompressed = vec![];
-            let mut w = BitWriter::endian(Cursor::new(&mut section_uncompressed), ENDIAN);
-            fs.tess.to_writer(&mut w, &mut w_ctx)?;
-            w.byte_align()?;
-            sections_compressed[i][PrcSectionKind::Tessellation as usize] =
-                compress(section_uncompressed.as_slice()).unwrap();
-
-            let mut section_uncompressed = vec![];
-            let mut w = BitWriter::endian(Cursor::new(&mut section_uncompressed), ENDIAN);
-            fs.geom.to_writer(&mut w, &mut w_ctx)?;
-            w.byte_align()?;
-            sections_compressed[i][PrcSectionKind::Geometry as usize] =
-                compress(section_uncompressed.as_slice()).unwrap();
-
-            let mut section_uncompressed = vec![];
-            let mut w = BitWriter::endian(Cursor::new(&mut section_uncompressed), ENDIAN);
-            fs.extg.to_writer(&mut w, &mut w_ctx)?;
-            w.byte_align()?;
-            sections_compressed[i][PrcSectionKind::ExtraGeometry as usize] =
-                compress(section_uncompressed.as_slice()).unwrap();
-
-            let header_start_offset = 47
-                + (i as u32 + 1) * (48 + fs.header.files_size())
-                + 12
-                + parsed_prc.uncompressed_files_size();
-            let glob_start_offset = header_start_offset + 47;
-            let tree_start_offset = glob_start_offset + sections_compressed[i][1].len() as u32;
-            let tess_start_offset = tree_start_offset + sections_compressed[i][2].len() as u32;
-            let geom_start_offset = tess_start_offset + sections_compressed[i][3].len() as u32;
-            let extg_start_offset = geom_start_offset + sections_compressed[i][4].len() as u32;
-            mf_start_offset = extg_start_offset + sections_compressed[i][5].len() as u32;
-
-            fsi[i] = UncompressedFileStructureDescription {
-                unique_id: UncompressedUniqueId::from(fs.uuid),
-                reserved: UncompressedUnsignedInteger { value: 0 },
-                section_count: UncompressedUnsignedInteger { value: 6 },
-                header_start_offset: UncompressedUnsignedInteger {
-                    value: header_start_offset,
-                },
-                glob_start_offset: UncompressedUnsignedInteger {
-                    value: glob_start_offset,
-                },
-                tree_start_offset: UncompressedUnsignedInteger {
-                    value: tree_start_offset,
-                },
-                tess_start_offset: UncompressedUnsignedInteger {
-                    value: tess_start_offset,
-                },
-                geom_start_offset: UncompressedUnsignedInteger {
-                    value: geom_start_offset,
-                },
-                extg_start_offset: UncompressedUnsignedInteger {
-                    value: extg_start_offset,
-                },
-            };
-        }
-
-        let file_header = UncompressedFileHeader {
-            magic: UncompressedByteArray { a: b"PRC".to_vec() },
-            minimal_version_for_read: UncompressedUnsignedInteger {
-                value: parsed_prc.verread,
-            },
-            authoring_version: UncompressedUnsignedInteger {
-                value: parsed_prc.verauth,
-            },
-            unique_id_file: UncompressedUniqueId::from(parsed_prc.uuid_file),
-            unique_id_application: UncompressedUniqueId::from(parsed_prc.uuid_application),
-            num_file_structs: UncompressedUnsignedInteger {
-                value: fsi.len() as u32,
-            },
-            ufsd: fsi,
-            mf_start_offset: UncompressedUnsignedInteger {
-                value: mf_start_offset,
-            },
-            mf_end_offset: UncompressedUnsignedInteger {
-                value: mf_start_offset + mf_compressed.len() as u32,
-            },
-            num_uncompr_files: UncompressedUnsignedInteger {
-                value: parsed_prc.uncompr_files.len() as u32,
-            },
-            uncompressed_files: parsed_prc
-                .uncompr_files
-                .iter()
-                .map(|f| UncompressedBlock {
-                    block_size: UncompressedUnsignedInteger {
-                        value: f.len() as u32,
-                    },
-                    block: UncompressedByteArray { a: f.clone() },
-                })
-                .collect::<Vec<_>>(),
-        };
-
-        file_header.to_writer(w, &mut w_ctx)?;
-        for i in 0..sections_compressed.len() {
-            for j in 0..6 {
-                w.write_all(sections_compressed[i][j].as_slice())?;
-            }
-        }
-        w.write_all(mf_compressed.as_slice())?;
-
-        Ok(file_header)
-    }
 }
 
 impl UncompressedFileStructureHeader {
@@ -769,7 +633,7 @@ impl UncompressedUnsignedInteger {
     }
     pub fn from_reader<R: Read>(rdr: &mut R) -> io::Result<Self> {
         let mut bytes: [u8; 4] = [0; 4];
-        let _ = rdr.read_exact(&mut bytes)?;
+        rdr.read_exact(&mut bytes)?;
         let mut ui: u32 = bytes[0] as u32;
         ui |= (bytes[1] as u32) << 8;
         ui |= (bytes[2] as u32) << 16;
@@ -786,9 +650,6 @@ impl UncompressedUnsignedInteger {
         bytes[2] = (val & 0xFF) as u8;
         val >>= 8;
         bytes[3] = (val & 0xFF) as u8;
-        for i in 0..4 {
-            w.write_u8(bytes[i])?;
-        }
-        Ok(())
+        w.write_all(&bytes)
     }
 }

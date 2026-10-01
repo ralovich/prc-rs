@@ -51,9 +51,9 @@ impl Tess3dCompressed {
         ];
         let mut raw_verts: Vec<[f64; 3]> = Vec::with_capacity(point_array.len() / 3);
         for i in 0..point_array.len() / 3 {
-            let x: f64 = point_array[i * 3 + 0] as f64 * tolerance + orig[0] as f64;
-            let y: f64 = point_array[i * 3 + 1] as f64 * tolerance + orig[1] as f64;
-            let z: f64 = point_array[i * 3 + 2] as f64 * tolerance + orig[2] as f64;
+            let x: f64 = point_array[i * 3 + 0] as f64 * tolerance /*+ orig[0] as f64*/;
+            let y: f64 = point_array[i * 3 + 1] as f64 * tolerance /*+ orig[1] as f64*/;
+            let z: f64 = point_array[i * 3 + 2] as f64 * tolerance /*+ orig[2] as f64*/;
             let vert: [f64; 3] = [x, y, z];
             //dbg!(v0);
             raw_verts.push(vert);
@@ -217,7 +217,6 @@ impl Tess3dCompressed {
         triangle_face_array: &Vec<i32>, /*is_face_planar: &Vec<bool>*/
     ) -> u32 {
         debug_time!("TESS_3D_Compressed__number_of_normals");
-        //panic!("number_of_normals: Not implemented yet");
 
         let mut num_normals = 0;
         let mut sum_triangles = 0;
@@ -250,7 +249,6 @@ impl Tess3dCompressed {
     /// Is_face_planar is TRUE if corresponding face is planar. A face is a group of triangles. In this case, only one normal is stored for all triangles of this face. It is stored when treating the first vertex of the first triangle of this face.
     pub fn number_of_faces_stored_in_mesh(&mut self, triangle_face_array: &Vec<i32>) -> u32 {
         self.number_of_faces(triangle_face_array)
-        //panic!("number_of_faces_stored_in_mesh: Not implemented yet");
         //return triangle_face_array.len() as u32;
     }
 

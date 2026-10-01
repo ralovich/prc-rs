@@ -2713,14 +2713,14 @@ mod tests {
         s
     }
 
-    fn from_bits_str(st: &str) -> Vec<u8> {
+    fn from_bits_str(st: &str) -> std::io::Result<Vec<u8>> {
         let mut v: Vec<u8> = vec![];
         let mut uc: u8 = 0;
 
         let mut n = 0; // number of bits collected in uc
         for s in st.chars() {
             if s != '0' && s != '1' {
-                panic!("Unexpected bit!")
+                return Err(Error::other("Unexpected bit!"));
             }
             let bit: u8 = if s == '1' { 1 } else { 0 };
             uc |= bit << (7 - n);
@@ -2735,7 +2735,7 @@ mod tests {
         if n > 0 {
             v.push(uc);
         }
-        v
+        Ok(v)
     }
 
     #[allow(unused)]
@@ -2809,7 +2809,7 @@ mod tests {
             let d: f64 = ll[0].parse::<f64>().expect("Should be able to parse f64");
             let u: u64 = ll[1].parse::<u64>().expect("Should be able to parse u64");
             let num_bits: usize = ll[2].parse().expect("Should be able to parse usize");
-            let bytes_external = from_bits_str(ll[3]);
+            let bytes_external = from_bits_str(ll[3]).expect("Should be able to parse bits");
 
             let mut r = BitReader::endian(Cursor::new(&bytes_external), BigEndian);
             let d1 = match Double::from_reader(&mut r) {
@@ -2985,7 +2985,7 @@ mod tests {
 
         {
             let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
-            let _ = UncompressedBoolArray { a: bools.clone() }
+            UncompressedBoolArray { a: bools.clone() }
                 .to_writer(&mut w, 0)
                 .unwrap();
             fill_partial_byte_at_end(&mut w, false).expect("failed to fill partial byte at end");
@@ -3013,7 +3013,7 @@ mod tests {
 
             {
                 let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
-                let _ = ca.to_writer(&mut w, num_bits_per_elem).unwrap();
+                ca.to_writer(&mut w, num_bits_per_elem).unwrap();
                 fill_partial_byte_at_end(&mut w, false)
                     .expect("failed to fill partial byte at end");
             }
@@ -3032,7 +3032,7 @@ mod tests {
 
             {
                 let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
-                let _ = ca.to_writer(&mut w, num_bits_per_elem).unwrap();
+                ca.to_writer(&mut w, num_bits_per_elem).unwrap();
                 fill_partial_byte_at_end(&mut w, false)
                     .expect("failed to fill partial byte at end");
             }
@@ -3055,7 +3055,7 @@ mod tests {
 
             {
                 let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
-                let _ = ca.to_writer(&mut w, num_bits_per_elem).unwrap();
+                ca.to_writer(&mut w, num_bits_per_elem).unwrap();
                 fill_partial_byte_at_end(&mut w, false)
                     .expect("failed to fill partial byte at end");
             }
@@ -3075,8 +3075,7 @@ mod tests {
 
             {
                 let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
-                let _ = ca
-                    .to_writer2(&mut w, num_bits_per_elem, true, true, sign_extend)
+                ca.to_writer2(&mut w, num_bits_per_elem, true, true, sign_extend)
                     .unwrap();
                 fill_partial_byte_at_end(&mut w, false)
                     .expect("failed to fill partial byte at end");
@@ -3099,7 +3098,7 @@ mod tests {
         };
         {
             let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
-            let _ = cia.to_writer(&mut w).unwrap();
+            cia.to_writer(&mut w).unwrap();
             fill_partial_byte_at_end(&mut w, false).expect("failed to fill partial byte at end");
         }
         let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
@@ -3120,7 +3119,7 @@ mod tests {
             };
             {
                 let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
-                let _ = cia.to_writer(&mut w).unwrap();
+                cia.to_writer(&mut w).unwrap();
                 fill_partial_byte_at_end(&mut w, false)
                     .expect("failed to fill partial byte at end");
             }
@@ -3134,7 +3133,7 @@ mod tests {
             let cia = CompressedIndiceArrayWithoutBit { a: vec![0; 68] };
             {
                 let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
-                let _ = cia.to_writer(&mut w, false).unwrap();
+                cia.to_writer(&mut w, false).unwrap();
                 fill_partial_byte_at_end(&mut w, false)
                     .expect("failed to fill partial byte at end");
             }
@@ -3146,9 +3145,9 @@ mod tests {
 
     #[test]
     fn test_have_bbox() {
-        assert_eq!(true, have_bbox(1));
-        assert_eq!(true, have_bbox(2));
-        assert_eq!(true, have_bbox(3));
-        assert_eq!(false, have_bbox(4))
+        assert!(have_bbox(1));
+        assert!(have_bbox(2));
+        assert!(have_bbox(3));
+        assert!(!have_bbox(4))
     }
 }

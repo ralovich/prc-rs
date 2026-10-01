@@ -232,7 +232,6 @@ use crate::io_check_limit;
                     rs.write('  %s_concrete = match %s_tid.unwrap() {\n' % (f['name'], f['name']) )
                     for eti in f['eligible_type_ids']:
                         rs.write('    %s::%s => %s_%sConcrete::%s(%s::from_reader(rdr, _ctx)?),\n' % (f['eligible_type_kind'], eti[0], struct_name, f['name'], eti[1], eti[0]) )
-                    #rs.write('    _ => panic!("%s: Unrecognized subtype: {}! bp={}", %s_type_id.to_string(), rdr.position_in_bits()?),\n' % (struct_name, f['name']) )
                     rs.write('    _ => return Err(Error::other(format!("%s: Unrecognized subtype: {}! bp={}", %s_type_id.to_string(), rdr.position_in_bits()?))),\n' % (struct_name, f['name']) )
                     rs.write('  };\n')
                     if do_debug:
@@ -353,7 +352,6 @@ use crate::io_check_limit;
                     rs.write('  match &self.%s_concrete {\n' % f['name'] )
                     for eti in f['eligible_type_ids']:
                         rs.write('    %s_%sConcrete::%s(x) => &x.to_writer(_w, _ctx)?,\n' % (struct_name, f['name'], eti[1]) )
-                    #rs.write('''    %s_%sConcrete::Invalid(x) => panic!("%s: Unrecognized subtype: {}!", x),''' % (struct_name, f['name'], struct_name) )
                     rs.write('''    %s_%sConcrete::Invalid(x) => return Err(Error::other(format!("%s: Unrecognized subtype: {}!", x))),''' % (struct_name, f['name'], struct_name) )
                     rs.write('  };\n')
                     if is_conditional:
