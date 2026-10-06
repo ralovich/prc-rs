@@ -4,9 +4,9 @@
 
 ## `prc` Status
 
-- [x] code generator based on 2014 PRC standard
+- [x] declarative description of [2014 PRC standard + errata](https://github.com/ralovich/prc-rs/blob/main/src/prc.json) and [code generator](https://github.com/ralovich/prc-rs/blob/main/src/generate_rust)
 - [x] Schema evaluator
-- [x] Huffman decoding
+- [x] Huffman coding
 - [x] parsing compressed arrays
 - [ ] parsing PRC_TYPE_TESS_3D_Compressed: vertex and triangle interpretation (https://patents.google.com/patent/US8207965B2/en, https://github.com/pdf-association/pdf-issues/issues/727)
 - [ ] parsing PRC_TYPE_TESS_3D_Compressed: normals (https://github.com/pdf-association/pdf-issues/issues/436, https://github.com/pdf-association/pdf-issues/issues/540)
