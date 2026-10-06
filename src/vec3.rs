@@ -85,9 +85,9 @@ impl From<[f64; 3]> for Vec3 {
         Vec3 { a: value }
     }
 }
-impl Into<[f64; 3]> for Vec3 {
-    fn into(self) -> [f64; 3] {
-        self.a
+impl From<Vec3> for [f64; 3] {
+    fn from(val: Vec3) -> Self {
+        val.a
     }
 }
 

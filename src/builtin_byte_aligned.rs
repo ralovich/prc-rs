@@ -126,7 +126,7 @@ impl UncompressedFileHeader {
             rdr.seek(std::io::SeekFrom::Start(self.mf_start_offset.value as u64))?;
             rdr.read_exact(&mut mf_compr)?;
 
-            mf_decompressed = decompress(&mf_compr).unwrap();
+            mf_decompressed = decompress(&mf_compr)?;
             trace!(
                 "mf uncompressed {} -> {}",
                 mf_compr.len(),
@@ -154,7 +154,7 @@ impl UncompressedFileHeader {
             let mut section_compr: Vec<u8> = vec![0; section_size as usize];
             rdr.seek(std::io::SeekFrom::Start(fs.glob_start_offset.value as u64))?;
             rdr.read_exact(&mut section_compr)?;
-            let glob = decompress(&section_compr).unwrap();
+            let glob = decompress(&section_compr)?;
             sections_decompressed[i][PrcSectionKind::Global as usize] = glob;
 
             if all || _tree {
@@ -165,7 +165,7 @@ impl UncompressedFileHeader {
                 let mut section_compr: Vec<u8> = vec![0; section_size as usize];
                 rdr.seek(std::io::SeekFrom::Start(fs.tree_start_offset.value as u64))?;
                 rdr.read_exact(&mut section_compr)?;
-                let tree = decompress(&section_compr).unwrap();
+                let tree = decompress(&section_compr)?;
                 sections_decompressed[i][PrcSectionKind::Tree as usize] = tree;
             }
 
@@ -177,7 +177,7 @@ impl UncompressedFileHeader {
                 let mut section_compr: Vec<u8> = vec![0; section_size as usize];
                 rdr.seek(std::io::SeekFrom::Start(fs.tess_start_offset.value as u64))?;
                 rdr.read_exact(&mut section_compr)?;
-                let tess = decompress(&section_compr).unwrap();
+                let tess = decompress(&section_compr)?;
                 sections_decompressed[i][PrcSectionKind::Tessellation as usize] = tess;
             }
 
@@ -189,7 +189,7 @@ impl UncompressedFileHeader {
                 let mut section_compr: Vec<u8> = vec![0; section_size as usize];
                 rdr.seek(std::io::SeekFrom::Start(fs.geom_start_offset.value as u64))?;
                 rdr.read_exact(&mut section_compr)?;
-                let geom = decompress(&section_compr).unwrap();
+                let geom = decompress(&section_compr)?;
                 sections_decompressed[i][PrcSectionKind::Geometry as usize] = geom;
             }
 
@@ -205,15 +205,14 @@ impl UncompressedFileHeader {
                 let mut section_compr: Vec<u8> = vec![0; section_size as usize];
                 rdr.seek(std::io::SeekFrom::Start(fs.extg_start_offset.value as u64))?;
                 rdr.read_exact(&mut section_compr)?;
-                let extg = decompress(&section_compr).unwrap();
+                let extg = decompress(&section_compr)?;
                 sections_decompressed[i][PrcSectionKind::ExtraGeometry as usize] = extg;
             }
         }
 
         let mut sum_files = 0;
-        for i in 0..sections_decompressed.len() {
-            let mut r_head =
-                Cursor::new(sections_decompressed[i][PrcSectionKind::Header as usize].as_slice());
+        for sdi in &sections_decompressed {
+            let mut r_head = Cursor::new(sdi[PrcSectionKind::Header as usize].as_slice());
             let head = UncompressedFileStructureHeader::from_reader(&mut r_head, ctx)?;
             sum_files += head.files.len();
         }
@@ -261,7 +260,7 @@ impl UncompressedFileHeader {
     }
 
     /// parse decompressed arrays
-    pub fn parse_decompressed_sections2(
+    pub fn parse_decompressed_sections(
         decompressed_sections: &DecompressedSections,
         ctx: &mut PrcParsingContext,
         verbose: bool,
@@ -571,9 +570,9 @@ impl UncompressedFileHeader {
         };
 
         file_header.to_writer(w, &mut w_ctx)?;
-        for i in 0..sections_compressed.len() {
-            for j in 0..6 {
-                w.write_all(sections_compressed[i][j].as_slice())?;
+        for sdi in &sections_compressed {
+            for sdj in sdi.iter().take(6) {
+                w.write_all(sdj.as_slice())?;
             }
         }
         w.write_all(mf_compressed.as_slice())?;
@@ -585,8 +584,8 @@ impl UncompressedFileHeader {
 impl UncompressedFileStructureHeader {
     pub fn files_size(&self) -> u32 {
         let mut num_bytes = 0;
-        for i in 0..self.files.len() {
-            num_bytes += self.files[i].block.a.len() as u32;
+        for fi in &self.files {
+            num_bytes += fi.block.a.len() as u32;
         }
         num_bytes
     }
@@ -640,7 +639,7 @@ impl UncompressedUnsignedInteger {
         ui |= (bytes[3] as u32) << 24;
         Ok(Self { value: ui })
     }
-    pub fn to_writer<W: Write + ?Sized>(&self, w: &mut W) -> std::io::Result<()> {
+    pub fn to_writer<W: Write + ?Sized>(self, w: &mut W) -> std::io::Result<()> {
         let mut val = self.value;
         let mut bytes: [u8; 4] = [0; 4];
         bytes[0] = (val & 0xFF) as u8;

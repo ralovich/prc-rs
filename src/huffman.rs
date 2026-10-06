@@ -302,7 +302,7 @@ impl<T: Eq + std::hash::Hash + Clone + Copy + Default + std::cmp::PartialEq + st
         // <symbol, frequency>
         let mut freq: HashMap<T, u32> = HashMap::new();
         for b in bytes {
-            let _ = match freq.get(&b) {
+            let _ = match freq.get(b) {
                 Some(count) => freq.insert(*b, count + 1),
                 None => freq.insert(*b, 1),
             };
@@ -312,7 +312,7 @@ impl<T: Eq + std::hash::Hash + Clone + Copy + Default + std::cmp::PartialEq + st
             freqs.push((*sf.0, *sf.1));
         }
         freq.clear();
-        freqs.sort_by(|a, b| b.1.cmp(&a.1));
+        freqs.sort_by_key(|a| std::cmp::Reverse(a.1));
 
         let mut nodes: Vec<Box<HTNode<T>>> = Vec::new();
         for (symb, freq) in &freqs {
@@ -321,7 +321,7 @@ impl<T: Eq + std::hash::Hash + Clone + Copy + Default + std::cmp::PartialEq + st
         freqs.clear();
         while nodes.len() > 1 {
             // sort and merge
-            nodes.sort_by(|a, b| b.freq.cmp(&a.freq));
+            nodes.sort_by_key(|a| std::cmp::Reverse(a.freq));
             let left = nodes.pop().unwrap();
             let right = nodes.pop().unwrap();
             let merged = Box::new(HTNode::<T>::new_internal(
@@ -437,12 +437,12 @@ impl<T: Eq + std::hash::Hash + Clone + Copy + Default + std::cmp::PartialEq + st
     /// Try to read a Huffman code bit-by-bit and return the corresponding decoded symbol.
     pub fn code_from_reader_as_symbol<R: BitRead>(
         r: &mut R,
-        node: &Box<HTNode<T>>,
+        node: &HTNode<T>,
         edge_code: u32,
         edge_len: u8,
     ) -> Option<T> {
         if node.left.is_none() && node.right.is_none() {
-            return Some(node.symb.clone());
+            return Some(node.symb);
         }
         let bit = r.read_bit();
         if bit.is_err() {
@@ -452,13 +452,13 @@ impl<T: Eq + std::hash::Hash + Clone + Copy + Default + std::cmp::PartialEq + st
         if bit {
             //println!("1");
             // go right
-            if node.right.is_some() {
-                return Self::code_from_reader_as_symbol(
+            if let Some(right) = &node.right {
+                Self::code_from_reader_as_symbol(
                     r,
-                    &node.right.as_ref().unwrap(),
+                    right,
                     edge_code | (1 << edge_len),
                     edge_len + 1,
-                );
+                )
             } else {
                 // this is a leaf
                 if node.code_length.is_none() || node.code_value.is_none() {
@@ -475,18 +475,13 @@ impl<T: Eq + std::hash::Hash + Clone + Copy + Default + std::cmp::PartialEq + st
                 //     node.code_length.unwrap(),
                 //     node.code_value.unwrap()
                 // );
-                return Some(node.symb.clone());
+                Some(node.symb)
             }
         } else {
             //println!("0");
             // go left
-            if node.left.is_some() {
-                return Self::code_from_reader_as_symbol(
-                    r,
-                    &node.left.as_ref().unwrap(),
-                    edge_code,
-                    edge_len + 1,
-                );
+            if let Some(left) = &node.left {
+                Self::code_from_reader_as_symbol(r, left, edge_code, edge_len + 1)
             } else {
                 if node.code_length.is_none() || node.code_value.is_none() {
                     return None;
@@ -502,7 +497,7 @@ impl<T: Eq + std::hash::Hash + Clone + Copy + Default + std::cmp::PartialEq + st
                 //     node.code_length.unwrap(),
                 //     node.code_value.unwrap()
                 // );
-                return Some(node.symb.clone());
+                Some(node.symb)
             }
         }
     }
@@ -532,7 +527,7 @@ pub fn prc_huffman_encode<
     let root = HTNode::build(symbols);
     let mut leaves: Vec<HuffTreeLeaf<T>> = Vec::new();
     root.collect_leaves(&mut leaves, 1, 1);
-    leaves.sort_by(|a, b| a.symbol.cmp(&b.symbol));
+    leaves.sort_by_key(|a| a.symbol);
 
     // for leaf in leaves.iter_mut() {
     //     leaf.code_value = rev_bits(leaf.code_value, leaf.code_length);
@@ -554,10 +549,10 @@ pub fn prc_huffman_encode<
         + 1;
     //dbg!(max_code_length);
     w.write_var::<u8>(8, max_code_length)?;
-    for i in 0..num_leaves as usize {
-        let symb = leaves[i].symbol;
-        let code_length = leaves[i].code_length;
-        let code_value = rev_bits(leaves[i].code_value, code_length);
+    for li in leaves.iter().take(num_leaves as usize) {
+        let symb = li.symbol;
+        let code_length = li.code_length;
+        let code_value = rev_bits(li.code_value, code_length);
         //let mask = ((1u32 << num_bits_per_elem) - 1) as u8;
         //assert_ne!(mask, 0);
         //if _sign_extend {
@@ -569,7 +564,7 @@ pub fn prc_huffman_encode<
         let val: WriteT = unsafe { std::mem::transmute_copy::<T, WriteT>(&masked) };
         w.write_var::<WriteT>(num_bits_per_elem as u32, val)?;
         w.write_var::<u32>(max_code_length as u32, code_length as u32)?;
-        w.write_var::<u32>(code_length as u32, code_value as u32)?;
+        w.write_var::<u32>(code_length as u32, code_value)?;
     }
     w.write_var::<u32>(32, symbols.len() as u32)?;
     for symb in symbols {
@@ -583,7 +578,7 @@ pub fn prc_huffman_encode<
     }
 
     let mut _padding_bits = fill_partial_byte_at_end(&mut w, false)?;
-    while prc_huffman_bytes.len() % 4 != 0 {
+    while !prc_huffman_bytes.len().is_multiple_of(4) {
         prc_huffman_bytes.push(0);
         _padding_bits += 8;
     }
@@ -629,15 +624,13 @@ fn get_mask_i8(num_bits_per_elem: u8) -> i8 {
     assert!(num_bits_per_elem > 0 && num_bits_per_elem <= 8);
     let mask = (1u32 << num_bits_per_elem) - 1;
     assert_ne!(mask, 0);
-    let mask_t = mask as i8;
-    mask_t
+    mask as i8
 }
 fn get_mask_i16(num_bits_per_elem: u8) -> i16 {
     assert!(num_bits_per_elem > 0 && num_bits_per_elem <= 16);
     let mask = (1u32 << num_bits_per_elem) - 1;
     assert_ne!(mask, 0);
-    let mask_t = mask as i16;
-    mask_t
+    mask as i16
 }
 
 fn huffman_decode<
@@ -684,16 +677,15 @@ where
 
     let mut leaves: Vec<HuffTreeLeaf<T>> = Vec::with_capacity(num_leaves as usize);
     for _i in 0..num_leaves {
-        let symbol: T;
-        if sign_extend {
-            symbol = r.read_var::<T>(num_bits_per_elem as u32)?;
+        let symbol: T = if sign_extend {
+            r.read_var::<T>(num_bits_per_elem as u32)?
         } else {
             //let mask = (1u32 << num_bits_per_elem) - 1;
             //assert_ne!(mask, 0);
             //let mask = T::try_from(mask).unwrap();
             let val = r.read_var::<T>(num_bits_per_elem as u32)?;
-            symbol = val & mask;
-        }
+            val & mask
+        };
         let code_length = r.read_var::<u32>(max_code_length as u32)? as u8;
         let code_value = r.read_var::<u32>(code_length as u32)?;
         leaves.push(HuffTreeLeaf {
@@ -704,7 +696,7 @@ where
     }
     //dbg!(&leaves.len(), min_code_bits, max_code_bits);
     //dbg!(&leaves);
-    leaves.sort_by(|a, b| a.code_value.cmp(&b.code_value));
+    leaves.sort_by_key(|a| a.code_value);
     //dbg!(&leaves);
 
     for leaf in leaves.iter_mut() {
@@ -818,13 +810,13 @@ mod tests {
         let root = HTNode::build(bytes.as_slice());
         let mut leaves: Vec<HuffTreeLeaf<i8>> = Vec::new();
         root.collect_leaves(&mut leaves, 1, 1);
-        leaves.sort_by(|a, b| a.symbol.cmp(&b.symbol));
+        leaves.sort_by_key(|a| a.symbol);
 
         // rebuild tree from leaves
         let root2 = HTNode::tree_from_leaves(&leaves).unwrap();
         let mut leaves2: Vec<HuffTreeLeaf<i8>> = Vec::new();
         root2.collect_leaves(&mut leaves2, 0, 0);
-        leaves2.sort_by(|a, b| a.symbol.cmp(&b.symbol));
+        leaves2.sort_by_key(|a| a.symbol);
 
         assert_eq!(leaves2, leaves);
     }
@@ -1128,20 +1120,19 @@ mod tests {
         assert_eq!(288, huffman_array.len());
 
         let mut huffman_bytes: Vec<u8> = Vec::with_capacity(huffman_array.len() * 4);
-        for i in 0..huffman_array.len() {
-            let u = huffman_array[i];
+        for u in &huffman_array {
             let bytes: [u8; 4] = [
-                ((u >> 0) & 0xFF) as u8,
+                *u as u8,
                 ((u >> 8) & 0xFF) as u8,
                 ((u >> 16) & 0xFF) as u8,
                 ((u >> 24) & 0xFF) as u8,
             ];
-            for j in 0..4 {
-                huffman_bytes.push(bytes[j]);
+            for b in &bytes {
+                huffman_bytes.push(*b);
             }
         }
         assert_eq!(1152, huffman_bytes.len());
-        let tot_bits = huffman_array.len() * 32 - 32 + number_of_bits_used_in_last_integer as usize;
+        let tot_bits = huffman_array.len() * 32 - 32 + number_of_bits_used_in_last_integer;
 
         let v = huffman_decode_i8(&huffman_bytes, tot_bits, num_bits, true).unwrap();
         assert_eq!(1950, v.len());

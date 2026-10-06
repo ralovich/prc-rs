@@ -35,12 +35,12 @@ impl Tess3dCompressed {
     pub fn get_points(
         &self,
         origin_array: &[FloatAsBytes; 3],
-        point_array: &Vec<i32>,
+        point_array: &[i32],
         tolerance: f64,
-        point_is_reference_array: &Vec<bool>,
-        point_reference_array: &Vec<i32>,
-        edge_status_array: &Vec<i8>,
-        triangle_face_array: &Vec<i32>,
+        point_is_reference_array: &[bool],
+        point_reference_array: &[i32],
+        edge_status_array: &[i8],
+        triangle_face_array: &[i32],
     ) {
         debug_time!("Tess3dCompress::get_points");
         assert_eq!(point_array.len() % 3, 0);
@@ -51,7 +51,7 @@ impl Tess3dCompressed {
         ];
         let mut raw_verts: Vec<[f64; 3]> = Vec::with_capacity(point_array.len() / 3);
         for i in 0..point_array.len() / 3 {
-            let x: f64 = point_array[i * 3 + 0] as f64 * tolerance /*+ orig[0] as f64*/;
+            let x: f64 = point_array[i * 3] as f64 * tolerance /*+ orig[0] as f64*/;
             let y: f64 = point_array[i * 3 + 1] as f64 * tolerance /*+ orig[1] as f64*/;
             let z: f64 = point_array[i * 3 + 2] as f64 * tolerance /*+ orig[2] as f64*/;
             let vert: [f64; 3] = [x, y, z];
@@ -92,7 +92,7 @@ impl Tess3dCompressed {
             )
         } else {
             warn!("t3dc: kindC unknown!");
-            assert!(false);
+            unimplemented!();
         }
 
         // for i in 0..point_array.len()/3 {
@@ -139,31 +139,31 @@ impl Tess3dCompressed {
         // }
         //assert_eq!(verts.len()*3, point_array.len());
     }
-    pub fn number_of_reference_points(&self, points_is_reference_array: &Vec<bool>) -> u32 {
+    pub fn number_of_referenced_points(&self, points_is_reference_array: &[bool]) -> u32 {
         // is the number of non-zero elements in the points_is_reference_array
         let mut num = 0;
-        for i in 0..points_is_reference_array.len() {
-            if points_is_reference_array[i] {
+        for pi in points_is_reference_array {
+            if *pi {
                 num += 1;
             }
         }
         num
     }
-    pub fn number_of_triangles(&self, triangle_face_array: &Vec<i32>) -> u32 {
-        return triangle_face_array.len() as u32;
+    pub fn number_of_triangles(&self, triangle_face_array: &[i32]) -> u32 {
+        triangle_face_array.len() as u32
     }
-    pub fn number_of_faces(&mut self, triangle_face_array: &Vec<i32>) -> u32 {
+    pub fn number_of_faces(&mut self, triangle_face_array: &[i32]) -> u32 {
         debug_time!("Tess3dCompress::number_of_faces");
         if self.num_faces != 0 {
             debug!("Tess3dCompress::number_of_faces: {}", self.num_faces);
-            return self.num_faces as u32;
+            return self.num_faces;
         }
         if triangle_face_array.is_empty() {
             debug!("Tess3dCompress::number_of_faces: {}", 0);
             return 0;
         }
-        let min_id = triangle_face_array.into_iter().min().unwrap();
-        let max_id = triangle_face_array.into_iter().max().unwrap();
+        let min_id = triangle_face_array.iter().min().unwrap();
+        let max_id = triangle_face_array.iter().max().unwrap();
         debug!(
             "TESS_3D_Compressed_number_of_faces: [{}, {}]",
             min_id, max_id
@@ -175,7 +175,7 @@ impl Tess3dCompressed {
     /// triangle_face_array represents, for each triangle, the index of the face to which it belongs
     pub fn number_of_triangles_in_face(
         &mut self,
-        triangle_face_array: &Vec<i32>,
+        triangle_face_array: &[i32],
         face_id: u32,
     ) -> u32 {
         if !self.triangles_in_face.is_empty() {
@@ -214,7 +214,7 @@ impl Tess3dCompressed {
     /// Vertices have always as many normals as number of faces to which they belong.
     pub fn number_of_normals(
         &mut self,
-        triangle_face_array: &Vec<i32>, /*is_face_planar: &Vec<bool>*/
+        triangle_face_array: &[i32], /*is_face_planar: &Vec<bool>*/
     ) -> u32 {
         debug_time!("TESS_3D_Compressed__number_of_normals");
 
@@ -238,7 +238,7 @@ impl Tess3dCompressed {
         }
         num_normals = triangle_face_array.len() as u32 * 3;
         debug!("sum tris: {}, num_normals: {}", sum_triangles, num_normals);
-        return num_normals;
+        num_normals
     }
     /// see PRC_TYPE_TESS_3D_Compressed.is_face_planar
     /// see PRC_TYPE_TESS_3D_Compressed.is_point_color_on_face
@@ -247,7 +247,7 @@ impl Tess3dCompressed {
     ///
     /// The size of this array correspond to number of face stored in the mesh.
     /// Is_face_planar is TRUE if corresponding face is planar. A face is a group of triangles. In this case, only one normal is stored for all triangles of this face. It is stored when treating the first vertex of the first triangle of this face.
-    pub fn number_of_faces_stored_in_mesh(&mut self, triangle_face_array: &Vec<i32>) -> u32 {
+    pub fn number_of_faces_stored_in_mesh(&mut self, triangle_face_array: &[i32]) -> u32 {
         self.number_of_faces(triangle_face_array)
         //return triangle_face_array.len() as u32;
     }
@@ -257,7 +257,7 @@ impl Tess3dCompressed {
         let v1 = vertex_2 - vertex_1;
         let v2 = vertex_3 - midpoint;
 
-        return crate::vec3::cross_product(v2, v1);
+        crate::vec3::cross_product(v2, v1)
     }
     fn sin_taylor_4(x: f64) -> f64 {
         let x2 = x * x;
@@ -267,9 +267,7 @@ impl Tess3dCompressed {
 
         let intermediate_1 = c2 - (x2 * c3);
         let intermediate_2 = c1 - (x2 * intermediate_1);
-        let res = x * (1.0 - (x2 * intermediate_2));
-
-        return res;
+        x * (1.0 - (x2 * intermediate_2))
     }
     fn cos_taylor_4(x: f64) -> f64 {
         let x2 = x * x;
@@ -280,12 +278,10 @@ impl Tess3dCompressed {
 
         let intermediate_1 = c2 - (x2 * c3);
         let intermediate_2 = c1 - (x2 * intermediate_1);
-        let res = 1.0 - (x2 * intermediate_2);
-
-        return res;
+        1.0 - (x2 * intermediate_2)
     }
 
-    pub fn on_point_color(&mut self, point_color_array5: &Vec<i8>) {
+    pub fn on_point_color(&mut self, point_color_array5: &[i8]) {
         let num_colors = point_color_array5.len() / 5;
         if point_color_array5.len() != num_colors * 5 {
             warn!(
@@ -294,7 +290,7 @@ impl Tess3dCompressed {
         }
         self.rgba = vec![[0u8; 4]; num_colors];
         for i in 0..num_colors {
-            if point_color_array5[i * 5 + 0] != 0 {
+            if point_color_array5[i * 5] != 0 {
                 self.rgba[i] = [
                     point_color_array5[i * 5 + 1] as u8,
                     point_color_array5[i * 5 + 2] as u8,

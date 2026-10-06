@@ -44,8 +44,10 @@ impl AnaFaceTrimLoop {
             );
             loop {
                 // open coding RefOrCompressedCurve::from_reader()...
-                let mut curve = RefOrCompressedCurve::default();
-                curve.curve_is_not_already_stored = Boolean::from_reader(rdr)?;
+                let mut curve = RefOrCompressedCurve {
+                    curve_is_not_already_stored: Boolean::from_reader(rdr)?,
+                    ..Default::default()
+                };
                 if curve.curve_is_not_already_stored.value {
                     let curve_type_tmp = CompressedEntityType::from_reader_and_seek_back(rdr)?;
                     trace!("{}{:?}", indent::get(), curve_type_tmp);

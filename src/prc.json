@@ -3440,15 +3440,15 @@
                         "data_type": "UncompressedBoolArray",
                         "vbr": "reference_array_size.value",
                         "debug": true,
-                        "on_set": "debug!(\"number_of_reference_points:{}\", _ctx.t3dc.number_of_reference_points(&point_is_reference_array.a));\ndebug!(\"{}point_is_reference_array: {}\", indent::get(), format(&point_is_reference_array.a))"
+                        "on_set": "debug!(\"number_of_referenced_points:{}\", _ctx.t3dc.number_of_referenced_points(&point_is_reference_array.a));\ndebug!(\"{}point_is_reference_array: {}\", indent::get(), format(&point_is_reference_array.a))"
                     },
                     {
                         "name": "point_reference_array",
                         "data_type": "CompressedIndiceArrayWithoutBit",
-                        "vbr": "_ctx.t3dc.number_of_reference_points(&point_is_reference_array.a) > 3",
+                        "vbr": "_ctx.t3dc.number_of_referenced_points(&point_is_reference_array.a) > 3",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/427",
                         "comment": "in this case, the boolean value which indicates whether the character array is compressed is not stored. Its value is implicit and set to number_of_reference_points > 3",
-                        "on_set": "assert_eq!(_ctx.t3dc.number_of_reference_points(&point_is_reference_array.a) as usize, point_reference_array.a.len())",
+                        "on_set": "assert_eq!(_ctx.t3dc.number_of_referenced_points(&point_is_reference_array.a) as usize, point_reference_array.a.len())",
                         "debug": true
                     },
                     {
@@ -3470,7 +3470,7 @@
                         "data_type": "Double",
                         "condition_rust": "!!self.must_recalculate_normals",
                         "debug": true,
-                        "comment": "definition similar than VRML"
+                        "comment": "definition similar to VRML"
                     },
                     {
                         "name": "normal_recalculation_flags",
@@ -3530,7 +3530,7 @@
                         "UNUSEDis_vec": true,
                         "comment": "above size if wrong, SPECBUG not in spec",
                         "FIXME": true,
-                        "vbr": "_ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a)",
+                        "vbr": "if !has_faces.value { 1 } else { _ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a) }",
                         "condition_rust": "!!self.is_point_color",
                         "on_set": "if !!is_point_color { debug!(\"{}is_point_color_on_face: {}\", indent::get(), format(&is_point_color_on_face.a)); }"
                     },

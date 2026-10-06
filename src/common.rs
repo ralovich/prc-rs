@@ -113,12 +113,12 @@ impl ParsedPrc {
     }
     pub fn uncompressed_files_size(&self) -> u32 {
         let mut num_bytes = 0;
-        for i in 0..self.uncompr_files.len() {
-            num_bytes += self.uncompr_files[i].len() as u32;
+        for ufi in &self.uncompr_files {
+            num_bytes += ufi.len() as u32;
         }
         num_bytes
     }
-    pub fn parse_decompressed2(
+    pub fn parse_decompressed(
         &mut self,
         ctx: &mut PrcParsingContext,
         verbose: bool,
@@ -134,8 +134,8 @@ impl ParsedPrc {
         if self.decompressed_sections.is_none() {
             return Ok(());
         }
-        let parsed_sections = UncompressedFileHeader::parse_decompressed_sections2(
-            &self.decompressed_sections.as_ref().unwrap(),
+        let parsed_sections = UncompressedFileHeader::parse_decompressed_sections(
+            self.decompressed_sections.as_ref().unwrap(),
             ctx,
             verbose,
             all,
@@ -333,11 +333,10 @@ impl PrcParsingContext {
             );
         }
 
-        let has = all_loops_are_vertex_loops
+        all_loops_are_vertex_loops
             && self.get_surface_type().unwrap().value
                 == PrcCompressedFaceType::PRC_HCG_AnaTorus as u8
-            && is_trimmed;
-        return has;
+            && is_trimmed
     }
 
     pub fn ContentCompressedFace_owner_enter(&mut self, is_an_iso_face: bool) {
@@ -493,11 +492,10 @@ impl PrcParsingContext {
     pub fn set_num_vertex_colors_from_tess_3d_face(
         &mut self,
         used_entities_flag: u32,
-        triangulated_data: &Vec<UnsignedInteger>,
+        triangulated_data: &[UnsignedInteger],
     ) {
         // TODO
 
-        let num_colors_per_triangle;
         if used_entities_flag != PrcTessellationFlags::PRC_FACETESSDATA_Triangle as u32
             && used_entities_flag != PrcTessellationFlags::PRC_FACETESSDATA_TriangleTextured as u32
         {
@@ -505,12 +503,11 @@ impl PrcParsingContext {
                 "Only PRC_FACETESSDATA_Triangle and PRC_FACETESSDATA_TriangleTextured are implemented! VertexColors_number_of_colors will be off!"
             );
         }
-        num_colors_per_triangle = 3;
+        let num_colors_per_triangle = 3;
 
         self.VertexColors_number_of_colors = 0;
-        for i in 0..triangulated_data.len() {
-            self.VertexColors_number_of_colors +=
-                num_colors_per_triangle * triangulated_data[i].value;
+        for tdi in triangulated_data {
+            self.VertexColors_number_of_colors += num_colors_per_triangle * tdi.value;
         }
     }
 
@@ -527,12 +524,11 @@ impl PrcParsingContext {
         } else {
             // TODO look up referenced curve
             let index = ref_or_cc.index_compressed_curve.as_ref().unwrap().value;
-            let index_str;
-            if index < self.AnaFaceTrimLoop_curves.len() as u32 {
-                index_str = "valid".to_string();
+            let index_str = if index < self.AnaFaceTrimLoop_curves.len() as u32 {
+                "valid".to_string()
             } else {
-                index_str = "invalid".to_string();
-            }
+                "invalid".to_string()
+            };
             debug!("CURVE TO LOOP: ADDING REF: {} ({})", index, index_str);
         }
         self.AnaFaceTrimLoop_curves.push(ref_or_cc);
@@ -553,10 +549,10 @@ impl PrcParsingContext {
         warn!("TODO: CompressedShell_reorder_faces not yet implemented!");
     }
 
-    pub fn load_prc00(
+    pub fn load_prc(
         &mut self,
         bytes: &[u8],
-        file_base_name: &std::string::String,
+        file_base_name: &str,
         parse: bool,
         verbose: bool,
         all: bool,
@@ -576,7 +572,7 @@ impl PrcParsingContext {
 
         let header = UncompressedFileHeader::from_reader(&mut mem_reader, self)?;
 
-        self.file_base_name = file_base_name.clone();
+        self.file_base_name = file_base_name.to_owned();
         self.authoring_version = header.authoring_version.value;
         self.num_fsi = header.ufsd.len();
         let mut parsed = header.decompress_sections(
@@ -595,7 +591,7 @@ impl PrcParsingContext {
         )?;
 
         if parse {
-            parsed.parse_decompressed2(
+            parsed.parse_decompressed(
                 &mut *self, verbose, all, globals, tree, tess, geom, extgeom, _schema, modelfile,
             )?;
         }
@@ -603,7 +599,7 @@ impl PrcParsingContext {
         Ok(parsed)
     }
 
-    pub fn load_prc(
+    pub fn load_prc_file(
         &mut self,
         infname: &std::string::String,
         parse: bool,
@@ -625,7 +621,7 @@ impl PrcParsingContext {
             .to_string_lossy()
             .to_string();
 
-        self.load_prc00(
+        self.load_prc(
             &bytes,
             &file_base_name,
             parse,
@@ -695,7 +691,7 @@ impl PrcParsingContext {
                         let coordinates = &t.tessellation_coordinates.coordinates;
                         for i in 0..coordinates.len() / 3 {
                             let v = [
-                                coordinates[i * 3 + 0].value,
+                                coordinates[i * 3].value,
                                 coordinates[i * 3 + 1].value,
                                 coordinates[i * 3 + 2].value,
                             ];
@@ -703,7 +699,7 @@ impl PrcParsingContext {
                         }
                         for i in 0..t.normal_coordinates.len() / 3 {
                             let /*mut*/ n = [
-                                t.normal_coordinates[i * 3 + 0].value,
+                                t.normal_coordinates[i * 3].value,
                                 t.normal_coordinates[i * 3 + 1].value,
                                 t.normal_coordinates[i * 3 + 2].value,
                             ];
@@ -737,7 +733,7 @@ impl PrcParsingContext {
                                     ];
                                     let inorm = [
                                         t.triangulated_index_array
-                                            [face.start_triangulated.value as usize + ti * 6 + 0]
+                                            [face.start_triangulated.value as usize + ti * 6]
                                             .value,
                                         t.triangulated_index_array
                                             [face.start_triangulated.value as usize + ti * 6 + 2]
@@ -775,7 +771,7 @@ impl PrcParsingContext {
                                     ];
                                     let inorm = [
                                         t.triangulated_index_array
-                                            [face.start_triangulated.value as usize + ti * 6 + 0]
+                                            [face.start_triangulated.value as usize + ti * 6]
                                             .value,
                                         t.triangulated_index_array
                                             [face.start_triangulated.value as usize + ti * 6 + 3]
@@ -846,7 +842,7 @@ impl PrcParsingContext {
 
 pub fn prc_describe(
     bytes: &[u8],
-    file_base_name: &std::string::String,
+    file_base_name: &str,
     verbose: bool,
     all: bool,
     globals: bool,
@@ -860,7 +856,7 @@ pub fn prc_describe(
     debug_time!("prc_describe");
     let parse = true;
     let mut ctx: PrcParsingContext = Default::default();
-    let parsed = ctx.load_prc00(
+    let parsed = ctx.load_prc(
         bytes,
         file_base_name,
         parse,
@@ -968,9 +964,8 @@ pub fn prc_search(
         .iter()
     {
         println!(".");
-        for section_id in 0..fsi.len() {
+        for (section_id, section) in fsi.iter().enumerate() {
             println!("-");
-            let section = &fsi[section_id];
             if section_id != PrcSectionKind::Tessellation as usize {
                 continue;
             }
@@ -1137,7 +1132,7 @@ mod tests {
             function!(),
             path.display()
         );
-        let bytes_external = std::fs::read(&std::string::String::from(
+        let bytes_external = std::fs::read(std::string::String::from(
             "testdata/pmi_sample.stream-23.prc",
         ))
         .unwrap();
@@ -1145,7 +1140,7 @@ mod tests {
 
         let parsed = prc_describe(
             &bytes_external,
-            &"pmi_sample.stream-23.prc".to_owned(),
+            "pmi_sample.stream-23.prc",
             true,
             true,
             true,
@@ -1176,7 +1171,7 @@ mod tests {
             function!(),
             path.display()
         );
-        let bytes_external = std::fs::read(&std::string::String::from(
+        let bytes_external = std::fs::read(std::string::String::from(
             "testdata/3D-PDF-Sample-School.stream-48.prc",
         ))
         .unwrap();
@@ -1184,7 +1179,7 @@ mod tests {
 
         let parsed = prc_describe(
             &bytes_external,
-            &"3D-PDF-Sample-School.stream-48.prc".to_owned(),
+            "3D-PDF-Sample-School.stream-48.prc",
             true,
             true,
             true,
@@ -1244,7 +1239,7 @@ mod tests {
             let bytes = std::fs::read(test_case).unwrap();
             let mut ctx: PrcParsingContext = Default::default();
             let parsed = ctx
-                .load_prc00(
+                .load_prc(
                     &bytes,
                     &file_base_name,
                     true,

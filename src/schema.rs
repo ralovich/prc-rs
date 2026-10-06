@@ -268,8 +268,11 @@ impl SchemaEvaluator {
             Ok(t) => t.to_string(),
             Err(_) => type_to_eval.to_string(),
         };
-        let mut s: VmState = Default::default();
-        s.indent = indent;
+
+        let mut s = VmState {
+            indent,
+            ..Default::default()
+        };
         debug!(
             "{}Evaluating schema for {} ({} tokens)",
             s.i(),
@@ -491,7 +494,7 @@ impl SchemaEvaluator {
                             vars: Default::default(),
                         };
                         self.do_eval(rdr, &mut s_tmp, false);
-                        s.merge_from(&mut s_tmp);
+                        s.merge_from(&s_tmp);
                     }
                     if n > 0 {
                         self.do_eval(rdr, s, false);
@@ -517,7 +520,7 @@ impl SchemaEvaluator {
                             vars: Default::default(),
                         };
                         self.do_eval(rdr, &mut s_tmp, false);
-                        s.merge_from(&mut s_tmp);
+                        s.merge_from(&s_tmp);
                     }
                     if n > 0 {
                         self.do_eval(rdr, s, false);

@@ -49,6 +49,7 @@ def codegen_rust(rs, d):
 
 
 #![allow(dead_code, unused_imports, unused)]
+#![allow(clippy::all, clippy::pedantic, clippy::nursery)]
 
 use std::io;
 use std::io::{Error, Read, Seek, Write};

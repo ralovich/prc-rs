@@ -504,7 +504,7 @@ mod tests {
     #[test]
     fn io_valid_default() {
         let n = crate::prc_gen::Name::default();
-        assert_eq!(n.same_name.value, false);
+        assert!(!n.same_name.value);
         assert!(n.name.is_some());
     }
     #[test]

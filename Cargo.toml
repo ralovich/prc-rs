@@ -15,7 +15,6 @@ crate-type = ["lib", "staticlib"]
 [dependencies]
 inflate = "0.4"
 deflate = "1"
-libdeflater = "1"
 log = "0.4"
 byteorder = "1"
 modular-bitfield = "0.13.1"

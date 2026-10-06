@@ -20,7 +20,7 @@ pub unsafe extern "C" fn prc_parse_to_json(
     if src_len < 1 {
         return -1;
     }
-    if src == std::ptr::null() {
+    if src.is_null() {
         return -2;
     }
     if allocate.is_none() {
@@ -46,7 +46,7 @@ pub unsafe extern "C" fn prc_parse_to_json(
     let modelfile = true;
     let rv = prc_describe(
         src_slice,
-        &"capi.prc_parse_to_json.prc".to_owned(),
+        "capi.prc_parse_to_json.prc",
         verbose,
         all,
         globals,
@@ -57,7 +57,7 @@ pub unsafe extern "C" fn prc_parse_to_json(
         _schema,
         modelfile,
     );
-    return match rv {
+    match rv {
         Err(_) => {
             unsafe {
                 *dst_actual_size = 0;
@@ -87,5 +87,5 @@ pub unsafe extern "C" fn prc_parse_to_json(
                 -11
             }
         }
-    };
+    }
 }

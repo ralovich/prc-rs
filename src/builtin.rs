@@ -32,7 +32,7 @@ fn max(i: i32, j: i32, k: i32) -> i32 {
 }
 
 /// Print info about a Vec<T> without printing all elements.
-pub fn format<T: std::cmp::Ord + std::fmt::Display>(v: &Vec<T>) -> std::string::String {
+pub fn format<T: std::cmp::Ord + std::fmt::Display>(v: &[T]) -> std::string::String {
     let min_value = v.iter().min();
     let max_value = v.iter().max();
     match (min_value, max_value) {
@@ -49,7 +49,7 @@ pub fn format<T: std::cmp::Ord + std::fmt::Display>(v: &Vec<T>) -> std::string::
 
 /// Current position in a seekable stream.
 pub fn position<S: Seek>(rdr: &mut S) -> std::io::Result<u64> {
-    rdr.seek(SeekFrom::Current(0))
+    rdr.stream_position()
 }
 
 pub fn read_bits<R: BitRead>(r: &mut R, num_bits: u8) -> std::io::Result<u8> {
@@ -81,7 +81,7 @@ impl Boolean {
             value: read_bits(rdr, 1)? != 0,
         })
     }
-    pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W) -> std::io::Result<()> {
+    pub fn to_writer<W: BitWrite + ?Sized>(self, w: &mut W) -> std::io::Result<()> {
         write_bits(w, self.value as u8, 1)
     }
 }
@@ -152,7 +152,7 @@ impl Character {
             value: read_bits(rdr, 8)? as i8,
         })
     }
-    pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W) -> std::io::Result<()> {
+    pub fn to_writer<W: BitWrite + ?Sized>(self, w: &mut W) -> std::io::Result<()> {
         write_bits(w, self.value as u8, 8)
     }
 }
@@ -172,7 +172,7 @@ impl UnsignedCharacter {
             value: read_bits(rdr, 8)?,
         })
     }
-    pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W) -> std::io::Result<()> {
+    pub fn to_writer<W: BitWrite + ?Sized>(self, w: &mut W) -> std::io::Result<()> {
         write_bits(w, self.value, 8)
     }
 }
@@ -193,7 +193,7 @@ impl UnsignedShort {
         let value: u16 = (hi as u16) << 8 | lo as u16;
         Ok(Self { value })
     }
-    pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W) -> std::io::Result<()> {
+    pub fn to_writer<W: BitWrite + ?Sized>(self, w: &mut W) -> std::io::Result<()> {
         let lo = (self.value & 0xFF) as u8;
         let hi = (self.value >> 8) as u8;
         write_bits(w, lo, 8)?;
@@ -227,7 +227,7 @@ impl UnsignedInteger {
             let ux: u32 = ux8 as u32;
             let sh: u32 = 8 * i;
             ui |= ux << sh;
-            i = i + 1;
+            i += 1;
         }
         Ok(Self { value: ui })
     }
@@ -252,11 +252,10 @@ impl UnsignedInteger {
     ) -> Vec<u64> {
         let pos = rdr.position_in_bits().unwrap();
 
-        let needle_str;
-        match PrcType::try_from(needle) {
-            Ok(val) => needle_str = val.to_string(),
-            Err(_) => needle_str = needle.to_string(),
-        }
+        let needle_str = match PrcType::try_from(needle) {
+            Ok(val) => val.to_string(),
+            Err(_) => needle.to_string(),
+        };
 
         info!(
             "[Starting searching for value:{}, starting bit pos:{}]",
@@ -310,12 +309,10 @@ impl UnsignedInteger {
         let found_offsets =
             Self::search_and_seek_back(rdr, needle, max_offset_bits, max_found_count);
         dbg!(&found_offsets);
-        if !found_offsets.is_empty() {
-            if found_offsets[0] <= max_allowed_offset {
-                rdr.seek_bits(SeekFrom::Current(found_offsets[0] as i64))?;
-                let ui = Self::from_reader(rdr)?;
-                return Ok(ui);
-            }
+        if !found_offsets.is_empty() && found_offsets[0] <= max_allowed_offset {
+            rdr.seek_bits(SeekFrom::Current(found_offsets[0] as i64))?;
+            let ui = Self::from_reader(rdr)?;
+            return Ok(ui);
         }
         Err(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
@@ -325,7 +322,7 @@ impl UnsignedInteger {
             ),
         ))
     }
-    pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W) -> std::io::Result<()> {
+    pub fn to_writer<W: BitWrite + ?Sized>(self, w: &mut W) -> std::io::Result<()> {
         let mut val = self.value;
         loop {
             if val == 0 {
@@ -337,7 +334,7 @@ impl UnsignedInteger {
             let uc: u8 = (val & 0xFF) as u8;
             //w.write::<8, _>(uc)?;
             write_bits(w, uc, 8)?;
-            val = val >> 8;
+            val >>= 8;
         }
     }
 }
@@ -419,9 +416,9 @@ impl String {
             let str_len: u32 = UnsignedInteger::from_reader(rdr)?.value;
             io_check_limit!(str_len, crate::limits::MAX_NUM_STR_LEN);
             data.resize(str_len as usize, 0);
-            for i in 0..str_len as usize {
+            for di in data.iter_mut().take(str_len as usize) {
                 let uc8: u8 = UnsignedCharacter::from_reader(rdr)?.value;
-                data[i] = uc8;
+                *di = uc8;
             }
         }
         // 3dpdf-AEC-OfficeBuilding.stream-78.prc contains non UTF-8 string...
@@ -455,7 +452,7 @@ impl String {
             let c = bytes[ui];
             let uc = UnsignedCharacter { value: c };
             uc.to_writer(w)?;
-            ui = ui + 1;
+            ui += 1;
         }
         Ok(())
     }
@@ -487,7 +484,7 @@ impl Integer {
         while read_bits(rdr, 1)? != 0 {
             let ival8: u8 = read_bits(rdr, 8)?;
             let ival: i32 = ival8 as i32;
-            ii |= ival << 8 * j;
+            ii |= ival << (8 * j);
             j += 1;
         }
         if j > 0 {
@@ -496,7 +493,7 @@ impl Integer {
         }
         Ok(Self { value: ii })
     }
-    pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W) -> std::io::Result<()> {
+    pub fn to_writer<W: BitWrite + ?Sized>(self, w: &mut W) -> std::io::Result<()> {
         let mut val = self.value;
         if val == 0 {
             return write_bits(w, 0, 1);
@@ -507,7 +504,7 @@ impl Integer {
             let uc: u8 = (val & 0xFF) as u8;
             write_bits(w, uc, 8)?;
 
-            val = val >> 8;
+            val >>= 8;
             if (val == 0 && (loc & 0x80) == 0) || (val == -1 && (loc & 0x80) != 0) {
                 return write_bits(w, 0, 1);
             }
@@ -537,7 +534,7 @@ impl Double {
         let d = double::read_double_from_reader(rdr)?;
         Ok(Self { value: d })
     }
-    pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W) -> std::io::Result<()> {
+    pub fn to_writer<W: BitWrite + ?Sized>(self, w: &mut W) -> std::io::Result<()> {
         let rv = double::write_double_to_writer(w, self.value);
         if rv.is_ok() {
             Ok(())
@@ -554,7 +551,7 @@ impl PartialEq for Double {
 impl Eq for Double {}
 impl PartialOrd for Double {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.value.partial_cmp(&other.value)
+        Some(self.cmp(other))
     }
 }
 impl Ord for Double {
@@ -594,7 +591,7 @@ impl<'de> Deserialize<'de> for Double {
                 formatter.write_str("f64 value")
             }
 
-            fn visit_u64<E>(self, value: u64) -> Result<Double, E>
+            fn visit_i64<E>(self, value: i64) -> Result<Double, E>
             where
                 E: serde::de::Error,
             {
@@ -603,7 +600,7 @@ impl<'de> Deserialize<'de> for Double {
                 })
             }
 
-            fn visit_i64<E>(self, value: i64) -> Result<Double, E>
+            fn visit_u64<E>(self, value: u64) -> Result<Double, E>
             where
                 E: serde::de::Error,
             {
@@ -675,7 +672,7 @@ pub fn get_number_of_bits_used_to_store_unsigned_integer(u: u32) -> u32 {
 }
 /// GetNumberOfBitsUsedToStoreInteger() in the spec
 fn get_number_of_bits_used_to_store_integer(i: i32) -> u32 {
-    let u = i.abs() as u32;
+    let u = i.unsigned_abs();
     get_number_of_bits_used_to_store_unsigned_integer(u) + 1
 }
 
@@ -695,17 +692,17 @@ impl UnsignedIntegerWithVariableBitNumber {
         }
         Ok(Self { value })
     }
-    pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W, num_bits: u32) -> std::io::Result<()> {
+    pub fn to_writer<W: BitWrite + ?Sized>(self, w: &mut W, num_bits: u32) -> std::io::Result<()> {
         //assert!(num_bits > 0);
         //assert!(num_bits < 31);
         let mut uval = self.value;
         for u in 0..num_bits {
             let test = 1 << (num_bits - 1 - u);
             if uval >= test {
-                let _ = write_bits(w, 1, 1)?;
+                write_bits(w, 1, 1)?;
                 uval -= test;
             } else {
-                let _ = write_bits(w, 0, 1)?;
+                write_bits(w, 0, 1)?;
             }
         }
         Ok(())
@@ -717,7 +714,7 @@ impl fmt::Debug for UnsignedIntegerWithVariableBitNumber {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Default, Clone, Copy, PartialEq, Eq)]
 struct IntegerWithVariableBitNumber {
     pub value: i32,
 }
@@ -727,24 +724,23 @@ impl IntegerWithVariableBitNumber {
         //assert!(num_bits < 31);
 
         let is_neg = read_bits(r, 1)? != 0;
-        let ui;
-        if num_bits == 1 {
-            ui = 0;
+        let ui = if num_bits == 1 {
+            0
         } else {
-            ui = UnsignedIntegerWithVariableBitNumber::from_reader(r, num_bits - 1)?.value;
-        }
+            UnsignedIntegerWithVariableBitNumber::from_reader(r, num_bits - 1)?.value
+        };
         let value = if !is_neg { ui as i32 } else { -(ui as i32) };
 
         Ok(Self { value })
     }
     #[allow(unused)]
-    pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W, num_bits: u32) -> std::io::Result<()> {
+    pub fn to_writer<W: BitWrite + ?Sized>(self, w: &mut W, num_bits: u32) -> std::io::Result<()> {
         //assert!(num_bits > 1);
         //assert!(num_bits < 31);
 
         write_bits(w, (self.value < 0) as u8, 1)?;
         UnsignedIntegerWithVariableBitNumber {
-            value: self.value.abs() as u32,
+            value: self.value.unsigned_abs(),
         }
         .to_writer(w, num_bits - 1)?;
         Ok(())
@@ -756,7 +752,7 @@ impl fmt::Debug for IntegerWithVariableBitNumber {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Default, Clone, Copy, PartialEq, Eq)]
 pub struct NumberOfBitsThenUnsignedInteger {
     pub value: u32,
 }
@@ -766,7 +762,7 @@ impl NumberOfBitsThenUnsignedInteger {
         let value: u32 = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, num_bits)?.value;
         Ok(NumberOfBitsThenUnsignedInteger { value })
     }
-    pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W) -> std::io::Result<()> {
+    pub fn to_writer<W: BitWrite + ?Sized>(self, w: &mut W) -> std::io::Result<()> {
         let num_bits = get_number_of_bits_used_to_store_unsigned_integer(self.value);
         UnsignedIntegerWithVariableBitNumber { value: num_bits }.to_writer(w, 5)?;
         UnsignedIntegerWithVariableBitNumber { value: self.value }.to_writer(w, num_bits)?;
@@ -885,7 +881,7 @@ impl CompressedEntityType {
         //dbg!(rv);
         Ok(rv)
     }
-    pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W) -> std::io::Result<()> {
+    pub fn to_writer<W: BitWrite + ?Sized>(self, w: &mut W) -> std::io::Result<()> {
         write_bits(w, self.is_a_curve as u8, 1)?;
         if self.is_a_curve {
             match self.value {
@@ -984,9 +980,9 @@ impl FloatAsBytes {
         sa::const_assert_eq!(4, mem::align_of::<f2u>());
 
         let mut f2u: f2u = unsafe { mem::zeroed() };
-        for i in 0..4 {
-            unsafe {
-                f2u.bytes[i] = UnsignedCharacter::from_reader(rdr)?.value;
+        unsafe {
+            for bi in &mut f2u.bytes {
+                *bi = UnsignedCharacter::from_reader(rdr)?.value;
             }
         }
 
@@ -994,7 +990,7 @@ impl FloatAsBytes {
             value: unsafe { f2u.f },
         })
     }
-    pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W) -> std::io::Result<()> {
+    pub fn to_writer<W: BitWrite + ?Sized>(self, w: &mut W) -> std::io::Result<()> {
         #[allow(non_camel_case_types)]
         #[allow(non_snake_case)]
         #[derive(Clone, Copy)]
@@ -1011,11 +1007,10 @@ impl FloatAsBytes {
 
         let f2u: f2u = f2u { f: self.value };
 
-        for i in 0..4 {
-            UnsignedCharacter {
-                value: unsafe { f2u.bytes[i] },
+        unsafe {
+            for bi in &f2u.bytes {
+                UnsignedCharacter { value: *bi }.to_writer(w)?;
             }
-            .to_writer(w)?;
         }
         Ok(())
     }
@@ -1272,8 +1267,8 @@ impl CompressedIntegerArray {
         let num_bits_used_to_store_ints =
             CharacterArray::from_reader2(_rdr, has_is_compressed_bit, 6, true, true)?.a;
         let mut a: Vec<i32> = Vec::with_capacity(num_bits_used_to_store_ints.len());
-        for i in 0..num_bits_used_to_store_ints.len() {
-            let num_bits_in_int = num_bits_used_to_store_ints[i] as u32;
+        for nbi in num_bits_used_to_store_ints {
+            let num_bits_in_int = nbi as u32;
             a.push(IntegerWithVariableBitNumber::from_reader(_rdr, num_bits_in_int)?.value);
         }
         Ok(Self { a })
@@ -1361,12 +1356,11 @@ impl CompressedIndiceArray {
         if false {
             let min_value = diff_num_bits_used_to_store_ints.iter().min();
             let max_value = diff_num_bits_used_to_store_ints.iter().max();
-            match (min_value, max_value) {
-                (Some(min), Some(max)) => println!(
+            if let (Some(min), Some(max)) = (min_value, max_value) {
+                println!(
                     "CompressedIndiceArray {} elements in diff_num_bits_used_to_store_ints, range: [{}, {}]",
                     num_elements, min, max
-                ),
-                (_, _) => (),
+                );
             }
         }
 
@@ -1384,12 +1378,11 @@ impl CompressedIndiceArray {
         if false {
             let min_value = pi_array.iter().min();
             let max_value = pi_array.iter().max();
-            match (min_value, max_value) {
-                (Some(min), Some(max)) => println!(
+            if let (Some(min), Some(max)) = (min_value, max_value) {
+                println!(
                     "CompressedIndiceArray {} elements in pi_array, range: [{}, {}]",
                     num_elements, min, max
-                ),
-                (_, _) => (),
+                )
             }
         }
         let _ = pi_array.iter().map(|i| assert!(*i >= 0));
@@ -1568,7 +1561,7 @@ impl DoubleWithVariableBitNumber {
         Ok(Self { value })
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
-        &self,
+        self,
         _w: &mut W,
         num_bits: u32,
         tolerance: f64,
@@ -1577,7 +1570,7 @@ impl DoubleWithVariableBitNumber {
         //assert!(num_bits <= 30); // if greater Double is used in CompressedNurbs
         assert!(tolerance > 0.0);
 
-        let _ = write_bits(_w, (self.value < 0.0) as u8, 1)?;
+        write_bits(_w, (self.value < 0.0) as u8, 1)?;
         if num_bits == 1 {
             return Ok(());
         }
@@ -1590,10 +1583,10 @@ impl DoubleWithVariableBitNumber {
 
         for u in 0..(num_bits - 1) {
             let exp = num_bits - 2 - u;
-            let thres = 1 << exp;
-            if u_temp_value >= thres {
+            let threshold = 1 << exp;
+            if u_temp_value >= threshold {
                 write_bits(_w, 1, 1)?;
-                u_temp_value -= thres;
+                u_temp_value -= threshold;
             } else {
                 write_bits(_w, 0, 1)?;
             }
@@ -1640,7 +1633,7 @@ impl Point3DWithVariableBitNumber {
         Ok(Self { x, y, z })
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
-        &self,
+        self,
         _w: &mut W,
         num_bits: u32,
         tolerance: f64,
@@ -1673,37 +1666,32 @@ pub struct CompressedPoint {
 }
 impl CompressedPoint {
     pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
-        _rdr: &mut BitReader<R, E>,
+        r: &mut BitReader<R, E>,
         tolerance: f64,
     ) -> io::Result<Self> {
         trace!(
             "{}CompressedPoint::from_reader() bp={}",
             indent::get(),
-            _rdr.position_in_bits()?
+            r.position_in_bits()?
         );
         assert!(tolerance > 0.0);
-        let num_bits = UnsignedIntegerWithVariableBitNumber::from_reader(_rdr, 6)?.value;
-        let x;
-        let y;
-        let z;
-        if num_bits == 0 {
-            x = 0.0;
-            y = 0.0;
-            z = 0.0;
+        let num_bits = UnsignedIntegerWithVariableBitNumber::from_reader(r, 6)?.value;
+        let (x, y, z) = if num_bits == 0 {
+            (0.0, 0.0, 0.0)
         } else if num_bits <= 30 {
-            let pt = Point3DWithVariableBitNumber::from_reader(_rdr, num_bits, tolerance)?;
-            x = pt.x;
-            y = pt.y;
-            z = pt.z;
+            let pt = Point3DWithVariableBitNumber::from_reader(r, num_bits, tolerance)?;
+            (pt.x, pt.y, pt.z)
         } else {
-            x = Double::from_reader(_rdr)?.value;
-            y = Double::from_reader(_rdr)?.value;
-            z = Double::from_reader(_rdr)?.value;
-        }
+            (
+                Double::from_reader(r)?.value,
+                Double::from_reader(r)?.value,
+                Double::from_reader(r)?.value,
+            )
+        };
         Ok(Self { x, y, z })
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
-        &self,
+        self,
         _w: &mut W,
         tolerance: f64,
     ) -> std::io::Result<()> {
@@ -1714,7 +1702,7 @@ impl CompressedPoint {
         let yi = (self.y / tolerance + 0.5) as i32;
         let zi = (self.z / tolerance + 0.5) as i32;
         let num_bits = get_number_of_bits_used_to_store_integer(max(xi.abs(), yi.abs(), zi.abs()));
-        let _ = UnsignedIntegerWithVariableBitNumber { value: num_bits }.to_writer(_w, 6)?;
+        UnsignedIntegerWithVariableBitNumber { value: num_bits }.to_writer(_w, 6)?;
         if num_bits == 0 {
         } else if num_bits <= 30 {
             Point3DWithVariableBitNumber {
@@ -1724,9 +1712,9 @@ impl CompressedPoint {
             }
             .to_writer(_w, num_bits, tolerance)?;
         } else {
-            let _ = Double { value: self.x }.to_writer(_w)?;
-            let _ = Double { value: self.y }.to_writer(_w)?;
-            let _ = Double { value: self.z }.to_writer(_w)?;
+            Double { value: self.x }.to_writer(_w)?;
+            Double { value: self.y }.to_writer(_w)?;
+            Double { value: self.z }.to_writer(_w)?;
         }
         Ok(())
     }
@@ -1747,7 +1735,7 @@ pub struct UncompressedBoolArray {
 impl UncompressedBoolArray {
     pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
-        num_bits: u32,
+        length: u32,
     ) -> io::Result<Self> {
         trace!(
             "{}UncompressedBoolArray::from_reader() bp={}",
@@ -1755,21 +1743,21 @@ impl UncompressedBoolArray {
             rdr.position_in_bits()?
         );
 
-        Self::from_reader1(rdr, num_bits)
+        Self::from_reader1(rdr, length)
     }
-    pub fn from_reader1<R: BitRead>(rdr: &mut R, num_bits: u32) -> io::Result<Self> {
-        //println!("UncompressedBoolArray: {}", num_bits);
-        let mut a: Vec<bool> = Vec::with_capacity(num_bits as usize);
-        a.resize(num_bits as usize, false);
-        for u in 0..a.len() {
+    pub fn from_reader1<R: BitRead>(rdr: &mut R, length: u32) -> io::Result<Self> {
+        //println!("UncompressedBoolArray: {}", length);
+        let mut a: Vec<bool> = Vec::with_capacity(length as usize);
+        a.resize(length as usize, false);
+        for au in &mut a {
             let b = read_bits(rdr, 1)? != 0;
-            a[u] = b;
+            *au = b;
         }
         Ok(Self { a })
     }
     pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W, _: u32) -> std::io::Result<()> {
-        for u in 0..self.a.len() {
-            write_bits(w, self.a[u] as u8, 1)?;
+        for au in &self.a {
+            write_bits(w, *au as u8, 1)?;
         }
         Ok(())
     }
@@ -1827,7 +1815,7 @@ mod tests {
 
     #[test]
     fn io_bool() {
-        fn internal<E: bitstream_io::Endianness + ?Sized + Copy>(endian: E, bytes: &mut Vec<u8>) {
+        fn internal<E: bitstream_io::Endianness + Copy>(endian: E, bytes: &mut Vec<u8>) {
             let mut w = BitWriter::endian(Cursor::new(&mut *bytes), endian);
             write_bits(&mut w, false as u8, 1).unwrap();
             write_bits(&mut w, true as u8, 1).unwrap();
@@ -1842,20 +1830,20 @@ mod tests {
         let mut bytes = vec![];
         internal(bitstream_io::LittleEndian, &mut bytes);
         assert_eq!(bytes, vec![0b1000_1110]);
-        assert_eq!(bytes.len(), 1 as usize);
+        assert_eq!(bytes.len(), 1_usize);
 
         let mut bytes = vec![];
         internal(bitstream_io::BigEndian, &mut bytes);
         assert_eq!(bytes, vec![0b0111_0001]);
-        assert_eq!(bytes.len(), 1 as usize);
+        assert_eq!(bytes.len(), 1_usize);
 
-        fn internal2<E: bitstream_io::Endianness + ?Sized + Copy>(endian: E, bytes: &mut Vec<u8>) {
+        fn internal2<E: bitstream_io::Endianness + Copy>(endian: E, bytes: &mut Vec<u8>) {
             assert_eq!(0, bytes.len());
             let mut w = BitWriter::endian(Cursor::new(&mut *bytes), endian);
             let mut b: Boolean = Boolean { value: true };
             let _ = b.to_writer(&mut w);
             b = Boolean { value: false };
-            let _ = b.to_writer(&mut w).unwrap();
+            b.to_writer(&mut w).unwrap();
 
             fill_partial_byte_at_end(&mut w, false).expect("failed to fill partial byte at end");
             assert_eq!(1, bytes.len());
@@ -1863,21 +1851,21 @@ mod tests {
             let bytes_ro: &Vec<u8> = bytes;
             let mut reader = BitReader::endian(Cursor::new(bytes_ro), endian);
             let mut b: bool = Boolean::from_reader(&mut reader).unwrap().value;
-            assert_eq!(b, true);
+            assert!(b);
             b = Boolean::from_reader(&mut reader).unwrap().value;
-            assert_eq!(b, false);
+            assert!(!b);
         }
 
         let mut bytes = vec![];
         internal2(bitstream_io::LittleEndian, &mut bytes);
-        assert_eq!(bytes.len(), 1 as usize);
+        assert_eq!(bytes.len(), 1usize);
         assert_eq!(bytes, vec![0b0000_0001]);
         //println!("v={:#?}", bytes);
 
         let mut bytes = vec![];
         bytes.clear();
         internal2(bitstream_io::BigEndian, &mut bytes);
-        assert_eq!(bytes.len(), 1 as usize);
+        assert_eq!(bytes.len(), 1usize);
         assert_eq!(bytes, vec![0b1000_0000]);
     }
 
@@ -1885,7 +1873,7 @@ mod tests {
     /// defined internally.
     #[test]
     fn io_bits_are_endian_independent() {
-        fn internal<E: bitstream_io::Endianness + ?Sized + Copy>(endian: E, bytes: &mut Vec<u8>) {
+        fn internal<E: bitstream_io::Endianness + Copy>(endian: E, bytes: &mut Vec<u8>) {
             let mut w = BitWriter::endian(Cursor::new(&mut *bytes), endian);
             write_bits(&mut w, 0xFF, 8).unwrap();
             write_bits(&mut w, 0xF0, 8).unwrap();
@@ -1916,7 +1904,7 @@ mod tests {
 
     #[test]
     fn io_uchar() {
-        fn internal<E: bitstream_io::Endianness + ?Sized + Copy>(endian: E, bytes: &mut Vec<u8>) {
+        fn internal<E: bitstream_io::Endianness + Copy>(endian: E, bytes: &mut Vec<u8>) {
             let mut w = BitWriter::endian(Cursor::new(&mut *bytes), endian);
             //let mut w = BitWriter::endian(&mut bytes, bitstream_io::LittleEndian);
             let mut uc = UnsignedCharacter { value: 125u8 };
@@ -1931,31 +1919,28 @@ mod tests {
             let bytes_ro: &Vec<u8> = bytes;
             let mut r = BitReader::endian(Cursor::new(&bytes_ro), endian);
             assert_eq!(
-                UnsignedCharacter::from_reader(&mut r).unwrap().value as u8,
-                125 as u8
+                UnsignedCharacter::from_reader(&mut r).unwrap().value,
+                125_u8
             );
+            assert_eq!(UnsignedCharacter::from_reader(&mut r).unwrap().value, 0_u8);
             assert_eq!(
-                UnsignedCharacter::from_reader(&mut r).unwrap().value as u8,
-                0 as u8
-            );
-            assert_eq!(
-                UnsignedCharacter::from_reader(&mut r).unwrap().value as u8,
-                255 as u8
+                UnsignedCharacter::from_reader(&mut r).unwrap().value,
+                255_u8
             );
         }
 
         let mut bytes = vec![];
         internal(bitstream_io::LittleEndian, &mut bytes);
-        assert_eq!(bytes.len(), 3 as usize);
+        assert_eq!(bytes.len(), 3_usize);
 
         let mut bytes = vec![];
         internal(bitstream_io::BigEndian, &mut bytes);
-        assert_eq!(bytes.len(), 3 as usize);
+        assert_eq!(bytes.len(), 3_usize);
     }
 
     #[test]
     fn io_ushort() {
-        fn internal<E: bitstream_io::Endianness + ?Sized + Copy>(endian: E, bytes: &mut Vec<u8>) {
+        fn internal<E: bitstream_io::Endianness + Copy>(endian: E, bytes: &mut Vec<u8>) {
             let mut w = BitWriter::endian(Cursor::new(&mut *bytes), endian);
             let us = UnsignedShort {
                 value: (3_u8 as u16) << 8 | 1_u8 as u16,
@@ -1982,7 +1967,7 @@ mod tests {
 
     #[test]
     fn io_only_uint() {
-        fn internal<E: bitstream_io::Endianness + ?Sized + Copy>(endian: E, bytes: &mut Vec<u8>) {
+        fn internal<E: bitstream_io::Endianness + Copy>(endian: E, bytes: &mut Vec<u8>) {
             let mut w = BitWriter::endian(Cursor::new(&mut *bytes), endian);
             let mut ui = UnsignedInteger { value: 125 };
             let _ = ui.to_writer(&mut w);
@@ -1992,7 +1977,7 @@ mod tests {
             let _ = ui.to_writer(&mut w);
 
             fill_partial_byte_at_end(&mut w, false).expect("failed to fill partial byte at end");
-            assert_eq!(bytes.len(), 5 as usize);
+            assert_eq!(bytes.len(), 5_usize);
 
             let bytes_ro = bytes.as_slice();
             let mut r = BitReader::endian(Cursor::new(&bytes_ro), endian);
@@ -2010,7 +1995,7 @@ mod tests {
 
     #[test]
     fn io_string() {
-        fn internal<E: bitstream_io::Endianness + ?Sized + Copy>(endian: E, bytes: &mut Vec<u8>) {
+        fn internal<E: bitstream_io::Endianness + Copy>(endian: E, bytes: &mut Vec<u8>) {
             let mut w = BitWriter::endian(Cursor::new(&mut *bytes), endian);
             let ss = std::string::String::from(
                 "Abracadabra order matters:77 CCCCitStream last to initialized last bla-bla 1234",
@@ -2039,7 +2024,7 @@ mod tests {
 
     #[test]
     fn io_only_int() {
-        fn internal<E: bitstream_io::Endianness + ?Sized + Copy>(endian: E, bytes: &mut Vec<u8>) {
+        fn internal<E: bitstream_io::Endianness + Copy>(endian: E, bytes: &mut Vec<u8>) {
             let mut w = BitWriter::endian(Cursor::new(&mut *bytes), endian);
             let mut i = Integer { value: 125 };
             let _ = i.to_writer(&mut w);
@@ -2049,7 +2034,7 @@ mod tests {
             let _ = i.to_writer(&mut w);
 
             fill_partial_byte_at_end(&mut w, false).expect("failed to fill partial byte at end");
-            assert_eq!(bytes.len(), 5 as usize);
+            assert_eq!(bytes.len(), 5_usize);
 
             let bytes_ro = bytes.as_slice();
             let mut r = BitReader::endian(Cursor::new(&bytes_ro), endian);
@@ -2070,8 +2055,8 @@ mod tests {
         let path = std::env::current_dir().unwrap();
         println!("The current directory is {}", path.display());
         let bytes_external =
-            std::fs::read(&std::string::String::from("testdata/read_ints.bin")).unwrap();
-        assert_eq!(bytes_external.len(), 808992 as usize);
+            std::fs::read(std::string::String::from("testdata/read_ints.bin")).unwrap();
+        assert_eq!(bytes_external.len(), 808992_usize);
 
         let n: u32 = 66002;
         let mut r = BitReader::endian(Cursor::new(&bytes_external), bitstream_io::BigEndian);
@@ -2092,11 +2077,10 @@ mod tests {
         {
             let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
             for i in 0..n {
-                let _ = UnsignedInteger { value: i }.to_writer(&mut w).unwrap();
-                let _ = Integer { value: i as i32 }.to_writer(&mut w).unwrap();
-                let _ = Integer { value: -(i as i32) }.to_writer(&mut w).unwrap();
-                w.write_unsigned::<32, u32>((i as u32).swap_bytes())
-                    .unwrap();
+                UnsignedInteger { value: i }.to_writer(&mut w).unwrap();
+                Integer { value: i as i32 }.to_writer(&mut w).unwrap();
+                Integer { value: -(i as i32) }.to_writer(&mut w).unwrap();
+                w.write_unsigned::<32, u32>(i.swap_bytes()).unwrap();
             }
             fill_partial_byte_at_end(&mut w, false).expect("failed to fill partial byte at end");
         }
@@ -2105,19 +2089,19 @@ mod tests {
 
     #[test]
     fn io_nbb_uint_vbr() {
-        fn internal<E: bitstream_io::Endianness + ?Sized + Copy>(endian: E, bytes: &mut Vec<u8>) {
+        fn internal<E: bitstream_io::Endianness + Copy>(endian: E, bytes: &mut Vec<u8>) {
             let mut w = BitWriter::endian(Cursor::new(&mut *bytes), endian);
 
             let n: u32 = 31966002;
 
-            let trailing_bits: u64;
             for i in 0..n {
-                let _ = NumberOfBitsThenUnsignedInteger { value: i }
+                NumberOfBitsThenUnsignedInteger { value: i }
                     .to_writer(&mut w)
                     .unwrap();
             }
-            trailing_bits = fill_partial_byte_at_end(&mut w, false)
-                .expect("failed to fill partial byte at end") as u64;
+            let trailing_bits: u64 = fill_partial_byte_at_end(&mut w, false)
+                .expect("failed to fill partial byte at end")
+                as u64;
             assert_eq!(115678204, bytes.len());
 
             let mut r = BitReader::endian(Cursor::new(&bytes), endian);
@@ -2129,7 +2113,7 @@ mod tests {
                 assert_eq!(i, u1);
             }
             assert_eq!(
-                115678204 as u64 * 8,
+                115678204_u64 * 8,
                 r.position_in_bits().unwrap() + trailing_bits
             );
         }
@@ -2142,20 +2126,20 @@ mod tests {
 
     #[test]
     fn io_uint_vbr() {
-        fn internal<E: bitstream_io::Endianness + ?Sized + Copy>(endian: E, bytes: &mut Vec<u8>) {
+        fn internal<E: bitstream_io::Endianness + Copy>(endian: E, bytes: &mut Vec<u8>) {
             let mut w = BitWriter::endian(Cursor::new(&mut *bytes), endian);
 
             let n: u32 = 31966002;
 
-            let trailing_bits: u64;
             for i in 0..n {
                 let nb = get_number_of_bits_used_to_store_unsigned_integer(i);
-                let _ = UnsignedIntegerWithVariableBitNumber { value: i }
+                UnsignedIntegerWithVariableBitNumber { value: i }
                     .to_writer(&mut w, nb)
                     .unwrap();
             }
-            trailing_bits = fill_partial_byte_at_end(&mut w, false)
-                .expect("failed to fill partial byte at end") as u64;
+            let trailing_bits: u64 = fill_partial_byte_at_end(&mut w, false)
+                .expect("failed to fill partial byte at end")
+                as u64;
             assert_eq!(95699453, bytes.len());
 
             let mut r = BitReader::endian(Cursor::new(&bytes), endian);
@@ -2168,7 +2152,7 @@ mod tests {
                 assert_eq!(i, u1);
             }
             assert_eq!(
-                95699453 as u64 * 8,
+                95699453u64 * 8,
                 r.position_in_bits().unwrap() + trailing_bits
             );
         }
@@ -2181,20 +2165,20 @@ mod tests {
 
     #[test]
     fn io_int_vbr() {
-        fn internal<E: bitstream_io::Endianness + ?Sized + Copy>(endian: E, bytes: &mut Vec<u8>) {
+        fn internal<E: bitstream_io::Endianness + Copy>(endian: E, bytes: &mut Vec<u8>) {
             let mut w = BitWriter::endian(Cursor::new(&mut *bytes), endian);
 
             let n: i32 = 1966002;
 
-            let trailing_bits: u64;
             for i in -n..n {
                 let nb = get_number_of_bits_used_to_store_integer(i);
-                let _ = IntegerWithVariableBitNumber { value: i }
+                IntegerWithVariableBitNumber { value: i }
                     .to_writer(&mut w, nb)
                     .unwrap();
             }
-            trailing_bits = fill_partial_byte_at_end(&mut w, false)
-                .expect("failed to fill partial byte at end") as u64;
+            let trailing_bits = fill_partial_byte_at_end(&mut w, false)
+                .expect("failed to fill partial byte at end")
+                as u64;
             assert_eq!(10288726, bytes.len());
 
             let bytes_ro = bytes.as_slice();
@@ -2208,7 +2192,7 @@ mod tests {
                 assert_eq!(i, u1);
             }
             assert_eq!(
-                10288726 as u64 * 8,
+                10288726u64 * 8,
                 r.position_in_bits().unwrap() + trailing_bits
             );
         }
@@ -2221,7 +2205,7 @@ mod tests {
 
     #[test]
     fn io_compressed_entity_type() {
-        fn internal<E: bitstream_io::Endianness + ?Sized + Copy>(endian: E, bytes: &mut Vec<u8>) {
+        fn internal<E: bitstream_io::Endianness + Copy>(endian: E, bytes: &mut Vec<u8>) {
             let mut w = BitWriter::endian(Cursor::new(&mut *bytes), endian);
 
             let c_line = CompressedEntityType {
@@ -2498,7 +2482,7 @@ mod tests {
         //let value: f64 = -296.37;
         //let value: f64 = -485.07;
         //let num_bits: usize = 60;
-        let value = 32768.099999999998544808477163314819;
+        let value = 32_768.1;
         let num_bits = 59;
         let trailing_bits: usize;
         let num_bits_encoded;
@@ -2561,7 +2545,7 @@ mod tests {
         }
 
         println!("bytes: {}", bytes.len());
-        assert_eq!(bytes.len(), 95353 as usize);
+        assert_eq!(bytes.len(), 95353_usize);
 
         //assert_eq!(s.len(), 177612usize);
 
@@ -2572,7 +2556,7 @@ mod tests {
         for i in 0..n {
             let ui = UnsignedInteger::from_reader(&mut r).unwrap().value;
             assert_eq!(i, ui);
-            let ui: u32 = serde_json::from_str(&s[i as usize * 3 + 0]).unwrap();
+            let ui: u32 = serde_json::from_str(&s[i as usize * 3]).unwrap();
             assert_eq!(i, ui);
 
             let mut reference = i as f64 * 1.15;
@@ -2618,8 +2602,8 @@ mod tests {
         }
 
         println!("bytes: {}", bytes.len());
-        assert_eq!(bytes.len(), 685018 as usize);
-        assert_eq!(bytes[bytes.len() - 1 - 0], 142);
+        assert_eq!(bytes.len(), 685018usize);
+        assert_eq!(bytes[bytes.len() - 1], 142);
         assert_eq!(bytes[bytes.len() - 1 - 1], 31);
         assert_eq!(bytes[bytes.len() - 1 - 2], 45);
         assert_eq!(bytes[bytes.len() - 1 - 3], 28);
@@ -2649,9 +2633,8 @@ mod tests {
     fn read_doubles() {
         let path = std::env::current_dir().unwrap();
         println!("[read_doubles] The current directory is {}", path.display());
-        let bytes_external =
-            std::fs::read(&std::string::String::from("testdata/read_doubles.bin")).unwrap();
-        assert_eq!(bytes_external.len(), 95340 as usize);
+        let bytes_external = std::fs::read("testdata/read_doubles.bin").unwrap();
+        assert_eq!(bytes_external.len(), 95340usize);
 
         let n: u32 = 6002;
         let mut r = BitReader::endian(Cursor::new(&bytes_external), BigEndian);
@@ -2669,13 +2652,13 @@ mod tests {
         {
             let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
             for i in 0..n {
-                let _ = UnsignedInteger { value: i }.to_writer(&mut w).unwrap();
-                let _ = Double {
+                UnsignedInteger { value: i }.to_writer(&mut w).unwrap();
+                Double {
                     value: i as f64 * 1.15,
                 }
                 .to_writer(&mut w)
                 .unwrap();
-                let _ = Double {
+                Double {
                     value: i as f64 * -1.11,
                 }
                 .to_writer(&mut w)
@@ -2701,7 +2684,7 @@ mod tests {
         }
     }
 
-    fn to_bits_str(bytes: &Vec<u8>, n: usize) -> std::string::String {
+    fn to_bits_str(bytes: &[u8], n: usize) -> std::string::String {
         let mut s = std::string::String::new();
         for i in 0..n {
             let byte_index = i / 8;
@@ -2758,15 +2741,14 @@ mod tests {
                 let bits_used = bytes.len() * 8 - num_trailing_passing_bits;
                 //let sbits = bytes.into_iter().map(|d| format!("{:b}", d)).collect::<Vec<_>>().join("");
                 let sbits = to_bits_str(&bytes, bits_used);
-                let _ = br
-                    .write_fmt(format_args!(
-                        "{:.30}\t{}\t{}\t{}\n",
-                        d,
-                        to_u64(d),
-                        bits_used,
-                        sbits
-                    ))
-                    .unwrap();
+                br.write_fmt(format_args!(
+                    "{:.30}\t{}\t{}\t{}\n",
+                    d,
+                    to_u64(d),
+                    bits_used,
+                    sbits
+                ))
+                .unwrap();
             }
 
             {
@@ -2779,15 +2761,14 @@ mod tests {
                 let bits_used = bytes.len() * 8 - num_trailing_passing_bits;
                 //let sbits = bytes.into_iter().map(|d| format!("{:b}", d)).collect::<Vec<_>>().join("");
                 let sbits = to_bits_str(&bytes, bits_used);
-                let _ = br
-                    .write_fmt(format_args!(
-                        "{:.30}\t{}\t{}\t{}\n",
-                        d,
-                        to_u64(d),
-                        bits_used,
-                        sbits
-                    ))
-                    .unwrap();
+                br.write_fmt(format_args!(
+                    "{:.30}\t{}\t{}\t{}\n",
+                    d,
+                    to_u64(d),
+                    bits_used,
+                    sbits
+                ))
+                .unwrap();
             }
         }
     }
@@ -2857,7 +2838,7 @@ mod tests {
         // DoubleWithVariableBitNumber
         // Point3DWithVariableBitNumber
 
-        fn internal<E: bitstream_io::Endianness + ?Sized + Copy>(endian: E, bytes: &mut Vec<u8>) {
+        fn internal<E: bitstream_io::Endianness + Copy>(endian: E, bytes: &mut Vec<u8>) {
             let n = 1000;
             let num_bits = 30;
             let tol = 0.01;
@@ -2865,15 +2846,15 @@ mod tests {
             let mut w = BitWriter::endian(Cursor::new(&mut *bytes), endian);
 
             for i in 0..n {
-                let _ = UnsignedIntegerWithVariableBitNumber { value: i }
+                UnsignedIntegerWithVariableBitNumber { value: i }
                     .to_writer(&mut w, num_bits)
                     .unwrap();
-                let _ = DoubleWithVariableBitNumber {
+                DoubleWithVariableBitNumber {
                     value: i as f64 * -1.11,
                 }
                 .to_writer(&mut w, num_bits, tol)
                 .unwrap();
-                let _ = CompressedPoint {
+                CompressedPoint {
                     x: i as f64 * -1.12,
                     y: i as f64 * 0.97,
                     z: i as f64 * 2.54,
@@ -2929,7 +2910,7 @@ mod tests {
 
     #[test]
     fn io_compressed_fp() {
-        fn internal<E: bitstream_io::Endianness + ?Sized + Copy>(endian: E, bytes: &mut Vec<u8>) {
+        fn internal<E: bitstream_io::Endianness + Copy>(endian: E, bytes: &mut Vec<u8>) {
             let paddings = [true, false];
             let nbs: [u32; _] = [25, 29, 30];
             let tols = [1.0, 0.1, 0.01, 0.001];

@@ -124,7 +124,7 @@ impl CompressedNurbs {
     }
     pub fn set2(&mut self, mult_v: &Vec<CompressedMultiplicitiesV>) {
         let sum_v;
-        (self.mult_v_flat, sum_v) = sum_up_v(&mult_v);
+        (self.mult_v_flat, sum_v) = sum_up_v(mult_v);
         self.number_ccpt_in_v = sum_v - self.degree_in_v - 1;
     }
     pub fn set3(
@@ -217,8 +217,7 @@ impl CompressedNurbs {
                     .compressed_knots
                     .iter()
                 {
-                    let knot_value;
-                    if knot_vector_u
+                    let knot_value = if knot_vector_u
                         .knots
                         .as_ref()
                         .unwrap()
@@ -226,10 +225,10 @@ impl CompressedNurbs {
                         .value
                         > 30
                     {
-                        knot_value = knot.knot.unwrap().value;
+                        knot.knot.unwrap().value
                     } else {
-                        knot_value = knot.knot_vbr.unwrap().value;
-                    }
+                        knot.knot_vbr.unwrap().value
+                    };
                     assert!(knot_value >= 0.0);
                     assert!(knot_value <= 1.0);
                     knots.push(knot_value);
@@ -257,8 +256,7 @@ impl CompressedNurbs {
                     .compressed_knots
                     .iter()
                 {
-                    let knot_value;
-                    if knot_vector_v
+                    let knot_value = if knot_vector_v
                         .knots
                         .as_ref()
                         .unwrap()
@@ -266,10 +264,10 @@ impl CompressedNurbs {
                         .value
                         > 30
                     {
-                        knot_value = knot.knot.unwrap().value;
+                        knot.knot.unwrap().value
                     } else {
-                        knot_value = knot.knot_vbr.unwrap().value;
-                    }
+                        knot.knot_vbr.unwrap().value
+                    };
                     assert!(knot_value >= 0.0);
                     assert!(knot_value <= 1.0);
                     knots.push(knot_value);

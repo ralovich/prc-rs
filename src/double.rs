@@ -25,14 +25,10 @@ extern crate static_assertions as sa;
 #[repr(C, packed)]
 #[bitfield]
 struct Ieee {
-    /* Together these comprise the mantissa.  */
-    #[allow(dead_code)]
+    /// Together these two fields comprise the mantissa.
     pub mantissa1: u32,
-    #[allow(dead_code)]
     pub mantissa0: B20,
-    #[allow(dead_code)]
     pub exponent: B11,
-    #[allow(dead_code)]
     pub negative: B1,
 }
 sa::const_assert_eq!(8, mem::size_of::<Ieee>());
@@ -74,7 +70,7 @@ impl Ord for ieee754_double {
 }
 impl PartialOrd for ieee754_double {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }
 impl PartialEq for ieee754_double {
@@ -83,7 +79,7 @@ impl PartialEq for ieee754_double {
     }
 }
 impl Eq for ieee754_double {}
-//sa::const_assert_eq!(8, mem::size_of::<Storage>());
+
 impl Default for ieee754_double {
     fn default() -> Self {
         ieee754_double { ul: [0; 2] }
@@ -95,9 +91,9 @@ impl Default for ieee754_double {
 #[allow(non_snake_case)]
 #[derive(Default, Clone, Copy)]
 struct CodingOfFrequentDoubleOrExponent {
-    pub Type: ValueType,
-    pub NumBits: i16,
-    pub Bits: u32,
+    pub type_: ValueType,
+    pub num_bits: i16,
+    pub bits: u32,
     pub s: ieee754_double,
 }
 type C = CodingOfFrequentDoubleOrExponent;
@@ -147,9 +143,9 @@ macro_rules! D {
 macro_rules! XX {
     ( $t:expr, $n:expr, $b:expr, $l:expr, $r:expr ) => {{
         let a: C = C {
-            Type: $t,
-            NumBits: $n,
-            Bits: $b,
+            type_: $t,
+            num_bits: $n,
+            bits: $b,
             s: ieee754_double { ul: [$r, $l] },
         };
         a
@@ -157,12 +153,11 @@ macro_rules! XX {
 }
 
 fn getcofdoe<'a>(bits: u32, nbits: i16) -> Option<&'a CodingOfFrequentDoubleOrExponent> {
-    for i in 0..N {
-        if ACOFDOE[i].NumBits == nbits && ACOFDOE[i].Bits == bits {
-            return Some(&ACOFDOE[i]);
-        }
-    }
-    None
+    ACOFDOE
+        .iter()
+        .take(N)
+        .find(|&coding| coding.num_bits == nbits && coding.bits == bits)
+        .map(|v| v as _)
 }
 
 pub fn read_double_from_reader<R: BitRead>(rdr: &mut R) -> io::Result<f64> {
@@ -171,9 +166,7 @@ pub fn read_double_from_reader<R: BitRead>(rdr: &mut R) -> io::Result<f64> {
     let mut found: bool = false;
     let mut code: C = Default::default();
     for i in 1..22 + 1 {
-        ucofdoe = ucofdoe << 1;
-        //ucofdoe |= Boolean::from_reader(rdr)?.value as u32;
-        //let b: bool = rdr.read_bit()?;
+        ucofdoe <<= 1;
         let b = read_bits(rdr, 1)?;
         ucofdoe |= b as u32;
         match getcofdoe(ucofdoe, i as i16) {
@@ -191,38 +184,29 @@ pub fn read_double_from_reader<R: BitRead>(rdr: &mut R) -> io::Result<f64> {
         }
     }
     if !found {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
+        return Err(std::io::Error::other(
             "prc double: Coding pattern not found!",
         ));
     }
 
-    //let d: f64 = unsafe { value.d };
-
-    //println!("u64={:064b} d={}", unsafe { value.u }, unsafe { value.d } );
-    if code.NumBits == 2 && code.Bits == 1 && code.Type == VT::double {
+    if code.num_bits == 2 && code.bits == 1 && code.type_ == VT::double {
         return Ok(unsafe { value.d });
     }
 
     unsafe {
-        //value.ieee.set_negative(rdr.read_bit()? as u8);
         value.ieee.set_negative(read_bits(rdr, 1)? as u8);
     }
-    //println!("u64={:064b} d={}", unsafe { value.u }, unsafe { value.d } );
 
-    if code.Type == VT::double {
+    if code.type_ == VT::double {
         return Ok(unsafe { value.d });
     }
 
-    //let has_mantissa: bool = rdr.read_bit()?;
     let has_mantissa: bool = read_bits(rdr, 1)? != 0;
     if !has_mantissa {
         return Ok(unsafe { value.d });
     }
 
-    //let b4: u8 = rdr.read::<4, u8>()? & 0x0F;
     let b4: u8 = read_bits(rdr, 4)? as u8 & 0x0F;
-    //println!("u64={:064b} b4={:04b}", unsafe { value.u }, b4);
     unsafe {
         value.bytes[6] |= b4;
     }
@@ -230,49 +214,32 @@ pub fn read_double_from_reader<R: BitRead>(rdr: &mut R) -> io::Result<f64> {
     let mut lbi: i8 = 0; // index of last byte
     let mut cbi: i8 = 5; // index of current byte
     while cbi >= lbi {
-        //let has_new_byte: bool = rdr.read_bit().unwrap();
         let has_new_byte: bool = read_bits(rdr, 1)? != 0;
-        //println!("cbi={} lbi={} has_nb={}", cbi, lbi, has_new_byte);
         if has_new_byte {
-            //let cb = UnsignedCharacter::from_reader(rdr)?.value as u8;
-            //let cb: u8 = rdr.read_to().unwrap();
             let cb: u8 = read_bits(rdr, 8)?;
             unsafe {
                 value.bytes[cbi as usize] = cb;
             }
-            //println!("u64={:064b} d={}", unsafe { value.u }, unsafe { value.d } );
         } else {
-            //let offset: u8 = rdr.read::<3, u8>()? & 0x07;
             let mut offset: u8 = read_bits(rdr, 3)? & 0x07;
-            // offset |= ((read_bits(rdr, 1)?&0x01)<<2);
-            // offset |= ((read_bits(rdr, 1)?&0x01)<<1);
-            // offset |= ((read_bits(rdr, 1)?&0x01)<<0);
-            //println!("offset={}", offset);
             if offset == 0 {
                 let b = unsafe { value.bytes[cbi as usize + 1] };
-                //println!("b={:08b}", b);
                 while cbi >= lbi {
                     unsafe {
                         value.bytes[cbi as usize] = b;
                     };
-                    //println!("u64={:064b} d={}", unsafe { value.u }, unsafe { value.d } );
-                    cbi = cbi - 1;
+                    cbi -= 1;
                 }
                 break;
             } else if offset == 6 {
                 let b = unsafe { value.bytes[cbi as usize + 1] };
-                //println!("b={:08b}", b);
-                lbi = lbi + 1;
+                lbi += 1;
                 while cbi >= lbi {
-                    //println!("cbi={} lbi={}", cbi, lbi);
                     unsafe {
                         value.bytes[cbi as usize] = b;
                     };
-                    //println!("u64={:064b} d={}", unsafe { value.u }, unsafe { value.d } );
-                    cbi = cbi - 1;
+                    cbi -= 1;
                 }
-                //unsafe { value.bytes[cbi as usize] = UnsignedCharacter::from_reader(rdr)?.value as u8; };
-                //let uc8: u8 = rdr.read_to()?;
                 let uc8: u8 = read_bits(rdr, 8)?;
                 unsafe {
                     value.bytes[cbi as usize] = uc8;
@@ -283,16 +250,13 @@ pub fn read_double_from_reader<R: BitRead>(rdr: &mut R) -> io::Result<f64> {
                 if (cbi + offset as i8) >= 8 {
                     return Err(std::io::Error::other("OOB read in prc double"));
                 }
-                //assert!((cbi + offset as i8) < 8);
                 unsafe {
                     value.bytes[cbi as usize] = value.bytes[cbi as usize + offset as usize];
                 }
-                //println!("u64={:064b} d={}", unsafe { value.u }, unsafe { value.d } );
             }
         }
-        cbi = cbi - 1;
+        cbi -= 1;
     }
-    //println!("u64={:064b} d={}", unsafe { value.u }, unsafe { value.d } );
 
     Ok(unsafe { value.d })
 }
@@ -321,7 +285,7 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
         _pcofdoe -= 1;
     }
 
-    while ACOFDOE[_pcofdoe].Type == ValueType::double {
+    while ACOFDOE[_pcofdoe].type_ == ValueType::double {
         if d.abs() == unsafe { ACOFDOE[_pcofdoe].s.d } {
             break;
         }
@@ -332,13 +296,13 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
     let mut bits_written = 0;
     let pcofdoe = ACOFDOE[_pcofdoe];
 
-    let from = 1 << pcofdoe.NumBits - 1;
+    let from = 1 << (pcofdoe.num_bits - 1);
     let mut i = from;
     while i >= 1 {
         //w.write_bit(pcofdoe.Bits & i != 0)?;
-        write_bits(w, (pcofdoe.Bits & i != 0) as u8, 1)?;
+        write_bits(w, (pcofdoe.bits & i != 0) as u8, 1)?;
         bits_written += 1;
-        i = i >> 1;
+        i >>= 1;
     }
 
     #[allow(non_snake_case)]
@@ -354,7 +318,7 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
     write_bits(w, (unsafe { _value.ieee }.negative() != 0) as u8, 1)?;
     bits_written += 1;
 
-    if pcofdoe.Type == ValueType::double {
+    if pcofdoe.type_ == ValueType::double {
         return Ok(bits_written);
     }
 
@@ -366,7 +330,7 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
     }
 
     //let _ = w.write_bit(true)?;
-    let _ = write_bits(w, 1, 1)?;
+    write_bits(w, 1, 1)?;
     bits_written += 1;
 
     let mut bi: usize = 6; // byte index same as pb
@@ -381,11 +345,10 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
     let end: usize = 0;
     let mut stop: usize = 0;
     #[allow(non_snake_case)]
-    let mut bSaveAtEnd: u8 = 0;
-    #[allow(non_snake_case)]
-    let fSaveAtEnd: bool = unsafe { _value.bytes[0] != _value.bytes[1] };
-    if fSaveAtEnd {
-        bSaveAtEnd = unsafe { _value.bytes[0] };
+    let mut byte_save_at_end: u8 = 0;
+    let do_save_at_end: bool = unsafe { _value.bytes[0] != _value.bytes[1] };
+    if do_save_at_end {
+        byte_save_at_end = unsafe { _value.bytes[0] };
     }
     stop += 1;
 
@@ -422,69 +385,55 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
                 };
             }
             if bi != start && found {
-                //let _ = w.write_bit(false)?;
-                let _ = write_bits(w, 0, 1)?;
+                write_bits(w, 0, 1)?;
                 bits_written += 1;
                 let b3: u8 = (result - bi) as u8 & 0x07;
-                //let _ = w.write::<3, _>(b3)?;
-                let _ = write_bits(w, b3, 3)?;
+                write_bits(w, b3, 3)?;
                 bits_written += 3;
             } else {
-                //let _ = w.write_bit(true)?;
-                let _ = write_bits(w, 1, 1)?;
+                write_bits(w, 1, 1)?;
                 bits_written += 1;
                 let byte: u8 = _value.bytes[bi];
-                //let _ = w.write::<8, _>(byte)?;
-                let _ = write_bits(w, byte, 8)?;
+                write_bits(w, byte, 8)?;
                 bits_written += 8;
             }
 
-            bi = bi - 1;
+            bi -= 1;
         }
 
         if !(end + 1 >= stop) {
-            if fSaveAtEnd {
-                //let _ = w.write_bit(false)?;
-                let _ = write_bits(w, 0, 1)?;
+            if do_save_at_end {
+                write_bits(w, 0, 1)?;
                 bits_written += 1;
                 let b3: u8 = 6;
-                //let _ = w.write::<3, _>(b3)?;
-                let _ = write_bits(w, b3, 3)?;
+                write_bits(w, b3, 3)?;
                 bits_written += 3;
-                //let _ = w.write::<8, _>(bSaveAtEnd)?;
-                let _ = write_bits(w, bSaveAtEnd, 8)?;
+                write_bits(w, byte_save_at_end, 8)?;
                 bits_written += 8;
             } else {
-                //let _ = w.write_bit(false)?;
-                let _ = write_bits(w, 0, 1)?;
+                write_bits(w, 0, 1)?;
                 bits_written += 1;
-                //let _ = w.write::<3, _>(0u8)?;
-                let _ = write_bits(w, 0, 3)?;
+                write_bits(w, 0, 3)?;
                 bits_written += 3;
             }
         } else {
-            let found: bool;
-            match memchr(&_value.bytes, bi + 1, _value.bytes[bi], start - bi) {
+            let found: bool = match memchr(&_value.bytes, bi + 1, _value.bytes[bi], start - bi) {
                 Some(x) => {
                     result = x;
-                    found = true
+                    true
                 }
-                None => found = false,
+                None => false,
             };
             if found {
-                //let _ = w.write_bit(false)?;
-                let _ = write_bits(w, 0, 1)?;
+                write_bits(w, 0, 1)?;
                 bits_written += 1;
                 let b3 = (result - bi) as u8 & 0x07;
-                //let _ = w.write::<3, _>(b3)?;
-                let _ = write_bits(w, b3, 3)?;
+                write_bits(w, b3, 3)?;
                 bits_written += 3;
             } else {
-                //let _ = w.write_bit(true)?;
-                let _ = write_bits(w, 1, 1)?;
+                write_bits(w, 1, 1)?;
                 bits_written += 1;
-                //let _ = w.write::<8, _>(_value.bytes[bi])?;
-                let _ = write_bits(w, _value.bytes[bi], 8)?;
+                write_bits(w, _value.bytes[bi], 8)?;
                 bits_written += 8;
             }
         }
@@ -499,7 +448,7 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
 
 const N: usize = 2077;
 #[rustfmt::skip]
-const ACOFDOE: [C; N] = [
+static ACOFDOE: [C; N] = [
     XX!{VT::double,2,0x1,0x00000000,0x00000000},
     XX!{VT::exponent,22,0xd1d32,0x00000000,0x00000000},
     XX!{VT::exponent,22,0xd1d33,0x00100000,0x00000000},
@@ -2587,7 +2536,7 @@ mod tests {
 
     #[test]
     fn io_double_lowlevel() {
-        fn internal<E: bitstream_io::Endianness + ?Sized + Copy>(endian: E, bytes: &mut Vec<u8>) {
+        fn internal<E: bitstream_io::Endianness + Copy>(endian: E, bytes: &mut Vec<u8>) {
             let mut w = BitWriter::endian(Cursor::new(&mut *bytes), endian);
             let p1 = super::write_double_to_writer(&mut w, 0.1).unwrap();
 
@@ -2597,9 +2546,9 @@ mod tests {
             //let x = w.bits;
 
             assert_eq!(p1, 33);
-            assert_eq!(bytes.len(), 5 as usize);
+            assert_eq!(bytes.len(), 5usize);
 
-            let bytes_ro: &Vec<u8> = &bytes;
+            let bytes_ro: &Vec<u8> = bytes;
             let mut rdr = bitstream_io::BitReader::endian(Cursor::new(&bytes_ro), endian);
             let d = super::read_double_from_reader(&mut rdr).unwrap();
             let p = rdr.position_in_bits().unwrap();
