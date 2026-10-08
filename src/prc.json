@@ -3554,7 +3554,7 @@
                         "UNUSEDis_vec": true,
                         "comment": "above size if wrong, SPECBUG not in spec",
                         "FIXME": true,
-                        "vbr": "_ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a)",
+                        "vbr": "if !has_faces.value { 1 } else { _ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a) }",
                         "condition_rust": "!!self.is_multiple_line_attribute",
                         "on_set1": "debug!(\"{}is_multiple_line_attribute_on_face: {}\", indent::get(), format(&is_multiple_line_attribute_on_face.a))"
                     },

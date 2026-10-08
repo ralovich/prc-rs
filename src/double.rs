@@ -57,11 +57,6 @@ enum ValueType {
     exponent,
 }
 type VT = ValueType;
-// impl PartialEq for ValueType {
-//     fn eq(&self, other: &Self) -> bool {
-//         self == other
-//     }
-// }
 
 impl Ord for ieee754_double {
     fn cmp(&self, other: &Self) -> Ordering {
@@ -152,8 +147,8 @@ macro_rules! XX {
     }};
 }
 
-fn getcofdoe<'a>(bits: u32, nbits: i16) -> Option<&'a CodingOfFrequentDoubleOrExponent> {
-    ACOFDOE
+fn get_c_o_f_d_o_e<'a>(bits: u32, nbits: i16) -> Option<&'a CodingOfFrequentDoubleOrExponent> {
+    COFDOE
         .iter()
         .take(N)
         .find(|&coding| coding.num_bits == nbits && coding.bits == bits)
@@ -169,7 +164,7 @@ pub fn read_double_from_reader<R: BitRead>(rdr: &mut R) -> io::Result<f64> {
         ucofdoe <<= 1;
         let b = read_bits(rdr, 1)?;
         ucofdoe |= b as u32;
-        match getcofdoe(ucofdoe, i as i16) {
+        match get_c_o_f_d_o_e(ucofdoe, i as i16) {
             None => {
                 continue;
             }
@@ -244,7 +239,6 @@ pub fn read_double_from_reader<R: BitRead>(rdr: &mut R) -> io::Result<f64> {
                 unsafe {
                     value.bytes[cbi as usize] = uc8;
                 };
-                //println!("u64={:064b} d={}", unsafe { value.u }, unsafe { value.d } );
                 break;
             } else {
                 if (cbi + offset as i8) >= 8 {
@@ -266,17 +260,17 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
     //println!("{}", unsafe { value.u } );
     let mut cofdoe: CodingOfFrequentDoubleOrExponent = Default::default();
     cofdoe.s.d = d;
-    let mut _pcofdoe: usize = ACOFDOE.binary_search(&cofdoe).unwrap();
+    let mut _pcofdoe: usize = COFDOE.binary_search(&cofdoe).unwrap();
 
     while _pcofdoe > 0
         && unsafe {
             ieee754_double {
-                d: ACOFDOE[_pcofdoe].s.d,
+                d: COFDOE[_pcofdoe].s.d,
             }
             .ieee
             .exponent()
                 == ieee754_double {
-                    d: ACOFDOE[_pcofdoe - 1].s.d,
+                    d: COFDOE[_pcofdoe - 1].s.d,
                 }
                 .ieee
                 .exponent()
@@ -285,8 +279,8 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
         _pcofdoe -= 1;
     }
 
-    while ACOFDOE[_pcofdoe].type_ == ValueType::double {
-        if d.abs() == unsafe { ACOFDOE[_pcofdoe].s.d } {
+    while COFDOE[_pcofdoe].type_ == ValueType::double {
+        if d.abs() == unsafe { COFDOE[_pcofdoe].s.d } {
             break;
         }
         _pcofdoe += 1;
@@ -294,48 +288,41 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
 
     #[allow(unused)]
     let mut bits_written = 0;
-    let pcofdoe = ACOFDOE[_pcofdoe];
+    let coding = COFDOE[_pcofdoe];
 
-    let from = 1 << (pcofdoe.num_bits - 1);
+    let from = 1 << (coding.num_bits - 1);
     let mut i = from;
     while i >= 1 {
-        //w.write_bit(pcofdoe.Bits & i != 0)?;
-        write_bits(w, (pcofdoe.bits & i != 0) as u8, 1)?;
+        write_bits(w, (coding.bits & i != 0) as u8, 1)?;
         bits_written += 1;
         i >>= 1;
     }
 
-    #[allow(non_snake_case)]
-    let stadwZero = D!(0x00000000, 0x00000000);
-    #[allow(non_snake_case)]
-    let stadwNegativeZero = D!(0x80000000, 0x00000000);
+    const ZERO: ieee754_double = D!(0x00000000, 0x00000000);
+    const NEGATIVE_ZERO: ieee754_double = D!(0x80000000, 0x00000000);
 
-    if unsafe { _value.ul == stadwZero.ul || _value.ul == stadwNegativeZero.ul } {
+    if unsafe { _value.ul == ZERO.ul || _value.ul == NEGATIVE_ZERO.ul } {
         return Ok(bits_written);
     }
 
-    //w.write_bit(unsafe { _value.ieee }.negative() != 0)?;
     write_bits(w, (unsafe { _value.ieee }.negative() != 0) as u8, 1)?;
     bits_written += 1;
 
-    if pcofdoe.type_ == ValueType::double {
+    if coding.type_ == ValueType::double {
         return Ok(bits_written);
     }
 
     if unsafe { _value.ieee.mantissa0() == 0 && _value.ieee.mantissa1() == 0 } {
-        //w.write_bit(false)?;
         write_bits(w, 0, 1)?;
         bits_written += 1;
         return Ok(bits_written);
     }
 
-    //let _ = w.write_bit(true)?;
     write_bits(w, 1, 1)?;
     bits_written += 1;
 
     let mut bi: usize = 6; // byte index same as pb
     let b4: u8 = unsafe { _value.bytes[bi] } & 0x0F;
-    //let _ = w.write::<4, _>(b4)?;
     write_bits(w, b4, 4)?;
     bits_written += 4;
 
@@ -344,7 +331,6 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
 
     let end: usize = 0;
     let mut stop: usize = 0;
-    #[allow(non_snake_case)]
     let mut byte_save_at_end: u8 = 0;
     let do_save_at_end: bool = unsafe { _value.bytes[0] != _value.bytes[1] };
     if do_save_at_end {
@@ -448,7 +434,7 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
 
 const N: usize = 2077;
 #[rustfmt::skip]
-static ACOFDOE: [C; N] = [
+static COFDOE: [C; N] = [
     XX!{VT::double,2,0x1,0x00000000,0x00000000},
     XX!{VT::exponent,22,0xd1d32,0x00000000,0x00000000},
     XX!{VT::exponent,22,0xd1d33,0x00100000,0x00000000},

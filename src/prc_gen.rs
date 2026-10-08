@@ -10965,8 +10965,12 @@ impl PRC_TYPE_TESS_3D_Compressed {
         if is_multiple_line_attribute_on_face_cond {
             is_multiple_line_attribute_on_face = UncompressedBoolArray::from_reader(
                 rdr,
-                _ctx.t3dc
-                    .number_of_faces_stored_in_mesh(&triangle_face_array.a),
+                if !has_faces.value {
+                    1
+                } else {
+                    _ctx.t3dc
+                        .number_of_faces_stored_in_mesh(&triangle_face_array.a)
+                },
             )?;
         }
         let mut line_attribute_array: ShortArray = Default::default();
@@ -11243,8 +11247,12 @@ impl PRC_TYPE_TESS_3D_Compressed {
                 self.is_multiple_line_attribute_on_face.as_ref().unwrap();
             is_multiple_line_attribute_on_face.to_writer(
                 _w,
-                _ctx.t3dc
-                    .number_of_faces_stored_in_mesh(&triangle_face_array.a),
+                if !has_faces.value {
+                    1
+                } else {
+                    _ctx.t3dc
+                        .number_of_faces_stored_in_mesh(&triangle_face_array.a)
+                },
             )?;
         }
         let line_attribute_array = self.line_attribute_array.clone();

@@ -119,14 +119,12 @@ pub fn read_huffman_to_element_array_i8<R: BitRead>(
     //dbg!(has_is_compressed_bit, num_bits_per_elem, is_compressed_dv);
     let mut is_compressed = is_compressed_dv;
     if has_is_compressed_bit {
-        //is_compressed = r.read_bit()?;
         is_compressed = read_bits(r, 1)? != 0;
     }
     //debug!("is_compressed: {}", is_compressed);
 
     if !is_compressed {
         let arr_size = UnsignedInteger::from_reader(r)?.value;
-        //dbg!(arr_size);
         let mut v = Vec::with_capacity(arr_size as usize);
         for _i in 0..arr_size {
             let val = UnsignedCharacter::from_reader(r)?.value;

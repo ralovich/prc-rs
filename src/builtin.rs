@@ -48,8 +48,8 @@ pub fn format<T: std::cmp::Ord + std::fmt::Display>(v: &[T]) -> std::string::Str
 }
 
 /// Current position in a seekable stream.
-pub fn position<S: Seek>(rdr: &mut S) -> std::io::Result<u64> {
-    rdr.stream_position()
+pub fn position<S: Seek>(r: &mut S) -> std::io::Result<u64> {
+    r.stream_position()
 }
 
 pub fn read_bits<R: BitRead>(r: &mut R, num_bits: u8) -> std::io::Result<u8> {
@@ -76,9 +76,9 @@ pub struct Boolean {
     pub value: bool,
 }
 impl Boolean {
-    pub fn from_reader<R: BitRead>(rdr: &mut R) -> io::Result<Self> {
+    pub fn from_reader<R: BitRead>(r: &mut R) -> io::Result<Self> {
         Ok(Self {
-            value: read_bits(rdr, 1)? != 0,
+            value: read_bits(r, 1)? != 0,
         })
     }
     pub fn to_writer<W: BitWrite + ?Sized>(self, w: &mut W) -> std::io::Result<()> {
@@ -147,9 +147,9 @@ pub struct Character {
     pub value: i8,
 }
 impl Character {
-    pub fn from_reader<R: BitRead>(rdr: &mut R) -> io::Result<Self> {
+    pub fn from_reader<R: BitRead>(r: &mut R) -> io::Result<Self> {
         Ok(Self {
-            value: read_bits(rdr, 8)? as i8,
+            value: read_bits(r, 8)? as i8,
         })
     }
     pub fn to_writer<W: BitWrite + ?Sized>(self, w: &mut W) -> std::io::Result<()> {
@@ -167,9 +167,9 @@ pub struct UnsignedCharacter {
     pub value: u8,
 }
 impl UnsignedCharacter {
-    pub fn from_reader<R: BitRead>(rdr: &mut R) -> io::Result<Self> {
+    pub fn from_reader<R: BitRead>(r: &mut R) -> io::Result<Self> {
         Ok(Self {
-            value: read_bits(rdr, 8)?,
+            value: read_bits(r, 8)?,
         })
     }
     pub fn to_writer<W: BitWrite + ?Sized>(self, w: &mut W) -> std::io::Result<()> {
@@ -187,9 +187,9 @@ pub struct UnsignedShort {
     pub value: u16,
 }
 impl UnsignedShort {
-    pub fn from_reader<R: BitRead>(rdr: &mut R) -> io::Result<Self> {
-        let lo = read_bits(rdr, 8)?;
-        let hi = read_bits(rdr, 8)?;
+    pub fn from_reader<R: BitRead>(r: &mut R) -> io::Result<Self> {
+        let lo = read_bits(r, 8)?;
+        let hi = read_bits(r, 8)?;
         let value: u16 = (hi as u16) << 8 | lo as u16;
         Ok(Self { value })
     }
@@ -219,11 +219,11 @@ impl UnsignedInteger {
     pub fn new() -> Self {
         UnsignedInteger { value: 0 }
     }
-    pub fn from_reader<R: BitRead>(rdr: &mut R) -> io::Result<Self> {
+    pub fn from_reader<R: BitRead>(r: &mut R) -> io::Result<Self> {
         let mut ui: u32 = 0;
         let mut i: u32 = 0;
-        while (read_bits(rdr, 1)? != 0) && i < 4 {
-            let ux8: u8 = read_bits(rdr, 8)?;
+        while (read_bits(r, 1)? != 0) && i < 4 {
+            let ux8: u8 = read_bits(r, 8)?;
             let ux: u32 = ux8 as u32;
             let sh: u32 = 8 * i;
             ui |= ux << sh;
@@ -235,22 +235,22 @@ impl UnsignedInteger {
         R: std::io::Read + std::io::Seek,
         E: bitstream_io::Endianness,
     >(
-        rdr: &mut BitReader<R, E>,
+        r: &mut BitReader<R, E>,
     ) -> io::Result<Self> {
-        let pos = rdr.position_in_bits().unwrap();
-        let value: u32 = Self::from_reader(rdr)?.value;
-        rdr.seek_bits(SeekFrom::Start(pos))?;
-        assert_eq!(pos, rdr.position_in_bits().unwrap());
+        let pos = r.position_in_bits()?;
+        let value: u32 = Self::from_reader(r)?.value;
+        r.seek_bits(SeekFrom::Start(pos))?;
+        assert_eq!(pos, r.position_in_bits()?);
         Ok(Self { value })
     }
     pub fn search_and_seek_back<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
-        rdr: &mut BitReader<R, E>,
+        r: &mut BitReader<R, E>,
         needle: u32,
         //start_offset_bits: i64,
         max_offset_bits: u64,
         max_found_count: u32,
     ) -> Vec<u64> {
-        let pos = rdr.position_in_bits().unwrap();
+        let pos = r.position_in_bits().unwrap();
 
         let needle_str = match PrcType::try_from(needle) {
             Ok(val) => val.to_string(),
@@ -264,8 +264,8 @@ impl UnsignedInteger {
         let mut found_count = 0;
         let mut offsets = Vec::with_capacity(max_found_count as usize);
         for offset in 0_u64..max_offset_bits {
-            rdr.seek_bits(SeekFrom::Start(pos + offset)).unwrap();
-            let read_rv = Self::from_reader(rdr);
+            r.seek_bits(SeekFrom::Start(pos + offset)).unwrap();
+            let read_rv = Self::from_reader(r);
             let value: u32;
             match read_rv {
                 Ok(val) => {
@@ -274,12 +274,12 @@ impl UnsignedInteger {
                 Err(err) => {
                     value = needle + 1;
                     if err.kind() == std::io::ErrorKind::UnexpectedEof {
-                        rdr.seek_bits(SeekFrom::Start(pos)).unwrap();
+                        r.seek_bits(SeekFrom::Start(pos)).unwrap();
                         return offsets;
                     }
                 }
             }
-            rdr.seek_bits(SeekFrom::Start(pos)).unwrap();
+            r.seek_bits(SeekFrom::Start(pos)).unwrap();
             if value == needle {
                 info!(
                     "[Search found value:{} at bit abs:{} offset:{}]",
@@ -297,7 +297,7 @@ impl UnsignedInteger {
         offsets
     }
     pub fn search_and_read<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
-        rdr: &mut BitReader<R, E>,
+        r: &mut BitReader<R, E>,
         needle: u32,
         //start_offset_bits: i64,
         //max_offset_bits: u64,
@@ -306,12 +306,11 @@ impl UnsignedInteger {
         let max_offset_bits: u64 = 25;
         let max_found_count: u32 = 1;
         let max_allowed_offset = 10;
-        let found_offsets =
-            Self::search_and_seek_back(rdr, needle, max_offset_bits, max_found_count);
+        let found_offsets = Self::search_and_seek_back(r, needle, max_offset_bits, max_found_count);
         dbg!(&found_offsets);
         if !found_offsets.is_empty() && found_offsets[0] <= max_allowed_offset {
-            rdr.seek_bits(SeekFrom::Current(found_offsets[0] as i64))?;
-            let ui = Self::from_reader(rdr)?;
+            r.seek_bits(SeekFrom::Current(found_offsets[0] as i64))?;
+            let ui = Self::from_reader(r)?;
             return Ok(ui);
         }
         Err(std::io::Error::new(
@@ -408,16 +407,16 @@ impl String {
         }
     }
     pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
-        rdr: &mut BitReader<R, E>,
+        r: &mut BitReader<R, E>,
     ) -> io::Result<Self> {
-        let is_not_empty: bool = Boolean::from_reader(rdr)?.value;
+        let is_not_empty: bool = Boolean::from_reader(r)?.value;
         let mut data = vec![];
         if is_not_empty {
-            let str_len: u32 = UnsignedInteger::from_reader(rdr)?.value;
+            let str_len: u32 = UnsignedInteger::from_reader(r)?.value;
             io_check_limit!(str_len, crate::limits::MAX_NUM_STR_LEN);
             data.resize(str_len as usize, 0);
             for di in data.iter_mut().take(str_len as usize) {
-                let uc8: u8 = UnsignedCharacter::from_reader(rdr)?.value;
+                let uc8: u8 = UnsignedCharacter::from_reader(r)?.value;
                 *di = uc8;
             }
         }
@@ -477,12 +476,12 @@ impl Integer {
         Integer { value: 0 }
     }
     pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
-        rdr: &mut BitReader<R, E>,
+        r: &mut BitReader<R, E>,
     ) -> io::Result<Self> {
         let mut ii: i32 = 0;
         let mut j: i32 = 0;
-        while read_bits(rdr, 1)? != 0 {
-            let ival8: u8 = read_bits(rdr, 8)?;
+        while read_bits(r, 1)? != 0 {
+            let ival8: u8 = read_bits(r, 8)?;
             let ival: i32 = ival8 as i32;
             ii |= ival << (8 * j);
             j += 1;
@@ -530,8 +529,8 @@ impl Double {
     pub fn new() -> Self {
         Double { value: 0.0 }
     }
-    pub fn from_reader<R: BitRead>(rdr: &mut R) -> io::Result<Self> {
-        let d = double::read_double_from_reader(rdr)?;
+    pub fn from_reader<R: BitRead>(r: &mut R) -> io::Result<Self> {
+        let d = double::read_double_from_reader(r)?;
         Ok(Self { value: d })
     }
     pub fn to_writer<W: BitWrite + ?Sized>(self, w: &mut W) -> std::io::Result<()> {
@@ -627,19 +626,18 @@ pub struct UserData {
 }
 impl UserData {
     pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
-        rdr: &mut BitReader<R, E>,
+        r: &mut BitReader<R, E>,
     ) -> io::Result<Self> {
         trace!(
             "{}UserData::from_reader() bp={}",
             indent::get(),
-            rdr.position_in_bits()?
+            r.position_in_bits()?
         );
-        let num_bits: u32 = UnsignedInteger::from_reader(rdr)?.value;
+        let num_bits: u32 = UnsignedInteger::from_reader(r)?.value;
         io_check_limit!(num_bits, crate::limits::MAX_NUM_USERDATA_BITS);
         let mut data: Vec<bool> = Vec::with_capacity(num_bits as usize);
         for _i in 0..num_bits {
-            //data.push(rdr.read_bit()?);
-            data.push(read_bits(rdr, 1)? != 0);
+            data.push(read_bits(r, 1)? != 0);
         }
         Ok(Self { data })
     }
@@ -681,13 +679,13 @@ pub struct UnsignedIntegerWithVariableBitNumber {
     pub value: u32,
 }
 impl UnsignedIntegerWithVariableBitNumber {
-    pub fn from_reader<R: BitRead>(rdr: &mut R, num_bits: u32) -> io::Result<Self> {
+    pub fn from_reader<R: BitRead>(r: &mut R, num_bits: u32) -> io::Result<Self> {
         //println!("UnsignedIntegerWithVariableBitNumber: {}", num_bits);
         //assert!(num_bits > 0);
         //assert!(num_bits < 31);
         let mut value = 0u32;
         for u in 0..num_bits {
-            let b: u32 = ((read_bits(rdr, 1)? as u8) & 0x01) as u32;
+            let b: u32 = ((read_bits(r, 1)? as u8) & 0x01) as u32;
             value |= b << (num_bits - u - 1);
         }
         Ok(Self { value })
@@ -757,9 +755,9 @@ pub struct NumberOfBitsThenUnsignedInteger {
     pub value: u32,
 }
 impl NumberOfBitsThenUnsignedInteger {
-    pub fn from_reader<R: BitRead>(rdr: &mut R) -> io::Result<Self> {
-        let num_bits = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 5)?.value;
-        let value: u32 = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, num_bits)?.value;
+    pub fn from_reader<R: BitRead>(r: &mut R) -> io::Result<Self> {
+        let num_bits = UnsignedIntegerWithVariableBitNumber::from_reader(r, 5)?.value;
+        let value: u32 = UnsignedIntegerWithVariableBitNumber::from_reader(r, num_bits)?.value;
         Ok(NumberOfBitsThenUnsignedInteger { value })
     }
     pub fn to_writer<W: BitWrite + ?Sized>(self, w: &mut W) -> std::io::Result<()> {
@@ -797,26 +795,26 @@ impl CompressedEntityType {
         R: std::io::Read + std::io::Seek,
         E: bitstream_io::Endianness,
     >(
-        rdr: &mut BitReader<R, E>,
+        r: &mut BitReader<R, E>,
     ) -> io::Result<Self> {
-        let pos = rdr.position_in_bits()?;
-        let rv = Self::from_reader(rdr)?;
-        rdr.seek_bits(SeekFrom::Start(pos))?;
-        assert_eq!(pos, rdr.position_in_bits()?);
+        let pos = r.position_in_bits()?;
+        let rv = Self::from_reader(r)?;
+        r.seek_bits(SeekFrom::Start(pos))?;
+        assert_eq!(pos, r.position_in_bits()?);
         Ok(rv)
     }
     pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
-        rdr: &mut BitReader<R, E>,
+        r: &mut BitReader<R, E>,
     ) -> io::Result<Self> {
         trace!(
             "{}CompressedEntityType::from_reader() bp={}",
             indent::get(),
-            rdr.position_in_bits()?
+            r.position_in_bits()?
         );
-        let is_a_curve = read_bits(rdr, 1)? != 0;
+        let is_a_curve = read_bits(r, 1)? != 0;
         let typev;
         if is_a_curve {
-            let x2 = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 2)?.value;
+            let x2 = UnsignedIntegerWithVariableBitNumber::from_reader(r, 2)?.value;
             match x2 {
                 0 => {
                     typev = PrcCompressedCurveType::PRC_HCG_Line as u8;
@@ -828,7 +826,7 @@ impl CompressedEntityType {
                     typev = PrcCompressedCurveType::PRC_HCG_BSplineHermiteCurve as u8;
                 }
                 3 => {
-                    let x4 = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 2)?.value;
+                    let x4 = UnsignedIntegerWithVariableBitNumber::from_reader(r, 2)?.value;
                     match x4 {
                         0 => {
                             typev = PrcCompressedCurveType::PRC_HCG_Ellipse as u8;
@@ -842,7 +840,7 @@ impl CompressedEntityType {
                                 format!(
                                     "CompressedEntityType: unknown 4-bit curve pattern ({})! bp={}",
                                     x2 * 4 + x4,
-                                    rdr.position_in_bits()?
+                                    r.position_in_bits()?
                                 ),
                             ));
                         }
@@ -854,13 +852,13 @@ impl CompressedEntityType {
                         format!(
                             "CompressedEntityType: unknown 2-bit curve pattern ({})! bp={}",
                             x2,
-                            rdr.position_in_bits()?
+                            r.position_in_bits()?
                         ),
                     ));
                 }
             };
         } else {
-            typev = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 4)?.value as u8;
+            typev = UnsignedIntegerWithVariableBitNumber::from_reader(r, 4)?.value as u8;
             let _trial = PrcCompressedFaceType::try_from(typev);
             if !_trial.is_ok() {
                 return Err(std::io::Error::new(
@@ -868,7 +866,7 @@ impl CompressedEntityType {
                     format!(
                         "CompressedEntityType: unknown face pattern: ({})! bp={}",
                         typev,
-                        rdr.position_in_bits()?
+                        r.position_in_bits()?
                     ),
                 ));
             }
@@ -964,7 +962,7 @@ pub struct FloatAsBytes {
     pub value: f32,
 }
 impl FloatAsBytes {
-    pub fn from_reader<R: BitRead>(rdr: &mut R) -> io::Result<Self> {
+    pub fn from_reader<R: BitRead>(r: &mut R) -> io::Result<Self> {
         #[allow(non_camel_case_types)]
         #[allow(non_snake_case)]
         #[derive(Clone, Copy)]
@@ -982,7 +980,7 @@ impl FloatAsBytes {
         let mut f2u: f2u = unsafe { mem::zeroed() };
         unsafe {
             for bi in &mut f2u.bytes {
-                *bi = UnsignedCharacter::from_reader(rdr)?.value;
+                *bi = UnsignedCharacter::from_reader(r)?.value;
             }
         }
 
@@ -1036,26 +1034,26 @@ impl CharacterArray {
         R: std::io::Read + std::io::Seek,
         E: bitstream_io::Endianness,
     >(
-        rdr: &mut BitReader<R, E>,
+        r: &mut BitReader<R, E>,
         num_bits_per_elem: u8,
     ) -> io::Result<Self> {
-        let pos = rdr.position_in_bits()?;
-        let rv = Self::from_reader(rdr, num_bits_per_elem)?;
-        rdr.seek_bits(SeekFrom::Start(pos))?;
-        assert_eq!(pos, rdr.position_in_bits()?);
+        let pos = r.position_in_bits()?;
+        let rv = Self::from_reader(r, num_bits_per_elem)?;
+        r.seek_bits(SeekFrom::Start(pos))?;
+        assert_eq!(pos, r.position_in_bits()?);
         Ok(rv)
     }
     pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
-        rdr: &mut BitReader<R, E>,
+        r: &mut BitReader<R, E>,
         num_bits_per_elem: u8,
     ) -> io::Result<Self> {
         trace!(
             "{}CharacterArray::from_reader() bp={}",
             indent::get(),
-            rdr.position_in_bits()?
+            r.position_in_bits()?
         );
 
-        Self::from_reader1(rdr, num_bits_per_elem)
+        Self::from_reader1(r, num_bits_per_elem)
     }
     pub fn from_reader1<R: BitRead>(r: &mut R, num_bits_per_elem: u8) -> io::Result<Self> {
         let has_is_compressed_bit = true;
@@ -1145,26 +1143,26 @@ impl ShortArray {
         R: std::io::Read + std::io::Seek,
         E: bitstream_io::Endianness,
     >(
-        rdr: &mut BitReader<R, E>,
+        r: &mut BitReader<R, E>,
         num_bits_per_elem: u8,
     ) -> io::Result<Self> {
-        let pos = rdr.position_in_bits()?;
-        let rv = Self::from_reader(rdr, num_bits_per_elem)?;
-        rdr.seek_bits(SeekFrom::Start(pos))?;
-        assert_eq!(pos, rdr.position_in_bits()?);
+        let pos = r.position_in_bits()?;
+        let rv = Self::from_reader(r, num_bits_per_elem)?;
+        r.seek_bits(SeekFrom::Start(pos))?;
+        assert_eq!(pos, r.position_in_bits()?);
         Ok(rv)
     }
     pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
-        rdr: &mut BitReader<R, E>,
+        r: &mut BitReader<R, E>,
         num_bits_per_elem: u8,
     ) -> io::Result<Self> {
         trace!(
             "{}ShortArray::from_reader() bp={}",
             indent::get(),
-            rdr.position_in_bits()?
+            r.position_in_bits()?
         );
 
-        Self::from_reader1(rdr, num_bits_per_elem)
+        Self::from_reader1(r, num_bits_per_elem)
     }
     pub fn from_reader1<R: BitRead>(r: &mut R, num_bits_per_elem: u8) -> io::Result<Self> {
         let has_is_compressed_bit: bool = true;
@@ -1197,14 +1195,14 @@ impl ShortArray {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _num_bits_per_elem: u8,
     ) -> std::io::Result<()> {
         let has_is_compressed_bit: bool = true;
         let is_compressed_dv: bool = true;
         let sign_extend: bool = true;
         self.to_writer2(
-            _w,
+            w,
             _num_bits_per_elem,
             has_is_compressed_bit,
             is_compressed_dv,
@@ -1213,17 +1211,17 @@ impl ShortArray {
     }
     pub fn to_writer2<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
-        _num_bits_per_elem: u8,
+        w: &mut W,
+        num_bits_per_elem: u8,
         has_is_compressed_bit: bool,
         is_compressed_dv: bool,
         sign_extend: bool,
     ) -> std::io::Result<()> {
         crate::huffman::write_huffman_from_element_array_i16(
-            _w,
+            w,
             &self.a,
             has_is_compressed_bit,
-            _num_bits_per_elem,
+            num_bits_per_elem,
             is_compressed_dv,
             sign_extend,
         )
@@ -1252,28 +1250,28 @@ pub struct CompressedIntegerArray {
 }
 impl CompressedIntegerArray {
     pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
-        rdr: &mut BitReader<R, E>,
+        r: &mut BitReader<R, E>,
     ) -> io::Result<Self> {
         trace!(
             "{}CompressedIntegerArray::from_reader() bp={}",
             indent::get(),
-            rdr.position_in_bits()?
+            r.position_in_bits()?
         );
 
-        Self::from_reader1(rdr)
+        Self::from_reader1(r)
     }
-    pub fn from_reader1<R: BitRead>(_rdr: &mut R) -> io::Result<Self> {
+    pub fn from_reader1<R: BitRead>(r: &mut R) -> io::Result<Self> {
         let has_is_compressed_bit = true;
         let num_bits_used_to_store_ints =
-            CharacterArray::from_reader2(_rdr, has_is_compressed_bit, 6, true, true)?.a;
+            CharacterArray::from_reader2(r, has_is_compressed_bit, 6, true, true)?.a;
         let mut a: Vec<i32> = Vec::with_capacity(num_bits_used_to_store_ints.len());
         for nbi in num_bits_used_to_store_ints {
             let num_bits_in_int = nbi as u32;
-            a.push(IntegerWithVariableBitNumber::from_reader(_rdr, num_bits_in_int)?.value);
+            a.push(IntegerWithVariableBitNumber::from_reader(r, num_bits_in_int)?.value);
         }
         Ok(Self { a })
     }
-    pub fn to_writer<W: BitWrite + ?Sized>(&self, _w: &mut W) -> std::io::Result<()> {
+    pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W) -> std::io::Result<()> {
         let mut num_bits_used_to_store_ints: Vec<i8> = vec![0; self.a.len()];
         for i in 0..self.a.len() {
             num_bits_used_to_store_ints[i] =
@@ -1282,10 +1280,10 @@ impl CompressedIntegerArray {
         CharacterArray {
             a: num_bits_used_to_store_ints.clone(),
         }
-        .to_writer2(_w, 6, true, true, true)?;
+        .to_writer2(w, 6, true, true, true)?;
         for i in 0..self.a.len() {
             IntegerWithVariableBitNumber { value: self.a[i] }
-                .to_writer(_w, num_bits_used_to_store_ints[i] as u32)?;
+                .to_writer(w, num_bits_used_to_store_ints[i] as u32)?;
         }
         Ok(())
     }
@@ -1313,17 +1311,14 @@ pub struct CompressedIndiceArray {
 }
 impl CompressedIndiceArray {
     pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
-        rdr: &mut BitReader<R, E>,
+        r: &mut BitReader<R, E>,
     ) -> io::Result<Self> {
         trace!(
             "{}CompressedIndiceArray::from_reader() bp={}",
             indent::get(),
-            rdr.position_in_bits()?
+            r.position_in_bits()?
         );
 
-        Self::from_reader1(rdr)
-    }
-    pub fn from_reader1<R: BitRead>(r: &mut R) -> io::Result<Self> {
         let has_is_compressed_bit = true;
         let num_bits_used_to_store_chars = 6;
         CompressedIndiceArray::from_reader2(
@@ -1389,12 +1384,12 @@ impl CompressedIndiceArray {
         Ok(Self { a: pi_array })
     }
     /// the indices are always positive at input.
-    pub fn to_writer<W: BitWrite + ?Sized>(&self, _w: &mut W) -> std::io::Result<()> {
+    pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W) -> std::io::Result<()> {
         let has_is_compressed_bit: bool = true;
         let num_bits_used_to_store_chars: u8 = 6;
         let is_compressed_dv: bool = true;
         self.to_writer2(
-            _w,
+            w,
             has_is_compressed_bit,
             num_bits_used_to_store_chars,
             is_compressed_dv,
@@ -1402,7 +1397,7 @@ impl CompressedIndiceArray {
     }
     pub fn to_writer2<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         has_is_compressed_bit: bool,
         num_bits_used_to_store_chars: u8,
         is_compressed_dv: bool,
@@ -1425,21 +1420,21 @@ impl CompressedIndiceArray {
             a: diff_num_bits_used_to_store_ints.clone(),
         }
         .to_writer2(
-            _w,
+            w,
             num_bits_used_to_store_chars,
             has_is_compressed_bit,
             is_compressed_dv,
             sign_extend,
         )?;
         let mut c_bit_count = get_number_of_bits_used_to_store_integer(self.a[0]) as i8;
-        IntegerWithVariableBitNumber { value: self.a[0] }.to_writer(_w, c_bit_count as u32)?;
+        IntegerWithVariableBitNumber { value: self.a[0] }.to_writer(w, c_bit_count as u32)?;
         for i in 1..self.a.len() {
             c_bit_count += diff_num_bits_used_to_store_ints[i];
 
             IntegerWithVariableBitNumber {
                 value: self.a[i] - self.a[i - 1],
             }
-            .to_writer(_w, c_bit_count as u32)?;
+            .to_writer(w, c_bit_count as u32)?;
         }
         Ok(())
     }
@@ -1467,18 +1462,15 @@ pub struct CompressedIndiceArrayWithoutBit {
 }
 impl CompressedIndiceArrayWithoutBit {
     pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
-        rdr: &mut BitReader<R, E>,
+        r: &mut BitReader<R, E>,
         is_compressed_dv: bool,
     ) -> io::Result<Self> {
         trace!(
             "{}CompressedIndiceArrayWithoutBit::from_reader() bp={}",
             indent::get(),
-            rdr.position_in_bits()?
+            r.position_in_bits()?
         );
 
-        Self::from_reader1(rdr, is_compressed_dv)
-    }
-    pub fn from_reader1<R: BitRead>(r: &mut R, is_compressed_dv: bool) -> io::Result<Self> {
         let has_is_compressed_bit = false;
         let num_bits_used_to_store_chars = 6;
         let a = CompressedIndiceArray::from_reader2(
@@ -1492,16 +1484,16 @@ impl CompressedIndiceArrayWithoutBit {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
-        _is_compressed_dv: bool,
+        w: &mut W,
+        is_compressed_dv: bool,
     ) -> std::io::Result<()> {
         let has_is_compressed_bit = false;
         let num_bits_used_to_store_chars = 6;
         CompressedIndiceArray { a: self.a.clone() }.to_writer2(
-            _w,
+            w,
             has_is_compressed_bit,
             num_bits_used_to_store_chars,
-            _is_compressed_dv,
+            is_compressed_dv,
         )
     }
 }
@@ -1531,16 +1523,12 @@ pub struct DoubleWithVariableBitNumber {
     pub value: f64,
 }
 impl DoubleWithVariableBitNumber {
-    pub fn from_reader<R: BitRead>(
-        _rdr: &mut R,
-        num_bits: u32,
-        tolerance: f64,
-    ) -> io::Result<Self> {
+    pub fn from_reader<R: BitRead>(r: &mut R, num_bits: u32, tolerance: f64) -> io::Result<Self> {
         assert!(num_bits > 0);
         //assert!(num_bits <= 30); // if greater Double is used in CompressedNurbs
         //assert!(tolerance > 0.0); // 0.0 is also acceptable
 
-        let neg = read_bits(_rdr, 1)? != 0;
+        let neg = read_bits(r, 1)? != 0;
 
         if num_bits == 1 {
             return Ok(Self {
@@ -1552,7 +1540,7 @@ impl DoubleWithVariableBitNumber {
         for u in 0..(num_bits - 1) {
             let exp = num_bits - 2 - u;
             let thres = 1 << exp;
-            let b = read_bits(_rdr, 1)? != 0;
+            let b = read_bits(r, 1)? != 0;
             if b {
                 u_temp_value += thres;
             }
@@ -1562,7 +1550,7 @@ impl DoubleWithVariableBitNumber {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         self,
-        _w: &mut W,
+        w: &mut W,
         num_bits: u32,
         tolerance: f64,
     ) -> std::io::Result<()> {
@@ -1570,7 +1558,7 @@ impl DoubleWithVariableBitNumber {
         //assert!(num_bits <= 30); // if greater Double is used in CompressedNurbs
         assert!(tolerance > 0.0);
 
-        write_bits(_w, (self.value < 0.0) as u8, 1)?;
+        write_bits(w, (self.value < 0.0) as u8, 1)?;
         if num_bits == 1 {
             return Ok(());
         }
@@ -1585,10 +1573,10 @@ impl DoubleWithVariableBitNumber {
             let exp = num_bits - 2 - u;
             let threshold = 1 << exp;
             if u_temp_value >= threshold {
-                write_bits(_w, 1, 1)?;
+                write_bits(w, 1, 1)?;
                 u_temp_value -= threshold;
             } else {
-                write_bits(_w, 0, 1)?;
+                write_bits(w, 0, 1)?;
             }
         }
         Ok(())
@@ -1616,33 +1604,33 @@ pub struct Point3DWithVariableBitNumber {
 }
 impl Point3DWithVariableBitNumber {
     pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
-        _rdr: &mut BitReader<R, E>,
+        r: &mut BitReader<R, E>,
         num_bits: u32,
         tolerance: f64,
     ) -> io::Result<Self> {
         trace!(
             "{}Point3DWithVariableBitNumber::from_reader() bp={}",
             indent::get(),
-            _rdr.position_in_bits()?
+            r.position_in_bits()?
         );
 
-        let x = DoubleWithVariableBitNumber::from_reader(_rdr, num_bits, tolerance)?.value;
-        let y = DoubleWithVariableBitNumber::from_reader(_rdr, num_bits, tolerance)?.value;
-        let z = DoubleWithVariableBitNumber::from_reader(_rdr, num_bits, tolerance)?.value;
+        let x = DoubleWithVariableBitNumber::from_reader(r, num_bits, tolerance)?.value;
+        let y = DoubleWithVariableBitNumber::from_reader(r, num_bits, tolerance)?.value;
+        let z = DoubleWithVariableBitNumber::from_reader(r, num_bits, tolerance)?.value;
 
         Ok(Self { x, y, z })
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         self,
-        _w: &mut W,
+        w: &mut W,
         num_bits: u32,
         tolerance: f64,
     ) -> std::io::Result<()> {
         // https://github.com/pdf-association/pdf-issues/issues/581 <- OLD, buggy
         // https://github.com/pdf-association/pdf-issues/issues/706
-        DoubleWithVariableBitNumber { value: self.x }.to_writer(_w, num_bits, tolerance)?;
-        DoubleWithVariableBitNumber { value: self.y }.to_writer(_w, num_bits, tolerance)?;
-        DoubleWithVariableBitNumber { value: self.z }.to_writer(_w, num_bits, tolerance)?;
+        DoubleWithVariableBitNumber { value: self.x }.to_writer(w, num_bits, tolerance)?;
+        DoubleWithVariableBitNumber { value: self.y }.to_writer(w, num_bits, tolerance)?;
+        DoubleWithVariableBitNumber { value: self.z }.to_writer(w, num_bits, tolerance)?;
         Ok(())
     }
 }
@@ -1659,7 +1647,6 @@ impl Eq for Point3DWithVariableBitNumber {}
 // bug: https://github.com/pdf-association/pdf-issues/issues/706
 #[derive(Serialize, Deserialize, Debug, Default, Clone, Copy)]
 pub struct CompressedPoint {
-    // TODO: use Point3DWithVariableBitNumber0 internally
     pub x: f64,
     pub y: f64,
     pub z: f64,
@@ -1690,11 +1677,7 @@ impl CompressedPoint {
         };
         Ok(Self { x, y, z })
     }
-    pub fn to_writer<W: BitWrite + ?Sized>(
-        self,
-        _w: &mut W,
-        tolerance: f64,
-    ) -> std::io::Result<()> {
+    pub fn to_writer<W: BitWrite + ?Sized>(self, w: &mut W, tolerance: f64) -> std::io::Result<()> {
         // https://github.com/pdf-association/pdf-issues/issues/581 <- OLD, buggy
         // https://github.com/pdf-association/pdf-issues/issues/706
         assert!(tolerance > 0.0);
@@ -1702,7 +1685,7 @@ impl CompressedPoint {
         let yi = (self.y / tolerance + 0.5) as i32;
         let zi = (self.z / tolerance + 0.5) as i32;
         let num_bits = get_number_of_bits_used_to_store_integer(max(xi.abs(), yi.abs(), zi.abs()));
-        UnsignedIntegerWithVariableBitNumber { value: num_bits }.to_writer(_w, 6)?;
+        UnsignedIntegerWithVariableBitNumber { value: num_bits }.to_writer(w, 6)?;
         if num_bits == 0 {
         } else if num_bits <= 30 {
             Point3DWithVariableBitNumber {
@@ -1710,11 +1693,11 @@ impl CompressedPoint {
                 y: self.y,
                 z: self.z,
             }
-            .to_writer(_w, num_bits, tolerance)?;
+            .to_writer(w, num_bits, tolerance)?;
         } else {
-            Double { value: self.x }.to_writer(_w)?;
-            Double { value: self.y }.to_writer(_w)?;
-            Double { value: self.z }.to_writer(_w)?;
+            Double { value: self.x }.to_writer(w)?;
+            Double { value: self.y }.to_writer(w)?;
+            Double { value: self.z }.to_writer(w)?;
         }
         Ok(())
     }
@@ -1734,23 +1717,23 @@ pub struct UncompressedBoolArray {
 }
 impl UncompressedBoolArray {
     pub fn from_reader<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
-        rdr: &mut BitReader<R, E>,
+        r: &mut BitReader<R, E>,
         length: u32,
     ) -> io::Result<Self> {
         trace!(
             "{}UncompressedBoolArray::from_reader() bp={}",
             indent::get(),
-            rdr.position_in_bits()?
+            r.position_in_bits()?
         );
 
-        Self::from_reader1(rdr, length)
+        Self::from_reader1(r, length)
     }
-    pub fn from_reader1<R: BitRead>(rdr: &mut R, length: u32) -> io::Result<Self> {
+    pub fn from_reader1<R: BitRead>(r: &mut R, length: u32) -> io::Result<Self> {
         //println!("UncompressedBoolArray: {}", length);
         let mut a: Vec<bool> = Vec::with_capacity(length as usize);
         a.resize(length as usize, false);
         for au in &mut a {
-            let b = read_bits(rdr, 1)? != 0;
+            let b = read_bits(r, 1)? != 0;
             *au = b;
         }
         Ok(Self { a })
