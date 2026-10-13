@@ -30,6 +30,8 @@ use serde::{Deserialize, Serialize};
 use std::io::{Cursor, Read, Seek, Write};
 use std::{fmt, io};
 
+use crate::io_check_limit;
+
 const ENDIAN: bitstream_io::BigEndian = bitstream_io::BigEndian;
 
 macro_rules! parse_section {
@@ -118,6 +120,7 @@ impl UncompressedFileHeader {
                 return Err(std::io::Error::other("invalid mf offset"));
             }
             let mf_size = self.mf_end_offset.value - self.mf_start_offset.value;
+            io_check_limit!(mf_size, crate::limits::MAX_NUM_SECTION_BYTES);
             // trace!(
             //     "mf compressed offset: [{},{}], size: {}",
             //     self.mf_start_offset.value, self.mf_end_offset.value, mf_size
@@ -151,6 +154,7 @@ impl UncompressedFileHeader {
                 return Err(std::io::Error::other("invalid glob offset"));
             }
             let section_size = fs.tree_start_offset.value - fs.glob_start_offset.value;
+            io_check_limit!(section_size, crate::limits::MAX_NUM_SECTION_BYTES);
             let mut section_compr: Vec<u8> = vec![0; section_size as usize];
             rdr.seek(std::io::SeekFrom::Start(fs.glob_start_offset.value as u64))?;
             rdr.read_exact(&mut section_compr)?;
@@ -162,6 +166,7 @@ impl UncompressedFileHeader {
                     return Err(std::io::Error::other("invalid tree offset"));
                 }
                 let section_size = fs.tess_start_offset.value - fs.tree_start_offset.value;
+                io_check_limit!(section_size, crate::limits::MAX_NUM_SECTION_BYTES);
                 let mut section_compr: Vec<u8> = vec![0; section_size as usize];
                 rdr.seek(std::io::SeekFrom::Start(fs.tree_start_offset.value as u64))?;
                 rdr.read_exact(&mut section_compr)?;
@@ -174,6 +179,7 @@ impl UncompressedFileHeader {
                     return Err(std::io::Error::other("invalid tess offset"));
                 }
                 let section_size = fs.geom_start_offset.value - fs.tess_start_offset.value;
+                io_check_limit!(section_size, crate::limits::MAX_NUM_SECTION_BYTES);
                 let mut section_compr: Vec<u8> = vec![0; section_size as usize];
                 rdr.seek(std::io::SeekFrom::Start(fs.tess_start_offset.value as u64))?;
                 rdr.read_exact(&mut section_compr)?;
@@ -186,6 +192,7 @@ impl UncompressedFileHeader {
                     return Err(std::io::Error::other("invalid geom offset"));
                 }
                 let section_size = fs.extg_start_offset.value - fs.geom_start_offset.value;
+                io_check_limit!(section_size, crate::limits::MAX_NUM_SECTION_BYTES);
                 let mut section_compr: Vec<u8> = vec![0; section_size as usize];
                 rdr.seek(std::io::SeekFrom::Start(fs.geom_start_offset.value as u64))?;
                 rdr.read_exact(&mut section_compr)?;
@@ -202,6 +209,7 @@ impl UncompressedFileHeader {
                 let section_size =
                     std::cmp::min(self.mf_start_offset.value, file_size_bytes as u32)
                         - fs.extg_start_offset.value;
+                io_check_limit!(section_size, crate::limits::MAX_NUM_SECTION_BYTES);
                 let mut section_compr: Vec<u8> = vec![0; section_size as usize];
                 rdr.seek(std::io::SeekFrom::Start(fs.extg_start_offset.value as u64))?;
                 rdr.read_exact(&mut section_compr)?;
