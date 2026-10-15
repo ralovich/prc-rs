@@ -7514,7 +7514,8 @@
                 "fields": [
                     {
                         "name": "block_size",
-                        "data_type": "UncompressedUnsignedInteger"
+                        "data_type": "UncompressedUnsignedInteger",
+                        "on_set": "io_check_limit!(block_size.value, crate::limits::MAX_NUM_SECTION_BYTES)"
                     },
                     {
                         "name": "block",

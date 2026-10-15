@@ -1203,7 +1203,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fuzz() {
+    fn test_fuzz1() {
         let file_name = "fuzz.prc".to_owned();
         let bytes = [10, 68, 68];
         let parsed = prc_describe(

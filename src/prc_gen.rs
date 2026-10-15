@@ -22847,6 +22847,7 @@ impl UncompressedBlock {
         let _ig = indent::IndentGuard::new();
         let mut block_size: UncompressedUnsignedInteger = Default::default();
         block_size = UncompressedUnsignedInteger::from_reader(rdr)?;
+        io_check_limit!(block_size.value, crate::limits::MAX_NUM_SECTION_BYTES);
         let mut block: UncompressedByteArray = Default::default();
         block = UncompressedByteArray::from_reader(rdr, block_size.value)?;
         let rv = Self { block_size, block };
