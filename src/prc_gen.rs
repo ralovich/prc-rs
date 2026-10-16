@@ -19354,7 +19354,9 @@ impl PRC_HCG_Ellipse {
             rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
-        unimplemented!("PRC_HCG_Ellipse: not implemented");
+        return Err(std::io::Error::other(
+            "The curve type PRC_HCG_Ellipse is reserved for future use!",
+        ));
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
         if Ok(PRC_HCG_Ellipse) != (PrcCompressedCurveType::try_from(id.value)) {

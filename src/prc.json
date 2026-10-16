@@ -6338,7 +6338,7 @@
                 ]
             },
             "PRC_HCG_Ellipse": {
-                "on_enter": "unimplemented!(\"PRC_HCG_Ellipse: not implemented\")",
+                "on_enter": "return Err(std::io::Error::other(\"The curve type PRC_HCG_Ellipse is reserved for future use!\"));",
                 "fields": [
                     {
                         "name": "id",
