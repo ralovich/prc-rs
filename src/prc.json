@@ -652,7 +652,7 @@
                     {
                         "name": "transform_2d",
                         "data_type": "Boolean",
-                        "on_set": "assert_eq!(transform_2d.value, true);"
+                        "on_set": "if !transform_2d.value { return Err(std::io::Error::other(\"2d transform expected!\")); }"
                     },
                     {
                         "name": "transform",
@@ -702,7 +702,7 @@
                     {
                         "name": "texture_dimension",
                         "data_type": "Character",
-                        "on_set": "assert_eq!(texture_dimension.value, 2 as i8)"
+                        "on_set": "if texture_dimension.value != 2 as i8 { return Err(std::io::Error::other(\"texture_dimension of 2 expected!\")); }"
                     },
                     {
                         "name": "texture_mapping_type",
@@ -730,7 +730,7 @@
                     {
                         "name": "number_of_texture_mapping_attributes_intensities",
                         "data_type": "UnsignedInteger",
-                        "on_set": "assert!(number_of_texture_mapping_attributes_intensities.value == 0 || number_of_texture_mapping_attributes_intensities.value == 1)"
+                        "on_set": "if number_of_texture_mapping_attributes_intensities.value != 0 && number_of_texture_mapping_attributes_intensities.value != 1 { return Err(std::io::Error::other(\"unexpected value in number_of_texture_mapping_attributes_intensities!\")); }"
                     },
                     {
                         "name": "texture_mapping_attributes_intensities",
@@ -743,7 +743,7 @@
                     {
                         "name": "number_of_texture_mapping_attributes_components",
                         "data_type": "UnsignedInteger",
-                        "on_set": "assert!(number_of_texture_mapping_attributes_components.value == 0 || number_of_texture_mapping_attributes_components.value == 1)"
+                        "on_set": "if number_of_texture_mapping_attributes_components.value != 0 && number_of_texture_mapping_attributes_components.value != 1 { return Err(std::io::Error::other(\"unexpected value in number_of_texture_mapping_attributes_components!\")); }"
                     },
                     {
                         "name": "texture_mapping_attributes_components",
@@ -762,7 +762,7 @@
                         "data_type": "Double",
                         "multiplicity": 4,
                         "condition_rust": "self.texture_function.value as i32 == TextureFunction::Blend as i32",
-                        "on_set": "for idx in 0..4 { assert!(blend_src[idx].value >= 0.0 && blend_src[idx].value <= 1.0); }"
+                        "on_set": "for idx in 0..4 { prc_gen_assert!(blend_src[idx].value >= 0.0 && blend_src[idx].value <= 1.0); }"
                     },
                     {
                         "name": "blend_src_rgb",
@@ -1810,8 +1810,7 @@
                     {
                         "name": "type_of_entity",
                         "data_type": "UnsignedInteger",
-                        "comment": "342 and 344 failed above assert",
-                        "on_set": "assert!(PRC_TYPE_TOPO_Face==PrcType::try_from(type_of_entity.value).unwrap() || PRC_TYPE_TOPO_Edge==PrcType::try_from(type_of_entity.value).unwrap() || PRC_TYPE_TOPO_CoEdge==PrcType::try_from(type_of_entity.value).unwrap() || PRC_TYPE_TOPO_UniqueVertex==PrcType::try_from(type_of_entity.value).unwrap())",
+                        "on_set": "if PRC_TYPE_TOPO_Face!=PrcType::try_from(type_of_entity.value).unwrap() && PRC_TYPE_TOPO_Edge!=PrcType::try_from(type_of_entity.value).unwrap() && PRC_TYPE_TOPO_CoEdge!=PrcType::try_from(type_of_entity.value).unwrap() && PRC_TYPE_TOPO_UniqueVertex!=PrcType::try_from(type_of_entity.value).unwrap() { warn!(\"Unexpected type ({}) being referenced!\", type_of_entity.value); }",
                         "SPECBUG": "has also seen PRC_TYPE_TOPO_Edge in e.g. -342, -344"
                     },
                     {
@@ -3326,7 +3325,7 @@
                     {
                         "name": "last_integer_used_bit_number",
                         "data_type": "UnsignedInteger",
-                        "on_set1": "assert!(/*last_integer_used_bit_number.value >= 0 &&*/ last_integer_used_bit_number.value <= 32)",
+                        "on_set1": "prc_gen_assert!(/*last_integer_used_bit_number.value >= 0 &&*/ last_integer_used_bit_number.value <= 32)",
                         "on_set": "if last_integer_used_bit_number.value > 32 { return Err(std::io::Error::other(\"last_integer_used_bit_number.value > 32 failed!\")); }",
                         "debug": true
                     }
@@ -3418,7 +3417,7 @@
                         "comment": "for each triangle, used to describe the triangles neighbors",
                         "data_type": "CharacterArray",
                         "vbr": "2",
-                        "on_set": "if !edge_status_array.a.is_empty() { assert!(*edge_status_array.a.iter().max().unwrap() >= 0i8); }",
+                        "on_set": "if !edge_status_array.a.is_empty() { prc_gen_assert!(*edge_status_array.a.iter().max().unwrap() >= 0i8); }",
                         "debug": true
                     },
                     {
@@ -3426,7 +3425,7 @@
                         "comment": "represents, for each triangle, the index of the face to which it belongs.",
                         "data_type": "CompressedIndiceArray",
                         "debug": true,
-                        "on_set": "assert!(edge_status_array.a.len() == 3*triangle_face_array.a.len() || edge_status_array.a.len() == triangle_face_array.a.len())"
+                        "on_set": "prc_gen_assert!(edge_status_array.a.len() == 3*triangle_face_array.a.len() || edge_status_array.a.len() == triangle_face_array.a.len())"
                     },
                     {
                         "name": "reference_array_size",
@@ -3448,7 +3447,7 @@
                         "vbr": "_ctx.t3dc.number_of_referenced_points(&point_is_reference_array.a) > 3",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/427",
                         "comment": "in this case, the boolean value which indicates whether the character array is compressed is not stored. Its value is implicit and set to number_of_reference_points > 3",
-                        "on_set": "assert_eq!(_ctx.t3dc.number_of_referenced_points(&point_is_reference_array.a) as usize, point_reference_array.a.len())",
+                        "on_set": "prc_gen_assert!(_ctx.t3dc.number_of_referenced_points(&point_is_reference_array.a) as usize == point_reference_array.a.len())",
                         "debug": true
                     },
                     {
@@ -3855,7 +3854,7 @@
                     {
                         "name": "curve_data",
                         "data_type": "ContentCurve",
-                        "on_set": "assert_eq!(true, curve_data.is_3d_flag.value)"
+                        "on_set": "prc_gen_assert!(curve_data.is_3d_flag.value)"
                     },
                     {
                         "name": "transform2d",
@@ -4001,7 +4000,7 @@
                         "data_type": "Double",
                         "is_vec": true,
                         "size": "highest_index_of_knots.value + 1",
-                        "on_set": "assert_eq!(highest_index_of_knots.value + 1, degree.value + (highest_index_of_control_points.value + 1) + 1)"
+                        "on_set": "prc_gen_assert!(highest_index_of_knots.value + 1 == degree.value + (highest_index_of_control_points.value + 1) + 1)"
                     },
                     {
                         "name": "knot_type",
@@ -4545,7 +4544,7 @@
                     {
                         "name": "_type",
                         "data_type": "Character",
-                        "on_set": "assert!(_type.value == 0 || _type.value == 1);"
+                        "on_set": "prc_gen_assert!(_type.value == 0 || _type.value == 1);"
                     },
                     {
                         "name": "orientation",
@@ -4601,7 +4600,7 @@
                     {
                         "name": "_type",
                         "data_type": "Character",
-                        "on_set": "assert!(_type.value == 0 || _type.value == 1);"
+                        "on_set": "prc_gen_assert!(_type.value == 0 || _type.value == 1);"
                     }
                 ]
             },
@@ -4759,7 +4758,7 @@
                     {
                         "name": "curve_data",
                         "data_type": "ContentCurve",
-                        "on_set": "assert_eq!(true, curve_data.is_3d_flag.value)"
+                        "on_set": "prc_gen_assert!(curve_data.is_3d_flag.value)"
                     },
                     {
                         "name": "transform2d",
@@ -4821,7 +4820,7 @@
                     {
                         "name": "_type",
                         "data_type": "Character",
-                        "on_set": "assert!(_type.value == 0 || _type.value == 1);"
+                        "on_set": "prc_gen_assert!(_type.value == 0 || _type.value == 1);"
                     }
                 ]
             },
@@ -6093,7 +6092,7 @@
             },
             "CompressedVertex": {
                 "rust_traits": [ "Copy" ],
-                "on_enter": "assert!(_ctx.is_curve_trimming_face())",
+                "on_enter": "prc_gen_assert!(_ctx.is_curve_trimming_face())",
                 "fields": [
                     {
                         "name": "already_stored",
@@ -7299,7 +7298,7 @@
             },
             "PRC_TYPE_TOPO_SingleWireBodyCompress": {
                 "bug": "https://github.com/pdf-association/pdf-issues/issues/753",
-                "on_enter": "assert!(!_ctx.is_curve_trimming_face())",
+                "on_enter": "prc_gen_assert!(!_ctx.is_curve_trimming_face())",
                 "fields": [
                     {
                         "name": "id",

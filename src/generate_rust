@@ -70,6 +70,18 @@ use crate::indent;
 
 use crate::io_check_limit;
 
+macro_rules! prc_gen_assert {
+    ($value:expr) => {
+        if !($value) {
+            return Err(std::io::Error::other(format!(
+                "Failed {} ({})!",
+                stringify!($value),
+                $value
+            )));
+        }
+    };
+}
+
 ''')
 
     for structs in d['structures']:

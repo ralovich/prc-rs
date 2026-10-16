@@ -28,6 +28,18 @@ use crate::indent;
 
 use crate::io_check_limit;
 
+macro_rules! prc_gen_assert {
+    ($value:expr) => {
+        if !($value) {
+            return Err(std::io::Error::other(format!(
+                "Failed {} ({})!",
+                stringify!($value),
+                $value
+            )));
+        }
+    };
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
 pub struct Name {
@@ -2111,7 +2123,9 @@ impl PRC_TYPE_GRAPH_TextureTransformation {
         invert_t = Boolean::from_reader(rdr)?;
         let mut transform_2d: Boolean = Default::default();
         transform_2d = Boolean::from_reader(rdr)?;
-        assert_eq!(transform_2d.value, true);
+        if !transform_2d.value {
+            return Err(std::io::Error::other("2d transform expected!"));
+        };
         let transform_cond = !!transform_2d;
         let mut transform: Transformation2D = Default::default();
         if transform_cond {
@@ -2393,7 +2407,9 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         biased_picture_index = UnsignedInteger::from_reader(rdr)?;
         let mut texture_dimension: Character = Default::default();
         texture_dimension = Character::from_reader(rdr)?;
-        assert_eq!(texture_dimension.value, 2 as i8);
+        if texture_dimension.value != 2 as i8 {
+            return Err(std::io::Error::other("texture_dimension of 2 expected!"));
+        };
         let mut texture_mapping_type: Integer = Default::default();
         texture_mapping_type = Integer::from_reader(rdr)?;
         let texture_mapping_operator_cond =
@@ -2419,10 +2435,13 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         let mut number_of_texture_mapping_attributes_intensities: UnsignedInteger =
             Default::default();
         number_of_texture_mapping_attributes_intensities = UnsignedInteger::from_reader(rdr)?;
-        assert!(
-            number_of_texture_mapping_attributes_intensities.value == 0
-                || number_of_texture_mapping_attributes_intensities.value == 1
-        );
+        if number_of_texture_mapping_attributes_intensities.value != 0
+            && number_of_texture_mapping_attributes_intensities.value != 1
+        {
+            return Err(std::io::Error::other(
+                "unexpected value in number_of_texture_mapping_attributes_intensities!",
+            ));
+        };
         let texture_mapping_attributes_intensities_cond =
             number_of_texture_mapping_attributes_intensities.value != 0;
         io_check_limit!(
@@ -2441,10 +2460,13 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         let mut number_of_texture_mapping_attributes_components: UnsignedInteger =
             Default::default();
         number_of_texture_mapping_attributes_components = UnsignedInteger::from_reader(rdr)?;
-        assert!(
-            number_of_texture_mapping_attributes_components.value == 0
-                || number_of_texture_mapping_attributes_components.value == 1
-        );
+        if number_of_texture_mapping_attributes_components.value != 0
+            && number_of_texture_mapping_attributes_components.value != 1
+        {
+            return Err(std::io::Error::other(
+                "unexpected value in number_of_texture_mapping_attributes_components!",
+            ));
+        };
         let texture_mapping_attributes_components_cond =
             number_of_texture_mapping_attributes_components.value != 0;
         io_check_limit!(
@@ -2470,7 +2492,7 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
             }
         }
         for idx in 0..4 {
-            assert!(blend_src[idx].value >= 0.0 && blend_src[idx].value <= 1.0);
+            prc_gen_assert!(blend_src[idx].value >= 0.0 && blend_src[idx].value <= 1.0);
         }
         let mut blend_src_rgb: Integer = Default::default();
         blend_src_rgb = Integer::from_reader(rdr)?;
@@ -5912,7 +5934,6 @@ impl AdditionalTargetData {
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_MISC_ReferenceOnTopology {
     pub id: UnsignedInteger,
-    /// 342 and 344 failed above assert
     pub type_of_entity: UnsignedInteger,
     pub flag: Boolean,
     pub data: Option<AdditionalTargetData>,
@@ -5952,12 +5973,16 @@ impl PRC_TYPE_MISC_ReferenceOnTopology {
         }
         let mut type_of_entity: UnsignedInteger = Default::default();
         type_of_entity = UnsignedInteger::from_reader(rdr)?;
-        assert!(
-            PRC_TYPE_TOPO_Face == PrcType::try_from(type_of_entity.value).unwrap()
-                || PRC_TYPE_TOPO_Edge == PrcType::try_from(type_of_entity.value).unwrap()
-                || PRC_TYPE_TOPO_CoEdge == PrcType::try_from(type_of_entity.value).unwrap()
-                || PRC_TYPE_TOPO_UniqueVertex == PrcType::try_from(type_of_entity.value).unwrap()
-        );
+        if PRC_TYPE_TOPO_Face != PrcType::try_from(type_of_entity.value).unwrap()
+            && PRC_TYPE_TOPO_Edge != PrcType::try_from(type_of_entity.value).unwrap()
+            && PRC_TYPE_TOPO_CoEdge != PrcType::try_from(type_of_entity.value).unwrap()
+            && PRC_TYPE_TOPO_UniqueVertex != PrcType::try_from(type_of_entity.value).unwrap()
+        {
+            warn!(
+                "Unexpected type ({}) being referenced!",
+                type_of_entity.value
+            );
+        };
         let mut flag: Boolean = Default::default();
         flag = Boolean::from_reader(rdr)?;
         let data_cond = !!flag;
@@ -10748,7 +10773,7 @@ impl PRC_TYPE_TESS_3D_Compressed {
             &edge_status_array
         );
         if !edge_status_array.a.is_empty() {
-            assert!(*edge_status_array.a.iter().max().unwrap() >= 0i8);
+            prc_gen_assert!(*edge_status_array.a.iter().max().unwrap() >= 0i8);
         };
         let mut triangle_face_array: CompressedIndiceArray = Default::default();
         triangle_face_array = CompressedIndiceArray::from_reader(rdr)?;
@@ -10757,7 +10782,7 @@ impl PRC_TYPE_TESS_3D_Compressed {
             indent::get(),
             &triangle_face_array
         );
-        assert!(
+        prc_gen_assert!(
             edge_status_array.a.len() == 3 * triangle_face_array.a.len()
                 || edge_status_array.a.len() == triangle_face_array.a.len()
         );
@@ -10804,10 +10829,10 @@ impl PRC_TYPE_TESS_3D_Compressed {
             indent::get(),
             &point_reference_array
         );
-        assert_eq!(
+        prc_gen_assert!(
             _ctx.t3dc
-                .number_of_referenced_points(&point_is_reference_array.a) as usize,
-            point_reference_array.a.len()
+                .number_of_referenced_points(&point_is_reference_array.a) as usize
+                == point_reference_array.a.len()
         );
         let mut must_recalculate_normals: Boolean = Default::default();
         must_recalculate_normals = Boolean::from_reader(rdr)?;
@@ -12081,7 +12106,7 @@ impl PRC_TYPE_CRV_Blend02Boundary {
         }
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
-        assert_eq!(true, curve_data.is_3d_flag.value);
+        prc_gen_assert!(curve_data.is_3d_flag.value);
         let transform2d_cond = !curve_data.is_3d_flag.value;
         let mut transform2d: Transformation2DWithBit = Default::default();
         if transform2d_cond {
@@ -12390,9 +12415,9 @@ impl PRC_TYPE_CRV_NURBS {
             let element = Double::from_reader(rdr)?;
             u.push(element);
         }
-        assert_eq!(
-            highest_index_of_knots.value + 1,
-            degree.value + (highest_index_of_control_points.value + 1) + 1
+        prc_gen_assert!(
+            highest_index_of_knots.value + 1
+                == degree.value + (highest_index_of_control_points.value + 1) + 1
         );
         let mut knot_type: UnsignedInteger = Default::default();
         knot_type = UnsignedInteger::from_reader(rdr)?;
@@ -13975,7 +14000,7 @@ impl PRC_TYPE_CRV_Helix {
         parameterization = Parameterization::from_reader(rdr, _ctx)?;
         let mut _type: Character = Default::default();
         _type = Character::from_reader(rdr)?;
-        assert!(_type.value == 0 || _type.value == 1);
+        prc_gen_assert!(_type.value == 0 || _type.value == 1);
         let mut orientation: Boolean = Default::default();
         orientation = Boolean::from_reader(rdr)?;
         let mut start: Vector3D = Default::default();
@@ -14094,7 +14119,7 @@ impl PRC_TYPE_CRV_Hyperbola {
         semi_image_axis = Double::from_reader(rdr)?;
         let mut _type: Character = Default::default();
         _type = Character::from_reader(rdr)?;
-        assert!(_type.value == 0 || _type.value == 1);
+        prc_gen_assert!(_type.value == 0 || _type.value == 1);
         let _ = _ctx.se.eval(rdr, PRC_TYPE_CRV_Hyperbola as u32, false, 0);
         let rv = Self {
             id,
@@ -14521,7 +14546,7 @@ impl PRC_TYPE_CRV_Offset {
         }
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
-        assert_eq!(true, curve_data.is_3d_flag.value);
+        prc_gen_assert!(curve_data.is_3d_flag.value);
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: Transformation2DWithBit = Default::default();
         if transform2d_cond {
@@ -14641,7 +14666,7 @@ impl PRC_TYPE_CRV_Parabola {
         focal_length = Double::from_reader(rdr)?;
         let mut _type: Character = Default::default();
         _type = Character::from_reader(rdr)?;
-        assert!(_type.value == 0 || _type.value == 1);
+        prc_gen_assert!(_type.value == 0 || _type.value == 1);
         let _ = _ctx.se.eval(rdr, PRC_TYPE_CRV_Parabola as u32, false, 0);
         let rv = Self {
             id,
@@ -18603,7 +18628,7 @@ impl CompressedVertex {
             rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
-        assert!(_ctx.is_curve_trimming_face());
+        prc_gen_assert!(_ctx.is_curve_trimming_face());
         let mut already_stored: Boolean = Default::default();
         already_stored = Boolean::from_reader(rdr)?;
         let point_index_cond = !already_stored.value;
@@ -22218,7 +22243,7 @@ impl PRC_TYPE_TOPO_SingleWireBodyCompress {
             rdr.position_in_bits()?
         );
         let _ig = indent::IndentGuard::new();
-        assert!(!_ctx.is_curve_trimming_face());
+        prc_gen_assert!(!_ctx.is_curve_trimming_face());
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
         if Ok(PRC_TYPE_TOPO_SingleWireBodyCompress) != (PrcType::try_from(id.value)) {
