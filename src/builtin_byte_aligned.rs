@@ -142,6 +142,9 @@ impl UncompressedFileHeader {
         for i in 0..self.ufsd.len() {
             let fs = &self.ufsd[i];
 
+            if fs.glob_start_offset.value <= fs.header_start_offset.value {
+                return Err(std::io::Error::other("invalid header offset"));
+            }
             let section_size = fs.glob_start_offset.value - fs.header_start_offset.value;
             let mut section: Vec<u8> = vec![0; section_size as usize];
             rdr.seek(std::io::SeekFrom::Start(
