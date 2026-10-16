@@ -76,7 +76,7 @@ pub fn print_schema(tokens: &[u32]) {
     let mut prev_raw: bool = false;
     for j in 0..tokens.len() {
         let tok = tokens[j];
-        if tok == EPRCSchema_Block_End as u32 || tok == EPRCSchema_Else as u32 && indent > 0 {
+        if (tok == EPRCSchema_Block_End as u32 || tok == EPRCSchema_Else as u32) && indent > 0 {
             indent -= 2;
         }
         let mut show_raw: bool = false;
