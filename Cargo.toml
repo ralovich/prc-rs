@@ -29,7 +29,7 @@ serde_json = "1.0"
 
 [workspace]
 members = ["tools"]
-exclude = ["fuzz"]
+exclude = ["afl", "fuzz"]
 
 [profile.release]
 lto = "thin"
@@ -40,4 +40,4 @@ lto = "off"
 debug = true
 
 [lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(fuzzing)'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(fuzzing)', 'cfg(afl)'] }

@@ -1,0 +1,20 @@
+[package]
+name = "prc-afl"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[workspace]
+
+[dependencies]
+afl = "0.18.2"
+
+[dependencies.prc]
+path = ".."
+
+[[bin]]
+name = "afl-target-1"
+path = "afl-targets/afl-target-1.rs"
+test = false
+doc = false
+bench = false
