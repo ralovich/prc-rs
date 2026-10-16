@@ -480,7 +480,7 @@ impl Integer {
     ) -> io::Result<Self> {
         let mut ii: i32 = 0;
         let mut j: i32 = 0;
-        while read_bits(r, 1)? != 0 {
+        while read_bits(r, 1)? != 0 && j < 4 {
             let ival8: u8 = read_bits(r, 8)?;
             let ival: i32 = ival8 as i32;
             ii |= ival << (8 * j);
