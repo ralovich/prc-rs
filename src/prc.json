@@ -1810,7 +1810,7 @@
                     {
                         "name": "type_of_entity",
                         "data_type": "UnsignedInteger",
-                        "on_set": "if PRC_TYPE_TOPO_Face!=PrcType::try_from(type_of_entity.value).unwrap() && PRC_TYPE_TOPO_Edge!=PrcType::try_from(type_of_entity.value).unwrap() && PRC_TYPE_TOPO_CoEdge!=PrcType::try_from(type_of_entity.value).unwrap() && PRC_TYPE_TOPO_UniqueVertex!=PrcType::try_from(type_of_entity.value).unwrap() { warn!(\"Unexpected type ({}) being referenced!\", type_of_entity.value); }",
+                        "on_set": "if Ok(PRC_TYPE_TOPO_Face)!=PrcType::try_from(type_of_entity.value) && Ok(PRC_TYPE_TOPO_Edge)!=PrcType::try_from(type_of_entity.value) && Ok(PRC_TYPE_TOPO_CoEdge)!=PrcType::try_from(type_of_entity.value) && Ok(PRC_TYPE_TOPO_UniqueVertex)!=PrcType::try_from(type_of_entity.value) { warn!(\"Unexpected type ({}) being referenced!\", type_of_entity.value); }",
                         "SPECBUG": "has also seen PRC_TYPE_TOPO_Edge in e.g. -342, -344"
                     },
                     {

@@ -5973,10 +5973,10 @@ impl PRC_TYPE_MISC_ReferenceOnTopology {
         }
         let mut type_of_entity: UnsignedInteger = Default::default();
         type_of_entity = UnsignedInteger::from_reader(rdr)?;
-        if PRC_TYPE_TOPO_Face != PrcType::try_from(type_of_entity.value).unwrap()
-            && PRC_TYPE_TOPO_Edge != PrcType::try_from(type_of_entity.value).unwrap()
-            && PRC_TYPE_TOPO_CoEdge != PrcType::try_from(type_of_entity.value).unwrap()
-            && PRC_TYPE_TOPO_UniqueVertex != PrcType::try_from(type_of_entity.value).unwrap()
+        if Ok(PRC_TYPE_TOPO_Face) != PrcType::try_from(type_of_entity.value)
+            && Ok(PRC_TYPE_TOPO_Edge) != PrcType::try_from(type_of_entity.value)
+            && Ok(PRC_TYPE_TOPO_CoEdge) != PrcType::try_from(type_of_entity.value)
+            && Ok(PRC_TYPE_TOPO_UniqueVertex) != PrcType::try_from(type_of_entity.value)
         {
             warn!(
                 "Unexpected type ({}) being referenced!",
