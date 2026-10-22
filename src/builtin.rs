@@ -1730,6 +1730,7 @@ impl UncompressedBoolArray {
     }
     pub fn from_reader1<R: BitRead>(r: &mut R, length: u32) -> io::Result<Self> {
         //println!("UncompressedBoolArray: {}", length);
+        io_check_limit!(length, crate::limits::MAX_NUM_ARRAY_ELEMENTS);
         let mut a: Vec<bool> = Vec::with_capacity(length as usize);
         a.resize(length as usize, false);
         for au in &mut a {
