@@ -2681,7 +2681,7 @@ mod tests {
     }
 
     fn from_bits_str(st: &str) -> std::io::Result<Vec<u8>> {
-        let mut v: Vec<u8> = vec![];
+        let mut v: Vec<u8> = Vec::with_capacity(st.chars().count().div_ceil(8));
         let mut uc: u8 = 0;
 
         let mut n = 0; // number of bits collected in uc
@@ -2706,8 +2706,6 @@ mod tests {
     }
 
     #[allow(unused)]
-    #[test]
-    #[ignore = "slow"]
     fn generate_csv_doubles() {
         let n = 1966002;
 
@@ -2758,8 +2756,6 @@ mod tests {
     }
 
     #[allow(unused)]
-    #[test]
-    #[ignore = "slow"]
     fn verify_csv_doubles() {
         let f = std::fs::File::open("doubles_rust.csv").expect("Should be able to open file");
         let br = std::io::BufReader::new(f);
@@ -2792,6 +2788,13 @@ mod tests {
         }
 
         assert_eq!(1966002usize * 2, n);
+    }
+
+    #[test]
+    #[ignore = "slow"]
+    fn generate_and_verify_csv_doubles() {
+        generate_csv_doubles();
+        verify_csv_doubles();
     }
 
     #[test]
