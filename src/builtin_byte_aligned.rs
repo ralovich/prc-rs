@@ -132,7 +132,11 @@ impl UncompressedFileHeader {
 
         let mut sections_decompressed: Vec<[Vec<u8>; PrcSectionKind::Count as usize]> =
             vec![Default::default(); self.ufsd.len()];
-        for i in 0..self.ufsd.len() {
+        for (i, sdi) in sections_decompressed
+            .iter_mut()
+            .enumerate()
+            .take(self.ufsd.len())
+        {
             let fs = &self.ufsd[i];
 
             if fs.glob_start_offset.value <= fs.header_start_offset.value {
@@ -145,7 +149,7 @@ impl UncompressedFileHeader {
                 fs.header_start_offset.value as u64,
             ))?;
             rdr.read_exact(&mut section)?;
-            sections_decompressed[i][PrcSectionKind::Header as usize] = section;
+            sdi[PrcSectionKind::Header as usize] = section;
 
             if fs.tree_start_offset.value <= fs.glob_start_offset.value {
                 return Err(std::io::Error::other("invalid glob offset"));
@@ -156,7 +160,7 @@ impl UncompressedFileHeader {
             rdr.seek(std::io::SeekFrom::Start(fs.glob_start_offset.value as u64))?;
             rdr.read_exact(&mut section_compr)?;
             let glob = decompress(&section_compr)?;
-            sections_decompressed[i][PrcSectionKind::Global as usize] = glob;
+            sdi[PrcSectionKind::Global as usize] = glob;
 
             if opts.all || opts.tree {
                 if fs.tess_start_offset.value <= fs.tree_start_offset.value {
@@ -168,7 +172,7 @@ impl UncompressedFileHeader {
                 rdr.seek(std::io::SeekFrom::Start(fs.tree_start_offset.value as u64))?;
                 rdr.read_exact(&mut section_compr)?;
                 let tree = decompress(&section_compr)?;
-                sections_decompressed[i][PrcSectionKind::Tree as usize] = tree;
+                sdi[PrcSectionKind::Tree as usize] = tree;
             }
 
             if opts.all || opts.tess {
@@ -181,7 +185,7 @@ impl UncompressedFileHeader {
                 rdr.seek(std::io::SeekFrom::Start(fs.tess_start_offset.value as u64))?;
                 rdr.read_exact(&mut section_compr)?;
                 let tess = decompress(&section_compr)?;
-                sections_decompressed[i][PrcSectionKind::Tessellation as usize] = tess;
+                sdi[PrcSectionKind::Tessellation as usize] = tess;
             }
 
             if opts.all || opts.geom {
@@ -194,7 +198,7 @@ impl UncompressedFileHeader {
                 rdr.seek(std::io::SeekFrom::Start(fs.geom_start_offset.value as u64))?;
                 rdr.read_exact(&mut section_compr)?;
                 let geom = decompress(&section_compr)?;
-                sections_decompressed[i][PrcSectionKind::Geometry as usize] = geom;
+                sdi[PrcSectionKind::Geometry as usize] = geom;
             }
 
             if opts.all || opts.extgeom {
@@ -211,7 +215,7 @@ impl UncompressedFileHeader {
                 rdr.seek(std::io::SeekFrom::Start(fs.extg_start_offset.value as u64))?;
                 rdr.read_exact(&mut section_compr)?;
                 let extg = decompress(&section_compr)?;
-                sections_decompressed[i][PrcSectionKind::ExtraGeometry as usize] = extg;
+                sdi[PrcSectionKind::ExtraGeometry as usize] = extg;
             }
         }
 

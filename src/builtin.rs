@@ -1285,17 +1285,23 @@ impl CompressedIntegerArray {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W) -> std::io::Result<()> {
         let mut num_bits_used_to_store_ints: Vec<i8> = vec![0; self.a.len()];
-        for i in 0..self.a.len() {
-            num_bits_used_to_store_ints[i] =
-                get_number_of_bits_used_to_store_integer(self.a[i]) as i8;
+        for (i, nbi) in num_bits_used_to_store_ints
+            .iter_mut()
+            .enumerate()
+            .take(self.a.len())
+        {
+            *nbi = get_number_of_bits_used_to_store_integer(self.a[i]) as i8;
         }
         CharacterArray {
             a: num_bits_used_to_store_ints.clone(),
         }
         .to_writer2(w, 6, true, true, true)?;
-        for i in 0..self.a.len() {
-            IntegerWithVariableBitNumber { value: self.a[i] }
-                .to_writer(w, num_bits_used_to_store_ints[i] as u32)?;
+        for (i, nbi) in num_bits_used_to_store_ints
+            .iter()
+            .enumerate()
+            .take(self.a.len())
+        {
+            IntegerWithVariableBitNumber { value: self.a[i] }.to_writer(w, *nbi as u32)?;
         }
         Ok(())
     }
@@ -1421,11 +1427,16 @@ impl CompressedIndiceArray {
         let mut diff_num_bits_used_to_store_ints: Vec<i8> = vec![0; self.a.len()];
         let mut c_bit_count = get_number_of_bits_used_to_store_integer(self.a[0]) as i8;
         diff_num_bits_used_to_store_ints[0] = c_bit_count;
-        for i in 1..self.a.len() {
+        for (i, dnbi) in diff_num_bits_used_to_store_ints
+            .iter_mut()
+            .enumerate()
+            .take(self.a.len())
+            .skip(1)
+        {
             let needed_bits =
                 get_number_of_bits_used_to_store_integer(self.a[i] - self.a[i - 1]) as i8;
-            diff_num_bits_used_to_store_ints[i] = needed_bits - c_bit_count;
-            c_bit_count += diff_num_bits_used_to_store_ints[i];
+            *dnbi = needed_bits - c_bit_count;
+            c_bit_count += *dnbi;
         }
         let sign_extend = true;
         CharacterArray {
@@ -1440,8 +1451,13 @@ impl CompressedIndiceArray {
         )?;
         let mut c_bit_count = get_number_of_bits_used_to_store_integer(self.a[0]) as i8;
         IntegerWithVariableBitNumber { value: self.a[0] }.to_writer(w, c_bit_count as u32)?;
-        for i in 1..self.a.len() {
-            c_bit_count += diff_num_bits_used_to_store_ints[i];
+        for (i, dnbi) in diff_num_bits_used_to_store_ints
+            .iter()
+            .enumerate()
+            .take(self.a.len())
+            .skip(1)
+        {
+            c_bit_count += *dnbi;
 
             IntegerWithVariableBitNumber {
                 value: self.a[i] - self.a[i - 1],
