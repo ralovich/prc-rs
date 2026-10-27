@@ -52,4 +52,4 @@ const LIBPRC_VERSION_PATCH: &str = env!("CARGO_PKG_VERSION_PATCH");
 /// Version of the PRC specification implemented.
 const LIBPRC_PRC_SPEC_VERSION: u32 = 8137;
 /// Version of the JSON representation.
-const LIBPRC_JSON_SCHEMA_VERSION: u32 = 20260910;
+const LIBPRC_JSON_SCHEMA_VERSION: u32 = 20261016;

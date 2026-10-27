@@ -84,16 +84,16 @@ impl Name {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let same_name = self.same_name.clone();
-        same_name.to_writer(_w)?;
+        same_name.to_writer(w)?;
         let name_cond = !same_name;
         let mut name: &String = &Default::default();
         if name_cond {
             name = self.name.as_ref().unwrap();
-            name.to_writer(_w)?;
+            name.to_writer(w)?;
         }
         Ok(())
     }
@@ -159,22 +159,22 @@ impl AttributeEntry {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let flag = self.flag.clone();
-        flag.to_writer(_w)?;
+        flag.to_writer(w)?;
         let integer_title_cond = !!flag;
         let mut integer_title: &UnsignedInteger = &Default::default();
         if integer_title_cond {
             integer_title = self.integer_title.as_ref().unwrap();
-            integer_title.to_writer(_w)?;
+            integer_title.to_writer(w)?;
         }
         let string_title_cond = !flag;
         let mut string_title: &String = &Default::default();
         if string_title_cond {
             string_title = self.string_title.as_ref().unwrap();
-            string_title.to_writer(_w)?;
+            string_title.to_writer(w)?;
         }
         Ok(())
     }
@@ -290,48 +290,48 @@ impl AttributeKeyValue {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let title = self.title.clone();
-        title.to_writer(_w, _ctx)?;
+        title.to_writer(w, _ctx)?;
         let type_ = self.type_.clone();
-        type_.to_writer(_w)?;
+        type_.to_writer(w)?;
         let valuei_cond = type_.value == 1;
         let mut valuei: &Integer = &Default::default();
         if valuei_cond {
             valuei = self.valuei.as_ref().unwrap();
-            valuei.to_writer(_w)?;
+            valuei.to_writer(w)?;
         }
         let valued_cond = type_.value == 2;
         let mut valued: &Double = &Default::default();
         if valued_cond {
             valued = self.valued.as_ref().unwrap();
-            valued.to_writer(_w)?;
+            valued.to_writer(w)?;
         }
         let valuet_cond = type_.value == 3;
         let mut valuet: &Integer = &Default::default();
         if valuet_cond {
             valuet = self.valuet.as_ref().unwrap();
-            valuet.to_writer(_w)?;
+            valuet.to_writer(w)?;
         }
         let values_cond = type_.value == 4;
         let mut values: &String = &Default::default();
         if values_cond {
             values = self.values.as_ref().unwrap();
-            values.to_writer(_w)?;
+            values.to_writer(w)?;
         }
         let value_msp_cond = type_.value == 5;
         let mut value_msp: &Integer = &Default::default();
         if value_msp_cond {
             value_msp = self.value_msp.as_ref().unwrap();
-            value_msp.to_writer(_w)?;
+            value_msp.to_writer(w)?;
         }
         let value_lsp_cond = type_.value == 5;
         let mut value_lsp: &UnsignedInteger = &Default::default();
         if value_lsp_cond {
             value_lsp = self.value_lsp.as_ref().unwrap();
-            value_lsp.to_writer(_w)?;
+            value_lsp.to_writer(w)?;
         }
         Ok(())
     }
@@ -404,18 +404,18 @@ impl PRC_TYPE_MISC_Attribute {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let attribute_title = self.attribute_title.clone();
-        attribute_title.to_writer(_w, _ctx)?;
+        attribute_title.to_writer(w, _ctx)?;
         let number_of_attributes = self.number_of_attributes.clone();
-        number_of_attributes.to_writer(_w)?;
+        number_of_attributes.to_writer(w)?;
         let attributes = self.attributes.clone();
         for i in &self.attributes {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -460,14 +460,14 @@ impl AttributeData {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let attribute_count = self.attribute_count.clone();
-        attribute_count.to_writer(_w)?;
+        attribute_count.to_writer(w)?;
         let attributes = self.attributes.clone();
         for i in &self.attributes {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -503,13 +503,13 @@ impl ContentPRCBase {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let attribute_data = self.attribute_data.clone();
-        attribute_data.to_writer(_w, _ctx)?;
+        attribute_data.to_writer(w, _ctx)?;
         let entity_name = self.entity_name.clone();
-        entity_name.to_writer(_w, _ctx)?;
+        entity_name.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -581,28 +581,28 @@ impl ElementGraphicsBehavior {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let use_context = self.use_context.clone();
-        use_context.to_writer(_w)?;
+        use_context.to_writer(w)?;
         let biased_layer_index_cond = !use_context;
         let mut biased_layer_index: &UnsignedInteger = &Default::default();
         if biased_layer_index_cond {
             biased_layer_index = self.biased_layer_index.as_ref().unwrap();
-            biased_layer_index.to_writer(_w)?;
+            biased_layer_index.to_writer(w)?;
         }
         let biased_index_of_line_style_cond = !use_context;
         let mut biased_index_of_line_style: &UnsignedInteger = &Default::default();
         if biased_index_of_line_style_cond {
             biased_index_of_line_style = self.biased_index_of_line_style.as_ref().unwrap();
-            biased_index_of_line_style.to_writer(_w)?;
+            biased_index_of_line_style.to_writer(w)?;
         }
         let behavior_bit_field_cond = !use_context;
         let mut behavior_bit_field: &UnsignedShort = &Default::default();
         if behavior_bit_field_cond {
             behavior_bit_field = self.behavior_bit_field.as_ref().unwrap();
-            behavior_bit_field.to_writer(_w)?;
+            behavior_bit_field.to_writer(w)?;
         }
         Ok(())
     }
@@ -647,14 +647,14 @@ impl GeometrySummary {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let number_of_bodies = self.number_of_bodies.clone();
-        number_of_bodies.to_writer(_w)?;
+        number_of_bodies.to_writer(w)?;
         let bodies = self.bodies.clone();
         for i in &self.bodies {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -699,18 +699,18 @@ impl BodyInformation {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let body_serial_type = self.body_serial_type.clone();
-        body_serial_type.to_writer(_w)?;
+        body_serial_type.to_writer(w)?;
         let tolerance_cond = body_serial_type.value == PRC_TYPE_TOPO_BrepDataCompress as u32
             || body_serial_type.value == PRC_TYPE_TOPO_SingleWireBodyCompress as u32
             || body_serial_type.value == PRC_TYPE_TESS_3D_Compressed as u32;
         let mut tolerance: &Double = &Default::default();
         if tolerance_cond {
             tolerance = self.tolerance.as_ref().unwrap();
-            tolerance.to_writer(_w)?;
+            tolerance.to_writer(w)?;
         }
         Ok(())
     }
@@ -755,14 +755,14 @@ impl ContextGraphics {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let number_of_treat_type = self.number_of_treat_type.clone();
-        number_of_treat_type.to_writer(_w)?;
+        number_of_treat_type.to_writer(w)?;
         let treat_types = self.treat_types.clone();
         for i in &self.treat_types {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -811,16 +811,16 @@ impl GraphicsInformation {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let element_type = self.element_type.clone();
-        element_type.to_writer(_w)?;
+        element_type.to_writer(w)?;
         let number_of_element = self.number_of_element.clone();
-        number_of_element.to_writer(_w)?;
+        number_of_element.to_writer(w)?;
         let treat_types = self.treat_types.clone();
         for i in &self.treat_types {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -863,16 +863,16 @@ impl ElementInformation {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let has_graphics = self.has_graphics.clone();
-        has_graphics.to_writer(_w)?;
+        has_graphics.to_writer(w)?;
         let graphic_behavior_cond = !!has_graphics;
         let mut graphic_behavior: &ElementGraphicsBehavior = &Default::default();
         if graphic_behavior_cond {
             graphic_behavior = self.graphic_behavior.as_ref().unwrap();
-            graphic_behavior.to_writer(_w, _ctx)?;
+            graphic_behavior.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -908,13 +908,13 @@ impl ExtraGeometry {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let summary = self.summary.clone();
-        summary.to_writer(_w, _ctx)?;
+        summary.to_writer(w, _ctx)?;
         let context_data = self.context_data.clone();
-        context_data.to_writer(_w, _ctx)?;
+        context_data.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -1000,21 +1000,21 @@ impl PRC_TYPE_ASM_FileStructureExtraGeometry {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let extra_geom_count = self.extra_geom_count.clone();
-        extra_geom_count.to_writer(_w)?;
+        extra_geom_count.to_writer(w)?;
         let extra_geom = self.extra_geom.clone();
         for i in &self.extra_geom {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -1062,16 +1062,16 @@ impl Entity_schema_definition {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let entity_type = self.entity_type.clone();
-        entity_type.to_writer(_w)?;
+        entity_type.to_writer(w)?;
         let token_count = self.token_count.clone();
-        token_count.to_writer(_w)?;
+        token_count.to_writer(w)?;
         let schema_tokens = self.schema_tokens.clone();
         for i in &self.schema_tokens {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         Ok(())
     }
@@ -1116,14 +1116,14 @@ impl Schema {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let schema_count = self.schema_count.clone();
-        schema_count.to_writer(_w)?;
+        schema_count.to_writer(w)?;
         let schemas = self.schemas.clone();
         for i in &self.schemas {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -1167,17 +1167,17 @@ impl UniqueId {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let unique_id0 = self.unique_id0.clone();
-        unique_id0.to_writer(_w)?;
+        unique_id0.to_writer(w)?;
         let unique_id1 = self.unique_id1.clone();
-        unique_id1.to_writer(_w)?;
+        unique_id1.to_writer(w)?;
         let unique_id2 = self.unique_id2.clone();
-        unique_id2.to_writer(_w)?;
+        unique_id2.to_writer(w)?;
         let unique_id3 = self.unique_id3.clone();
-        unique_id3.to_writer(_w)?;
+        unique_id3.to_writer(w)?;
         Ok(())
     }
 }
@@ -1212,13 +1212,13 @@ impl FontKey {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let font_size = self.font_size.clone();
-        font_size.to_writer(_w)?;
+        font_size.to_writer(w)?;
         let font_attributes = self.font_attributes.clone();
-        font_attributes.to_writer(_w)?;
+        font_attributes.to_writer(w)?;
         Ok(())
     }
 }
@@ -1269,18 +1269,18 @@ impl FontKeysSameFont {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let font_name = self.font_name.clone();
-        font_name.to_writer(_w)?;
+        font_name.to_writer(w)?;
         let character_set = self.character_set.clone();
-        character_set.to_writer(_w)?;
+        character_set.to_writer(w)?;
         let key_count = self.key_count.clone();
-        key_count.to_writer(_w)?;
+        key_count.to_writer(w)?;
         let font_key_list = self.font_key_list.clone();
         for i in &self.font_key_list {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -1329,16 +1329,16 @@ impl MarkupSerializationHelper {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let default_font_family_name = self.default_font_family_name.clone();
-        default_font_family_name.to_writer(_w)?;
+        default_font_family_name.to_writer(w)?;
         let font_keys_count = self.font_keys_count.clone();
-        font_keys_count.to_writer(_w)?;
+        font_keys_count.to_writer(w)?;
         let font_keys_of_font = self.font_keys_of_font.clone();
         for i in &self.font_keys_of_font {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -1374,15 +1374,15 @@ impl RgbColor {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let red = self.red.clone();
-        red.to_writer(_w)?;
+        red.to_writer(w)?;
         let green = self.green.clone();
-        green.to_writer(_w)?;
+        green.to_writer(w)?;
         let blue = self.blue.clone();
-        blue.to_writer(_w)?;
+        blue.to_writer(w)?;
         Ok(())
     }
 }
@@ -1458,21 +1458,21 @@ impl PRC_TYPE_GRAPH_Picture {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let format = self.format.clone();
-        format.to_writer(_w)?;
+        format.to_writer(w)?;
         let biased_uncompressed_file_index = self.biased_uncompressed_file_index.clone();
-        biased_uncompressed_file_index.to_writer(_w)?;
+        biased_uncompressed_file_index.to_writer(w)?;
         let pixel_width = self.pixel_width.clone();
-        pixel_width.to_writer(_w)?;
+        pixel_width.to_writer(w)?;
         let pixel_height = self.pixel_height.clone();
-        pixel_height.to_writer(_w)?;
+        pixel_height.to_writer(w)?;
         Ok(())
     }
 }
@@ -1504,13 +1504,13 @@ impl Vector2D {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let x = self.x.clone();
-        x.to_writer(_w)?;
+        x.to_writer(w)?;
         let y = self.y.clone();
-        y.to_writer(_w)?;
+        y.to_writer(w)?;
         Ok(())
     }
 }
@@ -1545,15 +1545,15 @@ impl Vector3D {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let x = self.x.clone();
-        x.to_writer(_w)?;
+        x.to_writer(w)?;
         let y = self.y.clone();
-        y.to_writer(_w)?;
+        y.to_writer(w)?;
         let z = self.z.clone();
-        z.to_writer(_w)?;
+        z.to_writer(w)?;
         Ok(())
     }
 }
@@ -1653,21 +1653,21 @@ impl Transformation2D {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let behavior = self.behavior.clone();
-        behavior.to_writer(_w)?;
+        behavior.to_writer(w)?;
         let translation_cond = (behavior.value & PRC_TRANSFORMATION_Translate as i8) != 0;
         let mut translation: &Vector2D = &Default::default();
         if translation_cond {
             translation = self.translation.as_ref().unwrap();
-            translation.to_writer(_w, _ctx)?;
+            translation.to_writer(w, _ctx)?;
         }
         let non_ortho_matrix = self.non_ortho_matrix.clone();
         if (behavior.value & PRC_TRANSFORMATION_NonOrtho as i8) != 0 {
             for i in self.non_ortho_matrix.as_ref().unwrap() {
-                i.to_writer(_w, _ctx)?;
+                i.to_writer(w, _ctx)?;
             }
         }
         let rotation_cond = ((behavior.value & PRC_TRANSFORMATION_Rotate as i8) != 0)
@@ -1675,25 +1675,25 @@ impl Transformation2D {
         let mut rotation: &Vector2D = &Default::default();
         if rotation_cond {
             rotation = self.rotation.as_ref().unwrap();
-            rotation.to_writer(_w, _ctx)?;
+            rotation.to_writer(w, _ctx)?;
         }
         let non_uniform_scale_cond =
             (behavior.value & PRC_TRANSFORMATION_NonUniformScale as i8) != 0;
         let mut non_uniform_scale: &Vector2D = &Default::default();
         if non_uniform_scale_cond {
             non_uniform_scale = self.non_uniform_scale.as_ref().unwrap();
-            non_uniform_scale.to_writer(_w, _ctx)?;
+            non_uniform_scale.to_writer(w, _ctx)?;
         }
         let scale_cond = (behavior.value & PRC_TRANSFORMATION_Scale as i8) != 0;
         let mut scale: &Double = &Default::default();
         if scale_cond {
             scale = self.scale.as_ref().unwrap();
-            scale.to_writer(_w)?;
+            scale.to_writer(w)?;
         }
         let homogeneous = self.homogeneous.clone();
         if (behavior.value & PRC_TRANSFORMATION_Homogeneous as i8) != 0 {
             for i in self.homogeneous.as_ref().unwrap() {
-                i.to_writer(_w)?;
+                i.to_writer(w)?;
             }
         }
         Ok(())
@@ -1737,16 +1737,16 @@ impl Transformation2DWithBit {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let has_transformation = self.has_transformation.clone();
-        has_transformation.to_writer(_w)?;
+        has_transformation.to_writer(w)?;
         let transformation_cond = !!has_transformation;
         let mut transformation: &Transformation2D = &Default::default();
         if transformation_cond {
             transformation = self.transformation.as_ref().unwrap();
-            transformation.to_writer(_w, _ctx)?;
+            transformation.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -1849,21 +1849,21 @@ impl Transformation3D {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let behavior = self.behavior.clone();
-        behavior.to_writer(_w)?;
+        behavior.to_writer(w)?;
         let translation_cond = (behavior.value as u8 & PRC_TRANSFORMATION_Translate as u8) != 0;
         let mut translation: &Vector3D = &Default::default();
         if translation_cond {
             translation = self.translation.as_ref().unwrap();
-            translation.to_writer(_w, _ctx)?;
+            translation.to_writer(w, _ctx)?;
         }
         let non_ortho_matrix = self.non_ortho_matrix.clone();
         if (behavior.value as u8 & PRC_TRANSFORMATION_NonOrtho as u8) != 0 {
             for i in self.non_ortho_matrix.as_ref().unwrap() {
-                i.to_writer(_w, _ctx)?;
+                i.to_writer(w, _ctx)?;
             }
         }
         let rotation = self.rotation.clone();
@@ -1871,7 +1871,7 @@ impl Transformation3D {
             && ((behavior.value as u8 & PRC_TRANSFORMATION_NonOrtho as u8) == 0)
         {
             for i in self.rotation.as_ref().unwrap() {
-                i.to_writer(_w, _ctx)?;
+                i.to_writer(w, _ctx)?;
             }
         }
         let non_uniform_scale_cond =
@@ -1879,18 +1879,18 @@ impl Transformation3D {
         let mut non_uniform_scale: &Vector3D = &Default::default();
         if non_uniform_scale_cond {
             non_uniform_scale = self.non_uniform_scale.as_ref().unwrap();
-            non_uniform_scale.to_writer(_w, _ctx)?;
+            non_uniform_scale.to_writer(w, _ctx)?;
         }
         let scale_cond = (behavior.value as u8 & PRC_TRANSFORMATION_Scale as u8) != 0;
         let mut scale: &Double = &Default::default();
         if scale_cond {
             scale = self.scale.as_ref().unwrap();
-            scale.to_writer(_w)?;
+            scale.to_writer(w)?;
         }
         let homogeneous = self.homogeneous.clone();
         if (behavior.value as u8 & PRC_TRANSFORMATION_Homogeneous as u8) != 0 {
             for i in self.homogeneous.as_ref().unwrap() {
-                i.to_writer(_w)?;
+                i.to_writer(w)?;
             }
         }
         Ok(())
@@ -1934,16 +1934,16 @@ impl Transformation3DWithBit {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let has_transformation = self.has_transformation.clone();
-        has_transformation.to_writer(_w)?;
+        has_transformation.to_writer(w)?;
         let transformation_cond = !!has_transformation;
         let mut transformation: &Transformation3D = &Default::default();
         if transformation_cond {
             transformation = self.transformation.as_ref().unwrap();
-            transformation.to_writer(_w, _ctx)?;
+            transformation.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -1993,13 +1993,13 @@ impl PRC_TYPE_MISC_CartesianTransformation {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let transform = self.transform.clone();
-        transform.to_writer(_w, _ctx)?;
+        transform.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -2054,14 +2054,14 @@ impl PRC_TYPE_MISC_GeneralTransformation {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let general_transform = self.general_transform.clone();
         for i in &self.general_transform {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         Ok(())
     }
@@ -2149,22 +2149,22 @@ impl PRC_TYPE_GRAPH_TextureTransformation {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let invert_s = self.invert_s.clone();
-        invert_s.to_writer(_w)?;
+        invert_s.to_writer(w)?;
         let invert_t = self.invert_t.clone();
-        invert_t.to_writer(_w)?;
+        invert_t.to_writer(w)?;
         let transform_2d = self.transform_2d.clone();
-        transform_2d.to_writer(_w)?;
+        transform_2d.to_writer(w)?;
         let transform_cond = !!transform_2d;
         let mut transform: &Transformation2D = &Default::default();
         if transform_cond {
             transform = self.transform.as_ref().unwrap();
-            transform.to_writer(_w, _ctx)?;
+            transform.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -2208,17 +2208,17 @@ impl ContentPRCRefBase {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let nonpersistent_id = self.nonpersistent_id.clone();
-        nonpersistent_id.to_writer(_w)?;
+        nonpersistent_id.to_writer(w)?;
         let unique_id_cad = self.unique_id_cad.clone();
-        unique_id_cad.to_writer(_w)?;
+        unique_id_cad.to_writer(w)?;
         let unique_id = self.unique_id.clone();
-        unique_id.to_writer(_w)?;
+        unique_id.to_writer(w)?;
         Ok(())
     }
 }
@@ -2629,46 +2629,46 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let biased_picture_index = self.biased_picture_index.clone();
-        biased_picture_index.to_writer(_w)?;
+        biased_picture_index.to_writer(w)?;
         let texture_dimension = self.texture_dimension.clone();
-        texture_dimension.to_writer(_w)?;
+        texture_dimension.to_writer(w)?;
         let texture_mapping_type = self.texture_mapping_type.clone();
-        texture_mapping_type.to_writer(_w)?;
+        texture_mapping_type.to_writer(w)?;
         let texture_mapping_operator_cond =
             texture_mapping_type.value as i32 == TextureMappingType::Operator as i32;
         let mut texture_mapping_operator: &Integer = &Default::default();
         if texture_mapping_operator_cond {
             texture_mapping_operator = self.texture_mapping_operator.as_ref().unwrap();
-            texture_mapping_operator.to_writer(_w)?;
+            texture_mapping_operator.to_writer(w)?;
         }
         let has_transformation_cond =
             texture_mapping_type.value == TextureMappingType::Operator as i32;
         let mut has_transformation: &Boolean = &Default::default();
         if has_transformation_cond {
             has_transformation = self.has_transformation.as_ref().unwrap();
-            has_transformation.to_writer(_w)?;
+            has_transformation.to_writer(w)?;
         }
         let transformation_cond = texture_mapping_type.value == TextureMappingType::Operator as i32
             && !!has_transformation.value;
         let mut transformation: &PRC_TYPE_MISC_CartesianTransformation = &Default::default();
         if transformation_cond {
             transformation = self.transformation.as_ref().unwrap();
-            transformation.to_writer(_w, _ctx)?;
+            transformation.to_writer(w, _ctx)?;
         }
         let texture_mapping_attributes = self.texture_mapping_attributes.clone();
-        texture_mapping_attributes.to_writer(_w)?;
+        texture_mapping_attributes.to_writer(w)?;
         let number_of_texture_mapping_attributes_intensities = self
             .number_of_texture_mapping_attributes_intensities
             .clone();
-        number_of_texture_mapping_attributes_intensities.to_writer(_w)?;
+        number_of_texture_mapping_attributes_intensities.to_writer(w)?;
         let texture_mapping_attributes_intensities =
             self.texture_mapping_attributes_intensities.clone();
         if number_of_texture_mapping_attributes_intensities.value != 0 {
@@ -2677,80 +2677,80 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
                 .as_ref()
                 .unwrap()
             {
-                i.to_writer(_w)?;
+                i.to_writer(w)?;
             }
         }
         let number_of_texture_mapping_attributes_components =
             self.number_of_texture_mapping_attributes_components.clone();
-        number_of_texture_mapping_attributes_components.to_writer(_w)?;
+        number_of_texture_mapping_attributes_components.to_writer(w)?;
         let texture_mapping_attributes_components =
             self.texture_mapping_attributes_components.clone();
         if number_of_texture_mapping_attributes_components.value != 0 {
             for i in self.texture_mapping_attributes_components.as_ref().unwrap() {
-                i.to_writer(_w)?;
+                i.to_writer(w)?;
             }
         }
         let texture_function = self.texture_function.clone();
-        texture_function.to_writer(_w)?;
+        texture_function.to_writer(w)?;
         let blend_src = self.blend_src.clone();
         if texture_function.value as i32 == TextureFunction::Blend as i32 {
             for i in self.blend_src.as_ref().unwrap() {
-                i.to_writer(_w)?;
+                i.to_writer(w)?;
             }
         }
         let blend_src_rgb = self.blend_src_rgb.clone();
-        blend_src_rgb.to_writer(_w)?;
+        blend_src_rgb.to_writer(w)?;
         let blend_dst_rgb_cond = blend_src_rgb.value != 0 as i32;
         let mut blend_dst_rgb: &Integer = &Default::default();
         if blend_dst_rgb_cond {
             blend_dst_rgb = self.blend_dst_rgb.as_ref().unwrap();
-            blend_dst_rgb.to_writer(_w)?;
+            blend_dst_rgb.to_writer(w)?;
         }
         let blend_src_alpha = self.blend_src_alpha.clone();
-        blend_src_alpha.to_writer(_w)?;
+        blend_src_alpha.to_writer(w)?;
         let blend_dst_alpha_cond = blend_src_alpha.value != 0 as i32;
         let mut blend_dst_alpha: &Integer = &Default::default();
         if blend_dst_alpha_cond {
             blend_dst_alpha = self.blend_dst_alpha.as_ref().unwrap();
-            blend_dst_alpha.to_writer(_w)?;
+            blend_dst_alpha.to_writer(w)?;
         }
         let texture_application_mode = self.texture_application_mode.clone();
-        texture_application_mode.to_writer(_w)?;
+        texture_application_mode.to_writer(w)?;
         let alpha_test_cond =
             (texture_application_mode.value as u16 & TextureApplicationMode::AlphaTest as u16) != 0;
         let mut alpha_test: &Integer = &Default::default();
         if alpha_test_cond {
             alpha_test = self.alpha_test.as_ref().unwrap();
-            alpha_test.to_writer(_w)?;
+            alpha_test.to_writer(w)?;
         }
         let alpha_test_reference_cond =
             (texture_application_mode.value as u16 & TextureApplicationMode::AlphaTest as u16) != 0;
         let mut alpha_test_reference: &Double = &Default::default();
         if alpha_test_reference_cond {
             alpha_test_reference = self.alpha_test_reference.as_ref().unwrap();
-            alpha_test_reference.to_writer(_w)?;
+            alpha_test_reference.to_writer(w)?;
         }
         let texture_wrapping_mode_s = self.texture_wrapping_mode_s.clone();
-        texture_wrapping_mode_s.to_writer(_w)?;
+        texture_wrapping_mode_s.to_writer(w)?;
         let texture_wrapping_mode_t_cond = texture_dimension.value > 1;
         let mut texture_wrapping_mode_t: &Integer = &Default::default();
         if texture_wrapping_mode_t_cond {
             texture_wrapping_mode_t = self.texture_wrapping_mode_t.as_ref().unwrap();
-            texture_wrapping_mode_t.to_writer(_w)?;
+            texture_wrapping_mode_t.to_writer(w)?;
         }
         let texture_wrapping_mode_r_cond = texture_dimension.value > 2;
         let mut texture_wrapping_mode_r: &Integer = &Default::default();
         if texture_wrapping_mode_r_cond {
             texture_wrapping_mode_r = self.texture_wrapping_mode_r.as_ref().unwrap();
-            texture_wrapping_mode_r.to_writer(_w)?;
+            texture_wrapping_mode_r.to_writer(w)?;
         }
         let has_texture_transformation = self.has_texture_transformation.clone();
-        has_texture_transformation.to_writer(_w)?;
+        has_texture_transformation.to_writer(w)?;
         let texture_transformation_cond = !!has_texture_transformation;
         let mut texture_transformation: &PRC_TYPE_GRAPH_TextureTransformation = &Default::default();
         if texture_transformation_cond {
             texture_transformation = self.texture_transformation.as_ref().unwrap();
-            texture_transformation.to_writer(_w, _ctx)?;
+            texture_transformation.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -2856,31 +2856,31 @@ impl PRC_TYPE_GRAPH_Material {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let biased_ambient_index = self.biased_ambient_index.clone();
-        biased_ambient_index.to_writer(_w)?;
+        biased_ambient_index.to_writer(w)?;
         let biased_diffuse_index = self.biased_diffuse_index.clone();
-        biased_diffuse_index.to_writer(_w)?;
+        biased_diffuse_index.to_writer(w)?;
         let biased_emissive_index = self.biased_emissive_index.clone();
-        biased_emissive_index.to_writer(_w)?;
+        biased_emissive_index.to_writer(w)?;
         let biased_specular_index = self.biased_specular_index.clone();
-        biased_specular_index.to_writer(_w)?;
+        biased_specular_index.to_writer(w)?;
         let shininess = self.shininess.clone();
-        shininess.to_writer(_w)?;
+        shininess.to_writer(w)?;
         let ambient_alpha = self.ambient_alpha.clone();
-        ambient_alpha.to_writer(_w)?;
+        ambient_alpha.to_writer(w)?;
         let diffuse_alpha = self.diffuse_alpha.clone();
-        diffuse_alpha.to_writer(_w)?;
+        diffuse_alpha.to_writer(w)?;
         let emissive_alpha = self.emissive_alpha.clone();
-        emissive_alpha.to_writer(_w)?;
+        emissive_alpha.to_writer(w)?;
         let specular_alpha = self.specular_alpha.clone();
-        specular_alpha.to_writer(_w)?;
+        specular_alpha.to_writer(w)?;
         Ok(())
     }
 }
@@ -2957,21 +2957,21 @@ impl PRC_TYPE_GRAPH_TextureApplication {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let biased_material_generic_index = self.biased_material_generic_index.clone();
-        biased_material_generic_index.to_writer(_w)?;
+        biased_material_generic_index.to_writer(w)?;
         let biased_texture_definition_index = self.biased_texture_definition_index.clone();
-        biased_texture_definition_index.to_writer(_w)?;
+        biased_texture_definition_index.to_writer(w)?;
         let biased_next_texture_index = self.biased_next_texture_index.clone();
-        biased_next_texture_index.to_writer(_w)?;
+        biased_next_texture_index.to_writer(w)?;
         let biased_uv_coordinates_index = self.biased_uv_coordinates_index.clone();
-        biased_uv_coordinates_index.to_writer(_w)?;
+        biased_uv_coordinates_index.to_writer(w)?;
         Ok(())
     }
 }
@@ -3020,12 +3020,12 @@ impl Material {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         match &self.id_concrete {
-            Material_idConcrete::m(x) => &x.to_writer(_w, _ctx)?,
-            Material_idConcrete::ta(x) => &x.to_writer(_w, _ctx)?,
+            Material_idConcrete::m(x) => &x.to_writer(w, _ctx)?,
+            Material_idConcrete::ta(x) => &x.to_writer(w, _ctx)?,
             Material_idConcrete::Invalid(x) => {
                 return Err(Error::other(format!(
                     "Material: Unrecognized subtype: {}!",
@@ -3129,23 +3129,23 @@ impl PRC_TYPE_GRAPH_LinePattern {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let number_of_elements = self.number_of_elements.clone();
-        number_of_elements.to_writer(_w)?;
+        number_of_elements.to_writer(w)?;
         let length = self.length.clone();
         for i in &self.length {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let start_offset = self.start_offset.clone();
-        start_offset.to_writer(_w)?;
+        start_offset.to_writer(w)?;
         let scale = self.scale.clone();
-        scale.to_writer(_w)?;
+        scale.to_writer(w)?;
         Ok(())
     }
 }
@@ -3320,54 +3320,54 @@ impl PRC_TYPE_GRAPH_Style {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let line_width = self.line_width.clone();
-        line_width.to_writer(_w)?;
+        line_width.to_writer(w)?;
         let is_vpicture = self.is_vpicture.clone();
-        is_vpicture.to_writer(_w)?;
+        is_vpicture.to_writer(w)?;
         let biased_pattern_index = self.biased_pattern_index.clone();
-        biased_pattern_index.to_writer(_w)?;
+        biased_pattern_index.to_writer(w)?;
         let is_material = self.is_material.clone();
-        is_material.to_writer(_w)?;
+        is_material.to_writer(w)?;
         let biased_color_index = self.biased_color_index.clone();
-        biased_color_index.to_writer(_w)?;
+        biased_color_index.to_writer(w)?;
         let is_transparency = self.is_transparency.clone();
-        is_transparency.to_writer(_w)?;
+        is_transparency.to_writer(w)?;
         let transparency_cond = !!is_transparency;
         let mut transparency: &Character = &Default::default();
         if transparency_cond {
             transparency = self.transparency.as_ref().unwrap();
-            transparency.to_writer(_w)?;
+            transparency.to_writer(w)?;
         }
         let is_rendering_parameters = self.is_rendering_parameters.clone();
-        is_rendering_parameters.to_writer(_w)?;
+        is_rendering_parameters.to_writer(w)?;
         let rendering_parameters_cond = !!is_rendering_parameters;
         let mut rendering_parameters: &Character = &Default::default();
         if rendering_parameters_cond {
             rendering_parameters = self.rendering_parameters.as_ref().unwrap();
-            rendering_parameters.to_writer(_w)?;
+            rendering_parameters.to_writer(w)?;
         }
         let is_rendering_parameters2 = self.is_rendering_parameters2.clone();
-        is_rendering_parameters2.to_writer(_w)?;
+        is_rendering_parameters2.to_writer(w)?;
         let rendering_parameters2_cond = !!is_rendering_parameters2;
         let mut rendering_parameters2: &Character = &Default::default();
         if rendering_parameters2_cond {
             rendering_parameters2 = self.rendering_parameters2.as_ref().unwrap();
-            rendering_parameters2.to_writer(_w)?;
+            rendering_parameters2.to_writer(w)?;
         }
         let is_rendering_parameters3 = self.is_rendering_parameters3.clone();
-        is_rendering_parameters3.to_writer(_w)?;
+        is_rendering_parameters3.to_writer(w)?;
         let rendering_parameters3_cond = !!is_rendering_parameters3;
         let mut rendering_parameters3: &Character = &Default::default();
         if rendering_parameters3_cond {
             rendering_parameters3 = self.rendering_parameters3.as_ref().unwrap();
-            rendering_parameters3.to_writer(_w)?;
+            rendering_parameters3.to_writer(w)?;
         }
         Ok(())
     }
@@ -3445,21 +3445,21 @@ impl PRC_TYPE_GRAPH_DottingPattern {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let biased_next_pattern_index = self.biased_next_pattern_index.clone();
-        biased_next_pattern_index.to_writer(_w)?;
+        biased_next_pattern_index.to_writer(w)?;
         let pitch = self.pitch.clone();
-        pitch.to_writer(_w)?;
+        pitch.to_writer(w)?;
         let is_offset = self.is_offset.clone();
-        is_offset.to_writer(_w)?;
+        is_offset.to_writer(w)?;
         let biased_color_index = self.biased_color_index.clone();
-        biased_color_index.to_writer(_w)?;
+        biased_color_index.to_writer(w)?;
         Ok(())
     }
 }
@@ -3502,17 +3502,17 @@ impl HatchingLine {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let start_point = self.start_point.clone();
-        start_point.to_writer(_w, _ctx)?;
+        start_point.to_writer(w, _ctx)?;
         let end_point = self.end_point.clone();
-        end_point.to_writer(_w, _ctx)?;
+        end_point.to_writer(w, _ctx)?;
         let angle = self.angle.clone();
-        angle.to_writer(_w)?;
+        angle.to_writer(w)?;
         let biased_index_of_line_style = self.biased_index_of_line_style.clone();
-        biased_index_of_line_style.to_writer(_w)?;
+        biased_index_of_line_style.to_writer(w)?;
         Ok(())
     }
 }
@@ -3592,20 +3592,20 @@ impl PRC_TYPE_GRAPH_HatchingPattern {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let biased_next_pattern_index = self.biased_next_pattern_index.clone();
-        biased_next_pattern_index.to_writer(_w)?;
+        biased_next_pattern_index.to_writer(w)?;
         let number_of_hatching_lines = self.number_of_hatching_lines.clone();
-        number_of_hatching_lines.to_writer(_w)?;
+        number_of_hatching_lines.to_writer(w)?;
         let hatch = self.hatch.clone();
         for i in &self.hatch {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -3705,28 +3705,28 @@ impl PRC_TYPE_GRAPH_SolidPattern {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let biased_next_pattern_index = self.biased_next_pattern_index.clone();
-        biased_next_pattern_index.to_writer(_w)?;
+        biased_next_pattern_index.to_writer(w)?;
         let is_material = self.is_material.clone();
-        is_material.to_writer(_w)?;
+        is_material.to_writer(w)?;
         let biased_material_index_cond = !!is_material;
         let mut biased_material_index: &UnsignedInteger = &Default::default();
         if biased_material_index_cond {
             biased_material_index = self.biased_material_index.as_ref().unwrap();
-            biased_material_index.to_writer(_w)?;
+            biased_material_index.to_writer(w)?;
         }
         let biased_color_index_cond = !is_material;
         let mut biased_color_index: &UnsignedInteger = &Default::default();
         if biased_color_index_cond {
             biased_color_index = self.biased_color_index.as_ref().unwrap();
-            biased_color_index.to_writer(_w)?;
+            biased_color_index.to_writer(w)?;
         }
         Ok(())
     }
@@ -3776,16 +3776,16 @@ impl ContentBaseTessData {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let is_calculated = self.is_calculated.clone();
-        is_calculated.to_writer(_w)?;
+        is_calculated.to_writer(w)?;
         let number_of_coordinates = self.number_of_coordinates.clone();
-        number_of_coordinates.to_writer(_w)?;
+        number_of_coordinates.to_writer(w)?;
         let coordinates = self.coordinates.clone();
         for i in &self.coordinates {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         Ok(())
     }
@@ -3891,29 +3891,29 @@ impl PRC_TYPE_TESS_Markup {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let tessellation_coordinates = self.tessellation_coordinates.clone();
-        tessellation_coordinates.to_writer(_w, _ctx)?;
+        tessellation_coordinates.to_writer(w, _ctx)?;
         let number_of_codes = self.number_of_codes.clone();
-        number_of_codes.to_writer(_w)?;
+        number_of_codes.to_writer(w)?;
         let code_numbers = self.code_numbers.clone();
         for i in &self.code_numbers {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let number_of_text_strings = self.number_of_text_strings.clone();
-        number_of_text_strings.to_writer(_w)?;
+        number_of_text_strings.to_writer(w)?;
         let text_strings = self.text_strings.clone();
         for i in &self.text_strings {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let tessellation_label = self.tessellation_label.clone();
-        tessellation_label.to_writer(_w)?;
+        tessellation_label.to_writer(w)?;
         let behavior = self.behavior.clone();
-        behavior.to_writer(_w)?;
+        behavior.to_writer(w)?;
         Ok(())
     }
 }
@@ -3987,21 +3987,21 @@ impl PRC_TYPE_GRAPH_VPicturePattern {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let biased_next_pattern_index = self.biased_next_pattern_index.clone();
-        biased_next_pattern_index.to_writer(_w)?;
+        biased_next_pattern_index.to_writer(w)?;
         let pattern_dimensions = self.pattern_dimensions.clone();
         for i in &self.pattern_dimensions {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let markup = self.markup.clone();
-        markup.to_writer(_w, _ctx)?;
+        markup.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -4062,14 +4062,14 @@ impl PRC_TYPE_GRAPH_FillPattern {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         match &self.data_concrete {
-            PRC_TYPE_GRAPH_FillPattern_dataConcrete::dp(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_GRAPH_FillPattern_dataConcrete::hp(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_GRAPH_FillPattern_dataConcrete::sp(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_GRAPH_FillPattern_dataConcrete::vpp(x) => &x.to_writer(_w, _ctx)?,
+            PRC_TYPE_GRAPH_FillPattern_dataConcrete::dp(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_GRAPH_FillPattern_dataConcrete::hp(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_GRAPH_FillPattern_dataConcrete::sp(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_GRAPH_FillPattern_dataConcrete::vpp(x) => &x.to_writer(w, _ctx)?,
             PRC_TYPE_GRAPH_FillPattern_dataConcrete::Invalid(x) => {
                 return Err(Error::other(format!(
                     "PRC_TYPE_GRAPH_FillPattern: Unrecognized subtype: {}!",
@@ -4134,15 +4134,15 @@ impl GraphicsContent {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let biased_layer_index = self.biased_layer_index.clone();
-        biased_layer_index.to_writer(_w)?;
+        biased_layer_index.to_writer(w)?;
         let biased_index_of_line_style = self.biased_index_of_line_style.clone();
-        biased_index_of_line_style.to_writer(_w)?;
+        biased_index_of_line_style.to_writer(w)?;
         let behavior_bit_field = self.behavior_bit_field.clone();
-        behavior_bit_field.to_writer(_w)?;
+        behavior_bit_field.to_writer(w)?;
         Ok(())
     }
 }
@@ -4207,18 +4207,18 @@ impl PRC_TYPE_ROOT_PRCBaseWithGraphics {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let same_graphics = self.same_graphics.clone();
-        same_graphics.to_writer(_w)?;
+        same_graphics.to_writer(w)?;
         let graphics_content_cond = !same_graphics;
         let mut graphics_content: &GraphicsContent = &Default::default();
         if graphics_content_cond {
             graphics_content = self.graphics_content.as_ref().unwrap();
-            graphics_content.to_writer(_w, _ctx)?;
+            graphics_content.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -4258,16 +4258,16 @@ impl RepresentationItemContent {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let biased_index_local_coordinate_system =
             self.biased_index_local_coordinate_system.clone();
-        biased_index_local_coordinate_system.to_writer(_w)?;
+        biased_index_local_coordinate_system.to_writer(w)?;
         let biased_index_tessellation = self.biased_index_tessellation.clone();
-        biased_index_tessellation.to_writer(_w)?;
+        biased_index_tessellation.to_writer(w)?;
         Ok(())
     }
 }
@@ -4361,16 +4361,16 @@ impl PRC_TYPE_RI_CoordinateSystem {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let item_content = self.item_content.clone();
-        item_content.to_writer(_w, _ctx)?;
+        item_content.to_writer(w, _ctx)?;
         match &self.transform_concrete {
-            PRC_TYPE_RI_CoordinateSystem_transformConcrete::gt(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_RI_CoordinateSystem_transformConcrete::ct(x) => &x.to_writer(_w, _ctx)?,
+            PRC_TYPE_RI_CoordinateSystem_transformConcrete::gt(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_RI_CoordinateSystem_transformConcrete::ct(x) => &x.to_writer(w, _ctx)?,
             PRC_TYPE_RI_CoordinateSystem_transformConcrete::Invalid(x) => {
                 return Err(Error::other(format!(
                     "PRC_TYPE_RI_CoordinateSystem: Unrecognized subtype: {}!",
@@ -4379,7 +4379,7 @@ impl PRC_TYPE_RI_CoordinateSystem {
             }
         };
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -4564,62 +4564,62 @@ impl FileStructureInternalGlobalData {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let tess_chord = self.tess_chord.clone();
-        tess_chord.to_writer(_w)?;
+        tess_chord.to_writer(w)?;
         let tess_angle = self.tess_angle.clone();
-        tess_angle.to_writer(_w)?;
+        tess_angle.to_writer(w)?;
         let serialize_help = self.serialize_help.clone();
-        serialize_help.to_writer(_w, _ctx)?;
+        serialize_help.to_writer(w, _ctx)?;
         let color_count = self.color_count.clone();
-        color_count.to_writer(_w)?;
+        color_count.to_writer(w)?;
         let colors = self.colors.clone();
         for i in &self.colors {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let picture_count = self.picture_count.clone();
-        picture_count.to_writer(_w)?;
+        picture_count.to_writer(w)?;
         let pictures = self.pictures.clone();
         for i in &self.pictures {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let texture_count = self.texture_count.clone();
-        texture_count.to_writer(_w)?;
+        texture_count.to_writer(w)?;
         let textures = self.textures.clone();
         for i in &self.textures {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let material_count = self.material_count.clone();
-        material_count.to_writer(_w)?;
+        material_count.to_writer(w)?;
         let materials = self.materials.clone();
         for i in &self.materials {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let line_pattern_count = self.line_pattern_count.clone();
-        line_pattern_count.to_writer(_w)?;
+        line_pattern_count.to_writer(w)?;
         let line_patterns = self.line_patterns.clone();
         for i in &self.line_patterns {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let style_count = self.style_count.clone();
-        style_count.to_writer(_w)?;
+        style_count.to_writer(w)?;
         let styles = self.styles.clone();
         for i in &self.styles {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let fill_count = self.fill_count.clone();
-        fill_count.to_writer(_w)?;
+        fill_count.to_writer(w)?;
         let fills = self.fills.clone();
         for i in &self.fills {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let ref_coord_count = self.ref_coord_count.clone();
-        ref_coord_count.to_writer(_w)?;
+        ref_coord_count.to_writer(w)?;
         let ref_coords = self.ref_coords.clone();
         for i in &self.ref_coords {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -4706,23 +4706,23 @@ impl PRC_TYPE_ASM_FileStructureGlobals {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let file_count = self.file_count.clone();
-        file_count.to_writer(_w)?;
+        file_count.to_writer(w)?;
         let unique_ids = self.unique_ids.clone();
         for i in &self.unique_ids {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let global_data = self.global_data.clone();
-        global_data.to_writer(_w, _ctx)?;
+        global_data.to_writer(w, _ctx)?;
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -4761,15 +4761,15 @@ impl ProductOccurrenceReference {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let unique_id = self.unique_id.clone();
-        unique_id.to_writer(_w, _ctx)?;
+        unique_id.to_writer(w, _ctx)?;
         let root_index = self.root_index.clone();
-        root_index.to_writer(_w)?;
+        root_index.to_writer(w)?;
         let product_occurrence_is_active = self.product_occurrence_is_active.clone();
-        product_occurrence_is_active.to_writer(_w)?;
+        product_occurrence_is_active.to_writer(w)?;
         Ok(())
     }
 }
@@ -4877,29 +4877,29 @@ impl PRC_TYPE_ASM_ModelFile {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let units_from_cad_file = self.units_from_cad_file.clone();
-        units_from_cad_file.to_writer(_w)?;
+        units_from_cad_file.to_writer(w)?;
         let units_in_mm = self.units_in_mm.clone();
-        units_in_mm.to_writer(_w)?;
+        units_in_mm.to_writer(w)?;
         let number_of_root_product_occurrences = self.number_of_root_product_occurrences.clone();
-        number_of_root_product_occurrences.to_writer(_w)?;
+        number_of_root_product_occurrences.to_writer(w)?;
         let product_occurrences = self.product_occurrences.clone();
         for i in &self.product_occurrences {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let file_structure_index_in_model_file = self.file_structure_index_in_model_file.clone();
         for i in &self.file_structure_index_in_model_file {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -4934,13 +4934,13 @@ impl BoundingBox {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let minimum_corner = self.minimum_corner.clone();
-        minimum_corner.to_writer(_w, _ctx)?;
+        minimum_corner.to_writer(w, _ctx)?;
         let maximum_corner = self.maximum_corner.clone();
-        maximum_corner.to_writer(_w, _ctx)?;
+        maximum_corner.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -5043,31 +5043,31 @@ impl PRC_TYPE_RI_BrepModel {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let item_content = self.item_content.clone();
-        item_content.to_writer(_w, _ctx)?;
+        item_content.to_writer(w, _ctx)?;
         let exact_geometry = self.exact_geometry.clone();
-        exact_geometry.to_writer(_w)?;
+        exact_geometry.to_writer(w)?;
         let index_topological_context_cond = !!exact_geometry;
         let mut index_topological_context: &UnsignedInteger = &Default::default();
         if index_topological_context_cond {
             index_topological_context = self.index_topological_context.as_ref().unwrap();
-            index_topological_context.to_writer(_w)?;
+            index_topological_context.to_writer(w)?;
         }
         let index_body_cond = !!exact_geometry;
         let mut index_body: &UnsignedInteger = &Default::default();
         if index_body_cond {
             index_body = self.index_body.as_ref().unwrap();
-            index_body.to_writer(_w)?;
+            index_body.to_writer(w)?;
         }
         let is_closed = self.is_closed.clone();
-        is_closed.to_writer(_w)?;
+        is_closed.to_writer(w)?;
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -5164,29 +5164,29 @@ impl PRC_TYPE_RI_Curve {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let item_content = self.item_content.clone();
-        item_content.to_writer(_w, _ctx)?;
+        item_content.to_writer(w, _ctx)?;
         let exact_geometry = self.exact_geometry.clone();
-        exact_geometry.to_writer(_w)?;
+        exact_geometry.to_writer(w)?;
         let index_topological_context_cond = !!exact_geometry;
         let mut index_topological_context: &UnsignedInteger = &Default::default();
         if index_topological_context_cond {
             index_topological_context = self.index_topological_context.as_ref().unwrap();
-            index_topological_context.to_writer(_w)?;
+            index_topological_context.to_writer(w)?;
         }
         let index_body_cond = !!exact_geometry;
         let mut index_body: &UnsignedInteger = &Default::default();
         if index_body_cond {
             index_body = self.index_body.as_ref().unwrap();
-            index_body.to_writer(_w)?;
+            index_body.to_writer(w)?;
         }
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -5264,25 +5264,25 @@ impl PRC_TYPE_RI_Direction {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let item_content = self.item_content.clone();
-        item_content.to_writer(_w, _ctx)?;
+        item_content.to_writer(w, _ctx)?;
         let has_orgin = self.has_orgin.clone();
-        has_orgin.to_writer(_w)?;
+        has_orgin.to_writer(w)?;
         let origin_cond = !!has_orgin;
         let mut origin: &Vector3D = &Default::default();
         if origin_cond {
             origin = self.origin.as_ref().unwrap();
-            origin.to_writer(_w, _ctx)?;
+            origin.to_writer(w, _ctx)?;
         }
         let direction = self.direction.clone();
-        direction.to_writer(_w, _ctx)?;
+        direction.to_writer(w, _ctx)?;
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -5379,29 +5379,29 @@ impl PRC_TYPE_RI_Plane {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let item_content = self.item_content.clone();
-        item_content.to_writer(_w, _ctx)?;
+        item_content.to_writer(w, _ctx)?;
         let exact_geometry = self.exact_geometry.clone();
-        exact_geometry.to_writer(_w)?;
+        exact_geometry.to_writer(w)?;
         let index_topological_context_cond = !!exact_geometry;
         let mut index_topological_context: &UnsignedInteger = &Default::default();
         if index_topological_context_cond {
             index_topological_context = self.index_topological_context.as_ref().unwrap();
-            index_topological_context.to_writer(_w)?;
+            index_topological_context.to_writer(w)?;
         }
         let index_body_cond = !!exact_geometry;
         let mut index_body: &UnsignedInteger = &Default::default();
         if index_body_cond {
             index_body = self.index_body.as_ref().unwrap();
-            index_body.to_writer(_w)?;
+            index_body.to_writer(w)?;
         }
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -5478,21 +5478,21 @@ impl PRC_TYPE_RI_PointSet {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let item_content = self.item_content.clone();
-        item_content.to_writer(_w, _ctx)?;
+        item_content.to_writer(w, _ctx)?;
         let number_of_points = self.number_of_points.clone();
-        number_of_points.to_writer(_w)?;
+        number_of_points.to_writer(w)?;
         let points = self.points.clone();
         for i in &self.points {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -5557,17 +5557,17 @@ impl PRC_TYPE_RI_PolyBrepModel {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let item_content = self.item_content.clone();
-        item_content.to_writer(_w, _ctx)?;
+        item_content.to_writer(w, _ctx)?;
         let is_closed = self.is_closed.clone();
-        is_closed.to_writer(_w)?;
+        is_closed.to_writer(w)?;
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -5624,15 +5624,15 @@ impl PRC_TYPE_RI_PolyWire {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let item_content = self.item_content.clone();
-        item_content.to_writer(_w, _ctx)?;
+        item_content.to_writer(w, _ctx)?;
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -5710,21 +5710,21 @@ impl PRC_TYPE_RI_Set {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let item_content = self.item_content.clone();
-        item_content.to_writer(_w, _ctx)?;
+        item_content.to_writer(w, _ctx)?;
         let number_of_items = self.number_of_items.clone();
-        number_of_items.to_writer(_w)?;
+        number_of_items.to_writer(w)?;
         let representation_items = self.representation_items.clone();
         for i in &self.representation_items {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -5800,19 +5800,19 @@ impl PRC_TYPE_RI_RepresentationItem {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         match &self.data_concrete {
-            PRC_TYPE_RI_RepresentationItem_dataConcrete::bm(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_RI_RepresentationItem_dataConcrete::c(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_RI_RepresentationItem_dataConcrete::d(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_RI_RepresentationItem_dataConcrete::p(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_RI_RepresentationItem_dataConcrete::ps(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_RI_RepresentationItem_dataConcrete::pbm(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_RI_RepresentationItem_dataConcrete::pw(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_RI_RepresentationItem_dataConcrete::s(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_RI_RepresentationItem_dataConcrete::cs(x) => &x.to_writer(_w, _ctx)?,
+            PRC_TYPE_RI_RepresentationItem_dataConcrete::bm(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_RI_RepresentationItem_dataConcrete::c(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_RI_RepresentationItem_dataConcrete::d(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_RI_RepresentationItem_dataConcrete::p(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_RI_RepresentationItem_dataConcrete::ps(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_RI_RepresentationItem_dataConcrete::pbm(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_RI_RepresentationItem_dataConcrete::pw(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_RI_RepresentationItem_dataConcrete::s(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_RI_RepresentationItem_dataConcrete::cs(x) => &x.to_writer(w, _ctx)?,
             PRC_TYPE_RI_RepresentationItem_dataConcrete::Invalid(x) => {
                 return Err(Error::other(format!(
                     "PRC_TYPE_RI_RepresentationItem: Unrecognized subtype: {}!",
@@ -5905,26 +5905,26 @@ impl AdditionalTargetData {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let flag = self.flag.clone();
-        flag.to_writer(_w)?;
+        flag.to_writer(w)?;
         let unique_id_cond = !flag;
         let mut unique_id: &UniqueId = &Default::default();
         if unique_id_cond {
             unique_id = self.unique_id.as_ref().unwrap();
-            unique_id.to_writer(_w, _ctx)?;
+            unique_id.to_writer(w, _ctx)?;
         }
         let index_of_topological_index = self.index_of_topological_index.clone();
-        index_of_topological_index.to_writer(_w)?;
+        index_of_topological_index.to_writer(w)?;
         let index_of_body = self.index_of_body.clone();
-        index_of_body.to_writer(_w)?;
+        index_of_body.to_writer(w)?;
         let number_of_indices = self.number_of_indices.clone();
-        number_of_indices.to_writer(_w)?;
+        number_of_indices.to_writer(w)?;
         let indices = self.indices.clone();
         for i in &self.indices {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         Ok(())
     }
@@ -6003,20 +6003,20 @@ impl PRC_TYPE_MISC_ReferenceOnTopology {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let type_of_entity = self.type_of_entity.clone();
-        type_of_entity.to_writer(_w)?;
+        type_of_entity.to_writer(w)?;
         let flag = self.flag.clone();
-        flag.to_writer(_w)?;
+        flag.to_writer(w)?;
         let data_cond = !!flag;
         let mut data: &AdditionalTargetData = &Default::default();
         if data_cond {
             data = self.data.as_ref().unwrap();
-            data.to_writer(_w, _ctx)?;
+            data.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -6099,23 +6099,23 @@ impl PRC_TYPE_MISC_ReferenceOnPRCBase {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let type_of_entity = self.type_of_entity.clone();
-        type_of_entity.to_writer(_w)?;
+        type_of_entity.to_writer(w)?;
         let flag = self.flag.clone();
-        flag.to_writer(_w)?;
+        flag.to_writer(w)?;
         let different_unique_id_cond = !flag;
         let mut different_unique_id: &UniqueId = &Default::default();
         if different_unique_id_cond {
             different_unique_id = self.different_unique_id.as_ref().unwrap();
-            different_unique_id.to_writer(_w, _ctx)?;
+            different_unique_id.to_writer(w, _ctx)?;
         }
         let unique_id = self.unique_id.clone();
-        unique_id.to_writer(_w)?;
+        unique_id.to_writer(w)?;
         Ok(())
     }
 }
@@ -6169,12 +6169,12 @@ impl ReferenceData {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         match &self.data_concrete {
-            ReferenceData_dataConcrete::topo_reference(x) => &x.to_writer(_w, _ctx)?,
-            ReferenceData_dataConcrete::non_topo_reference(x) => &x.to_writer(_w, _ctx)?,
+            ReferenceData_dataConcrete::topo_reference(x) => &x.to_writer(w, _ctx)?,
+            ReferenceData_dataConcrete::non_topo_reference(x) => &x.to_writer(w, _ctx)?,
             ReferenceData_dataConcrete::Invalid(x) => {
                 return Err(Error::other(format!(
                     "ReferenceData: Unrecognized subtype: {}!",
@@ -6243,20 +6243,20 @@ impl ContentEntityReference {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let index_of_local_coordinate_system = self.index_of_local_coordinate_system.clone();
-        index_of_local_coordinate_system.to_writer(_w)?;
+        index_of_local_coordinate_system.to_writer(w)?;
         let flag = self.flag.clone();
-        flag.to_writer(_w)?;
+        flag.to_writer(w)?;
         let reference_data_cond = !!flag;
         let mut reference_data: &ReferenceData = &Default::default();
         if reference_data_cond {
             reference_data = self.reference_data.as_ref().unwrap();
-            reference_data.to_writer(_w, _ctx)?;
+            reference_data.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -6303,18 +6303,18 @@ impl ContentExtendedEntityReference {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let content_entity_reference = self.content_entity_reference.clone();
-        content_entity_reference.to_writer(_w, _ctx)?;
+        content_entity_reference.to_writer(w, _ctx)?;
         let has_reference_data = self.has_reference_data.clone();
-        has_reference_data.to_writer(_w)?;
+        has_reference_data.to_writer(w)?;
         let reference_data_cond = !!has_reference_data;
         let mut reference_data: &ReferenceData = &Default::default();
         if reference_data_cond {
             reference_data = self.reference_data.as_ref().unwrap();
-            reference_data.to_writer(_w, _ctx)?;
+            reference_data.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -6400,23 +6400,23 @@ impl PRC_TYPE_MISC_MarkupLinkedItem {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let content_extended_entity_reference = self.content_extended_entity_reference.clone();
-        content_extended_entity_reference.to_writer(_w, _ctx)?;
+        content_extended_entity_reference.to_writer(w, _ctx)?;
         let show_markup = self.show_markup.clone();
-        show_markup.to_writer(_w)?;
+        show_markup.to_writer(w)?;
         let delete_markup = self.delete_markup.clone();
-        delete_markup.to_writer(_w)?;
+        delete_markup.to_writer(w)?;
         let show_leader = self.show_leader.clone();
-        show_leader.to_writer(_w)?;
+        show_leader.to_writer(w)?;
         let delete_leader = self.delete_leader.clone();
-        delete_leader.to_writer(_w)?;
+        delete_leader.to_writer(w)?;
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -6526,33 +6526,33 @@ impl PRC_TYPE_MKP_Leader {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let is_first_linked_item = self.is_first_linked_item.clone();
-        is_first_linked_item.to_writer(_w)?;
+        is_first_linked_item.to_writer(w)?;
         let first_linked_item_cond = !!is_first_linked_item;
         let mut first_linked_item: &PRC_TYPE_MISC_ReferenceOnPRCBase = &Default::default();
         if first_linked_item_cond {
             first_linked_item = self.first_linked_item.as_ref().unwrap();
-            first_linked_item.to_writer(_w, _ctx)?;
+            first_linked_item.to_writer(w, _ctx)?;
         }
         let is_second_linked_item = self.is_second_linked_item.clone();
-        is_second_linked_item.to_writer(_w)?;
+        is_second_linked_item.to_writer(w)?;
         let second_linked_item_cond = !!is_second_linked_item;
         let mut second_linked_item: &PRC_TYPE_MISC_ReferenceOnPRCBase = &Default::default();
         if second_linked_item_cond {
             second_linked_item = self.second_linked_item.as_ref().unwrap();
-            second_linked_item.to_writer(_w, _ctx)?;
+            second_linked_item.to_writer(w, _ctx)?;
         }
         let biased_index_tessellation = self.biased_index_tessellation.clone();
-        biased_index_tessellation.to_writer(_w)?;
+        biased_index_tessellation.to_writer(w)?;
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -6669,33 +6669,33 @@ impl PRC_TYPE_MKP_Markup {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let markup_type = self.markup_type.clone();
-        markup_type.to_writer(_w)?;
+        markup_type.to_writer(w)?;
         let markup_subtype = self.markup_subtype.clone();
-        markup_subtype.to_writer(_w)?;
+        markup_subtype.to_writer(w)?;
         let number_of_linked_items = self.number_of_linked_items.clone();
-        number_of_linked_items.to_writer(_w)?;
+        number_of_linked_items.to_writer(w)?;
         let linked_items = self.linked_items.clone();
         for i in &self.linked_items {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let number_of_leaders = self.number_of_leaders.clone();
-        number_of_leaders.to_writer(_w)?;
+        number_of_leaders.to_writer(w)?;
         let leaders = self.leaders.clone();
         for i in &self.leaders {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let biased_index_tessellation = self.biased_index_tessellation.clone();
-        biased_index_tessellation.to_writer(_w)?;
+        biased_index_tessellation.to_writer(w)?;
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -6760,17 +6760,17 @@ impl PRC_TYPE_MKP_AnnotationItem {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let unique_id = self.unique_id.clone();
-        unique_id.to_writer(_w, _ctx)?;
+        unique_id.to_writer(w, _ctx)?;
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -6850,21 +6850,21 @@ impl PRC_TYPE_MKP_AnnotationSet {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let number_of_annotations = self.number_of_annotations.clone();
-        number_of_annotations.to_writer(_w)?;
+        number_of_annotations.to_writer(w)?;
         let annotations = self.annotations.clone();
         for i in &self.annotations {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -6944,21 +6944,21 @@ impl PRC_TYPE_MKP_AnnotationReference {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let number_of_linked_items = self.number_of_linked_items.clone();
-        number_of_linked_items.to_writer(_w)?;
+        number_of_linked_items.to_writer(w)?;
         let linked_items = self.linked_items.clone();
         for i in &self.linked_items {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -7011,13 +7011,13 @@ impl AnnotationEntity {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         match &self.data_concrete {
-            AnnotationEntity_dataConcrete::ai(x) => &x.to_writer(_w, _ctx)?,
-            AnnotationEntity_dataConcrete::ans(x) => &x.to_writer(_w, _ctx)?,
-            AnnotationEntity_dataConcrete::ar(x) => &x.to_writer(_w, _ctx)?,
+            AnnotationEntity_dataConcrete::ai(x) => &x.to_writer(w, _ctx)?,
+            AnnotationEntity_dataConcrete::ans(x) => &x.to_writer(w, _ctx)?,
+            AnnotationEntity_dataConcrete::ar(x) => &x.to_writer(w, _ctx)?,
             AnnotationEntity_dataConcrete::Invalid(x) => {
                 return Err(Error::other(format!(
                     "AnnotationEntity: Unrecognized subtype: {}!",
@@ -7132,32 +7132,32 @@ impl MarkupData {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let number_of_linked_items = self.number_of_linked_items.clone();
-        number_of_linked_items.to_writer(_w)?;
+        number_of_linked_items.to_writer(w)?;
         let linked_items = self.linked_items.clone();
         for i in &self.linked_items {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let number_of_leaders = self.number_of_leaders.clone();
-        number_of_leaders.to_writer(_w)?;
+        number_of_leaders.to_writer(w)?;
         let leaders = self.leaders.clone();
         for i in &self.leaders {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let number_of_markups = self.number_of_markups.clone();
-        number_of_markups.to_writer(_w)?;
+        number_of_markups.to_writer(w)?;
         let markups = self.markups.clone();
         for i in &self.markups {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let number_of_annotation_entities = self.number_of_annotation_entities.clone();
-        number_of_annotation_entities.to_writer(_w)?;
+        number_of_annotation_entities.to_writer(w)?;
         let annotation_entities = self.annotation_entities.clone();
         for i in &self.annotation_entities {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -7219,31 +7219,31 @@ impl ContentSurface {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let has_base_geometry = self.has_base_geometry.clone();
-        has_base_geometry.to_writer(_w)?;
+        has_base_geometry.to_writer(w)?;
         let attribute_data_cond = !!has_base_geometry;
         let mut attribute_data: &AttributeData = &Default::default();
         if attribute_data_cond {
             attribute_data = self.attribute_data.as_ref().unwrap();
-            attribute_data.to_writer(_w, _ctx)?;
+            attribute_data.to_writer(w, _ctx)?;
         }
         let name_cond = !!has_base_geometry;
         let mut name: &Name = &Default::default();
         if name_cond {
             name = self.name.as_ref().unwrap();
-            name.to_writer(_w, _ctx)?;
+            name.to_writer(w, _ctx)?;
         }
         let id_cond = !!has_base_geometry;
         let mut id: &UnsignedInteger = &Default::default();
         if id_cond {
             id = self.id.as_ref().unwrap();
-            id.to_writer(_w)?;
+            id.to_writer(w)?;
         }
         let extend_type = self.extend_type.clone();
-        extend_type.to_writer(_w)?;
+        extend_type.to_writer(w)?;
         Ok(())
     }
 }
@@ -7275,13 +7275,13 @@ impl Domain {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let min_uv = self.min_uv.clone();
-        min_uv.to_writer(_w, _ctx)?;
+        min_uv.to_writer(w, _ctx)?;
         let max_uv = self.max_uv.clone();
-        max_uv.to_writer(_w, _ctx)?;
+        max_uv.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -7369,25 +7369,25 @@ impl PRC_TYPE_SURF_Plane {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform = self.transform.clone();
-        transform.to_writer(_w, _ctx)?;
+        transform.to_writer(w, _ctx)?;
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let u_parameter_coeff_a = self.u_parameter_coeff_a.clone();
-        u_parameter_coeff_a.to_writer(_w)?;
+        u_parameter_coeff_a.to_writer(w)?;
         let v_parameter_coeff_a = self.v_parameter_coeff_a.clone();
-        v_parameter_coeff_a.to_writer(_w)?;
+        v_parameter_coeff_a.to_writer(w)?;
         let u_parameter_coeff_b = self.u_parameter_coeff_b.clone();
-        u_parameter_coeff_b.to_writer(_w)?;
+        u_parameter_coeff_b.to_writer(w)?;
         let v_parameter_coeff_b = self.v_parameter_coeff_b.clone();
-        v_parameter_coeff_b.to_writer(_w)?;
+        v_parameter_coeff_b.to_writer(w)?;
         Ok(())
     }
 }
@@ -7459,19 +7459,19 @@ impl PRC_TYPE_GRAPH_AmbientLight {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let biased_ambient_index = self.biased_ambient_index.clone();
-        biased_ambient_index.to_writer(_w)?;
+        biased_ambient_index.to_writer(w)?;
         let biased_diffuse_index = self.biased_diffuse_index.clone();
-        biased_diffuse_index.to_writer(_w)?;
+        biased_diffuse_index.to_writer(w)?;
         let biased_specular_index = self.biased_specular_index.clone();
-        biased_specular_index.to_writer(_w)?;
+        biased_specular_index.to_writer(w)?;
         Ok(())
     }
 }
@@ -7567,27 +7567,27 @@ impl PRC_TYPE_GRAPH_PointLight {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let biased_ambient_index = self.biased_ambient_index.clone();
-        biased_ambient_index.to_writer(_w)?;
+        biased_ambient_index.to_writer(w)?;
         let biased_diffuse_index = self.biased_diffuse_index.clone();
-        biased_diffuse_index.to_writer(_w)?;
+        biased_diffuse_index.to_writer(w)?;
         let biased_specular_index = self.biased_specular_index.clone();
-        biased_specular_index.to_writer(_w)?;
+        biased_specular_index.to_writer(w)?;
         let location = self.location.clone();
-        location.to_writer(_w, _ctx)?;
+        location.to_writer(w, _ctx)?;
         let constant_attenuation_factor = self.constant_attenuation_factor.clone();
-        constant_attenuation_factor.to_writer(_w)?;
+        constant_attenuation_factor.to_writer(w)?;
         let linear_attenuation_factor = self.linear_attenuation_factor.clone();
-        linear_attenuation_factor.to_writer(_w)?;
+        linear_attenuation_factor.to_writer(w)?;
         let quadratic_attenuation_factor = self.quadratic_attenuation_factor.clone();
-        quadratic_attenuation_factor.to_writer(_w)?;
+        quadratic_attenuation_factor.to_writer(w)?;
         Ok(())
     }
 }
@@ -7659,26 +7659,26 @@ impl PRC_TYPE_GRAPH_DirectionalLight {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let biased_ambient_index = self.biased_ambient_index.clone();
-        biased_ambient_index.to_writer(_w)?;
+        biased_ambient_index.to_writer(w)?;
         let biased_diffuse_index = self.biased_diffuse_index.clone();
-        biased_diffuse_index.to_writer(_w)?;
+        biased_diffuse_index.to_writer(w)?;
         let biased_specular_index = self.biased_specular_index.clone();
-        biased_specular_index.to_writer(_w)?;
+        biased_specular_index.to_writer(w)?;
         let direction = self.direction.clone();
-        direction.to_writer(_w, _ctx)?;
+        direction.to_writer(w, _ctx)?;
         let intensity_cond = _ctx.get_authoring_version() >= 8030;
         let mut intensity: &Double = &Default::default();
         if intensity_cond {
             intensity = self.intensity.as_ref().unwrap();
-            intensity.to_writer(_w)?;
+            intensity.to_writer(w)?;
         }
         Ok(())
     }
@@ -7791,33 +7791,33 @@ impl PRC_TYPE_GRAPH_SpotLight {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let biased_ambient_index = self.biased_ambient_index.clone();
-        biased_ambient_index.to_writer(_w)?;
+        biased_ambient_index.to_writer(w)?;
         let biased_diffuse_index = self.biased_diffuse_index.clone();
-        biased_diffuse_index.to_writer(_w)?;
+        biased_diffuse_index.to_writer(w)?;
         let biased_specular_index = self.biased_specular_index.clone();
-        biased_specular_index.to_writer(_w)?;
+        biased_specular_index.to_writer(w)?;
         let location = self.location.clone();
-        location.to_writer(_w, _ctx)?;
+        location.to_writer(w, _ctx)?;
         let constant_attenuation_factor = self.constant_attenuation_factor.clone();
-        constant_attenuation_factor.to_writer(_w)?;
+        constant_attenuation_factor.to_writer(w)?;
         let linear_attenuation_factor = self.linear_attenuation_factor.clone();
-        linear_attenuation_factor.to_writer(_w)?;
+        linear_attenuation_factor.to_writer(w)?;
         let quadratic_attenuation_factor = self.quadratic_attenuation_factor.clone();
-        quadratic_attenuation_factor.to_writer(_w)?;
+        quadratic_attenuation_factor.to_writer(w)?;
         let direction = self.direction.clone();
-        direction.to_writer(_w, _ctx)?;
+        direction.to_writer(w, _ctx)?;
         let fall_off_angle = self.fall_off_angle.clone();
-        fall_off_angle.to_writer(_w)?;
+        fall_off_angle.to_writer(w)?;
         let fall_off_exponent = self.fall_off_exponent.clone();
-        fall_off_exponent.to_writer(_w)?;
+        fall_off_exponent.to_writer(w)?;
         Ok(())
     }
 }
@@ -7872,14 +7872,14 @@ impl Light {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         match &self.id_concrete {
-            Light_idConcrete::al(x) => &x.to_writer(_w, _ctx)?,
-            Light_idConcrete::pl(x) => &x.to_writer(_w, _ctx)?,
-            Light_idConcrete::dl(x) => &x.to_writer(_w, _ctx)?,
-            Light_idConcrete::sl(x) => &x.to_writer(_w, _ctx)?,
+            Light_idConcrete::al(x) => &x.to_writer(w, _ctx)?,
+            Light_idConcrete::pl(x) => &x.to_writer(w, _ctx)?,
+            Light_idConcrete::dl(x) => &x.to_writer(w, _ctx)?,
+            Light_idConcrete::sl(x) => &x.to_writer(w, _ctx)?,
             Light_idConcrete::Invalid(x) => {
                 return Err(Error::other(format!("Light: Unrecognized subtype: {}!", x)));
             }
@@ -8008,33 +8008,33 @@ impl PRC_TYPE_GRAPH_Camera {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let is_orthographic = self.is_orthographic.clone();
-        is_orthographic.to_writer(_w)?;
+        is_orthographic.to_writer(w)?;
         let position = self.position.clone();
-        position.to_writer(_w, _ctx)?;
+        position.to_writer(w, _ctx)?;
         let look = self.look.clone();
-        look.to_writer(_w, _ctx)?;
+        look.to_writer(w, _ctx)?;
         let up = self.up.clone();
-        up.to_writer(_w, _ctx)?;
+        up.to_writer(w, _ctx)?;
         let x = self.x.clone();
-        x.to_writer(_w)?;
+        x.to_writer(w)?;
         let y = self.y.clone();
-        y.to_writer(_w)?;
+        y.to_writer(w)?;
         let ratio = self.ratio.clone();
-        ratio.to_writer(_w)?;
+        ratio.to_writer(w)?;
         let clip_near = self.clip_near.clone();
-        clip_near.to_writer(_w)?;
+        clip_near.to_writer(w)?;
         let clip_far = self.clip_far.clone();
-        clip_far.to_writer(_w)?;
+        clip_far.to_writer(w)?;
         let zoom = self.zoom.clone();
-        zoom.to_writer(_w)?;
+        zoom.to_writer(w)?;
         Ok(())
     }
 }
@@ -8177,59 +8177,59 @@ impl PRC_TYPE_GRAPH_SceneDisplayParameters {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let is_active = self.is_active.clone();
-        is_active.to_writer(_w)?;
+        is_active.to_writer(w)?;
         let number_of_lights = self.number_of_lights.clone();
-        number_of_lights.to_writer(_w)?;
+        number_of_lights.to_writer(w)?;
         let lights = self.lights.clone();
         for i in &self.lights {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let camera_defined = self.camera_defined.clone();
-        camera_defined.to_writer(_w)?;
+        camera_defined.to_writer(w)?;
         let camera_cond = !!camera_defined;
         let mut camera: &PRC_TYPE_GRAPH_Camera = &Default::default();
         if camera_cond {
             camera = self.camera.as_ref().unwrap();
-            camera.to_writer(_w, _ctx)?;
+            camera.to_writer(w, _ctx)?;
         }
         let rotation_center_defined = self.rotation_center_defined.clone();
-        rotation_center_defined.to_writer(_w)?;
+        rotation_center_defined.to_writer(w)?;
         let rotation_center_cond = !!rotation_center_defined;
         let mut rotation_center: &Vector3D = &Default::default();
         if rotation_center_cond {
             rotation_center = self.rotation_center.as_ref().unwrap();
-            rotation_center.to_writer(_w, _ctx)?;
+            rotation_center.to_writer(w, _ctx)?;
         }
         let number_of_clipping_planes = self.number_of_clipping_planes.clone();
-        number_of_clipping_planes.to_writer(_w)?;
+        number_of_clipping_planes.to_writer(w)?;
         let clipping_planes = self.clipping_planes.clone();
         for i in &self.clipping_planes {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let biased_index_of_line_style_background =
             self.biased_index_of_line_style_background.clone();
-        biased_index_of_line_style_background.to_writer(_w)?;
+        biased_index_of_line_style_background.to_writer(w)?;
         let biased_index_of_line_style_default = self.biased_index_of_line_style_default.clone();
-        biased_index_of_line_style_default.to_writer(_w)?;
+        biased_index_of_line_style_default.to_writer(w)?;
         let number_default_styles = self.number_default_styles.clone();
-        number_default_styles.to_writer(_w)?;
+        number_default_styles.to_writer(w)?;
         let styles = self.styles.clone();
         for i in &self.styles {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let is_absolute_cond = _ctx.get_authoring_version() >= 8137;
         let mut is_absolute: &Boolean = &Default::default();
         if is_absolute_cond {
             is_absolute = self.is_absolute.as_ref().unwrap();
-            is_absolute.to_writer(_w)?;
+            is_absolute.to_writer(w)?;
         }
         Ok(())
     }
@@ -8278,16 +8278,16 @@ impl ContentLayerFilterItems {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let b_is_inclusive = self.b_is_inclusive.clone();
-        b_is_inclusive.to_writer(_w)?;
+        b_is_inclusive.to_writer(w)?;
         let number_of_layers = self.number_of_layers.clone();
-        number_of_layers.to_writer(_w)?;
+        number_of_layers.to_writer(w)?;
         let layers = self.layers.clone();
         for i in &self.layers {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         Ok(())
     }
@@ -8347,15 +8347,15 @@ impl PRC_TYPE_MISC_EntityReference {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let content_entity_reference = self.content_entity_reference.clone();
-        content_entity_reference.to_writer(_w, _ctx)?;
+        content_entity_reference.to_writer(w, _ctx)?;
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -8403,16 +8403,16 @@ impl ContentEntityFilterItems {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let b_is_inclusive = self.b_is_inclusive.clone();
-        b_is_inclusive.to_writer(_w)?;
+        b_is_inclusive.to_writer(w)?;
         let number_of_entities = self.number_of_entities.clone();
-        number_of_entities.to_writer(_w)?;
+        number_of_entities.to_writer(w)?;
         let entities = self.entities.clone();
         for i in &self.entities {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -8488,21 +8488,21 @@ impl PRC_TYPE_ASM_Filter {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let is_active = self.is_active.clone();
-        is_active.to_writer(_w)?;
+        is_active.to_writer(w)?;
         let layer_filter = self.layer_filter.clone();
-        layer_filter.to_writer(_w, _ctx)?;
+        layer_filter.to_writer(w, _ctx)?;
         let entity_filter = self.entity_filter.clone();
-        entity_filter.to_writer(_w, _ctx)?;
+        entity_filter.to_writer(w, _ctx)?;
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -8675,74 +8675,74 @@ impl PRC_TYPE_MKP_View {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let number_of_annotations = self.number_of_annotations.clone();
-        number_of_annotations.to_writer(_w)?;
+        number_of_annotations.to_writer(w)?;
         let annotations = self.annotations.clone();
         for i in &self.annotations {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let annotation_plane = self.annotation_plane.clone();
-        annotation_plane.to_writer(_w, _ctx)?;
+        annotation_plane.to_writer(w, _ctx)?;
         let has_parameters = self.has_parameters.clone();
-        has_parameters.to_writer(_w)?;
+        has_parameters.to_writer(w)?;
         let scene_display_parameters_cond = !!has_parameters;
         let mut scene_display_parameters: &PRC_TYPE_GRAPH_SceneDisplayParameters =
             &Default::default();
         if scene_display_parameters_cond {
             scene_display_parameters = self.scene_display_parameters.as_ref().unwrap();
-            scene_display_parameters.to_writer(_w, _ctx)?;
+            scene_display_parameters.to_writer(w, _ctx)?;
         }
         let is_annotation_view_cond = _ctx.get_authoring_version() >= 8137;
         let mut is_annotation_view: &Boolean = &Default::default();
         if is_annotation_view_cond {
             is_annotation_view = self.is_annotation_view.as_ref().unwrap();
-            is_annotation_view.to_writer(_w)?;
+            is_annotation_view.to_writer(w)?;
         }
         let is_default_view_cond = _ctx.get_authoring_version() >= 8137;
         let mut is_default_view: &Boolean = &Default::default();
         if is_default_view_cond {
             is_default_view = self.is_default_view.as_ref().unwrap();
-            is_default_view.to_writer(_w)?;
+            is_default_view.to_writer(w)?;
         }
         let is_direction_cond = _ctx.get_authoring_version() >= 8137;
         let mut is_direction: &Boolean = &Default::default();
         if is_direction_cond {
             is_direction = self.is_direction.as_ref().unwrap();
-            is_direction.to_writer(_w)?;
+            is_direction.to_writer(w)?;
         }
         let number_of_linked_items_cond = _ctx.get_authoring_version() >= 8137;
         let mut number_of_linked_items: &UnsignedInteger = &Default::default();
         if number_of_linked_items_cond {
             number_of_linked_items = self.number_of_linked_items.as_ref().unwrap();
-            number_of_linked_items.to_writer(_w)?;
+            number_of_linked_items.to_writer(w)?;
         }
         let linked_items = self.linked_items.clone();
         if _ctx.get_authoring_version() >= 8137 {
             for i in self.linked_items.as_ref().unwrap() {
-                i.to_writer(_w, _ctx)?;
+                i.to_writer(w, _ctx)?;
             }
         }
         let number_of_filters_cond = _ctx.get_authoring_version() >= 8137;
         let mut number_of_filters: &UnsignedInteger = &Default::default();
         if number_of_filters_cond {
             number_of_filters = self.number_of_filters.as_ref().unwrap();
-            number_of_filters.to_writer(_w)?;
+            number_of_filters.to_writer(w)?;
         }
         let filters = self.filters.clone();
         if _ctx.get_authoring_version() >= 8137 {
             for i in self.filters.as_ref().unwrap() {
-                i.to_writer(_w, _ctx)?;
+                i.to_writer(w, _ctx)?;
             }
         }
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -8855,31 +8855,31 @@ impl PRC_TYPE_ASM_PartDefinition {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let bounding_box = self.bounding_box.clone();
-        bounding_box.to_writer(_w, _ctx)?;
+        bounding_box.to_writer(w, _ctx)?;
         let number_of_representation_items = self.number_of_representation_items.clone();
-        number_of_representation_items.to_writer(_w)?;
+        number_of_representation_items.to_writer(w)?;
         let representation_items = self.representation_items.clone();
         for i in &self.representation_items {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let markups = self.markups.clone();
-        markups.to_writer(_w, _ctx)?;
+        markups.to_writer(w, _ctx)?;
         let number_of_views = self.number_of_views.clone();
-        number_of_views.to_writer(_w)?;
+        number_of_views.to_writer(w)?;
         let views = self.views.clone();
         for i in &self.views {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -8921,16 +8921,16 @@ impl FileIdentifier {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let flag = self.flag.clone();
-        flag.to_writer(_w)?;
+        flag.to_writer(w)?;
         let unique_id_cond = !flag;
         let mut unique_id: &UniqueId = &Default::default();
         if unique_id_cond {
             unique_id = self.unique_id.as_ref().unwrap();
-            unique_id.to_writer(_w, _ctx)?;
+            unique_id.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -9009,34 +9009,34 @@ impl ReferencesOfProductOccurrence {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let biased_index_part = self.biased_index_part.clone();
-        biased_index_part.to_writer(_w)?;
+        biased_index_part.to_writer(w)?;
         let biased_index_prototype = self.biased_index_prototype.clone();
-        biased_index_prototype.to_writer(_w)?;
+        biased_index_prototype.to_writer(w)?;
         let prototype_in_same_file_structure_cond = biased_index_prototype.value != 0;
         let mut prototype_in_same_file_structure: &FileIdentifier = &Default::default();
         if prototype_in_same_file_structure_cond {
             prototype_in_same_file_structure =
                 self.prototype_in_same_file_structure.as_ref().unwrap();
-            prototype_in_same_file_structure.to_writer(_w, _ctx)?;
+            prototype_in_same_file_structure.to_writer(w, _ctx)?;
         }
         let biased_index_external_data = self.biased_index_external_data.clone();
-        biased_index_external_data.to_writer(_w)?;
+        biased_index_external_data.to_writer(w)?;
         let external_data_in_same_file_structure_cond = biased_index_external_data.value != 0;
         let mut external_data_in_same_file_structure: &FileIdentifier = &Default::default();
         if external_data_in_same_file_structure_cond {
             external_data_in_same_file_structure =
                 self.external_data_in_same_file_structure.as_ref().unwrap();
-            external_data_in_same_file_structure.to_writer(_w, _ctx)?;
+            external_data_in_same_file_structure.to_writer(w, _ctx)?;
         }
         let number_of_child_product_occurrences = self.number_of_child_product_occurrences.clone();
-        number_of_child_product_occurrences.to_writer(_w)?;
+        number_of_child_product_occurrences.to_writer(w)?;
         let index_child_occurrence = self.index_child_occurrence.clone();
         for i in &self.index_child_occurrence {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         Ok(())
     }
@@ -9080,17 +9080,17 @@ impl ProductInformation {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let unit_from_cad_file = self.unit_from_cad_file.clone();
-        unit_from_cad_file.to_writer(_w)?;
+        unit_from_cad_file.to_writer(w)?;
         let unit = self.unit.clone();
-        unit.to_writer(_w)?;
+        unit.to_writer(w)?;
         let product_information_flags = self.product_information_flags.clone();
-        product_information_flags.to_writer(_w)?;
+        product_information_flags.to_writer(w)?;
         let product_load_status = self.product_load_status.clone();
-        product_load_status.to_writer(_w)?;
+        product_load_status.to_writer(w)?;
         Ok(())
     }
 }
@@ -9274,25 +9274,25 @@ impl PRC_TYPE_ASM_ProductOccurrence {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let references_product_occurrence = self.references_product_occurrence.clone();
-        references_product_occurrence.to_writer(_w, _ctx)?;
+        references_product_occurrence.to_writer(w, _ctx)?;
         let product_behavior = self.product_behavior.clone();
-        product_behavior.to_writer(_w)?;
+        product_behavior.to_writer(w)?;
         let product_information = self.product_information.clone();
-        product_information.to_writer(_w, _ctx)?;
+        product_information.to_writer(w, _ctx)?;
         let has_transformation = self.has_transformation.clone();
-        has_transformation.to_writer(_w)?;
+        has_transformation.to_writer(w)?;
         if !!has_transformation {
             match &self.location_concrete {
-                PRC_TYPE_ASM_ProductOccurrence_locationConcrete::ct(x) => &x.to_writer(_w, _ctx)?,
-                PRC_TYPE_ASM_ProductOccurrence_locationConcrete::gt(x) => &x.to_writer(_w, _ctx)?,
+                PRC_TYPE_ASM_ProductOccurrence_locationConcrete::ct(x) => &x.to_writer(w, _ctx)?,
+                PRC_TYPE_ASM_ProductOccurrence_locationConcrete::gt(x) => &x.to_writer(w, _ctx)?,
                 PRC_TYPE_ASM_ProductOccurrence_locationConcrete::Invalid(x) => {
                     return Err(Error::other(format!(
                         "PRC_TYPE_ASM_ProductOccurrence: Unrecognized subtype: {}!",
@@ -9302,41 +9302,41 @@ impl PRC_TYPE_ASM_ProductOccurrence {
             };
         }
         let entity_ref_count = self.entity_ref_count.clone();
-        entity_ref_count.to_writer(_w)?;
+        entity_ref_count.to_writer(w)?;
         let entity_reference = self.entity_reference.clone();
         for i in &self.entity_reference {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let markups = self.markups.clone();
-        markups.to_writer(_w, _ctx)?;
+        markups.to_writer(w, _ctx)?;
         let number_of_views = self.number_of_views.clone();
-        number_of_views.to_writer(_w)?;
+        number_of_views.to_writer(w)?;
         let views = self.views.clone();
         for i in &self.views {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let has_filter = self.has_filter.clone();
-        has_filter.to_writer(_w)?;
+        has_filter.to_writer(w)?;
         let entity_filter_cond = !!has_filter;
         let mut entity_filter: &PRC_TYPE_ASM_Filter = &Default::default();
         if entity_filter_cond {
             entity_filter = self.entity_filter.as_ref().unwrap();
-            entity_filter.to_writer(_w, _ctx)?;
+            entity_filter.to_writer(w, _ctx)?;
         }
         let number_of_display_filters = self.number_of_display_filters.clone();
-        number_of_display_filters.to_writer(_w)?;
+        number_of_display_filters.to_writer(w)?;
         let display_filters = self.display_filters.clone();
         for i in &self.display_filters {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let number_of_scene_parameters = self.number_of_scene_parameters.clone();
-        number_of_scene_parameters.to_writer(_w)?;
+        number_of_scene_parameters.to_writer(w)?;
         let scene_display_parameters = self.scene_display_parameters.clone();
         for i in &self.scene_display_parameters {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -9413,17 +9413,17 @@ impl PRC_TYPE_ASM_FileStructure {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let next_available_index = self.next_available_index.clone();
-        next_available_index.to_writer(_w)?;
+        next_available_index.to_writer(w)?;
         let index_product_occurrence = self.index_product_occurrence.clone();
-        index_product_occurrence.to_writer(_w)?;
+        index_product_occurrence.to_writer(w)?;
         Ok(())
     }
 }
@@ -9531,29 +9531,29 @@ impl PRC_TYPE_ASM_FileStructureTree {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let part_count = self.part_count.clone();
-        part_count.to_writer(_w)?;
+        part_count.to_writer(w)?;
         let parts = self.parts.clone();
         for i in &self.parts {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let product_count = self.product_count.clone();
-        product_count.to_writer(_w)?;
+        product_count.to_writer(w)?;
         let products = self.products.clone();
         for i in &self.products {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let internal_data = self.internal_data.clone();
-        internal_data.to_writer(_w, _ctx)?;
+        internal_data.to_writer(w, _ctx)?;
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -9584,12 +9584,12 @@ impl ColorRGB {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let color = self.color.clone();
         for i in &self.color {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         Ok(())
     }
@@ -9621,12 +9621,12 @@ impl ColorRGBA {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let color = self.color.clone();
         for i in &self.color {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         Ok(())
     }
@@ -9665,16 +9665,16 @@ impl ColorDataRemainderRGB {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let is_same = self.is_same.clone();
-        is_same.to_writer(_w)?;
+        is_same.to_writer(w)?;
         let color_cond = !is_same;
         let mut color: &ColorRGB = &Default::default();
         if color_cond {
             color = self.color.as_ref().unwrap();
-            color.to_writer(_w, _ctx)?;
+            color.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -9713,16 +9713,16 @@ impl ColorDataRemainderRGBA {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let is_same = self.is_same.clone();
-        is_same.to_writer(_w)?;
+        is_same.to_writer(w)?;
         let color_cond = !is_same;
         let mut color: &ColorRGBA = &Default::default();
         if color_cond {
             color = self.color.as_ref().unwrap();
-            color.to_writer(_w, _ctx)?;
+            color.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -9842,41 +9842,41 @@ impl VertexColors {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let is_rgba = self.is_rgba.clone();
-        is_rgba.to_writer(_w)?;
+        is_rgba.to_writer(w)?;
         let is_segment_color_cond = _ctx.TESS_3D_Wire__is_inside();
         let mut is_segment_color: &Boolean = &Default::default();
         if is_segment_color_cond {
             is_segment_color = self.is_segment_color.as_ref().unwrap();
-            is_segment_color.to_writer(_w)?;
+            is_segment_color.to_writer(w)?;
         }
         let b_optimized = self.b_optimized.clone();
-        b_optimized.to_writer(_w)?;
+        b_optimized.to_writer(w)?;
         let color_data_rgb_first_vertex_cond = !b_optimized && !is_rgba;
         let mut color_data_rgb_first_vertex: &ColorRGB = &Default::default();
         if color_data_rgb_first_vertex_cond {
             color_data_rgb_first_vertex = self.color_data_rgb_first_vertex.as_ref().unwrap();
-            color_data_rgb_first_vertex.to_writer(_w, _ctx)?;
+            color_data_rgb_first_vertex.to_writer(w, _ctx)?;
         }
         let color_data_rgb_remaining_vertices = self.color_data_rgb_remaining_vertices.clone();
         if !b_optimized && !is_rgba {
             for i in self.color_data_rgb_remaining_vertices.as_ref().unwrap() {
-                i.to_writer(_w, _ctx)?;
+                i.to_writer(w, _ctx)?;
             }
         }
         let color_data_rgba_first_vertex_cond = !b_optimized && !!is_rgba;
         let mut color_data_rgba_first_vertex: &ColorRGBA = &Default::default();
         if color_data_rgba_first_vertex_cond {
             color_data_rgba_first_vertex = self.color_data_rgba_first_vertex.as_ref().unwrap();
-            color_data_rgba_first_vertex.to_writer(_w, _ctx)?;
+            color_data_rgba_first_vertex.to_writer(w, _ctx)?;
         }
         let color_data_rgba_remaining_vertices = self.color_data_rgba_remaining_vertices.clone();
         if !b_optimized && !!is_rgba {
             for i in self.color_data_rgba_remaining_vertices.as_ref().unwrap() {
-                i.to_writer(_w, _ctx)?;
+                i.to_writer(w, _ctx)?;
             }
         }
         Ok(())
@@ -10072,51 +10072,51 @@ impl PRC_TYPE_TESS_Face {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let size_of_line_attributes = self.size_of_line_attributes.clone();
-        size_of_line_attributes.to_writer(_w)?;
+        size_of_line_attributes.to_writer(w)?;
         let line_attributes = self.line_attributes.clone();
         for i in &self.line_attributes {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let start_of_wire_data = self.start_of_wire_data.clone();
-        start_of_wire_data.to_writer(_w)?;
+        start_of_wire_data.to_writer(w)?;
         let size_of_sizes_wire = self.size_of_sizes_wire.clone();
-        size_of_sizes_wire.to_writer(_w)?;
+        size_of_sizes_wire.to_writer(w)?;
         let sizes_wire = self.sizes_wire.clone();
         for i in &self.sizes_wire {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let used_entities_flag = self.used_entities_flag.clone();
-        used_entities_flag.to_writer(_w)?;
+        used_entities_flag.to_writer(w)?;
         let start_triangulated = self.start_triangulated.clone();
-        start_triangulated.to_writer(_w)?;
+        start_triangulated.to_writer(w)?;
         let size_of_triangulateddata = self.size_of_triangulateddata.clone();
-        size_of_triangulateddata.to_writer(_w)?;
+        size_of_triangulateddata.to_writer(w)?;
         let triangulateddata = self.triangulateddata.clone();
         for i in &self.triangulateddata {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let number_of_textured_coordinate_indices =
             self.number_of_textured_coordinate_indices.clone();
-        number_of_textured_coordinate_indices.to_writer(_w)?;
+        number_of_textured_coordinate_indices.to_writer(w)?;
         let has_vertex_colors = self.has_vertex_colors.clone();
-        has_vertex_colors.to_writer(_w)?;
+        has_vertex_colors.to_writer(w)?;
         let vertex_color_data_cond = !!has_vertex_colors;
         let mut vertex_color_data: &VertexColors = &Default::default();
         if vertex_color_data_cond {
             vertex_color_data = self.vertex_color_data.as_ref().unwrap();
-            vertex_color_data.to_writer(_w, _ctx)?;
+            vertex_color_data.to_writer(w, _ctx)?;
         }
         let behavior_cond = size_of_line_attributes.value > 0;
         let mut behavior: &UnsignedInteger = &Default::default();
         if behavior_cond {
             behavior = self.behavior.as_ref().unwrap();
-            behavior.to_writer(_w)?;
+            behavior.to_writer(w)?;
         }
         Ok(())
     }
@@ -10318,70 +10318,70 @@ impl PRC_TYPE_TESS_3D {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let tessellation_coordinates = self.tessellation_coordinates.clone();
-        tessellation_coordinates.to_writer(_w, _ctx)?;
+        tessellation_coordinates.to_writer(w, _ctx)?;
         let has_faces = self.has_faces.clone();
-        has_faces.to_writer(_w)?;
+        has_faces.to_writer(w)?;
         let has_loops_cond = _ctx.get_authoring_version() >= 7039;
         let mut has_loops: &Boolean = &Default::default();
         if has_loops_cond {
             has_loops = self.has_loops.as_ref().unwrap();
-            has_loops.to_writer(_w)?;
+            has_loops.to_writer(w)?;
         }
         let must_calculate_normals_cond = _ctx.get_authoring_version() >= 7047;
         let mut must_calculate_normals: &Boolean = &Default::default();
         if must_calculate_normals_cond {
             must_calculate_normals = self.must_calculate_normals.as_ref().unwrap();
-            must_calculate_normals.to_writer(_w)?;
+            must_calculate_normals.to_writer(w)?;
         }
         let normal_recalculation_flags_cond =
             !!must_calculate_normals.value && _ctx.get_authoring_version() >= 7047;
         let mut normal_recalculation_flags: &Character = &Default::default();
         if normal_recalculation_flags_cond {
             normal_recalculation_flags = self.normal_recalculation_flags.as_ref().unwrap();
-            normal_recalculation_flags.to_writer(_w)?;
+            normal_recalculation_flags.to_writer(w)?;
         }
         let crease_angle_cond =
             !!must_calculate_normals.value && _ctx.get_authoring_version() >= 7047;
         let mut crease_angle: &Double = &Default::default();
         if crease_angle_cond {
             crease_angle = self.crease_angle.as_ref().unwrap();
-            crease_angle.to_writer(_w)?;
+            crease_angle.to_writer(w)?;
         }
         let number_of_normal_coordinates = self.number_of_normal_coordinates.clone();
-        number_of_normal_coordinates.to_writer(_w)?;
+        number_of_normal_coordinates.to_writer(w)?;
         let normal_coordinates = self.normal_coordinates.clone();
         for i in &self.normal_coordinates {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let number_of_wire_indices = self.number_of_wire_indices.clone();
-        number_of_wire_indices.to_writer(_w)?;
+        number_of_wire_indices.to_writer(w)?;
         let wire_indices = self.wire_indices.clone();
         for i in &self.wire_indices {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let number_of_triangulated_indicies = self.number_of_triangulated_indicies.clone();
-        number_of_triangulated_indicies.to_writer(_w)?;
+        number_of_triangulated_indicies.to_writer(w)?;
         let triangulated_index_array = self.triangulated_index_array.clone();
         for i in &self.triangulated_index_array {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let number_of_face_tessellation = self.number_of_face_tessellation.clone();
-        number_of_face_tessellation.to_writer(_w)?;
+        number_of_face_tessellation.to_writer(w)?;
         let face_tessellation_data = self.face_tessellation_data.clone();
         for i in &self.face_tessellation_data {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let number_of_texture_coordinates = self.number_of_texture_coordinates.clone();
-        number_of_texture_coordinates.to_writer(_w)?;
+        number_of_texture_coordinates.to_writer(w)?;
         let texture_coordinates = self.texture_coordinates.clone();
         for i in &self.texture_coordinates {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         Ok(())
     }
@@ -10486,26 +10486,26 @@ impl PRC_TYPE_TESS_3D_Wire {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let tessellation_coordinates = self.tessellation_coordinates.clone();
-        tessellation_coordinates.to_writer(_w, _ctx)?;
+        tessellation_coordinates.to_writer(w, _ctx)?;
         let number_of_wire_indexes = self.number_of_wire_indexes.clone();
-        number_of_wire_indexes.to_writer(_w)?;
+        number_of_wire_indexes.to_writer(w)?;
         let wire_indexes = self.wire_indexes.clone();
         for i in &self.wire_indexes {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let has_vertex_colors = self.has_vertex_colors.clone();
-        has_vertex_colors.to_writer(_w)?;
+        has_vertex_colors.to_writer(w)?;
         let vertex_color_data_cond = !!has_vertex_colors;
         let mut vertex_color_data: &VertexColors = &Default::default();
         if vertex_color_data_cond {
             vertex_color_data = self.vertex_color_data.as_ref().unwrap();
-            vertex_color_data.to_writer(_w, _ctx)?;
+            vertex_color_data.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -10564,17 +10564,17 @@ impl BinaryTextureData {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let texture_binary_data_size = self.texture_binary_data_size.clone();
-        texture_binary_data_size.to_writer(_w)?;
+        texture_binary_data_size.to_writer(w)?;
         let texture_binary_data = self.texture_binary_data.clone();
         for i in &self.texture_binary_data {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let last_integer_used_bit_number = self.last_integer_used_bit_number.clone();
-        last_integer_used_bit_number.to_writer(_w)?;
+        last_integer_used_bit_number.to_writer(w)?;
         Ok(())
     }
 }
@@ -10652,24 +10652,24 @@ impl CompressedTextureParameter {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let binary_texture_data = self.binary_texture_data.clone();
-        binary_texture_data.to_writer(_w, _ctx)?;
+        binary_texture_data.to_writer(w, _ctx)?;
         let reference_array_size = self.reference_array_size.clone();
-        reference_array_size.to_writer(_w)?;
+        reference_array_size.to_writer(w)?;
         let reference_array = self.reference_array.clone();
         for i in &self.reference_array {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let texture_parameters_tolerance = self.texture_parameters_tolerance.clone();
-        texture_parameters_tolerance.to_writer(_w)?;
+        texture_parameters_tolerance.to_writer(w)?;
         let texture_parameters_size = self.texture_parameters_size.clone();
-        texture_parameters_size.to_writer(_w)?;
+        texture_parameters_size.to_writer(w)?;
         let texture_parameters = self.texture_parameters.clone();
         for i in &self.texture_parameters {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         Ok(())
     }
@@ -10711,12 +10711,10 @@ pub struct PRC_TYPE_TESS_3D_Compressed {
     /// above size if wrong, SPECBUG not in spec
     pub is_face_planar: Option<UncompressedBoolArray>,
     pub is_point_color: Boolean,
-    /// above size if wrong, SPECBUG not in spec
     pub is_point_color_on_face: Option<UncompressedBoolArray>,
     /// point_color_array describes colors on vertices for each triangle. For each triangle vertex with point color, 5 characters are stored. The first character describe if the vertex has got RGB or RGBA components. Then 4 components are used to stored R, G, B, and alpha.
     pub point_color_array: Option<CharacterArray>,
     pub is_multiple_line_attribute: Boolean,
-    /// above size if wrong, SPECBUG not in spec
     pub is_multiple_line_attribute_on_face: Option<UncompressedBoolArray>,
     /// line_attribute_array describe indexes in a graphic array. If a face contains multiple attributes, one index per triangle is added in line_attribute_array. Otherwise, one index per face is added, when encountering the first triangle of this face.
     pub line_attribute_array: ShortArray,
@@ -10943,7 +10941,6 @@ impl PRC_TYPE_TESS_3D_Compressed {
         let mut is_point_color: Boolean = Default::default();
         is_point_color = Boolean::from_reader(rdr)?;
         trace!("{}is_point_color: {:?}", indent::get(), &is_point_color);
-        warn!("PRC_TYPE_TESS_3D_Compressed.is_point_color_on_face field contains FIXME!");
         let is_point_color_on_face_cond = !!is_point_color;
         let mut is_point_color_on_face: UncompressedBoolArray = Default::default();
         if is_point_color_on_face_cond {
@@ -10981,9 +10978,6 @@ impl PRC_TYPE_TESS_3D_Compressed {
             "{}is_multiple_line_attribute: {:?}",
             indent::get(),
             &is_multiple_line_attribute
-        );
-        warn!(
-            "PRC_TYPE_TESS_3D_Compressed.is_multiple_line_attribute_on_face field contains FIXME!"
         );
         let is_multiple_line_attribute_on_face_cond = !!is_multiple_line_attribute;
         let mut is_multiple_line_attribute_on_face: UncompressedBoolArray = Default::default();
@@ -11153,102 +11147,102 @@ impl PRC_TYPE_TESS_3D_Compressed {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let is_calculated = self.is_calculated.clone();
-        is_calculated.to_writer(_w)?;
+        is_calculated.to_writer(w)?;
         let has_faces = self.has_faces.clone();
-        has_faces.to_writer(_w)?;
+        has_faces.to_writer(w)?;
         let tolerance = self.tolerance.clone();
-        tolerance.to_writer(_w)?;
+        tolerance.to_writer(w)?;
         let origin_array = self.origin_array.clone();
         if _ctx.get_authoring_version() >= 7031 {
             for i in self.origin_array.as_ref().unwrap() {
-                i.to_writer(_w)?;
+                i.to_writer(w)?;
             }
         }
         let point_array = self.point_array.clone();
-        point_array.to_writer(_w)?;
+        point_array.to_writer(w)?;
         let edge_status_array = self.edge_status_array.clone();
-        edge_status_array.to_writer(_w, 2)?;
+        edge_status_array.to_writer(w, 2)?;
         let triangle_face_array = self.triangle_face_array.clone();
-        triangle_face_array.to_writer(_w)?;
+        triangle_face_array.to_writer(w)?;
         let reference_array_size = self.reference_array_size.clone();
-        reference_array_size.to_writer(_w)?;
+        reference_array_size.to_writer(w)?;
         let point_is_reference_array = self.point_is_reference_array.clone();
-        point_is_reference_array.to_writer(_w, reference_array_size.value)?;
+        point_is_reference_array.to_writer(w, reference_array_size.value)?;
         let point_reference_array = self.point_reference_array.clone();
         point_reference_array.to_writer(
-            _w,
+            w,
             _ctx.t3dc
                 .number_of_referenced_points(&point_is_reference_array.a)
                 > 3,
         )?;
         let must_recalculate_normals = self.must_recalculate_normals.clone();
-        must_recalculate_normals.to_writer(_w)?;
+        must_recalculate_normals.to_writer(w)?;
         let normal_is_reversed_cond = !!must_recalculate_normals;
         let mut normal_is_reversed: &UncompressedBoolArray = &Default::default();
         if normal_is_reversed_cond {
             normal_is_reversed = self.normal_is_reversed.as_ref().unwrap();
-            normal_is_reversed.to_writer(_w, triangle_face_array.a.len() as u32)?;
+            normal_is_reversed.to_writer(w, triangle_face_array.a.len() as u32)?;
         }
         let crease_angle_cond = !!must_recalculate_normals;
         let mut crease_angle: &Double = &Default::default();
         if crease_angle_cond {
             crease_angle = self.crease_angle.as_ref().unwrap();
-            crease_angle.to_writer(_w)?;
+            crease_angle.to_writer(w)?;
         }
         let normal_recalculation_flags_cond = !!must_recalculate_normals;
         let mut normal_recalculation_flags: &Character = &Default::default();
         if normal_recalculation_flags_cond {
             normal_recalculation_flags = self.normal_recalculation_flags.as_ref().unwrap();
-            normal_recalculation_flags.to_writer(_w)?;
+            normal_recalculation_flags.to_writer(w)?;
         }
         let normal_angle_number_of_bits_cond = !must_recalculate_normals;
         let mut normal_angle_number_of_bits: &Character = &Default::default();
         if normal_angle_number_of_bits_cond {
             normal_angle_number_of_bits = self.normal_angle_number_of_bits.as_ref().unwrap();
-            normal_angle_number_of_bits.to_writer(_w)?;
+            normal_angle_number_of_bits.to_writer(w)?;
         }
         let normal_binary_data_size_cond = !must_recalculate_normals;
         let mut normal_binary_data_size: &UnsignedInteger = &Default::default();
         if normal_binary_data_size_cond {
             normal_binary_data_size = self.normal_binary_data_size.as_ref().unwrap();
-            normal_binary_data_size.to_writer(_w)?;
+            normal_binary_data_size.to_writer(w)?;
         }
         let normal_binary_data_cond = !must_recalculate_normals;
         let mut normal_binary_data: &UncompressedBoolArray = &Default::default();
         if normal_binary_data_cond {
             normal_binary_data = self.normal_binary_data.as_ref().unwrap();
-            normal_binary_data.to_writer(_w, normal_binary_data_size.value)?;
+            normal_binary_data.to_writer(w, normal_binary_data_size.value)?;
         }
         let normal_angle_array_cond = !must_recalculate_normals;
         let mut normal_angle_array: &ShortArray = &Default::default();
         if normal_angle_array_cond {
             normal_angle_array = self.normal_angle_array.as_ref().unwrap();
-            normal_angle_array.to_writer(_w, normal_angle_number_of_bits.value as u8)?;
+            normal_angle_array.to_writer(w, normal_angle_number_of_bits.value as u8)?;
         }
         let is_face_planar_cond = !must_recalculate_normals;
         let mut is_face_planar: &UncompressedBoolArray = &Default::default();
         if is_face_planar_cond {
             is_face_planar = self.is_face_planar.as_ref().unwrap();
             is_face_planar.to_writer(
-                _w,
+                w,
                 _ctx.t3dc
                     .number_of_faces_stored_in_mesh(&triangle_face_array.a),
             )?;
         }
         let is_point_color = self.is_point_color.clone();
-        is_point_color.to_writer(_w)?;
+        is_point_color.to_writer(w)?;
         let is_point_color_on_face_cond = !!is_point_color;
         let mut is_point_color_on_face: &UncompressedBoolArray = &Default::default();
         if is_point_color_on_face_cond {
             is_point_color_on_face = self.is_point_color_on_face.as_ref().unwrap();
             is_point_color_on_face.to_writer(
-                _w,
+                w,
                 if !has_faces.value {
                     1
                 } else {
@@ -11261,17 +11255,17 @@ impl PRC_TYPE_TESS_3D_Compressed {
         let mut point_color_array: &CharacterArray = &Default::default();
         if point_color_array_cond {
             point_color_array = self.point_color_array.as_ref().unwrap();
-            point_color_array.to_writer(_w, 8)?;
+            point_color_array.to_writer(w, 8)?;
         }
         let is_multiple_line_attribute = self.is_multiple_line_attribute.clone();
-        is_multiple_line_attribute.to_writer(_w)?;
+        is_multiple_line_attribute.to_writer(w)?;
         let is_multiple_line_attribute_on_face_cond = !!is_multiple_line_attribute;
         let mut is_multiple_line_attribute_on_face: &UncompressedBoolArray = &Default::default();
         if is_multiple_line_attribute_on_face_cond {
             is_multiple_line_attribute_on_face =
                 self.is_multiple_line_attribute_on_face.as_ref().unwrap();
             is_multiple_line_attribute_on_face.to_writer(
-                _w,
+                w,
                 if !has_faces.value {
                     1
                 } else {
@@ -11281,38 +11275,38 @@ impl PRC_TYPE_TESS_3D_Compressed {
             )?;
         }
         let line_attribute_array = self.line_attribute_array.clone();
-        line_attribute_array.to_writer(_w, 16)?;
+        line_attribute_array.to_writer(w, 16)?;
         let no_texture = self.no_texture.clone();
-        no_texture.to_writer(_w)?;
+        no_texture.to_writer(w)?;
         let texture_data_cond = !no_texture;
         let mut texture_data: &CompressedTextureParameter = &Default::default();
         if texture_data_cond {
             texture_data = self.texture_data.as_ref().unwrap();
-            texture_data.to_writer(_w, _ctx)?;
+            texture_data.to_writer(w, _ctx)?;
         }
         let all_faces_have_texture_cond = !no_texture;
         let mut all_faces_have_texture: &Boolean = &Default::default();
         if all_faces_have_texture_cond {
             all_faces_have_texture = self.all_faces_have_texture.as_ref().unwrap();
-            all_faces_have_texture.to_writer(_w)?;
+            all_faces_have_texture.to_writer(w)?;
         }
         let face_has_texture_cond = !no_texture && !all_faces_have_texture.value;
         let mut face_has_texture: &UncompressedBoolArray = &Default::default();
         if face_has_texture_cond {
             face_has_texture = self.face_has_texture.as_ref().unwrap();
             face_has_texture.to_writer(
-                _w,
+                w,
                 _ctx.t3dc
                     .number_of_faces_stored_in_mesh(&triangle_face_array.a),
             )?;
         }
         let has_behaviors = self.has_behaviors.clone();
-        has_behaviors.to_writer(_w)?;
+        has_behaviors.to_writer(w)?;
         let behaviors_array_cond = !!has_behaviors;
         let mut behaviors_array: &CharacterArray = &Default::default();
         if behaviors_array_cond {
             behaviors_array = self.behaviors_array.as_ref().unwrap();
-            behaviors_array.to_writer(_w, 8)?;
+            behaviors_array.to_writer(w, 8)?;
         }
         Ok(())
     }
@@ -11370,14 +11364,14 @@ impl PRC_TYPE_TESS {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         match &self.id_concrete {
-            PRC_TYPE_TESS_idConcrete::tess_3d(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_TESS_idConcrete::tess_3d_wire(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_TESS_idConcrete::tess_markup(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_TESS_idConcrete::tess_3d_compressed(x) => &x.to_writer(_w, _ctx)?,
+            PRC_TYPE_TESS_idConcrete::tess_3d(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_TESS_idConcrete::tess_3d_wire(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_TESS_idConcrete::tess_markup(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_TESS_idConcrete::tess_3d_compressed(x) => &x.to_writer(w, _ctx)?,
             PRC_TYPE_TESS_idConcrete::Invalid(x) => {
                 return Err(Error::other(format!(
                     "PRC_TYPE_TESS: Unrecognized subtype: {}!",
@@ -11489,21 +11483,21 @@ impl PRC_TYPE_ASM_FileStructureTessellation {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let tess_count = self.tess_count.clone();
-        tess_count.to_writer(_w)?;
+        tess_count.to_writer(w)?;
         let tess = self.tess.clone();
         for i in &self.tess {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -11559,28 +11553,28 @@ impl BaseTopology {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let has_base = self.has_base.clone();
-        has_base.to_writer(_w)?;
+        has_base.to_writer(w)?;
         let attribute_data_cond = !!has_base;
         let mut attribute_data: &AttributeData = &Default::default();
         if attribute_data_cond {
             attribute_data = self.attribute_data.as_ref().unwrap();
-            attribute_data.to_writer(_w, _ctx)?;
+            attribute_data.to_writer(w, _ctx)?;
         }
         let name_cond = !!has_base;
         let mut name: &Name = &Default::default();
         if name_cond {
             name = self.name.as_ref().unwrap();
-            name.to_writer(_w, _ctx)?;
+            name.to_writer(w, _ctx)?;
         }
         let id_cond = !!has_base;
         let mut id: &UnsignedInteger = &Default::default();
         if id_cond {
             id = self.id.as_ref().unwrap();
-            id.to_writer(_w)?;
+            id.to_writer(w)?;
         }
         Ok(())
     }
@@ -11623,13 +11617,13 @@ impl ContentBody {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let bounding_box_behavior = self.bounding_box_behavior.clone();
-        bounding_box_behavior.to_writer(_w)?;
+        bounding_box_behavior.to_writer(w)?;
         Ok(())
     }
 }
@@ -11702,18 +11696,18 @@ impl PRC_TYPE_TOPO_MultipleVertex {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let number_of_points = self.number_of_points.clone();
-        number_of_points.to_writer(_w)?;
+        number_of_points.to_writer(w)?;
         let points = self.points.clone();
         for i in &self.points {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -11796,22 +11790,22 @@ impl PRC_TYPE_TOPO_UniqueVertex {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let vertex = self.vertex.clone();
-        vertex.to_writer(_w, _ctx)?;
+        vertex.to_writer(w, _ctx)?;
         let has_tolerance = self.has_tolerance.clone();
-        has_tolerance.to_writer(_w)?;
+        has_tolerance.to_writer(w)?;
         let tolerance_cond = !!has_tolerance;
         let mut tolerance: &Double = &Default::default();
         if tolerance_cond {
             tolerance = self.tolerance.as_ref().unwrap();
-            tolerance.to_writer(_w)?;
+            tolerance.to_writer(w)?;
         }
         Ok(())
     }
@@ -11847,13 +11841,13 @@ impl Interval {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let min_value = self.min_value.clone();
-        min_value.to_writer(_w)?;
+        min_value.to_writer(w)?;
         let max_value = self.max_value.clone();
-        max_value.to_writer(_w)?;
+        max_value.to_writer(w)?;
         Ok(())
     }
 }
@@ -11892,15 +11886,15 @@ impl Parameterization {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let trim_interval = self.trim_interval.clone();
-        trim_interval.to_writer(_w, _ctx)?;
+        trim_interval.to_writer(w, _ctx)?;
         let coeff_a = self.coeff_a.clone();
-        coeff_a.to_writer(_w)?;
+        coeff_a.to_writer(w)?;
         let coeff_b = self.coeff_b.clone();
-        coeff_b.to_writer(_w)?;
+        coeff_b.to_writer(w)?;
         Ok(())
     }
 }
@@ -11951,21 +11945,21 @@ impl UVParameterization {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let swap_uv = self.swap_uv.clone();
-        swap_uv.to_writer(_w)?;
+        swap_uv.to_writer(w)?;
         let suface_domain = self.suface_domain.clone();
-        suface_domain.to_writer(_w, _ctx)?;
+        suface_domain.to_writer(w, _ctx)?;
         let u_param_coeff_a = self.u_param_coeff_a.clone();
-        u_param_coeff_a.to_writer(_w)?;
+        u_param_coeff_a.to_writer(w)?;
         let v_param_coeff_a = self.v_param_coeff_a.clone();
-        v_param_coeff_a.to_writer(_w)?;
+        v_param_coeff_a.to_writer(w)?;
         let u_param_coeff_b = self.u_param_coeff_b.clone();
-        u_param_coeff_b.to_writer(_w)?;
+        u_param_coeff_b.to_writer(w)?;
         let v_param_coeff_b = self.v_param_coeff_b.clone();
-        v_param_coeff_b.to_writer(_w)?;
+        v_param_coeff_b.to_writer(w)?;
         Ok(())
     }
 }
@@ -12030,33 +12024,33 @@ impl ContentCurve {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let has_base_geometry = self.has_base_geometry.clone();
-        has_base_geometry.to_writer(_w)?;
+        has_base_geometry.to_writer(w)?;
         let attribute_data_cond = !!has_base_geometry;
         let mut attribute_data: &AttributeData = &Default::default();
         if attribute_data_cond {
             attribute_data = self.attribute_data.as_ref().unwrap();
-            attribute_data.to_writer(_w, _ctx)?;
+            attribute_data.to_writer(w, _ctx)?;
         }
         let name_cond = !!has_base_geometry;
         let mut name: &Name = &Default::default();
         if name_cond {
             name = self.name.as_ref().unwrap();
-            name.to_writer(_w, _ctx)?;
+            name.to_writer(w, _ctx)?;
         }
         let id_cond = !!has_base_geometry;
         let mut id: &UnsignedInteger = &Default::default();
         if id_cond {
             id = self.id.as_ref().unwrap();
-            id.to_writer(_w)?;
+            id.to_writer(w)?;
         }
         let extend_type = self.extend_type.clone();
-        extend_type.to_writer(_w)?;
+        extend_type.to_writer(w)?;
         let is_3d_flag = self.is_3d_flag.clone();
-        is_3d_flag.to_writer(_w)?;
+        is_3d_flag.to_writer(w)?;
         Ok(())
     }
 }
@@ -12198,61 +12192,61 @@ impl PRC_TYPE_CRV_Blend02Boundary {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform2d_cond = !curve_data.is_3d_flag.value;
         let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
             transform2d = self.transform2d.as_ref().unwrap();
-            transform2d.to_writer(_w, _ctx)?;
+            transform2d.to_writer(w, _ctx)?;
         }
         let transform3d_cond = !!curve_data.is_3d_flag.value;
         let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
             transform3d = self.transform3d.as_ref().unwrap();
-            transform3d.to_writer(_w, _ctx)?;
+            transform3d.to_writer(w, _ctx)?;
         }
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let surface = self.surface.clone();
-        surface.to_writer(_w, _ctx)?;
+        surface.to_writer(w, _ctx)?;
         let bound = self.bound.clone();
-        bound.to_writer(_w)?;
+        bound.to_writer(w)?;
         let number_of_crossing_points = self.number_of_crossing_points.clone();
-        number_of_crossing_points.to_writer(_w)?;
+        number_of_crossing_points.to_writer(w)?;
         let crossing_points = self.crossing_points.clone();
         for i in &self.crossing_points {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let chord_error = self.chord_error.clone();
-        chord_error.to_writer(_w)?;
+        chord_error.to_writer(w)?;
         let angle_error = self.angle_error.clone();
-        angle_error.to_writer(_w)?;
+        angle_error.to_writer(w)?;
         let bound_surface = self.bound_surface.clone();
-        bound_surface.to_writer(_w, _ctx)?;
+        bound_surface.to_writer(w, _ctx)?;
         let sense_bound_surface = self.sense_bound_surface.clone();
-        sense_bound_surface.to_writer(_w)?;
+        sense_bound_surface.to_writer(w)?;
         let intersection_order = self.intersection_order.clone();
-        intersection_order.to_writer(_w)?;
+        intersection_order.to_writer(w)?;
         let sense_intersection_order = self.sense_intersection_order.clone();
-        sense_intersection_order.to_writer(_w)?;
+        sense_intersection_order.to_writer(w)?;
         let base_parameter = self.base_parameter.clone();
-        base_parameter.to_writer(_w)?;
+        base_parameter.to_writer(w)?;
         let base_scale = self.base_scale.clone();
-        base_scale.to_writer(_w)?;
+        base_scale.to_writer(w)?;
         let start_limit_point = self.start_limit_point.clone();
-        start_limit_point.to_writer(_w, _ctx)?;
+        start_limit_point.to_writer(w, _ctx)?;
         let start_limit_type = self.start_limit_type.clone();
-        start_limit_type.to_writer(_w)?;
+        start_limit_type.to_writer(w)?;
         let end_limit_point = self.end_limit_point.clone();
-        end_limit_point.to_writer(_w, _ctx)?;
+        end_limit_point.to_writer(w, _ctx)?;
         let end_limit_type = self.end_limit_type.clone();
-        end_limit_type.to_writer(_w)?;
+        end_limit_type.to_writer(w)?;
         Ok(())
     }
 }
@@ -12263,7 +12257,7 @@ pub struct ControlPointsNurbsCrv {
     pub x: Double,
     pub y: Double,
     pub z: Option<Double>,
-    pub w: Option<Double>,
+    pub ww: Option<Double>,
 }
 impl ControlPointsNurbsCrv {
     #[allow(unused_assignments)]
@@ -12286,39 +12280,39 @@ impl ControlPointsNurbsCrv {
         if z_cond {
             z = Double::from_reader(rdr)?;
         }
-        let w_cond = _ctx.PRC_TYPE_CRV_NURBS_is_rational;
-        let mut w: Double = Default::default();
-        if w_cond {
-            w = Double::from_reader(rdr)?;
+        let ww_cond = _ctx.PRC_TYPE_CRV_NURBS_is_rational;
+        let mut ww: Double = Default::default();
+        if ww_cond {
+            ww = Double::from_reader(rdr)?;
         }
         let rv = Self {
             x,
             y,
             z: if z_cond { Some(z) } else { None },
-            w: if w_cond { Some(w) } else { None },
+            ww: if ww_cond { Some(ww) } else { None },
         };
         Ok(rv)
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let x = self.x.clone();
-        x.to_writer(_w)?;
+        x.to_writer(w)?;
         let y = self.y.clone();
-        y.to_writer(_w)?;
+        y.to_writer(w)?;
         let z_cond = _ctx.ContentCurve_is_3d_flag;
         let mut z: &Double = &Default::default();
         if z_cond {
             z = self.z.as_ref().unwrap();
-            z.to_writer(_w)?;
+            z.to_writer(w)?;
         }
-        let w_cond = _ctx.PRC_TYPE_CRV_NURBS_is_rational;
-        let mut w: &Double = &Default::default();
-        if w_cond {
-            w = self.w.as_ref().unwrap();
-            w.to_writer(_w)?;
+        let ww_cond = _ctx.PRC_TYPE_CRV_NURBS_is_rational;
+        let mut ww: &Double = &Default::default();
+        if ww_cond {
+            ww = self.ww.as_ref().unwrap();
+            ww.to_writer(w)?;
         }
         Ok(())
     }
@@ -12440,33 +12434,33 @@ impl PRC_TYPE_CRV_NURBS {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let is_rational = self.is_rational.clone();
-        is_rational.to_writer(_w)?;
+        is_rational.to_writer(w)?;
         let degree = self.degree.clone();
-        degree.to_writer(_w)?;
+        degree.to_writer(w)?;
         let highest_index_of_control_points = self.highest_index_of_control_points.clone();
-        highest_index_of_control_points.to_writer(_w)?;
+        highest_index_of_control_points.to_writer(w)?;
         let highest_index_of_knots = self.highest_index_of_knots.clone();
-        highest_index_of_knots.to_writer(_w)?;
+        highest_index_of_knots.to_writer(w)?;
         let p = self.p.clone();
         for i in &self.p {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let u = self.u.clone();
         for i in &self.u {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let knot_type = self.knot_type.clone();
-        knot_type.to_writer(_w)?;
+        knot_type.to_writer(w)?;
         let curve_form = self.curve_form.clone();
-        curve_form.to_writer(_w)?;
+        curve_form.to_writer(w)?;
         Ok(())
     }
 }
@@ -12536,29 +12530,29 @@ impl PRC_TYPE_CRV_Circle {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
             transform2d = self.transform2d.as_ref().unwrap();
-            transform2d.to_writer(_w, _ctx)?;
+            transform2d.to_writer(w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
             transform3d = self.transform3d.as_ref().unwrap();
-            transform3d.to_writer(_w, _ctx)?;
+            transform3d.to_writer(w, _ctx)?;
         }
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let radius = self.radius.clone();
-        radius.to_writer(_w)?;
+        radius.to_writer(w)?;
         Ok(())
     }
 }
@@ -12590,13 +12584,13 @@ impl CompositeSubCurve {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let subcurve = self.subcurve.clone();
-        subcurve.to_writer(_w, _ctx)?;
+        subcurve.to_writer(w, _ctx)?;
         let sense = self.sense.clone();
-        sense.to_writer(_w)?;
+        sense.to_writer(w)?;
         Ok(())
     }
 }
@@ -12683,35 +12677,35 @@ impl PRC_TYPE_CRV_Composite {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
             transform2d = self.transform2d.as_ref().unwrap();
-            transform2d.to_writer(_w, _ctx)?;
+            transform2d.to_writer(w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
             transform3d = self.transform3d.as_ref().unwrap();
-            transform3d.to_writer(_w, _ctx)?;
+            transform3d.to_writer(w, _ctx)?;
         }
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let number_of_subcurves = self.number_of_subcurves.clone();
-        number_of_subcurves.to_writer(_w)?;
+        number_of_subcurves.to_writer(w)?;
         let subcurves = self.subcurves.clone();
         for i in &self.subcurves {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let is_closed = self.is_closed.clone();
-        is_closed.to_writer(_w)?;
+        is_closed.to_writer(w)?;
         Ok(())
     }
 }
@@ -12793,35 +12787,35 @@ impl PRC_TYPE_CRV_OnSurf {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
             transform2d = self.transform2d.as_ref().unwrap();
-            transform2d.to_writer(_w, _ctx)?;
+            transform2d.to_writer(w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
             transform3d = self.transform3d.as_ref().unwrap();
-            transform3d.to_writer(_w, _ctx)?;
+            transform3d.to_writer(w, _ctx)?;
         }
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let tolerance = self.tolerance.clone();
-        tolerance.to_writer(_w)?;
+        tolerance.to_writer(w)?;
         let uv_curve = self.uv_curve.clone();
-        uv_curve.to_writer(_w, _ctx)?;
+        uv_curve.to_writer(w, _ctx)?;
         let surface = self.surface.clone();
-        surface.to_writer(_w, _ctx)?;
+        surface.to_writer(w, _ctx)?;
         let uv_domain = self.uv_domain.clone();
-        uv_domain.to_writer(_w, _ctx)?;
+        uv_domain.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -12895,31 +12889,31 @@ impl PRC_TYPE_CRV_Ellipse {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
             transform2d = self.transform2d.as_ref().unwrap();
-            transform2d.to_writer(_w, _ctx)?;
+            transform2d.to_writer(w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
             transform3d = self.transform3d.as_ref().unwrap();
-            transform3d.to_writer(_w, _ctx)?;
+            transform3d.to_writer(w, _ctx)?;
         }
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let rx = self.rx.clone();
-        rx.to_writer(_w)?;
+        rx.to_writer(w)?;
         let ry = self.ry.clone();
-        ry.to_writer(_w)?;
+        ry.to_writer(w)?;
         Ok(())
     }
 }
@@ -12987,16 +12981,16 @@ impl PRC_TYPE_MATH_FCT_1D_Polynom {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let number_of_coefficients = self.number_of_coefficients.clone();
-        number_of_coefficients.to_writer(_w)?;
+        number_of_coefficients.to_writer(w)?;
         let coefficient = self.coefficient.clone();
         for i in &self.coefficient {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         Ok(())
     }
@@ -13068,19 +13062,19 @@ impl PRC_TYPE_MATH_FCT_1D_Trigonometric {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let amplitude = self.amplitude.clone();
-        amplitude.to_writer(_w)?;
+        amplitude.to_writer(w)?;
         let phase = self.phase.clone();
-        phase.to_writer(_w)?;
+        phase.to_writer(w)?;
         let freq = self.freq.clone();
-        freq.to_writer(_w)?;
+        freq.to_writer(w)?;
         let dc_offset = self.dc_offset.clone();
-        dc_offset.to_writer(_w)?;
+        dc_offset.to_writer(w)?;
         Ok(())
     }
 }
@@ -13126,15 +13120,15 @@ impl PRC_TYPE_MATH_FCT_1D_Fraction {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let numerator = self.numerator.clone();
-        numerator.to_writer(_w, _ctx)?;
+        numerator.to_writer(w, _ctx)?;
         let denominator = self.denominator.clone();
-        denominator.to_writer(_w, _ctx)?;
+        denominator.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -13211,21 +13205,21 @@ impl PRC_TYPE_MATH_FCT_1D_ArctanCos {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let a = self.a.clone();
-        a.to_writer(_w)?;
+        a.to_writer(w)?;
         let amplitude = self.amplitude.clone();
-        amplitude.to_writer(_w)?;
+        amplitude.to_writer(w)?;
         let frequency = self.frequency.clone();
-        frequency.to_writer(_w)?;
+        frequency.to_writer(w)?;
         let phase = self.phase.clone();
-        phase.to_writer(_w)?;
+        phase.to_writer(w)?;
         let e = self.e.clone();
-        e.to_writer(_w)?;
+        e.to_writer(w)?;
         Ok(())
     }
 }
@@ -13260,13 +13254,13 @@ impl CombinationFunctions {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let coefficient = self.coefficient.clone();
-        coefficient.to_writer(_w)?;
+        coefficient.to_writer(w)?;
         let function = self.function.clone();
-        function.to_writer(_w, _ctx)?;
+        function.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -13334,16 +13328,16 @@ impl PRC_TYPE_MATH_FCT_1D_Combination {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let number_of_coefficients = self.number_of_coefficients.clone();
-        number_of_coefficients.to_writer(_w)?;
+        number_of_coefficients.to_writer(w)?;
         let coefficient = self.coefficient.clone();
         for i in &self.coefficient {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -13404,15 +13398,15 @@ impl PRC_TYPE_MATH_FCT_1D {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         match &self.id_concrete {
-            PRC_TYPE_MATH_FCT_1D_idConcrete::poly(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_MATH_FCT_1D_idConcrete::trigon(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_MATH_FCT_1D_idConcrete::frac(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_MATH_FCT_1D_idConcrete::arctancos(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_MATH_FCT_1D_idConcrete::comb(x) => &x.to_writer(_w, _ctx)?,
+            PRC_TYPE_MATH_FCT_1D_idConcrete::poly(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_MATH_FCT_1D_idConcrete::trigon(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_MATH_FCT_1D_idConcrete::frac(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_MATH_FCT_1D_idConcrete::arctancos(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_MATH_FCT_1D_idConcrete::comb(x) => &x.to_writer(w, _ctx)?,
             PRC_TYPE_MATH_FCT_1D_idConcrete::Invalid(x) => {
                 return Err(Error::other(format!(
                     "PRC_TYPE_MATH_FCT_1D: Unrecognized subtype: {}!",
@@ -13487,17 +13481,17 @@ impl PRC_TYPE_MATH_FCT_3D_Linear {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let mat = self.mat.clone();
         for i in &self.mat {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let vect = self.vect.clone();
-        vect.to_writer(_w, _ctx)?;
+        vect.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -13563,25 +13557,25 @@ impl PRC_TYPE_MATH_FCT_3D_NonLinear {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let left_transformation = self.left_transformation.clone();
-        left_transformation.to_writer(_w, _ctx)?;
+        left_transformation.to_writer(w, _ctx)?;
         let right_transformation = self.right_transformation.clone();
-        right_transformation.to_writer(_w, _ctx)?;
+        right_transformation.to_writer(w, _ctx)?;
         let d2 = self.d2.clone();
-        d2.to_writer(_w)?;
+        d2.to_writer(w)?;
         let reserved_double = self.reserved_double.clone();
-        reserved_double.to_writer(_w)?;
+        reserved_double.to_writer(w)?;
         let reserved_int_1 = self.reserved_int_1.clone();
-        reserved_int_1.to_writer(_w)?;
+        reserved_int_1.to_writer(w)?;
         let reserved_int_2 = self.reserved_int_2.clone();
-        reserved_int_2.to_writer(_w)?;
+        reserved_int_2.to_writer(w)?;
         let reserved_int_3 = self.reserved_int_3.clone();
-        reserved_int_3.to_writer(_w)?;
+        reserved_int_3.to_writer(w)?;
         Ok(())
     }
 }
@@ -13632,12 +13626,12 @@ impl PRC_TYPE_MATH_FCT_3D {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         match &self.id_concrete {
-            PRC_TYPE_MATH_FCT_3D_idConcrete::lin(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_MATH_FCT_3D_idConcrete::nonlin(x) => &x.to_writer(_w, _ctx)?,
+            PRC_TYPE_MATH_FCT_3D_idConcrete::lin(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_MATH_FCT_3D_idConcrete::nonlin(x) => &x.to_writer(w, _ctx)?,
             PRC_TYPE_MATH_FCT_3D_idConcrete::Invalid(x) => {
                 return Err(Error::other(format!(
                     "PRC_TYPE_MATH_FCT_3D: Unrecognized subtype: {}!",
@@ -13745,38 +13739,38 @@ impl PRC_TYPE_CRV_Equation {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
             transform2d = self.transform2d.as_ref().unwrap();
-            transform2d.to_writer(_w, _ctx)?;
+            transform2d.to_writer(w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
             transform3d = self.transform3d.as_ref().unwrap();
-            transform3d.to_writer(_w, _ctx)?;
+            transform3d.to_writer(w, _ctx)?;
         }
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let interval = self.interval.clone();
-        interval.to_writer(_w, _ctx)?;
+        interval.to_writer(w, _ctx)?;
         let x_function = self.x_function.clone();
-        x_function.to_writer(_w, _ctx)?;
+        x_function.to_writer(w, _ctx)?;
         let y_function = self.y_function.clone();
-        y_function.to_writer(_w, _ctx)?;
+        y_function.to_writer(w, _ctx)?;
         let z_function_cond = _ctx.ContentCurve_is_3d_flag;
         let mut z_function: &PRC_TYPE_MATH_FCT_1D = &Default::default();
         if z_function_cond {
             z_function = self.z_function.as_ref().unwrap();
-            z_function.to_writer(_w, _ctx)?;
+            z_function.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -13836,25 +13830,25 @@ impl Type0HelixData {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let origin0 = self.origin0.clone();
-        origin0.to_writer(_w)?;
+        origin0.to_writer(w)?;
         let direction0 = self.direction0.clone();
-        direction0.to_writer(_w)?;
+        direction0.to_writer(w)?;
         let origin1 = self.origin1.clone();
-        origin1.to_writer(_w)?;
+        origin1.to_writer(w)?;
         let direction1 = self.direction1.clone();
-        direction1.to_writer(_w)?;
+        direction1.to_writer(w)?;
         let origin2 = self.origin2.clone();
-        origin2.to_writer(_w)?;
+        origin2.to_writer(w)?;
         let direction2 = self.direction2.clone();
-        direction2.to_writer(_w)?;
+        direction2.to_writer(w)?;
         let pitch = self.pitch.clone();
-        pitch.to_writer(_w)?;
+        pitch.to_writer(w)?;
         let radius = self.radius.clone();
-        radius.to_writer(_w)?;
+        radius.to_writer(w)?;
         Ok(())
     }
 }
@@ -13923,31 +13917,31 @@ impl Type1HelixData {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let unit_z0 = self.unit_z0.clone();
-        unit_z0.to_writer(_w)?;
+        unit_z0.to_writer(w)?;
         let unit_u0 = self.unit_u0.clone();
-        unit_u0.to_writer(_w)?;
+        unit_u0.to_writer(w)?;
         let unit_z1 = self.unit_z1.clone();
-        unit_z1.to_writer(_w)?;
+        unit_z1.to_writer(w)?;
         let unit_u1 = self.unit_u1.clone();
-        unit_u1.to_writer(_w)?;
+        unit_u1.to_writer(w)?;
         let unit_z2 = self.unit_z2.clone();
-        unit_z2.to_writer(_w)?;
+        unit_z2.to_writer(w)?;
         let unit_u2 = self.unit_u2.clone();
-        unit_u2.to_writer(_w)?;
+        unit_u2.to_writer(w)?;
         let reserved_double = self.reserved_double.clone();
         for i in &self.reserved_double {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let radius_law = self.radius_law.clone();
-        radius_law.to_writer(_w, _ctx)?;
+        radius_law.to_writer(w, _ctx)?;
         let z_law = self.z_law.clone();
-        z_law.to_writer(_w, _ctx)?;
+        z_law.to_writer(w, _ctx)?;
         let theta_law = self.theta_law.clone();
-        theta_law.to_writer(_w, _ctx)?;
+        theta_law.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -14034,37 +14028,37 @@ impl PRC_TYPE_CRV_Helix {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
             transform2d = self.transform2d.as_ref().unwrap();
-            transform2d.to_writer(_w, _ctx)?;
+            transform2d.to_writer(w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
             transform3d = self.transform3d.as_ref().unwrap();
-            transform3d.to_writer(_w, _ctx)?;
+            transform3d.to_writer(w, _ctx)?;
         }
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let _type = self._type.clone();
-        _type.to_writer(_w)?;
+        _type.to_writer(w)?;
         let orientation = self.orientation.clone();
-        orientation.to_writer(_w)?;
+        orientation.to_writer(w)?;
         let start = self.start.clone();
-        start.to_writer(_w, _ctx)?;
+        start.to_writer(w, _ctx)?;
         let type0_helix = self.type0_helix.clone();
-        type0_helix.to_writer(_w, _ctx)?;
+        type0_helix.to_writer(w, _ctx)?;
         let type1_helix = self.type1_helix.clone();
-        type1_helix.to_writer(_w, _ctx)?;
+        type1_helix.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -14143,33 +14137,33 @@ impl PRC_TYPE_CRV_Hyperbola {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
             transform2d = self.transform2d.as_ref().unwrap();
-            transform2d.to_writer(_w, _ctx)?;
+            transform2d.to_writer(w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
             transform3d = self.transform3d.as_ref().unwrap();
-            transform3d.to_writer(_w, _ctx)?;
+            transform3d.to_writer(w, _ctx)?;
         }
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let semi_axis = self.semi_axis.clone();
-        semi_axis.to_writer(_w)?;
+        semi_axis.to_writer(w)?;
         let semi_image_axis = self.semi_image_axis.clone();
-        semi_image_axis.to_writer(_w)?;
+        semi_image_axis.to_writer(w)?;
         let _type = self._type.clone();
-        _type.to_writer(_w)?;
+        _type.to_writer(w)?;
         Ok(())
     }
 }
@@ -14224,23 +14218,23 @@ impl CrossingPointsCrvIntersection {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let position = self.position.clone();
-        position.to_writer(_w, _ctx)?;
+        position.to_writer(w, _ctx)?;
         let uv_surface_1 = self.uv_surface_1.clone();
-        uv_surface_1.to_writer(_w, _ctx)?;
+        uv_surface_1.to_writer(w, _ctx)?;
         let uv_surface_2 = self.uv_surface_2.clone();
-        uv_surface_2.to_writer(_w, _ctx)?;
+        uv_surface_2.to_writer(w, _ctx)?;
         let tangent = self.tangent.clone();
-        tangent.to_writer(_w, _ctx)?;
+        tangent.to_writer(w, _ctx)?;
         let parameter = self.parameter.clone();
-        parameter.to_writer(_w)?;
+        parameter.to_writer(w)?;
         let scale = self.scale.clone();
-        scale.to_writer(_w)?;
+        scale.to_writer(w)?;
         let flags = self.flags.clone();
-        flags.to_writer(_w)?;
+        flags.to_writer(w)?;
         Ok(())
     }
 }
@@ -14373,57 +14367,57 @@ impl PRC_TYPE_CRV_Intersection {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
             transform2d = self.transform2d.as_ref().unwrap();
-            transform2d.to_writer(_w, _ctx)?;
+            transform2d.to_writer(w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
             transform3d = self.transform3d.as_ref().unwrap();
-            transform3d.to_writer(_w, _ctx)?;
+            transform3d.to_writer(w, _ctx)?;
         }
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let surface_1 = self.surface_1.clone();
-        surface_1.to_writer(_w, _ctx)?;
+        surface_1.to_writer(w, _ctx)?;
         let surface_2 = self.surface_2.clone();
-        surface_2.to_writer(_w, _ctx)?;
+        surface_2.to_writer(w, _ctx)?;
         let sense_1 = self.sense_1.clone();
-        sense_1.to_writer(_w)?;
+        sense_1.to_writer(w)?;
         let sense_2 = self.sense_2.clone();
-        sense_2.to_writer(_w)?;
+        sense_2.to_writer(w)?;
         let sense_cross = self.sense_cross.clone();
-        sense_cross.to_writer(_w)?;
+        sense_cross.to_writer(w)?;
         let number_of_crossings = self.number_of_crossings.clone();
-        number_of_crossings.to_writer(_w)?;
+        number_of_crossings.to_writer(w)?;
         let crossings = self.crossings.clone();
         for i in &self.crossings {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let start_limit = self.start_limit.clone();
-        start_limit.to_writer(_w, _ctx)?;
+        start_limit.to_writer(w, _ctx)?;
         let start_limit_type = self.start_limit_type.clone();
-        start_limit_type.to_writer(_w)?;
+        start_limit_type.to_writer(w)?;
         let end_limit = self.end_limit.clone();
-        end_limit.to_writer(_w, _ctx)?;
+        end_limit.to_writer(w, _ctx)?;
         let end_limit_type = self.end_limit_type.clone();
-        end_limit_type.to_writer(_w)?;
+        end_limit_type.to_writer(w)?;
         let chord_error = self.chord_error.clone();
-        chord_error.to_writer(_w)?;
+        chord_error.to_writer(w)?;
         let angle_error = self.angle_error.clone();
-        angle_error.to_writer(_w)?;
+        angle_error.to_writer(w)?;
         let param_respected = self.param_respected.clone();
-        param_respected.to_writer(_w)?;
+        param_respected.to_writer(w)?;
         Ok(())
     }
 }
@@ -14489,27 +14483,27 @@ impl PRC_TYPE_CRV_Line {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
             transform2d = self.transform2d.as_ref().unwrap();
-            transform2d.to_writer(_w, _ctx)?;
+            transform2d.to_writer(w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
             transform3d = self.transform3d.as_ref().unwrap();
-            transform3d.to_writer(_w, _ctx)?;
+            transform3d.to_writer(w, _ctx)?;
         }
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -14588,33 +14582,33 @@ impl PRC_TYPE_CRV_Offset {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
             transform2d = self.transform2d.as_ref().unwrap();
-            transform2d.to_writer(_w, _ctx)?;
+            transform2d.to_writer(w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
             transform3d = self.transform3d.as_ref().unwrap();
-            transform3d.to_writer(_w, _ctx)?;
+            transform3d.to_writer(w, _ctx)?;
         }
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let base_curve = self.base_curve.clone();
-        base_curve.to_writer(_w, _ctx)?;
+        base_curve.to_writer(w, _ctx)?;
         let offset_plane_normal = self.offset_plane_normal.clone();
-        offset_plane_normal.to_writer(_w, _ctx)?;
+        offset_plane_normal.to_writer(w, _ctx)?;
         let offset = self.offset.clone();
-        offset.to_writer(_w)?;
+        offset.to_writer(w)?;
         Ok(())
     }
 }
@@ -14689,31 +14683,31 @@ impl PRC_TYPE_CRV_Parabola {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
             transform2d = self.transform2d.as_ref().unwrap();
-            transform2d.to_writer(_w, _ctx)?;
+            transform2d.to_writer(w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
             transform3d = self.transform3d.as_ref().unwrap();
-            transform3d.to_writer(_w, _ctx)?;
+            transform3d.to_writer(w, _ctx)?;
         }
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let focal_length = self.focal_length.clone();
-        focal_length.to_writer(_w)?;
+        focal_length.to_writer(w)?;
         let _type = self._type.clone();
-        _type.to_writer(_w)?;
+        _type.to_writer(w)?;
         Ok(())
     }
 }
@@ -14821,39 +14815,39 @@ impl PRC_TYPE_CRV_PolyLine {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
             transform2d = self.transform2d.as_ref().unwrap();
-            transform2d.to_writer(_w, _ctx)?;
+            transform2d.to_writer(w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
             transform3d = self.transform3d.as_ref().unwrap();
-            transform3d.to_writer(_w, _ctx)?;
+            transform3d.to_writer(w, _ctx)?;
         }
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let number_of_points = self.number_of_points.clone();
-        number_of_points.to_writer(_w)?;
+        number_of_points.to_writer(w)?;
         let points_3d = self.points_3d.clone();
         if curve_data.is_3d_flag.value {
             for i in self.points_3d.as_ref().unwrap() {
-                i.to_writer(_w, _ctx)?;
+                i.to_writer(w, _ctx)?;
             }
         }
         let points_2d = self.points_2d.clone();
         if !curve_data.is_3d_flag.value {
             for i in self.points_2d.as_ref().unwrap() {
-                i.to_writer(_w, _ctx)?;
+                i.to_writer(w, _ctx)?;
             }
         }
         Ok(())
@@ -14929,31 +14923,31 @@ impl PRC_TYPE_CRV_Transform {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: &Transformation2DWithBit = &Default::default();
         if transform2d_cond {
             transform2d = self.transform2d.as_ref().unwrap();
-            transform2d.to_writer(_w, _ctx)?;
+            transform2d.to_writer(w, _ctx)?;
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: &Transformation3DWithBit = &Default::default();
         if transform3d_cond {
             transform3d = self.transform3d.as_ref().unwrap();
-            transform3d.to_writer(_w, _ctx)?;
+            transform3d.to_writer(w, _ctx)?;
         }
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let base_curve = self.base_curve.clone();
-        base_curve.to_writer(_w, _ctx)?;
+        base_curve.to_writer(w, _ctx)?;
         let math_transformation = self.math_transformation.clone();
-        math_transformation.to_writer(_w, _ctx)?;
+        math_transformation.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -15045,26 +15039,26 @@ impl PRC_TYPE_CRV {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         match &self.id_concrete {
-            PRC_TYPE_CRV_idConcrete::empty(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_CRV_idConcrete::b02b(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_CRV_idConcrete::n(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_CRV_idConcrete::circle(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_CRV_idConcrete::comp(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_CRV_idConcrete::ons(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_CRV_idConcrete::ell(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_CRV_idConcrete::equ(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_CRV_idConcrete::hel(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_CRV_idConcrete::hyp(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_CRV_idConcrete::int(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_CRV_idConcrete::li(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_CRV_idConcrete::off(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_CRV_idConcrete::para(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_CRV_idConcrete::poly(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_CRV_idConcrete::tr(x) => &x.to_writer(_w, _ctx)?,
+            PRC_TYPE_CRV_idConcrete::empty(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_CRV_idConcrete::b02b(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_CRV_idConcrete::n(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_CRV_idConcrete::circle(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_CRV_idConcrete::comp(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_CRV_idConcrete::ons(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_CRV_idConcrete::ell(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_CRV_idConcrete::equ(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_CRV_idConcrete::hel(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_CRV_idConcrete::hyp(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_CRV_idConcrete::int(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_CRV_idConcrete::li(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_CRV_idConcrete::off(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_CRV_idConcrete::para(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_CRV_idConcrete::poly(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_CRV_idConcrete::tr(x) => &x.to_writer(w, _ctx)?,
             PRC_TYPE_CRV_idConcrete::Invalid(x) => {
                 return Err(Error::other(format!(
                     "PRC_TYPE_CRV: Unrecognized subtype: {}!",
@@ -15146,22 +15140,22 @@ impl PtrCurve {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let is_referenced = self.is_referenced.clone();
-        is_referenced.to_writer(_w)?;
+        is_referenced.to_writer(w)?;
         let curve_cond = !is_referenced;
         let mut curve: &PRC_TYPE_CRV = &Default::default();
         if curve_cond {
             curve = self.curve.as_ref().unwrap();
-            curve.to_writer(_w, _ctx)?;
+            curve.to_writer(w, _ctx)?;
         }
         let curve_identifier_cond = !!is_referenced;
         let mut curve_identifier: &UnsignedInteger = &Default::default();
         if curve_identifier_cond {
             curve_identifier = self.curve_identifier.as_ref().unwrap();
-            curve_identifier.to_writer(_w)?;
+            curve_identifier.to_writer(w)?;
         }
         Ok(())
     }
@@ -15244,23 +15238,23 @@ impl PRC_TYPE_SURF_Blend01 {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let tranform = self.tranform.clone();
-        tranform.to_writer(_w, _ctx)?;
+        tranform.to_writer(w, _ctx)?;
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let center_curve = self.center_curve.clone();
-        center_curve.to_writer(_w, _ctx)?;
+        center_curve.to_writer(w, _ctx)?;
         let orgin_cruve = self.orgin_cruve.clone();
-        orgin_cruve.to_writer(_w, _ctx)?;
+        orgin_cruve.to_writer(w, _ctx)?;
         let tangent_curve = self.tangent_curve.clone();
-        tangent_curve.to_writer(_w, _ctx)?;
+        tangent_curve.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -15402,43 +15396,43 @@ impl PRC_TYPE_SURF_Blend02 {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let tranform = self.tranform.clone();
-        tranform.to_writer(_w, _ctx)?;
+        tranform.to_writer(w, _ctx)?;
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let bound_surface_0 = self.bound_surface_0.clone();
-        bound_surface_0.to_writer(_w, _ctx)?;
+        bound_surface_0.to_writer(w, _ctx)?;
         let bound_curve_0 = self.bound_curve_0.clone();
-        bound_curve_0.to_writer(_w, _ctx)?;
+        bound_curve_0.to_writer(w, _ctx)?;
         let bound_surface_1 = self.bound_surface_1.clone();
-        bound_surface_1.to_writer(_w, _ctx)?;
+        bound_surface_1.to_writer(w, _ctx)?;
         let bound_curve_1 = self.bound_curve_1.clone();
-        bound_curve_1.to_writer(_w, _ctx)?;
+        bound_curve_1.to_writer(w, _ctx)?;
         let center_curve = self.center_curve.clone();
-        center_curve.to_writer(_w, _ctx)?;
+        center_curve.to_writer(w, _ctx)?;
         let center_curve_sense = self.center_curve_sense.clone();
-        center_curve_sense.to_writer(_w)?;
+        center_curve_sense.to_writer(w)?;
         let bound_surface_0_sense = self.bound_surface_0_sense.clone();
-        bound_surface_0_sense.to_writer(_w)?;
+        bound_surface_0_sense.to_writer(w)?;
         let bound_surface_1_sense = self.bound_surface_1_sense.clone();
-        bound_surface_1_sense.to_writer(_w)?;
+        bound_surface_1_sense.to_writer(w)?;
         let radius_0 = self.radius_0.clone();
-        radius_0.to_writer(_w)?;
+        radius_0.to_writer(w)?;
         let radius_1 = self.radius_1.clone();
-        radius_1.to_writer(_w)?;
+        radius_1.to_writer(w)?;
         let cliff_suface_0 = self.cliff_suface_0.clone();
-        cliff_suface_0.to_writer(_w, _ctx)?;
+        cliff_suface_0.to_writer(w, _ctx)?;
         let cliff_surface_1 = self.cliff_surface_1.clone();
-        cliff_surface_1.to_writer(_w, _ctx)?;
+        cliff_surface_1.to_writer(w, _ctx)?;
         let parameterization_type = self.parameterization_type.clone();
-        parameterization_type.to_writer(_w)?;
+        parameterization_type.to_writer(w)?;
         Ok(())
     }
 }
@@ -15684,70 +15678,70 @@ impl PRC_TYPE_SURF_Blend03 {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform = self.transform.clone();
-        transform.to_writer(_w, _ctx)?;
+        transform.to_writer(w, _ctx)?;
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let number_of_elements = self.number_of_elements.clone();
-        number_of_elements.to_writer(_w)?;
+        number_of_elements.to_writer(w)?;
         let parameters = self.parameters.clone();
         for i in &self.parameters {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let multiplicities = self.multiplicities.clone();
         for i in &self.multiplicities {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let points = self.points.clone();
         for i in &self.points {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let rail_2_angles_v = self.rail_2_angles_v.clone();
         for i in &self.rail_2_angles_v {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let tangents = self.tangents.clone();
         for i in &self.tangents {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let rail_2_derivatives_v = self.rail_2_derivatives_v.clone();
         for i in &self.rail_2_derivatives_v {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let second_derivatives = self.second_derivatives.clone();
         for i in &self.second_derivatives {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let rail_2_second_derivatives = self.rail_2_second_derivatives.clone();
         for i in &self.rail_2_second_derivatives {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let rail_2_parameter_v = self.rail_2_parameter_v.clone();
-        rail_2_parameter_v.to_writer(_w)?;
+        rail_2_parameter_v.to_writer(w)?;
         let trim_v_min = self.trim_v_min.clone();
-        trim_v_min.to_writer(_w)?;
+        trim_v_min.to_writer(w)?;
         let trim_v_max = self.trim_v_max.clone();
-        trim_v_max.to_writer(_w)?;
+        trim_v_max.to_writer(w)?;
         let reserved_int = self.reserved_int.clone();
         for i in &self.reserved_int {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let reserved_char = self.reserved_char.clone();
         for i in &self.reserved_char {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let number_of_supplimental_doubles = self.number_of_supplimental_doubles.clone();
-        number_of_supplimental_doubles.to_writer(_w)?;
+        number_of_supplimental_doubles.to_writer(w)?;
         let supplimental_doubles = self.supplimental_doubles.clone();
         for i in &self.supplimental_doubles {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         Ok(())
     }
@@ -15783,15 +15777,15 @@ impl ControlPointsNurbsSurf3 {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let x = self.x.clone();
-        x.to_writer(_w)?;
+        x.to_writer(w)?;
         let y = self.y.clone();
-        y.to_writer(_w)?;
+        y.to_writer(w)?;
         let z = self.z.clone();
-        z.to_writer(_w)?;
+        z.to_writer(w)?;
         Ok(())
     }
 }
@@ -15802,7 +15796,7 @@ pub struct ControlPointsNurbsSurf4 {
     pub x: Double,
     pub y: Double,
     pub z: Double,
-    pub w: Double,
+    pub ww: Double,
 }
 impl ControlPointsNurbsSurf4 {
     #[allow(unused_assignments)]
@@ -15822,24 +15816,24 @@ impl ControlPointsNurbsSurf4 {
         y = Double::from_reader(rdr)?;
         let mut z: Double = Default::default();
         z = Double::from_reader(rdr)?;
-        let mut w: Double = Default::default();
-        w = Double::from_reader(rdr)?;
-        let rv = Self { x, y, z, w };
+        let mut ww: Double = Default::default();
+        ww = Double::from_reader(rdr)?;
+        let rv = Self { x, y, z, ww };
         Ok(rv)
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let x = self.x.clone();
-        x.to_writer(_w)?;
+        x.to_writer(w)?;
         let y = self.y.clone();
-        y.to_writer(_w)?;
+        y.to_writer(w)?;
         let z = self.z.clone();
-        z.to_writer(_w)?;
-        let w = self.w.clone();
-        w.to_writer(_w)?;
+        z.to_writer(w)?;
+        let ww = self.ww.clone();
+        ww.to_writer(w)?;
         Ok(())
     }
 }
@@ -16020,53 +16014,53 @@ impl PRC_TYPE_SURF_NURBS {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let is_rational = self.is_rational.clone();
-        is_rational.to_writer(_w)?;
+        is_rational.to_writer(w)?;
         let du = self.du.clone();
-        du.to_writer(_w)?;
+        du.to_writer(w)?;
         let dv = self.dv.clone();
-        dv.to_writer(_w)?;
+        dv.to_writer(w)?;
         let highest_index_of_control_points_in_u =
             self.highest_index_of_control_points_in_u.clone();
-        highest_index_of_control_points_in_u.to_writer(_w)?;
+        highest_index_of_control_points_in_u.to_writer(w)?;
         let highest_index_of_control_points_in_v =
             self.highest_index_of_control_points_in_v.clone();
-        highest_index_of_control_points_in_v.to_writer(_w)?;
+        highest_index_of_control_points_in_v.to_writer(w)?;
         let highest_index_of_knots_in_u = self.highest_index_of_knots_in_u.clone();
-        highest_index_of_knots_in_u.to_writer(_w)?;
+        highest_index_of_knots_in_u.to_writer(w)?;
         let highest_index_of_knots_in_v = self.highest_index_of_knots_in_v.clone();
-        highest_index_of_knots_in_v.to_writer(_w)?;
+        highest_index_of_knots_in_v.to_writer(w)?;
         let p3 = self.p3.clone();
         if !is_rational {
             for i in self.p3.as_ref().unwrap() {
-                i.to_writer(_w, _ctx)?;
+                i.to_writer(w, _ctx)?;
             }
         }
         let p4 = self.p4.clone();
         if !!is_rational {
             for i in self.p4.as_ref().unwrap() {
-                i.to_writer(_w, _ctx)?;
+                i.to_writer(w, _ctx)?;
             }
         }
         let ku = self.ku.clone();
         for i in &self.ku {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let kv = self.kv.clone();
         for i in &self.kv {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let knot_type = self.knot_type.clone();
-        knot_type.to_writer(_w)?;
+        knot_type.to_writer(w)?;
         let surface_form = self.surface_form.clone();
-        surface_form.to_writer(_w)?;
+        surface_form.to_writer(w)?;
         Ok(())
     }
 }
@@ -16141,21 +16135,21 @@ impl PRC_TYPE_SURF_Cone {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform = self.transform.clone();
-        transform.to_writer(_w, _ctx)?;
+        transform.to_writer(w, _ctx)?;
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let radius = self.radius.clone();
-        radius.to_writer(_w)?;
+        radius.to_writer(w)?;
         let semi_angle = self.semi_angle.clone();
-        semi_angle.to_writer(_w)?;
+        semi_angle.to_writer(w)?;
         Ok(())
     }
 }
@@ -16224,19 +16218,19 @@ impl PRC_TYPE_SURF_Cylinder {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform = self.transform.clone();
-        transform.to_writer(_w, _ctx)?;
+        transform.to_writer(w, _ctx)?;
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let radius = self.radius.clone();
-        radius.to_writer(_w)?;
+        radius.to_writer(w)?;
         Ok(())
     }
 }
@@ -16313,21 +16307,21 @@ impl PRC_TYPE_SURF_Cylindrical {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform = self.transform.clone();
-        transform.to_writer(_w, _ctx)?;
+        transform.to_writer(w, _ctx)?;
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let base_surface = self.base_surface.clone();
-        base_surface.to_writer(_w, _ctx)?;
+        base_surface.to_writer(w, _ctx)?;
         let tolerance = self.tolerance.clone();
-        tolerance.to_writer(_w)?;
+        tolerance.to_writer(w)?;
         Ok(())
     }
 }
@@ -16402,21 +16396,21 @@ impl PRC_TYPE_SURF_Offset {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform = self.transform.clone();
-        transform.to_writer(_w, _ctx)?;
+        transform.to_writer(w, _ctx)?;
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let base_surface = self.base_surface.clone();
-        base_surface.to_writer(_w, _ctx)?;
+        base_surface.to_writer(w, _ctx)?;
         let offset_distance = self.offset_distance.clone();
-        offset_distance.to_writer(_w)?;
+        offset_distance.to_writer(w)?;
         Ok(())
     }
 }
@@ -16497,23 +16491,23 @@ impl PRC_TYPE_SURF_Pipe {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform = self.transform.clone();
-        transform.to_writer(_w, _ctx)?;
+        transform.to_writer(w, _ctx)?;
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let center_curve = self.center_curve.clone();
-        center_curve.to_writer(_w, _ctx)?;
+        center_curve.to_writer(w, _ctx)?;
         let orgin_curve = self.orgin_curve.clone();
-        orgin_curve.to_writer(_w, _ctx)?;
+        orgin_curve.to_writer(w, _ctx)?;
         let radius = self.radius.clone();
-        radius.to_writer(_w)?;
+        radius.to_writer(w)?;
         Ok(())
     }
 }
@@ -16588,21 +16582,21 @@ impl PRC_TYPE_SURF_Ruled {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform = self.transform.clone();
-        transform.to_writer(_w, _ctx)?;
+        transform.to_writer(w, _ctx)?;
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let first_curve = self.first_curve.clone();
-        first_curve.to_writer(_w, _ctx)?;
+        first_curve.to_writer(w, _ctx)?;
         let second_curve = self.second_curve.clone();
-        second_curve.to_writer(_w, _ctx)?;
+        second_curve.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -16671,19 +16665,19 @@ impl PRC_TYPE_SURF_Sphere {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform = self.transform.clone();
-        transform.to_writer(_w, _ctx)?;
+        transform.to_writer(w, _ctx)?;
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let radius = self.radius.clone();
-        radius.to_writer(_w)?;
+        radius.to_writer(w)?;
         Ok(())
     }
 }
@@ -16776,27 +16770,27 @@ impl PRC_TYPE_SURF_Revolution {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform = self.transform.clone();
-        transform.to_writer(_w, _ctx)?;
+        transform.to_writer(w, _ctx)?;
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let tolerance = self.tolerance.clone();
-        tolerance.to_writer(_w)?;
+        tolerance.to_writer(w)?;
         let origin = self.origin.clone();
-        origin.to_writer(_w, _ctx)?;
+        origin.to_writer(w, _ctx)?;
         let x_axis = self.x_axis.clone();
-        x_axis.to_writer(_w, _ctx)?;
+        x_axis.to_writer(w, _ctx)?;
         let y_axis = self.y_axis.clone();
-        y_axis.to_writer(_w, _ctx)?;
+        y_axis.to_writer(w, _ctx)?;
         let base_curve = self.base_curve.clone();
-        base_curve.to_writer(_w, _ctx)?;
+        base_curve.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -16871,21 +16865,21 @@ impl PRC_TYPE_SURF_Extrusion {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform = self.transform.clone();
-        transform.to_writer(_w, _ctx)?;
+        transform.to_writer(w, _ctx)?;
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let sweep_vector = self.sweep_vector.clone();
-        sweep_vector.to_writer(_w, _ctx)?;
+        sweep_vector.to_writer(w, _ctx)?;
         let base_curve = self.base_curve.clone();
-        base_curve.to_writer(_w, _ctx)?;
+        base_curve.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -16966,23 +16960,23 @@ impl PRC_TYPE_SURF_FromCurves {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform = self.transform.clone();
-        transform.to_writer(_w, _ctx)?;
+        transform.to_writer(w, _ctx)?;
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let origin = self.origin.clone();
-        origin.to_writer(_w, _ctx)?;
+        origin.to_writer(w, _ctx)?;
         let first_curve = self.first_curve.clone();
-        first_curve.to_writer(_w, _ctx)?;
+        first_curve.to_writer(w, _ctx)?;
         let second_curve = self.second_curve.clone();
-        second_curve.to_writer(_w, _ctx)?;
+        second_curve.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -17057,21 +17051,21 @@ impl PRC_TYPE_SURF_Torus {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform = self.transform.clone();
-        transform.to_writer(_w, _ctx)?;
+        transform.to_writer(w, _ctx)?;
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let major_radius = self.major_radius.clone();
-        major_radius.to_writer(_w)?;
+        major_radius.to_writer(w)?;
         let minor_radius = self.minor_radius.clone();
-        minor_radius.to_writer(_w)?;
+        minor_radius.to_writer(w)?;
         Ok(())
     }
 }
@@ -17146,21 +17140,21 @@ impl PRC_TYPE_SURF_Transform {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve_data = self.curve_data.clone();
-        curve_data.to_writer(_w, _ctx)?;
+        curve_data.to_writer(w, _ctx)?;
         let transform = self.transform.clone();
-        transform.to_writer(_w, _ctx)?;
+        transform.to_writer(w, _ctx)?;
         let parameterization = self.parameterization.clone();
-        parameterization.to_writer(_w, _ctx)?;
+        parameterization.to_writer(w, _ctx)?;
         let base_surface = self.base_surface.clone();
-        base_surface.to_writer(_w, _ctx)?;
+        base_surface.to_writer(w, _ctx)?;
         let math_transformation = self.math_transformation.clone();
-        math_transformation.to_writer(_w, _ctx)?;
+        math_transformation.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -17186,7 +17180,7 @@ impl PRC_TYPE_SURF_Blend04 {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         Ok(())
@@ -17290,29 +17284,29 @@ impl PRC_TYPE_SURF {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         match &self.id_concrete {
-            PRC_TYPE_SURF_idConcrete::empty(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_SURF_idConcrete::b01(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_SURF_idConcrete::b02(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_SURF_idConcrete::b03(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_SURF_idConcrete::n(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_SURF_idConcrete::co(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_SURF_idConcrete::cy(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_SURF_idConcrete::cy2(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_SURF_idConcrete::o(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_SURF_idConcrete::pi(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_SURF_idConcrete::pl(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_SURF_idConcrete::ru(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_SURF_idConcrete::s(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_SURF_idConcrete::re(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_SURF_idConcrete::ext(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_SURF_idConcrete::fc(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_SURF_idConcrete::torus(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_SURF_idConcrete::tr(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_SURF_idConcrete::b04(x) => &x.to_writer(_w, _ctx)?,
+            PRC_TYPE_SURF_idConcrete::empty(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_SURF_idConcrete::b01(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_SURF_idConcrete::b02(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_SURF_idConcrete::b03(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_SURF_idConcrete::n(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_SURF_idConcrete::co(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_SURF_idConcrete::cy(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_SURF_idConcrete::cy2(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_SURF_idConcrete::o(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_SURF_idConcrete::pi(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_SURF_idConcrete::pl(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_SURF_idConcrete::ru(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_SURF_idConcrete::s(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_SURF_idConcrete::re(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_SURF_idConcrete::ext(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_SURF_idConcrete::fc(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_SURF_idConcrete::torus(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_SURF_idConcrete::tr(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_SURF_idConcrete::b04(x) => &x.to_writer(w, _ctx)?,
             PRC_TYPE_SURF_idConcrete::Invalid(x) => {
                 return Err(Error::other(format!(
                     "PRC_TYPE_SURF: Unrecognized subtype: {}!",
@@ -17397,22 +17391,22 @@ impl PtrSurface {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let is_referenced = self.is_referenced.clone();
-        is_referenced.to_writer(_w)?;
+        is_referenced.to_writer(w)?;
         let surface_cond = !is_referenced;
         let mut surface: &PRC_TYPE_SURF = &Default::default();
         if surface_cond {
             surface = self.surface.as_ref().unwrap();
-            surface.to_writer(_w, _ctx)?;
+            surface.to_writer(w, _ctx)?;
         }
         let surface_identifier_cond = !!is_referenced;
         let mut surface_identifier: &UnsignedInteger = &Default::default();
         if surface_identifier_cond {
             surface_identifier = self.surface_identifier.as_ref().unwrap();
-            surface_identifier.to_writer(_w)?;
+            surface_identifier.to_writer(w)?;
         }
         Ok(())
     }
@@ -17463,20 +17457,20 @@ impl ContentWireEdge {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let ptr_curve = self.ptr_curve.clone();
-        ptr_curve.to_writer(_w, _ctx)?;
+        ptr_curve.to_writer(w, _ctx)?;
         let is_trimmed = self.is_trimmed.clone();
-        is_trimmed.to_writer(_w)?;
+        is_trimmed.to_writer(w)?;
         let trim_interval_cond = !!is_trimmed;
         let mut trim_interval: &Interval = &Default::default();
         if trim_interval_cond {
             trim_interval = self.trim_interval.as_ref().unwrap();
-            trim_interval.to_writer(_w, _ctx)?;
+            trim_interval.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -17522,13 +17516,13 @@ impl PRC_TYPE_TOPO_WireEdge {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let curve = self.curve.clone();
-        curve.to_writer(_w, _ctx)?;
+        curve.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -17614,24 +17608,24 @@ impl PRC_TYPE_TOPO_Edge {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let wire_edge = self.wire_edge.clone();
-        wire_edge.to_writer(_w, _ctx)?;
+        wire_edge.to_writer(w, _ctx)?;
         let start_vertex = self.start_vertex.clone();
-        start_vertex.to_writer(_w, _ctx)?;
+        start_vertex.to_writer(w, _ctx)?;
         let end_vertex = self.end_vertex.clone();
-        end_vertex.to_writer(_w, _ctx)?;
+        end_vertex.to_writer(w, _ctx)?;
         let has_tolerance = self.has_tolerance.clone();
-        has_tolerance.to_writer(_w)?;
+        has_tolerance.to_writer(w)?;
         let tolerance_cond = !!has_tolerance;
         let mut tolerance: &Double = &Default::default();
         if tolerance_cond {
             tolerance = self.tolerance.as_ref().unwrap();
-            tolerance.to_writer(_w)?;
+            tolerance.to_writer(w)?;
         }
         Ok(())
     }
@@ -17707,21 +17701,21 @@ impl PRC_TYPE_TOPO_CoEdge {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base_tolopogy = self.base_tolopogy.clone();
-        base_tolopogy.to_writer(_w, _ctx)?;
+        base_tolopogy.to_writer(w, _ctx)?;
         let ptr_topology = self.ptr_topology.clone();
-        ptr_topology.to_writer(_w, _ctx)?;
+        ptr_topology.to_writer(w, _ctx)?;
         let ptr_curves = self.ptr_curves.clone();
-        ptr_curves.to_writer(_w, _ctx)?;
+        ptr_curves.to_writer(w, _ctx)?;
         let coedge_orientation = self.coedge_orientation.clone();
-        coedge_orientation.to_writer(_w)?;
+        coedge_orientation.to_writer(w)?;
         let uv_orientation = self.uv_orientation.clone();
-        uv_orientation.to_writer(_w)?;
+        uv_orientation.to_writer(w)?;
         Ok(())
     }
 }
@@ -17756,13 +17750,13 @@ impl CoedgeInLoop {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let next_coedge = self.next_coedge.clone();
-        next_coedge.to_writer(_w, _ctx)?;
+        next_coedge.to_writer(w, _ctx)?;
         let neighbor_index = self.neighbor_index.clone();
-        neighbor_index.to_writer(_w)?;
+        neighbor_index.to_writer(w)?;
         Ok(())
     }
 }
@@ -17839,20 +17833,20 @@ impl PRC_TYPE_TOPO_Loop {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base_tolopogy = self.base_tolopogy.clone();
-        base_tolopogy.to_writer(_w, _ctx)?;
+        base_tolopogy.to_writer(w, _ctx)?;
         let loop_orientation = self.loop_orientation.clone();
-        loop_orientation.to_writer(_w)?;
+        loop_orientation.to_writer(w)?;
         let number_of_coedges = self.number_of_coedges.clone();
-        number_of_coedges.to_writer(_w)?;
+        number_of_coedges.to_writer(w)?;
         let coedge = self.coedge.clone();
         for i in &self.coedge {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -17982,38 +17976,38 @@ impl PRC_TYPE_TOPO_Face {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base_tolopogy = self.base_tolopogy.clone();
-        base_tolopogy.to_writer(_w, _ctx)?;
+        base_tolopogy.to_writer(w, _ctx)?;
         let surface_geometry = self.surface_geometry.clone();
-        surface_geometry.to_writer(_w, _ctx)?;
+        surface_geometry.to_writer(w, _ctx)?;
         let is_trimmed = self.is_trimmed.clone();
-        is_trimmed.to_writer(_w)?;
+        is_trimmed.to_writer(w)?;
         let trimmed_surface_cond = !!is_trimmed;
         let mut trimmed_surface: &Domain = &Default::default();
         if trimmed_surface_cond {
             trimmed_surface = self.trimmed_surface.as_ref().unwrap();
-            trimmed_surface.to_writer(_w, _ctx)?;
+            trimmed_surface.to_writer(w, _ctx)?;
         }
         let has_tolerance = self.has_tolerance.clone();
-        has_tolerance.to_writer(_w)?;
+        has_tolerance.to_writer(w)?;
         let tolerance_cond = !!has_tolerance;
         let mut tolerance: &Double = &Default::default();
         if tolerance_cond {
             tolerance = self.tolerance.as_ref().unwrap();
-            tolerance.to_writer(_w)?;
+            tolerance.to_writer(w)?;
         }
         let number_of_loops = self.number_of_loops.clone();
-        number_of_loops.to_writer(_w)?;
+        number_of_loops.to_writer(w)?;
         let index_of_outer_loop = self.index_of_outer_loop.clone();
-        index_of_outer_loop.to_writer(_w)?;
+        index_of_outer_loop.to_writer(w)?;
         let loops = self.loops.clone();
         for i in &self.loops {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -18046,13 +18040,13 @@ impl FacesInShell {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let face = self.face.clone();
-        face.to_writer(_w, _ctx)?;
+        face.to_writer(w, _ctx)?;
         let orientation = self.orientation.clone();
-        orientation.to_writer(_w)?;
+        orientation.to_writer(w)?;
         Ok(())
     }
 }
@@ -18129,20 +18123,20 @@ impl PRC_TYPE_TOPO_Shell {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base_tolopogy = self.base_tolopogy.clone();
-        base_tolopogy.to_writer(_w, _ctx)?;
+        base_tolopogy.to_writer(w, _ctx)?;
         let is_closed = self.is_closed.clone();
-        is_closed.to_writer(_w)?;
+        is_closed.to_writer(w)?;
         let number_of_faces = self.number_of_faces.clone();
-        number_of_faces.to_writer(_w)?;
+        number_of_faces.to_writer(w)?;
         let faces = self.faces.clone();
         for i in &self.faces {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -18214,18 +18208,18 @@ impl PRC_TYPE_TOPO_Connex {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base_tolopogy = self.base_tolopogy.clone();
-        base_tolopogy.to_writer(_w, _ctx)?;
+        base_tolopogy.to_writer(w, _ctx)?;
         let number_of_shells = self.number_of_shells.clone();
-        number_of_shells.to_writer(_w)?;
+        number_of_shells.to_writer(w)?;
         let shells = self.shells.clone();
         for i in &self.shells {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -18267,11 +18261,11 @@ impl PRC_TYPE_ROOT {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         Ok(())
     }
 }
@@ -18346,20 +18340,20 @@ impl PRC_TYPE_TOPO {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         match &self.id_concrete {
-            PRC_TYPE_TOPO_idConcrete::empty(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_TOPO_idConcrete::mv(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_TOPO_idConcrete::uv(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_TOPO_idConcrete::we(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_TOPO_idConcrete::e(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_TOPO_idConcrete::ce(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_TOPO_idConcrete::l(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_TOPO_idConcrete::f(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_TOPO_idConcrete::s(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_TOPO_idConcrete::c(x) => &x.to_writer(_w, _ctx)?,
+            PRC_TYPE_TOPO_idConcrete::empty(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_TOPO_idConcrete::mv(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_TOPO_idConcrete::uv(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_TOPO_idConcrete::we(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_TOPO_idConcrete::e(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_TOPO_idConcrete::ce(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_TOPO_idConcrete::l(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_TOPO_idConcrete::f(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_TOPO_idConcrete::s(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_TOPO_idConcrete::c(x) => &x.to_writer(w, _ctx)?,
             PRC_TYPE_TOPO_idConcrete::Invalid(x) => {
                 return Err(Error::other(format!(
                     "PRC_TYPE_TOPO: Unrecognized subtype: {}!",
@@ -18435,22 +18429,22 @@ impl PtrTopology {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let is_stored = self.is_stored.clone();
-        is_stored.to_writer(_w)?;
+        is_stored.to_writer(w)?;
         let topo_cond = !is_stored;
         let mut topo: &PRC_TYPE_TOPO = &Default::default();
         if topo_cond {
             topo = self.topo.as_ref().unwrap();
-            topo.to_writer(_w, _ctx)?;
+            topo.to_writer(w, _ctx)?;
         }
         let topo_identifier_cond = !!is_stored;
         let mut topo_identifier: &UnsignedInteger = &Default::default();
         if topo_identifier_cond {
             topo_identifier = self.topo_identifier.as_ref().unwrap();
-            topo_identifier.to_writer(_w)?;
+            topo_identifier.to_writer(w)?;
         }
         Ok(())
     }
@@ -18510,15 +18504,15 @@ impl PRC_TYPE_TOPO_SingleWireBody {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let wire_body = self.wire_body.clone();
-        wire_body.to_writer(_w, _ctx)?;
+        wire_body.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -18586,24 +18580,24 @@ impl PRC_TYPE_TOPO_BrepData {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let number_of_connex = self.number_of_connex.clone();
-        number_of_connex.to_writer(_w)?;
+        number_of_connex.to_writer(w)?;
         let connex = self.connex.clone();
         for i in &self.connex {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let bounding_box_cond = have_bbox(base.bounding_box_behavior.value);
         let mut bounding_box: &BoundingBox = &Default::default();
         if bounding_box_cond {
             bounding_box = self.bounding_box.as_ref().unwrap();
-            bounding_box.to_writer(_w, _ctx)?;
+            bounding_box.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -18668,22 +18662,22 @@ impl CompressedVertex {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let already_stored = self.already_stored.clone();
-        already_stored.to_writer(_w)?;
+        already_stored.to_writer(w)?;
         let point_index_cond = !already_stored.value;
         let mut point_index: &UnsignedIntegerWithVariableBitNumber = &Default::default();
         if point_index_cond {
             point_index = self.point_index.as_ref().unwrap();
-            point_index.to_writer(_w, _ctx.BrepDataCompress_number_of_bits_to_store_reference)?;
+            point_index.to_writer(w, _ctx.BrepDataCompress_number_of_bits_to_store_reference)?;
         }
         let point_data_cond = !!already_stored.value;
         let mut point_data: &CompressedPoint = &Default::default();
         if point_data_cond {
             point_data = self.point_data.as_ref().unwrap();
-            point_data.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
+            point_data.to_writer(w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         Ok(())
     }
@@ -18755,34 +18749,34 @@ impl ParticularCircle {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let full_circle = self.full_circle.clone();
-        full_circle.to_writer(_w)?;
+        full_circle.to_writer(w)?;
         let start_end_data_cond = !_ctx.is_compressed_iso_spline();
         let mut start_end_data: &StartEndData = &Default::default();
         if start_end_data_cond {
             start_end_data = self.start_end_data.as_ref().unwrap();
-            start_end_data.to_writer(_w, _ctx)?;
+            start_end_data.to_writer(w, _ctx)?;
         }
         let center_cond = full_circle.value;
         let mut center: &CompressedPoint = &Default::default();
         if center_cond {
             center = self.center.as_ref().unwrap();
-            center.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
+            center.to_writer(w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         let normal_cond = full_circle.value;
         let mut normal: &CompressedPoint = &Default::default();
         if normal_cond {
             normal = self.normal.as_ref().unwrap();
-            normal.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
+            normal.to_writer(w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         let middle_of_arc_cond = !full_circle.value;
         let mut middle_of_arc: &CompressedPoint = &Default::default();
         if middle_of_arc_cond {
             middle_of_arc = self.middle_of_arc.as_ref().unwrap();
-            middle_of_arc.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
+            middle_of_arc.to_writer(w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         Ok(())
     }
@@ -18830,19 +18824,19 @@ impl GeneralCircle {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let start_end_data_cond = !_ctx.is_compressed_iso_spline();
         let mut start_end_data: &StartEndData = &Default::default();
         if start_end_data_cond {
             start_end_data = self.start_end_data.as_ref().unwrap();
-            start_end_data.to_writer(_w, _ctx)?;
+            start_end_data.to_writer(w, _ctx)?;
         }
         let center = self.center.clone();
-        center.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
+        center.to_writer(w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         let circle_angle = self.circle_angle.clone();
-        circle_angle.to_writer(_w)?;
+        circle_angle.to_writer(w)?;
         Ok(())
     }
 }
@@ -18915,32 +18909,32 @@ impl StartEndData {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let start_vertex_cond = !!_ctx.is_curve_trimming_face();
         let mut start_vertex: &CompressedVertex = &Default::default();
         if start_vertex_cond {
             start_vertex = self.start_vertex.as_ref().unwrap();
-            start_vertex.to_writer(_w, _ctx)?;
+            start_vertex.to_writer(w, _ctx)?;
         }
         let end_vertex_cond = !!_ctx.is_curve_trimming_face();
         let mut end_vertex: &CompressedVertex = &Default::default();
         if end_vertex_cond {
             end_vertex = self.end_vertex.as_ref().unwrap();
-            end_vertex.to_writer(_w, _ctx)?;
+            end_vertex.to_writer(w, _ctx)?;
         }
         let start_point_cond = !_ctx.is_curve_trimming_face();
         let mut start_point: &CompressedPoint = &Default::default();
         if start_point_cond {
             start_point = self.start_point.as_ref().unwrap();
-            start_point.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
+            start_point.to_writer(w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         let end_point_cond = !_ctx.is_curve_trimming_face();
         let mut end_point: &CompressedPoint = &Default::default();
         if end_point_cond {
             end_point = self.end_point.as_ref().unwrap();
-            end_point.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
+            end_point.to_writer(w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         Ok(())
     }
@@ -18978,13 +18972,13 @@ impl PRC_HCG_Line {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let start_end_data = self.start_end_data.clone();
-        start_end_data.to_writer(_w, _ctx)?;
+        start_end_data.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -19050,28 +19044,28 @@ impl PRC_HCG_Circle {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id_cond = !_ctx.is_compressed_iso_spline();
         let mut id: &CompressedEntityType = &Default::default();
         if id_cond {
             id = self.id.as_ref().unwrap();
-            id.to_writer(_w)?;
+            id.to_writer(w)?;
         }
         let is_particular_circle = self.is_particular_circle.clone();
-        is_particular_circle.to_writer(_w)?;
+        is_particular_circle.to_writer(w)?;
         let particular_circle_cond = is_particular_circle.value;
         let mut particular_circle: &ParticularCircle = &Default::default();
         if particular_circle_cond {
             particular_circle = self.particular_circle.as_ref().unwrap();
-            particular_circle.to_writer(_w, _ctx)?;
+            particular_circle.to_writer(w, _ctx)?;
         }
         let general_circle_cond = !is_particular_circle.value;
         let mut general_circle: &GeneralCircle = &Default::default();
         if general_circle_cond {
             general_circle = self.general_circle.as_ref().unwrap();
-            general_circle.to_writer(_w, _ctx)?;
+            general_circle.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -19206,48 +19200,48 @@ impl PRC_HCG_BSplineHermiteCurve {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let start_end_data = self.start_end_data.clone();
-        start_end_data.to_writer(_w, _ctx)?;
+        start_end_data.to_writer(w, _ctx)?;
         let number_bits = self.number_bits.clone();
-        number_bits.to_writer(_w, 4)?;
+        number_bits.to_writer(w, 4)?;
         let number_points = self.number_points.clone();
-        number_points.to_writer(_w, number_bits.value)?;
+        number_points.to_writer(w, number_bits.value)?;
         let point_number_bits = self.point_number_bits.clone();
-        point_number_bits.to_writer(_w, 6)?;
+        point_number_bits.to_writer(w, 6)?;
         let points = self.points.clone();
         if point_number_bits.value > 30 {
             for i in self.points.as_ref().unwrap() {
-                i.to_writer(_w, _ctx)?;
+                i.to_writer(w, _ctx)?;
             }
         }
         let compressed_points = self.compressed_points.clone();
         if point_number_bits.value <= 30 {
             for i in self.compressed_points.as_ref().unwrap() {
                 i.to_writer(
-                    _w,
+                    w,
                     point_number_bits.value,
                     _ctx.brep_data_compressed_tolerance,
                 )?;
             }
         }
         let tangent_number_bits = self.tangent_number_bits.clone();
-        tangent_number_bits.to_writer(_w, 6)?;
+        tangent_number_bits.to_writer(w, 6)?;
         let tangents = self.tangents.clone();
         if tangent_number_bits.value > 30 {
             for i in self.tangents.as_ref().unwrap() {
-                i.to_writer(_w, _ctx)?;
+                i.to_writer(w, _ctx)?;
             }
         }
         let compressed_tangents = self.compressed_tangents.clone();
         if tangent_number_bits.value <= 30 {
             for i in self.compressed_tangents.as_ref().unwrap() {
                 i.to_writer(
-                    _w,
+                    w,
                     tangent_number_bits.value,
                     _ctx.brep_data_compressed_tolerance,
                 )?;
@@ -19316,22 +19310,22 @@ impl PRC_HCG_CompositeCurve {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let start_end_data = self.start_end_data.clone();
-        start_end_data.to_writer(_w, _ctx)?;
+        start_end_data.to_writer(w, _ctx)?;
         let dimension = self.dimension.clone();
-        dimension.to_writer(_w)?;
+        dimension.to_writer(w)?;
         let is_closed = self.is_closed.clone();
-        is_closed.to_writer(_w)?;
+        is_closed.to_writer(w)?;
         let number_of_curves = self.number_of_curves.clone();
-        number_of_curves.to_writer(_w)?;
+        number_of_curves.to_writer(w)?;
         let curves = self.curves.clone();
         for i in &self.curves {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -19368,11 +19362,11 @@ impl PRC_HCG_Ellipse {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         Ok(())
     }
 }
@@ -19434,15 +19428,15 @@ impl CompressedCurve {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         match &self.id_concrete {
-            CompressedCurve_idConcrete::line(x) => &x.to_writer(_w, _ctx)?,
-            CompressedCurve_idConcrete::circ(x) => &x.to_writer(_w, _ctx)?,
-            CompressedCurve_idConcrete::bspl(x) => &x.to_writer(_w, _ctx)?,
-            CompressedCurve_idConcrete::compcrv(x) => &x.to_writer(_w, _ctx)?,
-            CompressedCurve_idConcrete::ellipse(x) => &x.to_writer(_w, _ctx)?,
+            CompressedCurve_idConcrete::line(x) => &x.to_writer(w, _ctx)?,
+            CompressedCurve_idConcrete::circ(x) => &x.to_writer(w, _ctx)?,
+            CompressedCurve_idConcrete::bspl(x) => &x.to_writer(w, _ctx)?,
+            CompressedCurve_idConcrete::compcrv(x) => &x.to_writer(w, _ctx)?,
+            CompressedCurve_idConcrete::ellipse(x) => &x.to_writer(w, _ctx)?,
             CompressedCurve_idConcrete::Invalid(x) => {
                 return Err(Error::other(format!(
                     "CompressedCurve: Unrecognized subtype: {}!",
@@ -19551,39 +19545,39 @@ impl ContentCompressedIsoFace {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let orientation_loop_with_surface = self.orientation_loop_with_surface.clone();
-        orientation_loop_with_surface.to_writer(_w)?;
+        orientation_loop_with_surface.to_writer(w)?;
         let first_trim_curve = self.first_trim_curve.clone();
-        first_trim_curve.to_writer(_w, _ctx)?;
+        first_trim_curve.to_writer(w, _ctx)?;
         let second_trim_curve = self.second_trim_curve.clone();
-        second_trim_curve.to_writer(_w, _ctx)?;
+        second_trim_curve.to_writer(w, _ctx)?;
         let third_trim_curve_is_not_yet_saved = self.third_trim_curve_is_not_yet_saved.clone();
-        third_trim_curve_is_not_yet_saved.to_writer(_w)?;
+        third_trim_curve_is_not_yet_saved.to_writer(w)?;
         let third_trim_curve_cond = !third_trim_curve_is_not_yet_saved.value;
         let mut third_trim_curve: &UnsignedIntegerWithVariableBitNumber = &Default::default();
         if third_trim_curve_cond {
             third_trim_curve = self.third_trim_curve.as_ref().unwrap();
             third_trim_curve
-                .to_writer(_w, _ctx.BrepDataCompress_number_of_bits_to_store_reference)?;
+                .to_writer(w, _ctx.BrepDataCompress_number_of_bits_to_store_reference)?;
         }
         let fourth_trim_curve_is_not_yet_saved = self.fourth_trim_curve_is_not_yet_saved.clone();
-        fourth_trim_curve_is_not_yet_saved.to_writer(_w)?;
+        fourth_trim_curve_is_not_yet_saved.to_writer(w)?;
         let fourth_trim_curve_cond = !fourth_trim_curve_is_not_yet_saved.value;
         let mut fourth_trim_curve: &UnsignedIntegerWithVariableBitNumber = &Default::default();
         if fourth_trim_curve_cond {
             fourth_trim_curve = self.fourth_trim_curve.as_ref().unwrap();
             fourth_trim_curve
-                .to_writer(_w, _ctx.BrepDataCompress_number_of_bits_to_store_reference)?;
+                .to_writer(w, _ctx.BrepDataCompress_number_of_bits_to_store_reference)?;
         }
         let common_third_fourth_vertex_cond =
             third_trim_curve_is_not_yet_saved.value && fourth_trim_curve_is_not_yet_saved.value;
         let mut common_third_fourth_vertex: &CompressedVertex = &Default::default();
         if common_third_fourth_vertex_cond {
             common_third_fourth_vertex = self.common_third_fourth_vertex.as_ref().unwrap();
-            common_third_fourth_vertex.to_writer(_w, _ctx)?;
+            common_third_fourth_vertex.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -19640,23 +19634,23 @@ impl RefOrCompressedCurve {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let curve_is_not_already_stored = self.curve_is_not_already_stored.clone();
-        curve_is_not_already_stored.to_writer(_w)?;
+        curve_is_not_already_stored.to_writer(w)?;
         let index_compressed_curve_cond = !curve_is_not_already_stored.value;
         let mut index_compressed_curve: &UnsignedIntegerWithVariableBitNumber = &Default::default();
         if index_compressed_curve_cond {
             index_compressed_curve = self.index_compressed_curve.as_ref().unwrap();
             index_compressed_curve
-                .to_writer(_w, _ctx.BrepDataCompress_number_of_bits_to_store_reference)?;
+                .to_writer(w, _ctx.BrepDataCompress_number_of_bits_to_store_reference)?;
         }
         let compressed_curve_cond = !!curve_is_not_already_stored.value;
         let mut compressed_curve: &CompressedCurve = &Default::default();
         if compressed_curve_cond {
             compressed_curve = self.compressed_curve.as_ref().unwrap();
-            compressed_curve.to_writer(_w, _ctx)?;
+            compressed_curve.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -19697,14 +19691,14 @@ impl AnaFaceTrimLoop {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let loop_surface_orientation = self.loop_surface_orientation.clone();
-        loop_surface_orientation.to_writer(_w)?;
+        loop_surface_orientation.to_writer(w)?;
         let curves = self.curves.clone();
         for i in &self.curves {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -19770,24 +19764,20 @@ impl ContentCompressedAnaFace {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let is_trimmed = self.is_trimmed.clone();
-        is_trimmed.to_writer(_w)?;
+        is_trimmed.to_writer(w)?;
         if !!is_trimmed.value {
-            AnaFaceTrimLoop::to_writer_loops(
-                _w,
-                _ctx,
-                self.trim_loop.as_ref().unwrap().as_slice(),
-            )?;
+            AnaFaceTrimLoop::to_writer_loops(w, _ctx, self.trim_loop.as_ref().unwrap().as_slice())?;
         };
         let point_on_torus_cond =
             _ctx.ContentCompressedAnaFace_has_point_on_torus(is_trimmed.value);
         let mut point_on_torus: &CompressedPoint = &Default::default();
         if point_on_torus_cond {
             point_on_torus = self.point_on_torus.as_ref().unwrap();
-            point_on_torus.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
+            point_on_torus.to_writer(w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         }
         Ok(())
     }
@@ -19834,22 +19824,22 @@ impl ContentCompressedFace {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let orientation_surface_with_shell = self.orientation_surface_with_shell.clone();
-        orientation_surface_with_shell.to_writer(_w)?;
+        orientation_surface_with_shell.to_writer(w)?;
         let iso_face_cond = _ctx.ContentCompressedFace_owner_is_an_iso_face();
         let mut iso_face: &ContentCompressedIsoFace = &Default::default();
         if iso_face_cond {
             iso_face = self.iso_face.as_ref().unwrap();
-            iso_face.to_writer(_w, _ctx)?;
+            iso_face.to_writer(w, _ctx)?;
         }
         let ana_face_cond = !_ctx.ContentCompressedFace_owner_is_an_iso_face();
         let mut ana_face: &ContentCompressedAnaFace = &Default::default();
         if ana_face_cond {
             ana_face = self.ana_face.as_ref().unwrap();
-            ana_face.to_writer(_w, _ctx)?;
+            ana_face.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -19905,19 +19895,19 @@ impl PRC_HCG_IsoPlane {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let x = self.x.clone();
-        x.to_writer(_w)?;
+        x.to_writer(w)?;
         let y = self.y.clone();
-        y.to_writer(_w)?;
+        y.to_writer(w)?;
         let positive_z = self.positive_z.clone();
-        positive_z.to_writer(_w)?;
+        positive_z.to_writer(w)?;
         let face = self.face.clone();
-        face.to_writer(_w, _ctx)?;
+        face.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -19957,13 +19947,13 @@ impl PRC_HCG_IsoCylinder {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let face = self.face.clone();
-        face.to_writer(_w, _ctx)?;
+        face.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -20010,15 +20000,15 @@ impl PRC_HCG_IsoTorus {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let is_major_radius = self.is_major_radius.clone();
-        is_major_radius.to_writer(_w)?;
+        is_major_radius.to_writer(w)?;
         let face = self.face.clone();
-        face.to_writer(_w, _ctx)?;
+        face.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -20058,13 +20048,13 @@ impl PRC_HCG_IsoSphere {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let face = self.face.clone();
-        face.to_writer(_w, _ctx)?;
+        face.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -20104,13 +20094,13 @@ impl PRC_HCG_IsoCone {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let face = self.face.clone();
-        face.to_writer(_w, _ctx)?;
+        face.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -20165,19 +20155,19 @@ impl PRC_HCG_AnaPlane {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let x = self.x.clone();
-        x.to_writer(_w)?;
+        x.to_writer(w)?;
         let y = self.y.clone();
-        y.to_writer(_w)?;
+        y.to_writer(w)?;
         let facepositive_z = self.facepositive_z.clone();
-        facepositive_z.to_writer(_w)?;
+        facepositive_z.to_writer(w)?;
         let face = self.face.clone();
-        face.to_writer(_w, _ctx)?;
+        face.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -20228,17 +20218,17 @@ impl PRC_HCG_AnaCylinder {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let face = self.face.clone();
-        face.to_writer(_w, _ctx)?;
+        face.to_writer(w, _ctx)?;
         let point = self.point.clone();
-        point.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
+        point.to_writer(w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         let direction = self.direction.clone();
-        direction.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
+        direction.to_writer(w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         Ok(())
     }
 }
@@ -20296,19 +20286,19 @@ impl PRC_HCG_AnaTorus {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let face = self.face.clone();
-        face.to_writer(_w, _ctx)?;
+        face.to_writer(w, _ctx)?;
         let center = self.center.clone();
-        center.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
+        center.to_writer(w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         let x_axis = self.x_axis.clone();
-        x_axis.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
+        x_axis.to_writer(w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         let y_axis = self.y_axis.clone();
-        y_axis.to_writer(_w, _ctx)?;
+        y_axis.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -20356,15 +20346,15 @@ impl PRC_HCG_AnaSphere {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let face = self.face.clone();
-        face.to_writer(_w, _ctx)?;
+        face.to_writer(w, _ctx)?;
         let sphere_center = self.sphere_center.clone();
-        sphere_center.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
+        sphere_center.to_writer(w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         Ok(())
     }
 }
@@ -20417,17 +20407,17 @@ impl PRC_HCG_AnaCone {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let face = self.face.clone();
-        face.to_writer(_w, _ctx)?;
+        face.to_writer(w, _ctx)?;
         let axis_point = self.axis_point.clone();
-        axis_point.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
+        axis_point.to_writer(w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         let apex_point = self.apex_point.clone();
-        apex_point.to_writer(_w, _ctx.brep_data_compressed_tolerance / 100.0)?;
+        apex_point.to_writer(w, _ctx.brep_data_compressed_tolerance / 100.0)?;
         Ok(())
     }
 }
@@ -20474,15 +20464,15 @@ impl PRC_HCG_AnaNurbs {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let face = self.face.clone();
-        face.to_writer(_w, _ctx)?;
+        face.to_writer(w, _ctx)?;
         let compressed_surface = self.compressed_surface.clone();
-        compressed_surface.to_writer(_w, _ctx)?;
+        compressed_surface.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -20529,15 +20519,15 @@ impl PRC_HCG_AnaGenericFace {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let face = self.face.clone();
-        face.to_writer(_w, _ctx)?;
+        face.to_writer(w, _ctx)?;
         let surface_definition = self.surface_definition.clone();
-        surface_definition.to_writer(_w, _ctx)?;
+        surface_definition.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -20583,16 +20573,16 @@ impl CompressedMultiplicitiesU {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let multiplicity_is_not_stored = self.multiplicity_is_not_stored.clone();
-        multiplicity_is_not_stored.to_writer(_w)?;
+        multiplicity_is_not_stored.to_writer(w)?;
         let multiplicity_cond = !multiplicity_is_not_stored;
         let mut multiplicity: &UnsignedIntegerWithVariableBitNumber = &Default::default();
         if multiplicity_cond {
             multiplicity = self.multiplicity.as_ref().unwrap();
-            multiplicity.to_writer(_w, _ctx.compressed_nurbs.number_bits_u)?;
+            multiplicity.to_writer(w, _ctx.compressed_nurbs.number_bits_u)?;
         }
         Ok(())
     }
@@ -20639,16 +20629,16 @@ impl CompressedMultiplicitiesV {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let multiplicity_is_not_stored = self.multiplicity_is_not_stored.clone();
-        multiplicity_is_not_stored.to_writer(_w)?;
+        multiplicity_is_not_stored.to_writer(w)?;
         let multiplicity_cond = !multiplicity_is_not_stored;
         let mut multiplicity: &UnsignedIntegerWithVariableBitNumber = &Default::default();
         if multiplicity_cond {
             multiplicity = self.multiplicity.as_ref().unwrap();
-            multiplicity.to_writer(_w, _ctx.compressed_nurbs.number_bits_v)?;
+            multiplicity.to_writer(w, _ctx.compressed_nurbs.number_bits_v)?;
         }
         Ok(())
     }
@@ -20746,17 +20736,17 @@ impl InteriorCompressedControlPoints {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let _type = self._type.clone();
-        _type.to_writer(_w, 2)?;
+        _type.to_writer(w, 2)?;
         let p1z_cond = _type.value == 1;
         let mut p1z: &DoubleWithVariableBitNumber = &Default::default();
         if p1z_cond {
             p1z = self.p1z.as_ref().unwrap();
             p1z.to_writer(
-                _w,
+                w,
                 _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
@@ -20766,7 +20756,7 @@ impl InteriorCompressedControlPoints {
         if p2x_cond {
             p2x = self.p2x.as_ref().unwrap();
             p2x.to_writer(
-                _w,
+                w,
                 _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
@@ -20776,7 +20766,7 @@ impl InteriorCompressedControlPoints {
         if p2y_cond {
             p2y = self.p2y.as_ref().unwrap();
             p2y.to_writer(
-                _w,
+                w,
                 _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
@@ -20786,7 +20776,7 @@ impl InteriorCompressedControlPoints {
         if p3x_cond {
             p3x = self.p3x.as_ref().unwrap();
             p3x.to_writer(
-                _w,
+                w,
                 _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
@@ -20796,7 +20786,7 @@ impl InteriorCompressedControlPoints {
         if p3y_cond {
             p3y = self.p3y.as_ref().unwrap();
             p3y.to_writer(
-                _w,
+                w,
                 _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
@@ -20806,7 +20796,7 @@ impl InteriorCompressedControlPoints {
         if p3z_cond {
             p3z = self.p3z.as_ref().unwrap();
             p3z.to_writer(
-                _w,
+                w,
                 _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
@@ -20893,15 +20883,15 @@ impl CompressedControlPoints {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let p00 = self.p00.clone();
-        p00.to_writer(_w, _ctx)?;
+        p00.to_writer(w, _ctx)?;
         let ccpt_in_v = self.ccpt_in_v.clone();
         for i in &self.ccpt_in_v {
             i.to_writer(
-                _w,
+                w,
                 _ctx.compressed_nurbs.number_of_bits_for_isomin + 1,
                 _ctx.nurbs_tolerance,
             )?;
@@ -20909,14 +20899,14 @@ impl CompressedControlPoints {
         let ccpt_in_u = self.ccpt_in_u.clone();
         for i in &self.ccpt_in_u {
             i.to_writer(
-                _w,
+                w,
                 _ctx.compressed_nurbs.number_of_bits_for_isomin + 1,
                 _ctx.nurbs_tolerance,
             )?;
         }
         let ccpt_interior = self.ccpt_interior.clone();
         for i in &self.ccpt_interior {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -20962,21 +20952,21 @@ impl CompressedKnot {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let knot_cond = _ctx.compressed_nurbs.number_bit_parameter > 30;
         let mut knot: &Double = &Default::default();
         if knot_cond {
             knot = self.knot.as_ref().unwrap();
-            knot.to_writer(_w)?;
+            knot.to_writer(w)?;
         }
         let knot_vbr_cond = _ctx.compressed_nurbs.number_bit_parameter <= 30;
         let mut knot_vbr: &DoubleWithVariableBitNumber = &Default::default();
         if knot_vbr_cond {
             knot_vbr = self.knot_vbr.as_ref().unwrap();
             knot_vbr.to_writer(
-                _w,
+                w,
                 _ctx.compressed_nurbs.number_bit_parameter + 1,
                 _ctx.compressed_nurbs.tolerance_parameter,
             )?;
@@ -21056,22 +21046,22 @@ impl CompressedKnotsU {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let is_unknown_form = self.is_unknown_form.clone();
-        is_unknown_form.to_writer(_w)?;
+        is_unknown_form.to_writer(w)?;
         let is_pseudo_uniform_cond = !is_unknown_form.value;
         let mut is_pseudo_uniform: &Boolean = &Default::default();
         if is_pseudo_uniform_cond {
             is_pseudo_uniform = self.is_pseudo_uniform.as_ref().unwrap();
-            is_pseudo_uniform.to_writer(_w)?;
+            is_pseudo_uniform.to_writer(w)?;
         }
         let number_bit_parameter = self.number_bit_parameter.clone();
-        number_bit_parameter.to_writer(_w, 6)?;
+        number_bit_parameter.to_writer(w, 6)?;
         let compressed_knots = self.compressed_knots.clone();
         for i in &self.compressed_knots {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -21148,22 +21138,22 @@ impl CompressedKnotsV {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let is_unknown_form = self.is_unknown_form.clone();
-        is_unknown_form.to_writer(_w)?;
+        is_unknown_form.to_writer(w)?;
         let is_pseudo_uniform_cond = !is_unknown_form.value;
         let mut is_pseudo_uniform: &Boolean = &Default::default();
         if is_pseudo_uniform_cond {
             is_pseudo_uniform = self.is_pseudo_uniform.as_ref().unwrap();
-            is_pseudo_uniform.to_writer(_w)?;
+            is_pseudo_uniform.to_writer(w)?;
         }
         let number_bit_parameter = self.number_bit_parameter.clone();
-        number_bit_parameter.to_writer(_w, 6)?;
+        number_bit_parameter.to_writer(w, 6)?;
         let compressed_knots = self.compressed_knots.clone();
         for i in &self.compressed_knots {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -21203,16 +21193,16 @@ impl CompressedKnotVectorU {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let is_uniform = self.is_uniform.clone();
-        is_uniform.to_writer(_w)?;
+        is_uniform.to_writer(w)?;
         let knots_cond = !is_uniform.value;
         let mut knots: &CompressedKnotsU = &Default::default();
         if knots_cond {
             knots = self.knots.as_ref().unwrap();
-            knots.to_writer(_w, _ctx)?;
+            knots.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -21252,16 +21242,16 @@ impl CompressedKnotVectorV {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let is_uniform = self.is_uniform.clone();
-        is_uniform.to_writer(_w)?;
+        is_uniform.to_writer(w)?;
         let knots_cond = !is_uniform.value;
         let mut knots: &CompressedKnotsV = &Default::default();
         if knots_cond {
             knots = self.knots.as_ref().unwrap();
-            knots.to_writer(_w, _ctx)?;
+            knots.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -21354,27 +21344,27 @@ impl CompressedWeights {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let number_bit_weight = self.number_bit_weight.clone();
-        number_bit_weight.to_writer(_w, 6)?;
+        number_bit_weight.to_writer(w, 6)?;
         let weights = self.weights.clone();
         if number_bit_weight.value > 30 {
             for i in self.weights.as_ref().unwrap() {
-                i.to_writer(_w)?;
+                i.to_writer(w)?;
             }
         }
         let weight_tolerance_cond = number_bit_weight.value <= 30;
         let mut weight_tolerance: &Double = &Default::default();
         if weight_tolerance_cond {
             weight_tolerance = self.weight_tolerance.as_ref().unwrap();
-            weight_tolerance.to_writer(_w)?;
+            weight_tolerance.to_writer(w)?;
         }
         let compressed_weights = self.compressed_weights.clone();
         if number_bit_weight.value <= 30 {
             for i in self.compressed_weights.as_ref().unwrap() {
-                i.to_writer(_w, number_bit_weight.value + 1, weight_tolerance.value)?;
+                i.to_writer(w, number_bit_weight.value + 1, weight_tolerance.value)?;
             }
         }
         Ok(())
@@ -21505,46 +21495,46 @@ impl CompressedNurbs {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let degree_in_u = self.degree_in_u.clone();
-        degree_in_u.to_writer(_w, 5)?;
+        degree_in_u.to_writer(w, 5)?;
         let degree_in_v = self.degree_in_v.clone();
-        degree_in_v.to_writer(_w, 5)?;
+        degree_in_v.to_writer(w, 5)?;
         let number_stored_knots_in_u = self.number_stored_knots_in_u.clone();
-        number_stored_knots_in_u.to_writer(_w, 16)?;
+        number_stored_knots_in_u.to_writer(w, 16)?;
         let mult_u = self.mult_u.clone();
         for i in &self.mult_u {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let number_stored_knots_in_v = self.number_stored_knots_in_v.clone();
-        number_stored_knots_in_v.to_writer(_w, 16)?;
+        number_stored_knots_in_v.to_writer(w, 16)?;
         let mult_v = self.mult_v.clone();
         for i in &self.mult_v {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let is_closed_in_u = self.is_closed_in_u.clone();
-        is_closed_in_u.to_writer(_w)?;
+        is_closed_in_u.to_writer(w)?;
         let is_closed_in_v = self.is_closed_in_v.clone();
-        is_closed_in_v.to_writer(_w)?;
+        is_closed_in_v.to_writer(w)?;
         let number_of_bits_for_isomin = self.number_of_bits_for_isomin.clone();
-        number_of_bits_for_isomin.to_writer(_w, 20)?;
+        number_of_bits_for_isomin.to_writer(w, 20)?;
         let number_of_bits_for_rest = self.number_of_bits_for_rest.clone();
-        number_of_bits_for_rest.to_writer(_w, 20)?;
+        number_of_bits_for_rest.to_writer(w, 20)?;
         let compressed_control_points = self.compressed_control_points.clone();
-        compressed_control_points.to_writer(_w, _ctx)?;
+        compressed_control_points.to_writer(w, _ctx)?;
         let knot_vector_u = self.knot_vector_u.clone();
-        knot_vector_u.to_writer(_w, _ctx)?;
+        knot_vector_u.to_writer(w, _ctx)?;
         let knot_vector_v = self.knot_vector_v.clone();
-        knot_vector_v.to_writer(_w, _ctx)?;
+        knot_vector_v.to_writer(w, _ctx)?;
         let is_rational = self.is_rational.clone();
-        is_rational.to_writer(_w)?;
+        is_rational.to_writer(w)?;
         let weights_cond = !!is_rational;
         let mut weights: &CompressedWeights = &Default::default();
         if weights_cond {
             weights = self.weights.as_ref().unwrap();
-            weights.to_writer(_w, _ctx)?;
+            weights.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -21602,22 +21592,22 @@ impl IsoNurbsTrimCrv {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let iso_boundary = self.iso_boundary.clone();
-        iso_boundary.to_writer(_w)?;
+        iso_boundary.to_writer(w)?;
         let is_a_circle_cond = !iso_boundary.value;
         let mut is_a_circle: &Boolean = &Default::default();
         if is_a_circle_cond {
             is_a_circle = self.is_a_circle.as_ref().unwrap();
-            is_a_circle.to_writer(_w)?;
+            is_a_circle.to_writer(w)?;
         }
         let compressed_circle_cond = !iso_boundary.value && is_a_circle.value;
         let mut compressed_circle: &PRC_HCG_Circle = &Default::default();
         if compressed_circle_cond {
             compressed_circle = self.compressed_circle.as_ref().unwrap();
-            compressed_circle.to_writer(_w, _ctx)?;
+            compressed_circle.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -21674,23 +21664,23 @@ impl IsoNurbsTrimCurve {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let is_referenced = self.is_referenced.clone();
-        is_referenced.to_writer(_w)?;
+        is_referenced.to_writer(w)?;
         let trim_curve_index_cond = is_referenced.value;
         let mut trim_curve_index: &UnsignedIntegerWithVariableBitNumber = &Default::default();
         if trim_curve_index_cond {
             trim_curve_index = self.trim_curve_index.as_ref().unwrap();
             trim_curve_index
-                .to_writer(_w, _ctx.BrepDataCompress_number_of_bits_to_store_reference)?;
+                .to_writer(w, _ctx.BrepDataCompress_number_of_bits_to_store_reference)?;
         }
         let trim_curve_cond = !is_referenced.value;
         let mut trim_curve: &IsoNurbsTrimCrv = &Default::default();
         if trim_curve_cond {
             trim_curve = self.trim_curve.as_ref().unwrap();
-            trim_curve.to_writer(_w, _ctx)?;
+            trim_curve.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -21818,52 +21808,52 @@ impl PRC_HCG_IsoNurbs {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let orientation_surface_with_shell = self.orientation_surface_with_shell.clone();
-        orientation_surface_with_shell.to_writer(_w)?;
+        orientation_surface_with_shell.to_writer(w)?;
         let orientation_loop_with_surface = self.orientation_loop_with_surface.clone();
-        orientation_loop_with_surface.to_writer(_w)?;
+        orientation_loop_with_surface.to_writer(w)?;
         let sense_array = self.sense_array.clone();
         for i in &self.sense_array {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         let surface = self.surface.clone();
-        surface.to_writer(_w, _ctx)?;
+        surface.to_writer(w, _ctx)?;
         let curve0 = self.curve0.clone();
-        curve0.to_writer(_w, _ctx)?;
+        curve0.to_writer(w, _ctx)?;
         let curve1 = self.curve1.clone();
-        curve1.to_writer(_w, _ctx)?;
+        curve1.to_writer(w, _ctx)?;
         let curve2 = self.curve2.clone();
-        curve2.to_writer(_w, _ctx)?;
+        curve2.to_writer(w, _ctx)?;
         let curve3 = self.curve3.clone();
-        curve3.to_writer(_w, _ctx)?;
+        curve3.to_writer(w, _ctx)?;
         let loop_vertex3_cond = !curve3.is_referenced.value && !curve0.is_referenced.value;
         let mut loop_vertex3: &CompressedVertex = &Default::default();
         if loop_vertex3_cond {
             loop_vertex3 = self.loop_vertex3.as_ref().unwrap();
-            loop_vertex3.to_writer(_w, _ctx)?;
+            loop_vertex3.to_writer(w, _ctx)?;
         }
         let loop_vertex0_cond = !curve0.is_referenced.value && !curve1.is_referenced.value;
         let mut loop_vertex0: &CompressedVertex = &Default::default();
         if loop_vertex0_cond {
             loop_vertex0 = self.loop_vertex0.as_ref().unwrap();
-            loop_vertex0.to_writer(_w, _ctx)?;
+            loop_vertex0.to_writer(w, _ctx)?;
         }
         let loop_vertex1_cond = !curve1.is_referenced.value && !curve2.is_referenced.value;
         let mut loop_vertex1: &CompressedVertex = &Default::default();
         if loop_vertex1_cond {
             loop_vertex1 = self.loop_vertex1.as_ref().unwrap();
-            loop_vertex1.to_writer(_w, _ctx)?;
+            loop_vertex1.to_writer(w, _ctx)?;
         }
         let loop_vertex2_cond = !curve2.is_referenced.value && !curve3.is_referenced.value;
         let mut loop_vertex2: &CompressedVertex = &Default::default();
         if loop_vertex2_cond {
             loop_vertex2 = self.loop_vertex2.as_ref().unwrap();
-            loop_vertex2.to_writer(_w, _ctx)?;
+            loop_vertex2.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -21947,23 +21937,23 @@ impl CompressedFace {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         match &self.id_concrete {
-            CompressedFace_idConcrete::ip(x) => &x.to_writer(_w, _ctx)?,
-            CompressedFace_idConcrete::icy(x) => &x.to_writer(_w, _ctx)?,
-            CompressedFace_idConcrete::it(x) => &x.to_writer(_w, _ctx)?,
-            CompressedFace_idConcrete::is(x) => &x.to_writer(_w, _ctx)?,
-            CompressedFace_idConcrete::ico(x) => &x.to_writer(_w, _ctx)?,
-            CompressedFace_idConcrete::ison(x) => &x.to_writer(_w, _ctx)?,
-            CompressedFace_idConcrete::ap(x) => &x.to_writer(_w, _ctx)?,
-            CompressedFace_idConcrete::acy(x) => &x.to_writer(_w, _ctx)?,
-            CompressedFace_idConcrete::at(x) => &x.to_writer(_w, _ctx)?,
-            CompressedFace_idConcrete::anas(x) => &x.to_writer(_w, _ctx)?,
-            CompressedFace_idConcrete::aco(x) => &x.to_writer(_w, _ctx)?,
-            CompressedFace_idConcrete::an(x) => &x.to_writer(_w, _ctx)?,
-            CompressedFace_idConcrete::agf(x) => &x.to_writer(_w, _ctx)?,
+            CompressedFace_idConcrete::ip(x) => &x.to_writer(w, _ctx)?,
+            CompressedFace_idConcrete::icy(x) => &x.to_writer(w, _ctx)?,
+            CompressedFace_idConcrete::it(x) => &x.to_writer(w, _ctx)?,
+            CompressedFace_idConcrete::is(x) => &x.to_writer(w, _ctx)?,
+            CompressedFace_idConcrete::ico(x) => &x.to_writer(w, _ctx)?,
+            CompressedFace_idConcrete::ison(x) => &x.to_writer(w, _ctx)?,
+            CompressedFace_idConcrete::ap(x) => &x.to_writer(w, _ctx)?,
+            CompressedFace_idConcrete::acy(x) => &x.to_writer(w, _ctx)?,
+            CompressedFace_idConcrete::at(x) => &x.to_writer(w, _ctx)?,
+            CompressedFace_idConcrete::anas(x) => &x.to_writer(w, _ctx)?,
+            CompressedFace_idConcrete::aco(x) => &x.to_writer(w, _ctx)?,
+            CompressedFace_idConcrete::an(x) => &x.to_writer(w, _ctx)?,
+            CompressedFace_idConcrete::agf(x) => &x.to_writer(w, _ctx)?,
             CompressedFace_idConcrete::Invalid(x) => {
                 return Err(Error::other(format!(
                     "CompressedFace: Unrecognized subtype: {}!",
@@ -22094,24 +22084,24 @@ impl CompressedShell {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let single_face = self.single_face.clone();
-        single_face.to_writer(_w)?;
+        single_face.to_writer(w)?;
         let number_of_faces_cond = !single_face;
         let mut number_of_faces: &NumberOfBitsThenUnsignedInteger = &Default::default();
         if number_of_faces_cond {
             number_of_faces = self.number_of_faces.as_ref().unwrap();
-            number_of_faces.to_writer(_w)?;
+            number_of_faces.to_writer(w)?;
         }
         let faces = self.faces.clone();
         for i in &self.faces {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let is_an_iso_face = self.is_an_iso_face.clone();
         for i in &self.is_an_iso_face {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         Ok(())
     }
@@ -22156,14 +22146,14 @@ impl CompressedConnex {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let number_of_shells = self.number_of_shells.clone();
-        number_of_shells.to_writer(_w)?;
+        number_of_shells.to_writer(w)?;
         let shells = self.shells.clone();
         for i in &self.shells {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -22208,14 +22198,14 @@ impl MultipleCompressedConnex {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let number_of_connex = self.number_of_connex.clone();
-        number_of_connex.to_writer(_w)?;
+        number_of_connex.to_writer(w)?;
         let connex = self.connex.clone();
         for i in &self.connex {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -22278,19 +22268,19 @@ impl PRC_TYPE_TOPO_SingleWireBodyCompress {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let curve_tolerance = self.curve_tolerance.clone();
-        curve_tolerance.to_writer(_w)?;
+        curve_tolerance.to_writer(w)?;
         let unknown = self.unknown.clone();
-        unknown.to_writer(_w)?;
+        unknown.to_writer(w)?;
         let compressed_curve = self.compressed_curve.clone();
-        compressed_curve.to_writer(_w, _ctx)?;
+        compressed_curve.to_writer(w, _ctx)?;
         Ok(())
     }
 }
@@ -22394,38 +22384,38 @@ impl PRC_TYPE_TOPO_BrepDataCompress {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let brep_data_compressed_tolerance = self.brep_data_compressed_tolerance.clone();
-        brep_data_compressed_tolerance.to_writer(_w)?;
+        brep_data_compressed_tolerance.to_writer(w)?;
         let number_of_bits_to_store_reference = self.number_of_bits_to_store_reference.clone();
-        number_of_bits_to_store_reference.to_writer(_w)?;
+        number_of_bits_to_store_reference.to_writer(w)?;
         let number_vertex_references = self.number_vertex_references.clone();
-        number_vertex_references.to_writer(_w, number_of_bits_to_store_reference.value)?;
+        number_vertex_references.to_writer(w, number_of_bits_to_store_reference.value)?;
         let number_edge_references = self.number_edge_references.clone();
-        number_edge_references.to_writer(_w, number_of_bits_to_store_reference.value)?;
+        number_edge_references.to_writer(w, number_of_bits_to_store_reference.value)?;
         let single_connex = self.single_connex.clone();
-        single_connex.to_writer(_w)?;
+        single_connex.to_writer(w)?;
         let single_cond = !!single_connex;
         let mut single: &CompressedShell = &Default::default();
         if single_cond {
             single = self.single.as_ref().unwrap();
-            single.to_writer(_w, _ctx)?;
+            single.to_writer(w, _ctx)?;
         }
         let multi_cond = !single_connex;
         let mut multi: &MultipleCompressedConnex = &Default::default();
         if multi_cond {
             multi = self.multi.as_ref().unwrap();
-            multi.to_writer(_w, _ctx)?;
+            multi.to_writer(w, _ctx)?;
         }
         let base_topology_data = self.base_topology_data.clone();
         for i in &self.base_topology_data {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -22485,14 +22475,14 @@ impl PRC_TYPE_TOPO_Body {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         match &self.id_concrete {
-            PRC_TYPE_TOPO_Body_idConcrete::topo_swb(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_TOPO_Body_idConcrete::topo_bd(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_TOPO_Body_idConcrete::topo_swbc(x) => &x.to_writer(_w, _ctx)?,
-            PRC_TYPE_TOPO_Body_idConcrete::topo_bdc(x) => &x.to_writer(_w, _ctx)?,
+            PRC_TYPE_TOPO_Body_idConcrete::topo_swb(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_TOPO_Body_idConcrete::topo_bd(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_TOPO_Body_idConcrete::topo_swbc(x) => &x.to_writer(w, _ctx)?,
+            PRC_TYPE_TOPO_Body_idConcrete::topo_bdc(x) => &x.to_writer(w, _ctx)?,
             PRC_TYPE_TOPO_Body_idConcrete::Invalid(x) => {
                 return Err(Error::other(format!(
                     "PRC_TYPE_TOPO_Body: Unrecognized subtype: {}!",
@@ -22642,40 +22632,40 @@ impl PRC_TYPE_TOPO_Context {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let behavior = self.behavior.clone();
-        behavior.to_writer(_w)?;
+        behavior.to_writer(w)?;
         let granularity = self.granularity.clone();
-        granularity.to_writer(_w)?;
+        granularity.to_writer(w)?;
         let tolerance = self.tolerance.clone();
-        tolerance.to_writer(_w)?;
+        tolerance.to_writer(w)?;
         let has_face_thickness = self.has_face_thickness.clone();
-        has_face_thickness.to_writer(_w)?;
+        has_face_thickness.to_writer(w)?;
         let face_thicknes_cond = !!has_face_thickness;
         let mut face_thicknes: &Double = &Default::default();
         if face_thicknes_cond {
             face_thicknes = self.face_thicknes.as_ref().unwrap();
-            face_thicknes.to_writer(_w)?;
+            face_thicknes.to_writer(w)?;
         }
         let has_scale = self.has_scale.clone();
-        has_scale.to_writer(_w)?;
+        has_scale.to_writer(w)?;
         let scale_cond = !!has_scale;
         let mut scale: &Double = &Default::default();
         if scale_cond {
             scale = self.scale.as_ref().unwrap();
-            scale.to_writer(_w)?;
+            scale.to_writer(w)?;
         }
         let number_of_bodies = self.number_of_bodies.clone();
-        number_of_bodies.to_writer(_w)?;
+        number_of_bodies.to_writer(w)?;
         let bodies = self.bodies.clone();
         for i in &self.bodies {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -22732,14 +22722,14 @@ impl FileStructureExactGeometry {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let topo_context_count = self.topo_context_count.clone();
-        topo_context_count.to_writer(_w)?;
+        topo_context_count.to_writer(w)?;
         let topo_contexts = self.topo_contexts.clone();
         for i in &self.topo_contexts {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -22806,17 +22796,17 @@ impl PRC_TYPE_ASM_FileStructureGeometry {
     }
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
-        _w: &mut W,
+        w: &mut W,
         _ctx: &mut PrcParsingContext,
     ) -> io::Result<()> {
         let id = self.id.clone();
-        id.to_writer(_w)?;
+        id.to_writer(w)?;
         let base = self.base.clone();
-        base.to_writer(_w, _ctx)?;
+        base.to_writer(w, _ctx)?;
         let exact_geometry = self.exact_geometry.clone();
-        exact_geometry.to_writer(_w, _ctx)?;
+        exact_geometry.to_writer(w, _ctx)?;
         let user_data = self.user_data.clone();
-        user_data.to_writer(_w)?;
+        user_data.to_writer(w)?;
         Ok(())
     }
 }
@@ -22845,10 +22835,10 @@ impl UncompressedUniqueId {
         let rv = Self { unique_id };
         Ok(rv)
     }
-    pub fn to_writer<W: Write>(&self, _w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {
+    pub fn to_writer<W: Write>(&self, w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {
         let unique_id = self.unique_id.clone();
         for i in &self.unique_id {
-            i.to_writer(_w)?;
+            i.to_writer(w)?;
         }
         Ok(())
     }
@@ -22880,11 +22870,11 @@ impl UncompressedBlock {
         let rv = Self { block_size, block };
         Ok(rv)
     }
-    pub fn to_writer<W: Write>(&self, _w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {
+    pub fn to_writer<W: Write>(&self, w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {
         let block_size = self.block_size.clone();
-        block_size.to_writer(_w)?;
+        block_size.to_writer(w)?;
         let block = self.block.clone();
-        block.to_writer(_w, block_size.value)?;
+        block.to_writer(w, block_size.value)?;
         Ok(())
     }
 }
@@ -22952,22 +22942,22 @@ impl UncompressedFileStructureHeader {
         };
         Ok(rv)
     }
-    pub fn to_writer<W: Write>(&self, _w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {
+    pub fn to_writer<W: Write>(&self, w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {
         let magic = self.magic.clone();
-        magic.to_writer(_w, 3)?;
+        magic.to_writer(w, 3)?;
         let minimal_version_for_read = self.minimal_version_for_read.clone();
-        minimal_version_for_read.to_writer(_w)?;
+        minimal_version_for_read.to_writer(w)?;
         let authoring_version = self.authoring_version.clone();
-        authoring_version.to_writer(_w)?;
+        authoring_version.to_writer(w)?;
         let unique_id_file = self.unique_id_file.clone();
-        unique_id_file.to_writer(_w, _ctx)?;
+        unique_id_file.to_writer(w, _ctx)?;
         let unique_id_application = self.unique_id_application.clone();
-        unique_id_application.to_writer(_w, _ctx)?;
+        unique_id_application.to_writer(w, _ctx)?;
         let file_count = self.file_count.clone();
-        file_count.to_writer(_w)?;
+        file_count.to_writer(w)?;
         let files = self.files.clone();
         for i in &self.files {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }
@@ -23032,25 +23022,25 @@ impl UncompressedFileStructureDescription {
         };
         Ok(rv)
     }
-    pub fn to_writer<W: Write>(&self, _w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {
+    pub fn to_writer<W: Write>(&self, w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {
         let unique_id = self.unique_id.clone();
-        unique_id.to_writer(_w, _ctx)?;
+        unique_id.to_writer(w, _ctx)?;
         let reserved = self.reserved.clone();
-        reserved.to_writer(_w)?;
+        reserved.to_writer(w)?;
         let section_count = self.section_count.clone();
-        section_count.to_writer(_w)?;
+        section_count.to_writer(w)?;
         let header_start_offset = self.header_start_offset.clone();
-        header_start_offset.to_writer(_w)?;
+        header_start_offset.to_writer(w)?;
         let glob_start_offset = self.glob_start_offset.clone();
-        glob_start_offset.to_writer(_w)?;
+        glob_start_offset.to_writer(w)?;
         let tree_start_offset = self.tree_start_offset.clone();
-        tree_start_offset.to_writer(_w)?;
+        tree_start_offset.to_writer(w)?;
         let tess_start_offset = self.tess_start_offset.clone();
-        tess_start_offset.to_writer(_w)?;
+        tess_start_offset.to_writer(w)?;
         let geom_start_offset = self.geom_start_offset.clone();
-        geom_start_offset.to_writer(_w)?;
+        geom_start_offset.to_writer(w)?;
         let extg_start_offset = self.extg_start_offset.clone();
-        extg_start_offset.to_writer(_w)?;
+        extg_start_offset.to_writer(w)?;
         Ok(())
     }
 }
@@ -23144,32 +23134,32 @@ impl UncompressedFileHeader {
         };
         Ok(rv)
     }
-    pub fn to_writer<W: Write>(&self, _w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {
+    pub fn to_writer<W: Write>(&self, w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {
         let magic = self.magic.clone();
-        magic.to_writer(_w, 3)?;
+        magic.to_writer(w, 3)?;
         let minimal_version_for_read = self.minimal_version_for_read.clone();
-        minimal_version_for_read.to_writer(_w)?;
+        minimal_version_for_read.to_writer(w)?;
         let authoring_version = self.authoring_version.clone();
-        authoring_version.to_writer(_w)?;
+        authoring_version.to_writer(w)?;
         let unique_id_file = self.unique_id_file.clone();
-        unique_id_file.to_writer(_w, _ctx)?;
+        unique_id_file.to_writer(w, _ctx)?;
         let unique_id_application = self.unique_id_application.clone();
-        unique_id_application.to_writer(_w, _ctx)?;
+        unique_id_application.to_writer(w, _ctx)?;
         let num_file_structs = self.num_file_structs.clone();
-        num_file_structs.to_writer(_w)?;
+        num_file_structs.to_writer(w)?;
         let ufsd = self.ufsd.clone();
         for i in &self.ufsd {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         let mf_start_offset = self.mf_start_offset.clone();
-        mf_start_offset.to_writer(_w)?;
+        mf_start_offset.to_writer(w)?;
         let mf_end_offset = self.mf_end_offset.clone();
-        mf_end_offset.to_writer(_w)?;
+        mf_end_offset.to_writer(w)?;
         let num_uncompr_files = self.num_uncompr_files.clone();
-        num_uncompr_files.to_writer(_w)?;
+        num_uncompr_files.to_writer(w)?;
         let uncompressed_files = self.uncompressed_files.clone();
         for i in &self.uncompressed_files {
-            i.to_writer(_w, _ctx)?;
+            i.to_writer(w, _ctx)?;
         }
         Ok(())
     }

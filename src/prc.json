@@ -3526,9 +3526,6 @@
                     {
                         "name": "is_point_color_on_face",
                         "data_type": "UncompressedBoolArray",
-                        "UNUSEDis_vec": true,
-                        "comment": "above size if wrong, SPECBUG not in spec",
-                        "FIXME": true,
                         "vbr": "if !has_faces.value { 1 } else { _ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a) }",
                         "condition_rust": "!!self.is_point_color",
                         "on_set": "if !!is_point_color { debug!(\"{}is_point_color_on_face: {}\", indent::get(), format(&is_point_color_on_face.a)); }"
@@ -3550,9 +3547,6 @@
                     {
                         "name": "is_multiple_line_attribute_on_face",
                         "data_type": "UncompressedBoolArray",
-                        "UNUSEDis_vec": true,
-                        "comment": "above size if wrong, SPECBUG not in spec",
-                        "FIXME": true,
                         "vbr": "if !has_faces.value { 1 } else { _ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a) }",
                         "condition_rust": "!!self.is_multiple_line_attribute",
                         "on_set1": "debug!(\"{}is_multiple_line_attribute_on_face: {}\", indent::get(), format(&is_multiple_line_attribute_on_face.a))"
@@ -3954,7 +3948,7 @@
                         "condition_rust": "_ctx.ContentCurve_is_3d_flag"
                     },
                     {
-                        "name": "w",
+                        "name": "ww",
                         "data_type": "Double",
                         "condition_rust": "_ctx.PRC_TYPE_CRV_NURBS_is_rational"
                     }
@@ -5232,7 +5226,7 @@
                         "data_type": "Double"
                     },
                     {
-                        "name": "w",
+                        "name": "ww",
                         "data_type": "Double"
                     }
                 ]
@@ -6453,7 +6447,7 @@
                         "size": "0",
                         "condition_rust": "!!self.is_trimmed.value",
                         "on_set": "if !!is_trimmed.value { trim_loop = AnaFaceTrimLoop::from_reader_while_loop(rdr, _ctx)?; }",
-                        "on_write_override": "if !!is_trimmed.value { AnaFaceTrimLoop::to_writer_loops(_w, _ctx, self.trim_loop.as_ref().unwrap().as_slice())?; }"
+                        "on_write_override": "if !!is_trimmed.value { AnaFaceTrimLoop::to_writer_loops(w, _ctx, self.trim_loop.as_ref().unwrap().as_slice())?; }"
                     },
                     {
                         "name": "point_on_torus",

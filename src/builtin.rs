@@ -71,6 +71,18 @@ pub fn write_bits<W: BitWrite + ?Sized>(w: &mut W, value: u8, num_bits: u8) -> s
     Ok(())
 }
 
+pub fn write_bits_u32<W: BitWrite + ?Sized>(
+    w: &mut W,
+    value: u32,
+    num_bits: u8,
+) -> std::io::Result<()> {
+    for i in 0..num_bits {
+        let bit = 1 == (value >> (num_bits - 1 - i)) & 1;
+        w.write_bit(bit)?;
+    }
+    Ok(())
+}
+
 #[derive(Default, Clone, Copy, PartialOrd, Ord, PartialEq, Eq)]
 pub struct Boolean {
     pub value: bool,
@@ -1196,14 +1208,14 @@ impl ShortArray {
     pub fn to_writer<W: BitWrite + ?Sized>(
         &self,
         w: &mut W,
-        _num_bits_per_elem: u8,
+        num_bits_per_elem: u8,
     ) -> std::io::Result<()> {
         let has_is_compressed_bit: bool = true;
         let is_compressed_dv: bool = true;
         let sign_extend: bool = true;
         self.to_writer2(
             w,
-            _num_bits_per_elem,
+            num_bits_per_elem,
             has_is_compressed_bit,
             is_compressed_dv,
             sign_extend,
@@ -1767,8 +1779,10 @@ impl fmt::Debug for UncompressedBoolArray {
 mod tests {
     use super::*;
     use crate::test_common::*;
-    use bitstream_io::{BigEndian, BitWriter};
+    use bitstream_io::BitWriter;
     use std::io::{BufRead, Cursor, Write};
+
+    const ENDIAN: bitstream_io::BigEndian = bitstream_io::BigEndian;
 
     #[test]
     fn io_endian() {
@@ -1787,7 +1801,7 @@ mod tests {
         assert_eq!(us, value_lo);
 
         {
-            let mut w = BitWriter::endian(Cursor::new(&mut bytes), bitstream_io::BigEndian);
+            let mut w = BitWriter::endian(Cursor::new(&mut bytes), ENDIAN);
             w.write::<16, _>(value_lo).unwrap();
         }
         assert_eq!(bytes.len(), 2);
@@ -2043,7 +2057,7 @@ mod tests {
         assert_eq!(bytes_external.len(), 808992_usize);
 
         let n: u32 = 66002;
-        let mut r = BitReader::endian(Cursor::new(&bytes_external), bitstream_io::BigEndian);
+        let mut r = BitReader::endian(Cursor::new(&bytes_external), ENDIAN);
         for i in 0..n {
             let u1 = UnsignedInteger::from_reader(&mut r).unwrap().value;
             let i1 = Integer::from_reader(&mut r).unwrap().value;
@@ -2059,7 +2073,7 @@ mod tests {
 
         let mut bytes = vec![];
         {
-            let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+            let mut w = BitWriter::endian(&mut bytes, ENDIAN);
             for i in 0..n {
                 UnsignedInteger { value: i }.to_writer(&mut w).unwrap();
                 Integer { value: i as i32 }.to_writer(&mut w).unwrap();
@@ -2471,7 +2485,7 @@ mod tests {
         let trailing_bits: usize;
         let num_bits_encoded;
         {
-            let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+            let mut w = BitWriter::endian(&mut bytes, ENDIAN);
             Double { value }.to_writer(&mut w).unwrap();
             trailing_bits = fill_partial_byte_at_end(&mut w, false)
                 .expect("failed to fill partial byte at end");
@@ -2484,7 +2498,7 @@ mod tests {
         println!("bytes: {}", bytes.len());
         //assert_eq!(8 as usize, bytes.len());
 
-        let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+        let mut r = BitReader::endian(Cursor::new(&bytes), ENDIAN);
         let recovered = Double::from_reader(&mut r).unwrap().value;
         println!("num bits read: {}", r.position_in_bits().unwrap());
         assert_eq!(num_bits as u64, r.position_in_bits().unwrap());
@@ -2501,17 +2515,17 @@ mod tests {
         let mut s: Vec<std::string::String> = vec![];
 
         {
-            let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+            let mut w = BitWriter::endian(&mut bytes, ENDIAN);
             Double { value: 0.1 }.to_writer(&mut w).unwrap();
             Double { value: 0.01 }.to_writer(&mut w).unwrap();
             Double { value: 0.001 }.to_writer(&mut w).unwrap();
             for i in 0..n {
                 let u = UnsignedInteger { value: i };
                 let d1 = Double {
-                    value: i as f64 * 1.15,
+                    value: i as f64 * 1.6715,
                 };
                 let d2 = Double {
-                    value: i as f64 * -1.11,
+                    value: i as f64 * -1.4911,
                 };
 
                 u.to_writer(&mut w).unwrap();
@@ -2529,11 +2543,9 @@ mod tests {
         }
 
         println!("bytes: {}", bytes.len());
-        assert_eq!(bytes.len(), 95353_usize);
+        assert_eq!(bytes.len(), 118474_usize);
 
-        //assert_eq!(s.len(), 177612usize);
-
-        let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+        let mut r = BitReader::endian(Cursor::new(&bytes), ENDIAN);
         assert_eq!(0.1, Double::from_reader(&mut r).unwrap().value);
         assert_eq!(0.01, Double::from_reader(&mut r).unwrap().value);
         assert_eq!(0.001, Double::from_reader(&mut r).unwrap().value);
@@ -2543,13 +2555,13 @@ mod tests {
             let ui: u32 = serde_json::from_str(&s[i as usize * 3]).unwrap();
             assert_eq!(i, ui);
 
-            let mut reference = i as f64 * 1.15;
+            let mut reference = i as f64 * 1.6715;
             let recovered = Double::from_reader(&mut r).unwrap().value;
             assert_eq!(reference, recovered);
             let recovered: Double = serde_json::from_str(&s[i as usize * 3 + 1]).unwrap();
             assert!((reference - recovered.value).abs() < 1E-9);
 
-            reference = i as f64 * -1.11;
+            reference = i as f64 * -1.4911;
             let recovered = Double::from_reader(&mut r).unwrap().value;
             assert_eq!(reference, recovered);
             let recovered: Double = serde_json::from_str(&s[i as usize * 3 + 2]).unwrap();
@@ -2564,7 +2576,7 @@ mod tests {
         let mut bytes = vec![];
         let num_trailing_padding_bits;
         {
-            let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+            let mut w = BitWriter::endian(&mut bytes, ENDIAN);
             FloatAsBytes { value: 0.1 }.to_writer(&mut w).unwrap();
             FloatAsBytes { value: 0.01 }.to_writer(&mut w).unwrap();
             FloatAsBytes { value: 0.001 }.to_writer(&mut w).unwrap();
@@ -2592,7 +2604,7 @@ mod tests {
         assert_eq!(bytes[bytes.len() - 1 - 2], 45);
         assert_eq!(bytes[bytes.len() - 1 - 3], 28);
 
-        let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+        let mut r = BitReader::endian(Cursor::new(&bytes), ENDIAN);
         assert_eq!(0.1, FloatAsBytes::from_reader(&mut r).unwrap().value);
         assert_eq!(0.01, FloatAsBytes::from_reader(&mut r).unwrap().value);
         assert_eq!(0.001, FloatAsBytes::from_reader(&mut r).unwrap().value);
@@ -2621,7 +2633,7 @@ mod tests {
         assert_eq!(bytes_external.len(), 95340usize);
 
         let n: u32 = 6002;
-        let mut r = BitReader::endian(Cursor::new(&bytes_external), BigEndian);
+        let mut r = BitReader::endian(Cursor::new(&bytes_external), ENDIAN);
         for i in 0..n {
             let ui = UnsignedInteger::from_reader(&mut r).unwrap().value;
             let d1 = Double::from_reader(&mut r).unwrap().value;
@@ -2634,7 +2646,7 @@ mod tests {
 
         let mut bytes = vec![];
         {
-            let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+            let mut w = BitWriter::endian(&mut bytes, ENDIAN);
             for i in 0..n {
                 UnsignedInteger { value: i }.to_writer(&mut w).unwrap();
                 Double {
@@ -2681,7 +2693,7 @@ mod tests {
     }
 
     fn from_bits_str(st: &str) -> std::io::Result<Vec<u8>> {
-        let mut v: Vec<u8> = Vec::with_capacity(st.chars().count().div_ceil(8));
+        let mut v: Vec<u8> = vec![];
         let mut uc: u8 = 0;
 
         let mut n = 0; // number of bits collected in uc
@@ -2715,7 +2727,7 @@ mod tests {
         for i in 0..n {
             {
                 let mut bytes = vec![];
-                let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+                let mut w = BitWriter::endian(&mut bytes, ENDIAN);
                 let d = i as f64 * 1.15;
                 Double { value: d }.to_writer(&mut w).unwrap();
                 let num_trailing_passing_bits = fill_partial_byte_at_end(&mut w, false)
@@ -2735,7 +2747,7 @@ mod tests {
 
             {
                 let mut bytes = vec![];
-                let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+                let mut w = BitWriter::endian(&mut bytes, ENDIAN);
                 let d = i as f64 * -1.11;
                 Double { value: d }.to_writer(&mut w).unwrap();
                 let num_trailing_passing_bits = fill_partial_byte_at_end(&mut w, false)
@@ -2772,7 +2784,7 @@ mod tests {
             let num_bits: usize = ll[2].parse().expect("Should be able to parse usize");
             let bytes_external = from_bits_str(ll[3]).expect("Should be able to parse bits");
 
-            let mut r = BitReader::endian(Cursor::new(&bytes_external), BigEndian);
+            let mut r = BitReader::endian(Cursor::new(&bytes_external), ENDIAN);
             let d1 = match Double::from_reader(&mut r) {
                 Ok(d) => d.value,
                 _ => panic!(
@@ -2802,7 +2814,7 @@ mod tests {
         let mut bytes: Vec<u8> = vec![];
         let reference: UserData;
         {
-            let mut w = BitWriter::endian(Cursor::new(&mut bytes), bitstream_io::BigEndian);
+            let mut w = BitWriter::endian(Cursor::new(&mut bytes), ENDIAN);
             let mut data = Vec::with_capacity(123);
             for i in 0..123 {
                 data.push(i % 3 == 0);
@@ -2813,7 +2825,7 @@ mod tests {
         }
         assert_eq!(bytes.len(), 17usize);
 
-        let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+        let mut r = BitReader::endian(Cursor::new(&bytes), ENDIAN);
         let ud = UserData::from_reader(&mut r).unwrap();
         assert_eq!(123usize, ud.data.len());
         assert_eq!(reference, ud);
@@ -2952,7 +2964,7 @@ mod tests {
         assert_eq!(bools.len(), n);
 
         {
-            let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+            let mut w = BitWriter::endian(&mut bytes, ENDIAN);
             UncompressedBoolArray { a: bools.clone() }
                 .to_writer(&mut w, 0)
                 .unwrap();
@@ -2962,7 +2974,7 @@ mod tests {
         assert_eq!(2, bytes.len());
         //assert_eq!(bytes_external, bytes);
 
-        let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+        let mut r = BitReader::endian(Cursor::new(&bytes), ENDIAN);
         let read_bools = UncompressedBoolArray::from_reader(&mut r, n as u32)
             .unwrap()
             .a;
@@ -2980,13 +2992,13 @@ mod tests {
             let num_bits_per_elem = 8;
 
             {
-                let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+                let mut w = BitWriter::endian(&mut bytes, ENDIAN);
                 ca.to_writer(&mut w, num_bits_per_elem).unwrap();
                 fill_partial_byte_at_end(&mut w, false)
                     .expect("failed to fill partial byte at end");
             }
 
-            let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+            let mut r = BitReader::endian(Cursor::new(&bytes), ENDIAN);
             let read_ca = CharacterArray::from_reader(&mut r, num_bits_per_elem).unwrap();
             assert_eq!(ca, read_ca);
         }
@@ -2999,13 +3011,13 @@ mod tests {
             let num_bits_per_elem = 2;
 
             {
-                let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+                let mut w = BitWriter::endian(&mut bytes, ENDIAN);
                 ca.to_writer(&mut w, num_bits_per_elem).unwrap();
                 fill_partial_byte_at_end(&mut w, false)
                     .expect("failed to fill partial byte at end");
             }
 
-            let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+            let mut r = BitReader::endian(Cursor::new(&bytes), ENDIAN);
             let read_ca = CharacterArray::from_reader(&mut r, num_bits_per_elem).unwrap();
             assert_eq!(ca, read_ca);
         }
@@ -3022,13 +3034,13 @@ mod tests {
             let num_bits_per_elem = 14;
 
             {
-                let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+                let mut w = BitWriter::endian(&mut bytes, ENDIAN);
                 ca.to_writer(&mut w, num_bits_per_elem).unwrap();
                 fill_partial_byte_at_end(&mut w, false)
                     .expect("failed to fill partial byte at end");
             }
 
-            let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+            let mut r = BitReader::endian(Cursor::new(&bytes), ENDIAN);
             let read_ca = ShortArray::from_reader(&mut r, num_bits_per_elem).unwrap();
             assert_eq!(ca, read_ca);
         }
@@ -3042,14 +3054,14 @@ mod tests {
             let sign_extend = false;
 
             {
-                let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+                let mut w = BitWriter::endian(&mut bytes, ENDIAN);
                 ca.to_writer2(&mut w, num_bits_per_elem, true, true, sign_extend)
                     .unwrap();
                 fill_partial_byte_at_end(&mut w, false)
                     .expect("failed to fill partial byte at end");
             }
 
-            let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+            let mut r = BitReader::endian(Cursor::new(&bytes), ENDIAN);
             let read_ca =
                 ShortArray::from_reader2(&mut r, num_bits_per_elem, true, true, sign_extend)
                     .unwrap();
@@ -3065,11 +3077,11 @@ mod tests {
             a: vec![8, 126, 1, 0, -127, 125, -190, 356333, 356444],
         };
         {
-            let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+            let mut w = BitWriter::endian(&mut bytes, ENDIAN);
             cia.to_writer(&mut w).unwrap();
             fill_partial_byte_at_end(&mut w, false).expect("failed to fill partial byte at end");
         }
-        let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+        let mut r = BitReader::endian(Cursor::new(&bytes), ENDIAN);
         let read_cia = CompressedIntegerArray::from_reader(&mut r).unwrap();
         assert_eq!(cia, read_cia);
     }
@@ -3086,12 +3098,12 @@ mod tests {
                 //a: vec![0; 68],
             };
             {
-                let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+                let mut w = BitWriter::endian(&mut bytes, ENDIAN);
                 cia.to_writer(&mut w).unwrap();
                 fill_partial_byte_at_end(&mut w, false)
                     .expect("failed to fill partial byte at end");
             }
-            let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+            let mut r = BitReader::endian(Cursor::new(&bytes), ENDIAN);
             let read_cia = CompressedIndiceArray::from_reader(&mut r).unwrap();
             assert_eq!(cia, read_cia);
         }
@@ -3100,12 +3112,12 @@ mod tests {
 
             let cia = CompressedIndiceArrayWithoutBit { a: vec![0; 68] };
             {
-                let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
+                let mut w = BitWriter::endian(&mut bytes, ENDIAN);
                 cia.to_writer(&mut w, false).unwrap();
                 fill_partial_byte_at_end(&mut w, false)
                     .expect("failed to fill partial byte at end");
             }
-            let mut r = BitReader::endian(Cursor::new(&bytes), BigEndian);
+            let mut r = BitReader::endian(Cursor::new(&bytes), ENDIAN);
             let read_cia = CompressedIndiceArrayWithoutBit::from_reader(&mut r, false).unwrap();
             assert_eq!(cia, read_cia);
         }

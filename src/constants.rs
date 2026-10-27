@@ -184,6 +184,7 @@ impl fmt::Display for PrcType {
     }
 }
 
+#[allow(clippy::enum_variant_names)]
 #[repr(u16)]
 #[allow(non_camel_case_types)]
 pub enum PrcGraphicsBehavior {
@@ -225,6 +226,7 @@ pub struct PrcGraphicsBehaviorBitField {
     unused: modular_bitfield::specifiers::B2,
 }
 
+#[allow(clippy::enum_variant_names)]
 #[repr(u8)]
 #[allow(non_camel_case_types)]
 pub enum PrcTransformation {
@@ -292,6 +294,7 @@ pub struct PrcBodyBoundingBoxBehaviorBitField {
     unused: modular_bitfield::specifiers::B5,
 }
 
+#[allow(clippy::enum_variant_names)]
 #[repr(u8)]
 #[allow(non_camel_case_types)]
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, Hash, PartialEq, Eq, TryFromPrimitive)]
@@ -338,6 +341,7 @@ impl TryFrom<CompressedEntityType> for PrcCompressedFaceType {
     }
 }
 
+#[allow(clippy::enum_variant_names)]
 #[repr(u8)]
 #[allow(non_camel_case_types)]
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, Hash, PartialEq, Eq, TryFromPrimitive)]

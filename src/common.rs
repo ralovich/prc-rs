@@ -66,6 +66,20 @@ pub struct ParsedSections {
     pub mf: PRC_TYPE_ASM_ModelFile,
 }
 
+#[derive(Clone, Debug)]
+pub struct ParsingOptions {
+    pub verbose: bool,
+    pub all: bool,
+    pub globals: bool,
+    pub tree: bool,
+    pub tess: bool,
+    pub geom: bool,
+    pub extgeom: bool,
+    pub schema: bool,
+    pub modelfile: bool,
+    pub dump_attachments: bool,
+}
+
 /// All information from a parsed PRC. Can be (de-)serialized into e.g. JSON.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct ParsedPrc {
@@ -121,15 +135,7 @@ impl ParsedPrc {
     pub fn parse_decompressed(
         &mut self,
         ctx: &mut PrcParsingContext,
-        verbose: bool,
-        all: bool,
-        globals: bool,
-        tree: bool,
-        tess: bool,
-        geom: bool,
-        extgeom: bool,
-        _schema: bool,
-        modelfile: bool,
+        opts: &ParsingOptions,
     ) -> io::Result<()> {
         if self.decompressed_sections.is_none() {
             return Ok(());
@@ -137,15 +143,7 @@ impl ParsedPrc {
         let parsed_sections = UncompressedFileHeader::parse_decompressed_sections(
             self.decompressed_sections.as_ref().unwrap(),
             ctx,
-            verbose,
-            all,
-            globals,
-            tree,
-            tess,
-            geom,
-            extgeom,
-            _schema,
-            modelfile,
+            opts,
         )?;
         self.fsi = parsed_sections.fsi;
         self.mf_schema = parsed_sections.mf_schema;
@@ -285,9 +283,11 @@ impl PrcParsingContext {
                 }
                 match curve.compressed_curve.as_ref().unwrap().id_concrete {
                     CompressedCurve_idConcrete::line(l) => {
-                        if l.start_end_data.start_point.is_some() {
+                        if let Some(start_point) = l.start_end_data.start_point {
+                            //if l.start_end_data.start_point.is_some() {
                             if distance(
-                                &l.start_end_data.start_point.unwrap(),
+                                &start_point,
+                                //&l.start_end_data.start_point.unwrap(),
                                 &l.start_end_data.end_point.unwrap(),
                             ) >= tol
                             {
@@ -325,8 +325,11 @@ impl PrcParsingContext {
         let all_loops_are_vertex_loops = self.ContentCompressedFace_all_loops_are_vertex_loops();
 
         let st = self.get_surface_type();
-        if st.is_some() && st.unwrap().value == PrcCompressedFaceType::PRC_HCG_AnaTorus as u8 {
-            let surface_type = st.unwrap();
+        if let Some(surface_type) = st
+            && surface_type.value == PrcCompressedFaceType::PRC_HCG_AnaTorus as u8
+        {
+            //if st.is_some() && st.unwrap().value == PrcCompressedFaceType::PRC_HCG_AnaTorus as u8 {
+            //let surface_type = st.unwrap();
             error!(
                 "surface_type: {:?}, is_trimmed: {} -> all_loops_are_vertex_loops should probably return TRUE",
                 surface_type, is_trimmed
@@ -554,15 +557,7 @@ impl PrcParsingContext {
         bytes: &[u8],
         file_base_name: &str,
         parse: bool,
-        verbose: bool,
-        all: bool,
-        globals: bool,
-        tree: bool,
-        tess: bool,
-        geom: bool,
-        extgeom: bool,
-        _schema: bool,
-        modelfile: bool,
+        opts: &ParsingOptions,
     ) -> std::io::Result<ParsedPrc> {
         debug_time!("load_prc");
 
@@ -571,29 +566,22 @@ impl PrcParsingContext {
         let mut mem_reader: Cursor<_> = Cursor::new(bytes);
 
         let header = UncompressedFileHeader::from_reader(&mut mem_reader, self)?;
+        if opts.dump_attachments {
+            for (j, file) in header.uncompressed_files.iter().enumerate() {
+                let file_name = format!("{}_uncompressed_files_{:03}.bin", file_base_name, j);
+                let mut f = std::fs::File::create(file_name)?;
+                f.write_all(file.block.a.as_slice())?;
+            }
+        }
 
         self.file_base_name = file_base_name.to_owned();
         self.authoring_version = header.authoring_version.value;
         self.num_fsi = header.ufsd.len();
-        let mut parsed = header.decompress_sections(
-            &mut mem_reader,
-            self,
-            file_size_bytes,
-            verbose,
-            all,
-            globals,
-            tree,
-            tess,
-            geom,
-            extgeom,
-            _schema,
-            modelfile,
-        )?;
+        let mut parsed =
+            header.decompress_sections(&mut mem_reader, self, file_size_bytes, opts)?;
 
         if parse {
-            parsed.parse_decompressed(
-                &mut *self, verbose, all, globals, tree, tess, geom, extgeom, _schema, modelfile,
-            )?;
+            parsed.parse_decompressed(&mut *self, opts)?;
         }
 
         Ok(parsed)
@@ -604,15 +592,18 @@ impl PrcParsingContext {
         infname: &std::string::String,
         parse: bool,
     ) -> std::io::Result<ParsedPrc> {
-        let verbose = true;
-        let all = true;
-        let globals = true;
-        let tree = true;
-        let tess = true;
-        let geom = true;
-        let extgeom = true;
-        let _schema = true;
-        let modelfile = true;
+        let opts: ParsingOptions = ParsingOptions {
+            verbose: true,
+            all: true,
+            globals: true,
+            tree: true,
+            tess: true,
+            geom: true,
+            extgeom: true,
+            schema: true,
+            modelfile: true,
+            dump_attachments: false,
+        };
 
         let bytes = std::fs::read(infname)?;
         let file_base_name = Path::new(&infname)
@@ -621,20 +612,7 @@ impl PrcParsingContext {
             .to_string_lossy()
             .to_string();
 
-        self.load_prc(
-            &bytes,
-            &file_base_name,
-            parse,
-            verbose,
-            all,
-            globals,
-            tree,
-            tess,
-            geom,
-            extgeom,
-            _schema,
-            modelfile,
-        )
+        self.load_prc(&bytes, &file_base_name, parse, &opts)
     }
     pub fn save_prc(
         &mut self,
@@ -843,47 +821,15 @@ impl PrcParsingContext {
 pub fn prc_describe(
     bytes: &[u8],
     file_base_name: &str,
-    verbose: bool,
-    all: bool,
-    globals: bool,
-    tree: bool,
-    tess: bool,
-    geom: bool,
-    extgeom: bool,
-    _schema: bool,
-    modelfile: bool,
+    opts: &ParsingOptions,
 ) -> io::Result<ParsedPrc> {
     debug_time!("prc_describe");
     let parse = true;
     let mut ctx: PrcParsingContext = Default::default();
-    let parsed = ctx.load_prc(
-        bytes,
-        file_base_name,
-        parse,
-        verbose,
-        all,
-        globals,
-        tree,
-        tess,
-        geom,
-        extgeom,
-        _schema,
-        modelfile,
-    )?;
+    let parsed = ctx.load_prc(bytes, file_base_name, parse, opts)?;
     Ok(parsed)
 }
-pub fn prc_describe_file(
-    fname: &std::string::String,
-    verbose: bool,
-    all: bool,
-    globals: bool,
-    tree: bool,
-    tess: bool,
-    geom: bool,
-    extgeom: bool,
-    _schema: bool,
-    modelfile: bool,
-) -> io::Result<()> {
+pub fn prc_describe_file(fname: &std::string::String, opts: &ParsingOptions) -> io::Result<()> {
     debug_time!("prc_describe_file \"{}\"", fname);
 
     // Create a path to the desired file
@@ -904,19 +850,7 @@ pub fn prc_describe_file(
         now.elapsed().as_millis()
     );
 
-    let rv = prc_describe(
-        &bytes,
-        &file_base_name,
-        verbose,
-        all,
-        globals,
-        tree,
-        tess,
-        geom,
-        extgeom,
-        _schema,
-        modelfile,
-    );
+    let rv = prc_describe(&bytes, &file_base_name, opts);
 
     match rv {
         Err(why) => {
@@ -932,6 +866,7 @@ pub fn prc_describe_file(
 
 /// Allow searching for structures in decompressed PRC sections. Helpful for reverse engineering
 /// the binary PRC file format.
+#[allow(clippy::all)]
 pub fn prc_search(
     ctx: &mut PrcParsingContext,
     parsed: &ParsedPrc,
@@ -1138,19 +1073,20 @@ mod tests {
         .unwrap();
         assert_eq!(bytes_external.len(), 24535usize);
 
-        let parsed = prc_describe(
-            &bytes_external,
-            "pmi_sample.stream-23.prc",
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-        );
+        let opts: ParsingOptions = ParsingOptions {
+            verbose: true,
+            all: true,
+            globals: true,
+            tree: true,
+            tess: true,
+            geom: true,
+            extgeom: true,
+            schema: true,
+            modelfile: true,
+            dump_attachments: false,
+        };
+
+        let parsed = prc_describe(&bytes_external, "pmi_sample.stream-23.prc", &opts);
         assert!(parsed.is_ok());
 
         let parsed = parsed.unwrap();
@@ -1176,20 +1112,19 @@ mod tests {
         ))
         .unwrap();
         assert_eq!(bytes_external.len(), 427862usize);
-
-        let parsed = prc_describe(
-            &bytes_external,
-            "3D-PDF-Sample-School.stream-48.prc",
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-        );
+        let opts: ParsingOptions = ParsingOptions {
+            verbose: true,
+            all: true,
+            globals: true,
+            tree: true,
+            tess: true,
+            geom: true,
+            extgeom: true,
+            schema: true,
+            modelfile: true,
+            dump_attachments: false,
+        };
+        let parsed = prc_describe(&bytes_external, "3D-PDF-Sample-School.stream-48.prc", &opts);
         assert!(parsed.is_ok());
 
         let parsed = parsed.unwrap();
@@ -1206,9 +1141,19 @@ mod tests {
     fn test_fuzz1() {
         let file_name = "fuzz.prc".to_owned();
         let bytes = [10, 68, 68];
-        let parsed = prc_describe(
-            &bytes, &file_name, true, true, true, true, true, true, true, true, true,
-        );
+        let opts: ParsingOptions = ParsingOptions {
+            verbose: true,
+            all: true,
+            globals: true,
+            tree: true,
+            tess: true,
+            geom: true,
+            extgeom: true,
+            schema: true,
+            modelfile: true,
+            dump_attachments: false,
+        };
+        let parsed = prc_describe(&bytes, &file_name, &opts);
         assert!(parsed.is_err());
     }
 
@@ -1238,22 +1183,19 @@ mod tests {
 
             let bytes = std::fs::read(test_case).unwrap();
             let mut ctx: PrcParsingContext = Default::default();
-            let parsed = ctx
-                .load_prc(
-                    &bytes,
-                    &file_base_name,
-                    true,
-                    true,
-                    true,
-                    true,
-                    true,
-                    true,
-                    true,
-                    true,
-                    true,
-                    true,
-                )
-                .unwrap();
+            let opts: ParsingOptions = ParsingOptions {
+                verbose: true,
+                all: true,
+                globals: true,
+                tree: true,
+                tess: true,
+                geom: true,
+                extgeom: true,
+                schema: true,
+                modelfile: true,
+                dump_attachments: false,
+            };
+            let parsed = ctx.load_prc(&bytes, &file_base_name, true, &opts).unwrap();
             //println!("{:#?}", prc);
 
             // serialize and round-trip

@@ -138,6 +138,7 @@ pub enum VariableKind {
 }
 impl VariableKind {
     fn is_scalar(&self) -> bool {
+        #[allow(clippy::match_like_matches_macro)]
         match self {
             VariableKind::Boolean(_x) => true,
             VariableKind::Double(_x) => true,

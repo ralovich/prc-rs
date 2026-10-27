@@ -5,12 +5,15 @@
 // Copyright Kristóf Ralovich (C) 2025-2026. All rights reserved.
 
 use clap::Parser;
-use log::{info, warn};
+use log::{info, trace, warn};
+use prc::common::ParsingOptions;
 use prc::*;
 use std::io::*;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::{SystemTime, UNIX_EPOCH};
+
+// See https://jwodder.github.io/kbits/posts/clap-bool-negate/
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -43,6 +46,10 @@ struct Args {
     #[arg(long, default_value_t = false)]
     mf: bool,
 
+    /// Dump attachments
+    #[arg(long, default_value_t = false)]
+    dump: bool,
+
     /// Sets the file to describe.
     //#[arg(short, long, value_name = "FILE")]
     fname: PathBuf,
@@ -53,6 +60,7 @@ fn main() -> ExitCode {
     pretty_env_logger::init();
 
     let args = Args::parse();
+    trace!("{:#?}", args);
 
     let all_sections: bool = args.gl && args.tr && args.te && args.ge && args.ex && args.mf
         || (!args.gl && !args.tr && !args.te && !args.ge && !args.ex && !args.sc && !args.mf);
@@ -77,18 +85,21 @@ fn main() -> ExitCode {
             .as_secs()
     );
 
-    match common::prc_describe_file(
-        &fname,
+    let opts: ParsingOptions = ParsingOptions {
         verbose,
-        all_sections,
-        args.gl,
-        args.tr,
-        args.te,
-        args.ge,
-        args.ex,
-        args.sc,
-        args.mf,
-    ) {
+        all: all_sections,
+        globals: args.gl,
+        tree: args.tr,
+        tess: args.te,
+        geom: args.ge,
+        extgeom: args.ex,
+        schema: args.sc,
+        modelfile: args.mf,
+        dump_attachments: args.dump,
+    };
+    trace!("{:#?}", opts);
+
+    match common::prc_describe_file(&fname, &opts) {
         Ok(_data) => ExitCode::SUCCESS,
         Err(why) => {
             warn!("prc_describe_file FAILED: {}", why);

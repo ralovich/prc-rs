@@ -5,10 +5,13 @@
 // SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026.
 // All rights reserved.
 
-use crate::common::prc_describe;
+use crate::common::{ParsingOptions, prc_describe};
 
 pub type AllocateFnT = ::std::option::Option<unsafe extern "C" fn(argument: usize) -> *mut u8>;
 
+/// # Safety
+///
+/// Use of raw pointers.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn prc_parse_to_json(
     src_len: u64,
@@ -35,28 +38,19 @@ pub unsafe extern "C" fn prc_parse_to_json(
 
     let src_slice = unsafe { std::slice::from_raw_parts(src, src_len as usize) };
 
-    let verbose: bool = true;
-    let all: bool = true;
-    let globals: bool = true;
-    let tree: bool = true;
-    let tess: bool = true;
-    let geom: bool = true;
-    let extgeom: bool = true;
-    let _schema: bool = true;
-    let modelfile = true;
-    let rv = prc_describe(
-        src_slice,
-        "capi.prc_parse_to_json.prc",
-        verbose,
-        all,
-        globals,
-        tree,
-        tess,
-        geom,
-        extgeom,
-        _schema,
-        modelfile,
-    );
+    let opts: ParsingOptions = ParsingOptions {
+        verbose: true,
+        all: true,
+        globals: true,
+        tree: true,
+        tess: true,
+        geom: true,
+        extgeom: true,
+        schema: true,
+        modelfile: true,
+        dump_attachments: false,
+    };
+    let rv = prc_describe(src_slice, "capi.prc_parse_to_json.prc", &opts);
     match rv {
         Err(_) => {
             unsafe {

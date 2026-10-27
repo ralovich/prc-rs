@@ -32,6 +32,7 @@ impl Tess3dCompressed {
     }
     pub fn leave(&mut self) {}
     /// reconstruct vertices
+    #[allow(clippy::too_many_arguments)]
     pub fn get_points(
         &self,
         origin_array: &[FloatAsBytes; 3],
@@ -81,8 +82,9 @@ impl Tess3dCompressed {
         } else if edge_status_array.len() == 3 * triangle_face_array.len() {
             warn!("t3dc: kindB");
             let mut any_non_zero_in_latter_two_thirds = false;
-            for i in (edge_status_array.len() / 3)..edge_status_array.len() {
-                if edge_status_array[i] != 0i8 {
+            for esai in edge_status_array.iter().skip(edge_status_array.len() / 3) {
+                //for i in (edge_status_array.len() / 3)..edge_status_array.len() {
+                if *esai != 0i8 {
                     any_non_zero_in_latter_two_thirds = true;
                 }
             }
@@ -184,10 +186,9 @@ impl Tess3dCompressed {
 
         self.triangles_in_face
             .resize(self.num_faces as usize, Vec::new());
-        for tri_id in 0..triangle_face_array.len() {
+        for (tri_id, _face_idx) in triangle_face_array.iter().enumerate() {
             // index of the face this triangle belongs to
-            let _face_idx = triangle_face_array[tri_id];
-            self.triangles_in_face[_face_idx as usize].push(tri_id as u32);
+            self.triangles_in_face[*_face_idx as usize].push(tri_id as u32);
         }
 
         let triangles_in_face = self.triangles_in_face[face_id as usize].len() as u32;

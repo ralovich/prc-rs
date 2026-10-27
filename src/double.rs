@@ -6,7 +6,7 @@
 
 #![allow(unused)]
 
-use crate::builtin::{read_bits, write_bits};
+use crate::builtin::{read_bits, write_bits, write_bits_u32};
 use bitstream_io::{BitRead, BitWrite};
 use modular_bitfield::bitfield;
 use modular_bitfield::prelude::{B1, B11, B20};
@@ -87,17 +87,27 @@ impl Default for ieee754_double {
 #[derive(Default, Clone, Copy)]
 struct CodingOfFrequentDoubleOrExponent {
     pub type_: ValueType,
-    pub num_bits: i16,
+    pub num_bits: u16,
     pub bits: u32,
     pub s: ieee754_double,
+}
+impl CodingOfFrequentDoubleOrExponent {
+    pub fn new(s: ieee754_double) -> Self {
+        Self {
+            type_: ValueType::double,
+            num_bits: 0,
+            bits: 0,
+            s,
+        }
+    }
 }
 type C = CodingOfFrequentDoubleOrExponent;
 impl Ord for CodingOfFrequentDoubleOrExponent {
     fn cmp(&self, other: &Self) -> Ordering {
-        let lhs: ieee754_double = ieee754_double {
+        let lhs = ieee754_double {
             d: unsafe { self.s.d },
         };
-        let rhs: ieee754_double = ieee754_double {
+        let rhs = ieee754_double {
             d: unsafe { other.s.d },
         };
         let left_exp = unsafe { lhs.ieee.exponent() };
@@ -147,7 +157,7 @@ macro_rules! XX {
     }};
 }
 
-fn get_c_o_f_d_o_e<'a>(bits: u32, nbits: i16) -> Option<&'a CodingOfFrequentDoubleOrExponent> {
+fn get_c_o_f_d_o_e<'a>(bits: u32, nbits: u16) -> Option<&'a CodingOfFrequentDoubleOrExponent> {
     COFDOE
         .iter()
         .take(N)
@@ -164,7 +174,7 @@ pub fn read_double_from_reader<R: BitRead>(rdr: &mut R) -> io::Result<f64> {
         ucofdoe <<= 1;
         let b = read_bits(rdr, 1)?;
         ucofdoe |= b as u32;
-        match get_c_o_f_d_o_e(ucofdoe, i as i16) {
+        match get_c_o_f_d_o_e(ucofdoe, i as u16) {
             None => {
                 continue;
             }
@@ -255,74 +265,74 @@ pub fn read_double_from_reader<R: BitRead>(rdr: &mut R) -> io::Result<f64> {
     Ok(unsafe { value.d })
 }
 
-pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::io::Result<u32> {
-    let _value: ieee754_double = ieee754_double { d };
+pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::io::Result<usize> {
+    let value: ieee754_double = ieee754_double { d };
     //println!("{}", unsafe { value.u } );
-    let mut cofdoe: CodingOfFrequentDoubleOrExponent = Default::default();
-    cofdoe.s.d = d;
-    let mut _pcofdoe: usize = COFDOE.binary_search(&cofdoe).unwrap();
+    let cofdoe = CodingOfFrequentDoubleOrExponent::new(ieee754_double { d });
+    let idx = COFDOE.binary_search(&cofdoe);
+    if idx.is_err() {
+        return Err(Error::other("Failed to find double exponent!"));
+    }
+    let mut idx: usize = idx.unwrap();
 
-    while _pcofdoe > 0
+    while idx > 0
         && unsafe {
-            ieee754_double {
-                d: COFDOE[_pcofdoe].s.d,
-            }
-            .ieee
-            .exponent()
+            ieee754_double { d: COFDOE[idx].s.d }.ieee.exponent()
                 == ieee754_double {
-                    d: COFDOE[_pcofdoe - 1].s.d,
+                    d: COFDOE[idx - 1].s.d,
                 }
                 .ieee
                 .exponent()
         }
     {
-        _pcofdoe -= 1;
+        idx -= 1;
     }
 
-    while COFDOE[_pcofdoe].type_ == ValueType::double {
-        if d.abs() == unsafe { COFDOE[_pcofdoe].s.d } {
+    while COFDOE[idx].type_ == ValueType::double {
+        if d.abs() == unsafe { COFDOE[idx].s.d } {
             break;
         }
-        _pcofdoe += 1;
+        idx += 1;
+    }
+    if idx >= COFDOE.len() {
+        return Err(Error::other("Failed to find frequent coding!"));
     }
 
-    #[allow(unused)]
-    let mut bits_written = 0;
-    let coding = COFDOE[_pcofdoe];
+    let mut bits_written = 0usize;
+    let coding = COFDOE[idx];
 
-    let from = 1 << (coding.num_bits - 1);
-    let mut i = from;
-    while i >= 1 {
-        write_bits(w, (coding.bits & i != 0) as u8, 1)?;
-        bits_written += 1;
-        i >>= 1;
-    }
+    // write coding.bits
+    crate::builtin::write_bits_u32(w, coding.bits, coding.num_bits as u8)?;
+    bits_written += coding.num_bits as usize;
 
     const ZERO: ieee754_double = D!(0x00000000, 0x00000000);
     const NEGATIVE_ZERO: ieee754_double = D!(0x80000000, 0x00000000);
 
-    if unsafe { _value.ul == ZERO.ul || _value.ul == NEGATIVE_ZERO.ul } {
+    if unsafe { value.ul == ZERO.ul || value.ul == NEGATIVE_ZERO.ul } {
         return Ok(bits_written);
     }
 
-    write_bits(w, (unsafe { _value.ieee }.negative() != 0) as u8, 1)?;
+    // negative flag
+    write_bits(w, (unsafe { value.ieee }.negative() != 0) as u8, 1)?;
     bits_written += 1;
 
     if coding.type_ == ValueType::double {
         return Ok(bits_written);
     }
 
-    if unsafe { _value.ieee.mantissa0() == 0 && _value.ieee.mantissa1() == 0 } {
+    // mantissa is all zeroes
+    if unsafe { value.ieee.mantissa0() == 0 && value.ieee.mantissa1() == 0 } {
         write_bits(w, 0, 1)?;
         bits_written += 1;
         return Ok(bits_written);
     }
 
+    // mantissa is not all zeroes
     write_bits(w, 1, 1)?;
     bits_written += 1;
 
-    let mut bi: usize = 6; // byte index same as pb
-    let b4: u8 = unsafe { _value.bytes[bi] } & 0x0F;
+    let mut bi: usize = 6; // byte index same as pb in spec
+    let b4: u8 = unsafe { value.bytes[bi] } & 0x0F;
     write_bits(w, b4, 4)?;
     bits_written += 4;
 
@@ -332,9 +342,9 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
     let end: usize = 0;
     let mut stop: usize = 0;
     let mut byte_save_at_end: u8 = 0;
-    let do_save_at_end: bool = unsafe { _value.bytes[0] != _value.bytes[1] };
+    let do_save_at_end: bool = unsafe { value.bytes[0] != value.bytes[1] };
     if do_save_at_end {
-        byte_save_at_end = unsafe { _value.bytes[0] };
+        byte_save_at_end = unsafe { value.bytes[0] };
     }
     stop += 1;
 
@@ -351,7 +361,7 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
     }
 
     unsafe {
-        while _value.bytes[stop] == _value.bytes[stop + 1] {
+        while value.bytes[stop] == value.bytes[stop + 1] && stop < 6 {
             stop += 1;
             if stop >= 7 {
                 return Err(Error::other("Failed to write double!"));
@@ -362,7 +372,7 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
         while bi >= stop {
             let mut found: bool = false;
             if bi != start {
-                match memchr(&_value.bytes, bi + 1, _value.bytes[bi], start - bi) {
+                match memchr(&value.bytes, bi + 1, value.bytes[bi], start - bi) {
                     Some(x) => {
                         result = x;
                         found = true
@@ -379,7 +389,7 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
             } else {
                 write_bits(w, 1, 1)?;
                 bits_written += 1;
-                let byte: u8 = _value.bytes[bi];
+                let byte: u8 = value.bytes[bi];
                 write_bits(w, byte, 8)?;
                 bits_written += 8;
             }
@@ -403,7 +413,7 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
                 bits_written += 3;
             }
         } else {
-            let found: bool = match memchr(&_value.bytes, bi + 1, _value.bytes[bi], start - bi) {
+            let found: bool = match memchr(&value.bytes, bi + 1, value.bytes[bi], start - bi) {
                 Some(x) => {
                     result = x;
                     true
@@ -419,7 +429,7 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
             } else {
                 write_bits(w, 1, 1)?;
                 bits_written += 1;
-                write_bits(w, _value.bytes[bi], 8)?;
+                write_bits(w, value.bytes[bi], 8)?;
                 bits_written += 8;
             }
         }
@@ -2521,30 +2531,101 @@ mod tests {
     use std::io::Cursor;
 
     #[test]
-    fn io_double_lowlevel() {
-        fn internal<E: bitstream_io::Endianness + Copy>(endian: E, bytes: &mut Vec<u8>) {
+    fn check_double_coding() {
+        for i in super::COFDOE {
+            let num_bits =
+                crate::builtin::get_number_of_bits_used_to_store_unsigned_integer(i.bits);
+            assert!(num_bits <= i.num_bits as u32);
+            assert!(i.num_bits < 256);
+        }
+    }
+
+    #[allow(non_camel_case_types)]
+    #[repr(align(8))]
+    union d2u {
+        d: f64,
+        u: u64,
+    }
+
+    fn to_u64(d: f64) -> u64 {
+        unsafe { d2u { d }.u }
+    }
+
+    fn to_f64(u: u64) -> f64 {
+        unsafe { d2u { u }.d }
+    }
+
+    fn roundtrip(value: f64, num_bits: usize) {
+        fn internal<E: bitstream_io::Endianness + Copy>(
+            endian: E,
+            bytes: &mut Vec<u8>,
+            value: f64,
+            num_bits: usize,
+        ) {
             let mut w = BitWriter::endian(Cursor::new(&mut *bytes), endian);
-            let p1 = super::write_double_to_writer(&mut w, 0.1).unwrap();
+            let written = super::write_double_to_writer(&mut w, value);
+            let p1 = written.unwrap();
 
             fill_partial_byte_at_end(&mut w, false).expect("failed to fill partial byte at end");
 
-            //let p0 = w.writer().unwrap().position();
-            //let x = w.bits;
-
-            assert_eq!(p1, 33);
-            assert_eq!(bytes.len(), 5usize);
+            assert_eq!(p1, num_bits);
+            assert_eq!(bytes.len(), num_bits.div_ceil(8));
 
             let bytes_ro: &Vec<u8> = bytes;
             let mut rdr = bitstream_io::BitReader::endian(Cursor::new(&bytes_ro), endian);
             let d = super::read_double_from_reader(&mut rdr).unwrap();
             let p = rdr.position_in_bits().unwrap();
-            assert_eq!(d, 0.1);
-            assert_eq!(p, 33);
+            assert_eq!(d, value);
+            assert_eq!(p, num_bits as u64);
         }
+        let mut bytes = vec![];
+        internal(bitstream_io::LittleEndian, &mut bytes, value, num_bits);
+        let mut bytes = vec![];
+        internal(bitstream_io::BigEndian, &mut bytes, value, num_bits);
+    }
 
-        let mut bytes = vec![];
-        internal(bitstream_io::LittleEndian, &mut bytes);
-        let mut bytes = vec![];
-        internal(bitstream_io::BigEndian, &mut bytes);
+    #[test]
+    fn io_double_lowlevel() {
+        let val = 0.1;
+        roundtrip(val, 33);
+
+        let val = 0.01;
+        roundtrip(val, 67);
+
+        let val = 0.001;
+        roundtrip(val, 5);
+
+        let val = f64::MAX;
+        roundtrip(val, 40);
+
+        let val = f64::EPSILON;
+        roundtrip(val, 13);
+
+        let val = f64::MIN;
+        roundtrip(val, 40);
+
+        let val = f64::MIN_POSITIVE;
+        roundtrip(val, 24);
+
+        let val = 0.0;
+        roundtrip(val, 2);
+
+        let val = -0.0;
+        roundtrip(val, 2);
+
+        let val = 1.0;
+        roundtrip(val, 5);
+
+        let val = -1.0;
+        roundtrip(val, 5);
+    }
+
+    #[test]
+    fn io_double_lowlevel_was_failing() {
+        let val = to_f64(0x4040404040404040); // 32.501960784313724
+        roundtrip(val, 15);
+
+        let val = to_f64(0x3030303030303030); // 1.3980432860952889E-76
+        roundtrip(val, 32);
     }
 }

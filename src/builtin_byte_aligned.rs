@@ -9,11 +9,13 @@
 
 /// Built-in structures that are byte-aligned.
 use crate::common::{
-    DecompressedSections, ParsedPrc, ParsedPrcFileStructure, ParsedSections, PrcParsingContext,
+    DecompressedSections, ParsedPrc, ParsedPrcFileStructure, ParsedSections, ParsingOptions,
+    PrcParsingContext,
 };
 use crate::constants::PrcSectionKind;
 use crate::decompress::{compress, decompress};
 use crate::function;
+use crate::io_check_limit;
 use crate::prc_gen::{
     PRC_TYPE_ASM_FileStructureExtraGeometry, PRC_TYPE_ASM_FileStructureGeometry,
     PRC_TYPE_ASM_FileStructureGlobals, PRC_TYPE_ASM_FileStructureTessellation,
@@ -28,14 +30,13 @@ use measure_time::debug_time;
 use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 use std::io::{Cursor, Read, Seek, Write};
+use std::path::Path;
 use std::{fmt, io};
-
-use crate::io_check_limit;
 
 const ENDIAN: bitstream_io::BigEndian = bitstream_io::BigEndian;
 
 macro_rules! parse_section {
-    ($reader_object:tt, $id:tt, $bytes:tt, $typ:tt, $object:tt, $ctx:tt, $verbose:tt) => {
+    ($reader_object:tt, $id:tt, $bytes:tt, $typ:tt, $object:tt, $ctx:tt, $verbose:expr) => {
         debug!(
             "--{:?} START {} bits ({} bytes)--",
             $id,
@@ -95,15 +96,7 @@ impl UncompressedFileHeader {
         ctx: &mut PrcParsingContext,
         //file_base_name: &String,
         file_size_bytes: usize,
-        verbose: bool,
-        all: bool,
-        _globals: bool,
-        _tree: bool,
-        _tess: bool,
-        _geom: bool,
-        _extgeom: bool,
-        _schema: bool,
-        _modelfile: bool,
+        opts: &ParsingOptions,
     ) -> std::io::Result<ParsedPrc> {
         info!(
             "Version for reading: {}",
@@ -115,7 +108,7 @@ impl UncompressedFileHeader {
 
         // decompress arrays
         let mut mf_decompressed: Vec<u8> = Vec::new();
-        if all || _modelfile {
+        if opts.all || opts.modelfile {
             if self.mf_end_offset.value <= self.mf_start_offset.value {
                 return Err(std::io::Error::other("invalid mf offset"));
             }
@@ -165,7 +158,7 @@ impl UncompressedFileHeader {
             let glob = decompress(&section_compr)?;
             sections_decompressed[i][PrcSectionKind::Global as usize] = glob;
 
-            if all || _tree {
+            if opts.all || opts.tree {
                 if fs.tess_start_offset.value <= fs.tree_start_offset.value {
                     return Err(std::io::Error::other("invalid tree offset"));
                 }
@@ -178,7 +171,7 @@ impl UncompressedFileHeader {
                 sections_decompressed[i][PrcSectionKind::Tree as usize] = tree;
             }
 
-            if all || _tess {
+            if opts.all || opts.tess {
                 if fs.geom_start_offset.value <= fs.tess_start_offset.value {
                     return Err(std::io::Error::other("invalid tess offset"));
                 }
@@ -191,7 +184,7 @@ impl UncompressedFileHeader {
                 sections_decompressed[i][PrcSectionKind::Tessellation as usize] = tess;
             }
 
-            if all || _geom {
+            if opts.all || opts.geom {
                 if fs.extg_start_offset.value <= fs.geom_start_offset.value {
                     return Err(std::io::Error::other("invalid geom offset"));
                 }
@@ -204,7 +197,7 @@ impl UncompressedFileHeader {
                 sections_decompressed[i][PrcSectionKind::Geometry as usize] = geom;
             }
 
-            if all || _extgeom {
+            if opts.all || opts.extgeom {
                 if std::cmp::min(self.mf_start_offset.value, file_size_bytes as u32)
                     <= fs.extg_start_offset.value
                 {
@@ -272,18 +265,11 @@ impl UncompressedFileHeader {
     }
 
     /// parse decompressed arrays
+    /// optionally dumps UncompressedFileStructureHeader.files
     pub fn parse_decompressed_sections(
         decompressed_sections: &DecompressedSections,
         ctx: &mut PrcParsingContext,
-        verbose: bool,
-        all: bool,
-        _globals: bool,
-        _tree: bool,
-        _tess: bool,
-        _geom: bool,
-        _extgeom: bool,
-        _schema: bool,
-        _modelfile: bool,
+        opts: &ParsingOptions,
     ) -> std::io::Result<crate::common::ParsedSections> {
         let mut num_schemas = 0;
         let sections_decompressed = &decompressed_sections.sections_decompressed;
@@ -296,15 +282,31 @@ impl UncompressedFileHeader {
             let mut r_head =
                 Cursor::new(sections_decompressed[i][PrcSectionKind::Header as usize].as_slice());
             let header = UncompressedFileStructureHeader::from_reader(&mut r_head, &mut noctx)?;
-            for file in header.files.iter() {
-                if file.block.a.len() >= 4 {
-                    if [255, 216, 255, 224] == file.block.a.as_slice()[0..4] {
-                        debug!("attachment: JFIF {} bytes", file.block.a.len());
-                    } else if *b".PNG" == file.block.a.as_slice()[0..4] {
-                        debug!("attachment: PNG {} bytes", file.block.a.len());
-                    } else {
-                        debug!("attachment: unrecognised {} bytes", file.block.a.len());
-                    }
+            for (j, file) in header.files.iter().enumerate() {
+                let mut ext = if file.block.a.len() >= 4
+                    && [255, 216, 255, 224] == file.block.a.as_slice()[0..4]
+                {
+                    debug!("attachment: JFIF {} bytes", file.block.a.len());
+                    ".jpg"
+                } else if file.block.a.len() >= 4
+                    && [137, 80, 78, 71] == file.block.a.as_slice()[0..4]
+                {
+                    debug!("attachment: PNG {} bytes", file.block.a.len());
+                    ".png"
+                } else if file.block.a.len() >= 2 && [66, 77] == file.block.a.as_slice()[0..2] {
+                    debug!("attachment: BMP {} bytes", file.block.a.len());
+                    ".bmp"
+                } else {
+                    debug!("attachment: unrecognised {} bytes", file.block.a.len());
+                    ".bin"
+                };
+                if opts.dump_attachments {
+                    let file_name = format!(
+                        "{}_fsi_{:03}_attachment_{:03}{}",
+                        ctx.file_base_name, i, j, ext
+                    );
+                    let mut f = std::fs::File::create(file_name)?;
+                    f.write_all(file.block.a.as_slice())?;
                 }
             }
 
@@ -316,7 +318,7 @@ impl UncompressedFileHeader {
             num_schemas += schema.schemas.len() as u32;
             ctx.se = crate::schema::SchemaEvaluator::new(&schema.schemas);
             let mut glob = Default::default();
-            if all || _globals {
+            if opts.all || opts.globals {
                 let id = PrcSectionKind::Global;
                 let bytes = sections_decompressed[i][id as usize].as_slice();
                 parse_section!(
@@ -326,12 +328,12 @@ impl UncompressedFileHeader {
                     PRC_TYPE_ASM_FileStructureGlobals,
                     glob,
                     ctx,
-                    verbose
+                    opts.verbose
                 );
             }
 
             let mut tree = Default::default();
-            if all || _tree {
+            if opts.all || opts.tree {
                 let id = PrcSectionKind::Tree;
                 let bytes = sections_decompressed[i][id as usize].as_slice();
                 let mut r_tree = BitReader::endian(Cursor::new(bytes), ENDIAN);
@@ -342,12 +344,12 @@ impl UncompressedFileHeader {
                     PRC_TYPE_ASM_FileStructureTree,
                     tree,
                     ctx,
-                    verbose
+                    opts.verbose
                 );
             }
 
             let mut tess = Default::default();
-            if all || _tess {
+            if opts.all || opts.tess {
                 let id = PrcSectionKind::Tessellation;
                 let bytes = sections_decompressed[i][id as usize].as_slice();
                 let mut r_tess = BitReader::endian(Cursor::new(bytes), ENDIAN);
@@ -358,12 +360,12 @@ impl UncompressedFileHeader {
                     PRC_TYPE_ASM_FileStructureTessellation,
                     tess,
                     ctx,
-                    verbose
+                    opts.verbose
                 );
             }
 
             let mut geom = Default::default();
-            if all || _geom {
+            if opts.all || opts.geom {
                 let id = PrcSectionKind::Geometry;
                 let bytes = sections_decompressed[i][id as usize].as_slice();
                 let mut r_geom = BitReader::endian(Cursor::new(bytes), ENDIAN);
@@ -374,12 +376,12 @@ impl UncompressedFileHeader {
                     PRC_TYPE_ASM_FileStructureGeometry,
                     geom,
                     ctx,
-                    verbose
+                    opts.verbose
                 );
             }
 
             let mut extg = Default::default();
-            if all || _extgeom {
+            if opts.all || opts.extgeom {
                 let id = PrcSectionKind::ExtraGeometry;
                 let bytes = sections_decompressed[i][id as usize].as_slice();
                 let mut r_extg = BitReader::endian(Cursor::new(bytes), ENDIAN);
@@ -390,7 +392,7 @@ impl UncompressedFileHeader {
                     PRC_TYPE_ASM_FileStructureExtraGeometry,
                     extg,
                     ctx,
-                    verbose
+                    opts.verbose
                 );
             }
             let uuid = decompressed_sections.uuids[i];
@@ -410,7 +412,7 @@ impl UncompressedFileHeader {
         info!("Number of sum global schemas: {}", num_schemas);
         let mut mf_schema: Schema = Default::default();
         let mut mf: PRC_TYPE_ASM_ModelFile = Default::default();
-        if all || _modelfile {
+        if opts.all || opts.modelfile {
             //let mf_decompressed = ctx.prc_parsed.mf_decompressed.clone();
             let mf_decompressed = &decompressed_sections.mf_decompressed;
             let bytes = mf_decompressed.as_slice();
@@ -428,7 +430,15 @@ impl UncompressedFileHeader {
             ctx.se = crate::schema::SchemaEvaluator::new(&mf_schema.schemas);
 
             let id = "ModelFile";
-            parse_section!(r_mf, id, bytes, PRC_TYPE_ASM_ModelFile, mf, ctx, verbose);
+            parse_section!(
+                r_mf,
+                id,
+                bytes,
+                PRC_TYPE_ASM_ModelFile,
+                mf,
+                ctx,
+                opts.verbose
+            );
         }
 
         Ok(crate::common::ParsedSections { fsi, mf_schema, mf })

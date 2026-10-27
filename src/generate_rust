@@ -2,7 +2,7 @@
 # -*- mode: python; coding: utf-8-unix -*-
 #
 # SPDX-License-Identifier: MIT
-# 
+#
 # SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026. All rights reserved.
 
 import sys
@@ -349,9 +349,9 @@ macro_rules! prc_gen_assert {
     Ok(rv)
   }\n''')
             if not is_byte_aligned:
-                rs.write('  pub fn to_writer<W: BitWrite + ?Sized>(&self, _w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {\n')
+                rs.write('  pub fn to_writer<W: BitWrite + ?Sized>(&self, w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {\n')
             else:
-                rs.write('  pub fn to_writer<W: Write>(&self, _w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {\n')
+                rs.write('  pub fn to_writer<W: Write>(&self, w: &mut W, _ctx: &mut PrcParsingContext) -> io::Result<()> {\n')
             for f in d['structures'][0][struct_name]['fields']:
                 is_conditional = 'condition_rust' in f
                 is_virtual_type_switch = 'eligible_type_ids' in f
@@ -364,7 +364,7 @@ macro_rules! prc_gen_assert {
                         rs.write(f'  if {rust_condition_to_writer_condition(f['condition_rust'])} {{\n')
                     rs.write('  match &self.%s_concrete {\n' % f['name'] )
                     for eti in f['eligible_type_ids']:
-                        rs.write('    %s_%sConcrete::%s(x) => &x.to_writer(_w, _ctx)?,\n' % (struct_name, f['name'], eti[1]) )
+                        rs.write('    %s_%sConcrete::%s(x) => &x.to_writer(w, _ctx)?,\n' % (struct_name, f['name'], eti[1]) )
                     rs.write('''    %s_%sConcrete::Invalid(x) => return Err(Error::other(format!("%s: Unrecognized subtype: {}!", x))),''' % (struct_name, f['name'], struct_name) )
                     rs.write('  };\n')
                     if is_conditional:
@@ -376,14 +376,14 @@ macro_rules! prc_gen_assert {
                     is_mult = 'multiplicity' in f
                     if is_builtin:
                         field_type = f['data_type']
-                        field_writer = 'to_writer(_w)?'
+                        field_writer = 'to_writer(w)?'
                         if is_vbr_1param(f):
-                            field_writer = f'to_writer(_w, {rust_condition_to_reader_condition(f['vbr'])})?'
+                            field_writer = f'to_writer(w, {rust_condition_to_reader_condition(f['vbr'])})?'
                         if is_vbr_2param(f):
-                            field_writer = f'to_writer(_w, {rust_condition_to_reader_condition(f['vbr'])}, {rust_condition_to_reader_condition(f['tol'])})?'
+                            field_writer = f'to_writer(w, {rust_condition_to_reader_condition(f['vbr'])}, {rust_condition_to_reader_condition(f['tol'])})?'
                     else:
                         field_type = f['data_type']
-                        field_writer = 'to_writer(_w, _ctx)?'
+                        field_writer = 'to_writer(w, _ctx)?'
                     if is_conditional and (not is_vec and not is_mult):
                         #field_writer = f"as_ref().unwrap().{field_writer}"
                         rs.write(f'    let {f['name']}_cond = {rust_condition_to_writer_condition(f['condition_rust'])};\n')

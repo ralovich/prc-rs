@@ -8,7 +8,7 @@
 #[cfg(test)]
 mod tests {
     use crate::builtin;
-    use crate::builtin::{Boolean, Character, Double, Integer, UnsignedInteger};
+    use crate::builtin::{Boolean, Character, Double, Integer, UnsignedInteger, UserData};
     use crate::common::{ParsedPrc, PrcParsingContext};
     use crate::constants::{PrcType, TextureMappingType};
     use crate::prc_gen::*;
@@ -59,6 +59,9 @@ mod tests {
             reference.id.value,
             PrcType::PRC_TYPE_ASM_FileStructureGlobals as u32
         );
+        reference.base.entity_name.name = Some(crate::builtin::String {
+            value: "bla-bla".to_owned(),
+        });
         reference.file_count.value = 1;
         reference.unique_ids.push(Default::default());
         reference.global_data.serialize_help.font_keys_count.value = 1;
@@ -309,24 +312,43 @@ mod tests {
             .data
             .push(true);
         reference.user_data.data.push(true);
+        reference.user_data.data.push(true);
+        reference.user_data.data.push(false);
         println!("{:#?}", reference);
+        println!("{}", serde_json::to_string_pretty(&reference).unwrap());
         {
             let mut w = BitWriter::endian(Cursor::new(&mut bytes), ENDIAN);
             let _ = reference.to_writer(&mut w, &mut ctx);
             fill_partial_byte_at_end(&mut w, false).expect("failed to fill partial byte at end");
         }
-        assert_eq!(bytes.len(), 155usize);
+        assert_eq!(bytes.len(), 163usize);
 
         let mut r = BitReader::endian(Cursor::new(&bytes), ENDIAN);
         let recovered = PRC_TYPE_ASM_FileStructureGlobals::from_reader(&mut r, &mut ctx).unwrap();
         assert_eq!(reference, recovered);
     }
 
+    #[allow(unused)]
+    fn gen_tree_all() -> PRC_TYPE_ASM_FileStructureTree {
+        //let mut ctx: PrcParsingContext = Default::default();
+        //let mut bytes: Vec<u8> = vec![];
+        let mut reference: PRC_TYPE_ASM_FileStructureTree = Default::default();
+        assert_eq!(
+            reference.id.value,
+            PrcType::PRC_TYPE_ASM_FileStructureTree as u32
+        );
+        //reference.base = crate::prc_gen::ContentPRCBase::dummy();
+        reference.user_data = UserData {
+            data: vec![true, false, false],
+        };
+        reference
+    }
+
     #[test]
     fn io_tree() {
         let mut ctx: PrcParsingContext = Default::default();
         let mut bytes: Vec<u8> = vec![];
-        let reference: PRC_TYPE_ASM_FileStructureTree = Default::default();
+        let reference = gen_tree_all();
         assert_eq!(
             reference.id.value,
             PrcType::PRC_TYPE_ASM_FileStructureTree as u32
@@ -340,7 +362,7 @@ mod tests {
             let _ = reference.to_writer(&mut w, &mut ctx);
             fill_partial_byte_at_end(&mut w, false).expect("failed to fill partial byte at end");
         }
-        assert_eq!(bytes.len(), 7usize);
+        assert_eq!(bytes.len(), 8usize);
 
         let mut ctx: PrcParsingContext = Default::default();
         let mut r = BitReader::endian(Cursor::new(&bytes), ENDIAN);
@@ -465,6 +487,10 @@ mod tests {
         //assert_eq!(bytes_external.len(), 28147usize);
 
         let mut parsed_prc: ParsedPrc = serde_json::from_slice(bytes_external.as_slice()).unwrap();
+        assert_eq!(
+            parsed_prc.json_schema_version,
+            crate::LIBPRC_JSON_SCHEMA_VERSION
+        );
         assert_eq!(parsed_prc.verread, 7094);
         assert_eq!(parsed_prc.fsi.len(), 1);
         assert_eq!(parsed_prc.uncompr_files.len(), 0);

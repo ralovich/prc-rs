@@ -187,8 +187,20 @@ impl CompressedNurbs {
                 _ => unreachable!("v={}", inpt._type.value),
             }
         }
-        for u in 1..self.number_ccpt_in_u as usize {
-            for v in 1..self.number_ccpt_in_v as usize {
+        for (u, cpu) in cp
+            .iter_mut()
+            .enumerate()
+            .take(self.number_ccpt_in_u as usize)
+            .skip(1)
+        {
+            //for u in 1..self.number_ccpt_in_u as usize {
+            for (v, cpuv) in cpu
+                .iter_mut()
+                .enumerate()
+                .take(self.number_ccpt_in_v as usize)
+                .skip(1)
+            {
+                //for v in 1..self.number_ccpt_in_v as usize {
                 let pt = get_interior_pt(
                     ccpt,
                     self.number_ccpt_in_u as usize,
@@ -196,7 +208,8 @@ impl CompressedNurbs {
                     u - 1,
                     v - 1,
                 );
-                cp[u][v] = pt;
+                //cp[u][v] = pt;
+                *cpuv = pt;
             }
         }
 
