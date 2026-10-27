@@ -167,6 +167,7 @@ GlobalMineDesign-SEISMIC-SHEAR-DISPLACEMENT-FINAL.stream-38.prc 	8137	8137	0	0	0
 Template_DesignChangeNotification_Template_Final.stream-344.prc 	7094	15216	0	0	0	0	0	0
 Asymptote_The_Vector_Graphics_Language.stream-1019.prc          	8137	8137	0	0	0	0	0	0
 Battery-indicator-panel-(3D).stream-12.prc                      	7094	18063	0	0	0	0	0	0
+6007.stream-7.prc                                               	8137	8137	0	0	0	0	0	0
 gator_w_den_full_transp_comments.stream-20.prc                  	7094	20225	0	0	0	0	0	0
 asyTUG3.stream-142.prc                                          	8137	8137	0	0	0	0	0	0
 asyTUG3.stream-203.prc                                          	8137	8137	0	0	0	0	0	0
@@ -182,6 +183,7 @@ baldor_pdf_131227_gAhGdEu.stream-7.prc                          	8137	8137	0	0	0
 PDF3D_ReportGen_outline.stream-491.prc                          	8137	8137	0	0	0	0	0	0
 g125-4520000b.stream-28.prc                                     	8137	8137	0	0	0	0	0	0
 3D-PDF-Example_FEA_Flange.stream-14.prc                         	8137	8137	0	0	0	0	0	0
+PAVGB-23.stream-7.prc                                           	8137	8137	0	0	0	0	0	0
 baldor_pdf_129769_Ar4Xh7e.stream-7.prc                          	8137	8137	0	0	0	0	0	0
 PAWOB-95.stream-7.prc                                           	8137	8137	0	0	0	0	0	0
 m80-2320000b.prc                                                	8137	8137	0	0	0	0	0	0
@@ -221,6 +223,7 @@ EGU2020-3889_presentation.stream-65.prc                         	8137	8137	0	0	0
 asyTUG3.stream-196.prc                                          	8137	8137	0	0	0	0	0	0
 davidgbarnes-submitted-version.stream-32.prc                    	7094	7094	0	0	0	0	0	0
 media9.stream-542.prc                                           	8137	8137	0	0	0	0	0	0
+PAGLB-36-1.stream-7.prc                                         	8137	8137	0	0	0	0	0	0
 EN-D-M9BSAPC.stream-7.prc                                       	8137	8137	0	0	0	0	0	0
 PMI_dressed_secure.stream-43.prc                                	8137	8137	0	0	0	0	0	0
 TKKSB-23BLIND.stream-7.prc                                      	8137	8137	0	0	0	0	0	0
@@ -236,6 +239,7 @@ A700000010537956.stream-8.prc                                   	8137	8137	0	0	0
 A700000010221750.stream-8.prc                                   	8137	8137	0	0	0	0	0	0
 Asymptote_The_Vector_Graphics_Language.stream-1014.prc          	8137	8137	0	0	0	0	0	0
 baldor_pdf_127821_78ejrf8.stream-7.prc                          	8137	8137	0	0	0	0	0	0
+A700000010750914.stream-8.prc                                   	8137	8137	0	0	0	0	0	0
 TFM_ALMUDENA_SEBASTIAN_GONZALEZ.stream-481.prc                  	8137	8137	0	0	0	0	0	0
 asyTUG3.stream-79.prc                                           	8137	8137	0	0	0	0	0	0
 A700000010750978.stream-8.prc                                   	8137	8137	0	0	0	0	0	0
@@ -249,6 +253,7 @@ A700000010221958.stream-8.prc                                   	8137	8137	0	0	0
 2368573.stream-146.prc                                          	7094	8137	0	0	0	0	0	0
 EN-D-A54.stream-8.prc                                           	8137	8137	0	0	0	0	0	0
 a3drtemplate_01.stream-26.prc                                   	7094	7094	0	0	0	0	0	0
+baldor_pdf_126629_P5BCDlE.stream-7.prc                          	8137	8137	0	0	0	0	0	0
 PAEBB-70.stream-7.prc                                           	8137	8137	0	0	0	0	0	0
 2368559.stream-146.prc                                          	7094	8137	0	0	0	0	0	0
 6568a22d9c321797309588.stream-9.prc                             	8137	8137	0	0	0	0	0	0
@@ -257,6 +262,7 @@ A700000011045957.stream-8.prc                                   	8137	8137	0	0	0
 A700000010536508.stream-8.prc                                   	8137	8137	0	0	0	0	0	0
 D-M9PWSDPC.stream-20.prc                                        	8137	8137	0	0	0	0	0	0
 B1385400FSC-100WIBWIRSBDB703.stream-101.prc                     	8137	8137	0	0	0	0	0	0
+A700000010536660.stream-8.prc                                   	8137	8137	0	0	0	0	0	0
 AV114AWM-My-Way-Quadro-Scheda-Tecnica.stream-75.prc             	8137	8137	0	0	0	0	0	0
 AV114BNE-My-Way-Quadro-Scheda-Tecnica.stream-75.prc             	8137	8137	0	0	0	0	0	0
 winch_pf53103s-c1.prc                                           	8137	8137	0	0	0	0	0	0
@@ -315,9 +321,9 @@ test.stream-7.prc                                               	8137	8137	0	0	0
 sample-chevrolet-camaro-2014-rs-medium_r10325.stream-137.prc    	8137	8137	0	0	0	0	0	0
 
 
-GLOB PASS:  315/ 315 (100%)		FAIL:    0/ 315 (0%)
-TREE PASS:  315/ 315 (100%)		FAIL:    0/ 315 (0%)
-TESS PASS:  315/ 315 (100%)		FAIL:    0/ 315 (0%)
-GEOM PASS:  315/ 315 (100%)		FAIL:    0/ 315 (0%)
-EXTG PASS:  315/ 315 (100%)		FAIL:    0/ 315 (0%)
-MODF PASS:  315/ 315 (100%)		FAIL:    0/ 315 (0%)
+GLOB PASS:  321/ 321 (100%)		FAIL:    0/ 321 (0%)
+TREE PASS:  321/ 321 (100%)		FAIL:    0/ 321 (0%)
+TESS PASS:  321/ 321 (100%)		FAIL:    0/ 321 (0%)
+GEOM PASS:  321/ 321 (100%)		FAIL:    0/ 321 (0%)
+EXTG PASS:  321/ 321 (100%)		FAIL:    0/ 321 (0%)
+MODF PASS:  321/ 321 (100%)		FAIL:    0/ 321 (0%)
