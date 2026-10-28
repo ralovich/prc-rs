@@ -12,7 +12,6 @@ set(BUILD_TESTING ON)
 enable_testing()
 
 
-include (ExternalProject)
 set(RUST_DIR ../../../prc-rs)
 if (WIN32)
     set(LIB_NAME "prc.lib")
@@ -21,12 +20,15 @@ if (UNIX)
     set(LIB_NAME "libprc.a")
 endif (UNIX)
 
+include (ExternalProject)
 ExternalProject_Add(
     prc
+    BUILD_ALWAYS ON
+    PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}
     DOWNLOAD_COMMAND ""
     CONFIGURE_COMMAND ""
-    BUILD_COMMAND "" cargo build "$<IF:$<CONFIG:Release>,--release,>"
+    BUILD_COMMAND cargo build --lib $<IF:$<CONFIG:Release>,--release,>
     BUILD_BYPRODUCTS     ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/target/$<IF:$<CONFIG:Release>,release,debug>/${LIB_NAME}
                          ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/include/prc.h
     #BINARY_DIR "${PROJECT_SOURCE_DIR}/${RUST_DIR}"
