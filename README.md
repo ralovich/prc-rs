@@ -43,5 +43,5 @@ The PRC file format documentation is quite scattered, incomplete, sometimes cont
 - Acrobat SDK 9 for [Mac](http://download.macromedia.com/pub/developer/acrobat/sdk/9/sdk91_v2_mac.dmg) [Win](http://download.macromedia.com/pub/developer/acrobat/sdk/9/sdk91_v2_win.zip)
 - Acrobat SDK 10 for [Mac](http://download.macromedia.com/pub/developer/acrobat/sdk/10/sdk100_v1_mac.dmg) [Win](http://download.macromedia.com/pub/developer/acrobat/sdk/10/sdk100_v1_win.zip)
 - Acrobat SDK 11 for [Mac](https://download.macromedia.com/pub/developer/acrobat/sdk/11/sdk110_v1_mac.dmg) [Win](https://download.macromedia.com/pub/developer/acrobat/sdk/11/sdk110_v1_win.zip)
-- [US pat. 8.207,965](https://patents.google.com/patent/US8207965B2/en) on compressed tesselation
+- [US pat. 8.207,965](https://patents.google.com/patent/US8207965B2/en) on compressed tessellation
 - [Acrobat Pro Extended 9](http://trials.adobe.com/Applications/Acrobat/APEX/9/APEX9_Win_WEB_WWEFG.7z)
