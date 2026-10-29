@@ -4,23 +4,13 @@
 //
 // SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026. All rights reserved.
 
-#![allow(unused)]
-
 use crate::builtin::{read_bits, write_bits, write_bits_u32};
 use bitstream_io::{BitRead, BitWrite};
 use modular_bitfield::bitfield;
 use modular_bitfield::prelude::{B1, B11, B20};
-use std::cmp::Ordering;
-use std::io;
-use std::io::Error;
-use std::mem;
-//use std::fmt::Debug;
 
 extern crate static_assertions as sa;
 
-#[allow(unused)]
-#[allow(non_camel_case_types)]
-#[allow(non_snake_case)]
 #[derive(Clone, Copy)]
 #[repr(C, packed)]
 #[bitfield]
@@ -31,7 +21,7 @@ struct Ieee {
     pub exponent: B11,
     pub negative: B1,
 }
-sa::const_assert_eq!(8, mem::size_of::<Ieee>());
+sa::const_assert_eq!(8, std::mem::size_of::<Ieee>());
 
 #[allow(non_camel_case_types)]
 #[allow(non_snake_case)]
@@ -45,8 +35,8 @@ union ieee754_double {
     pub bytes: [u8; 8],
     pub ul: [u32; 2],
 }
-sa::const_assert_eq!(8, mem::size_of::<ieee754_double>());
-sa::const_assert_eq!(8, mem::align_of::<ieee754_double>());
+sa::const_assert_eq!(8, std::mem::size_of::<ieee754_double>());
+sa::const_assert_eq!(8, std::mem::align_of::<ieee754_double>());
 
 #[allow(non_camel_case_types)]
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
@@ -59,12 +49,12 @@ enum ValueType {
 type VT = ValueType;
 
 impl Ord for ieee754_double {
-    fn cmp(&self, other: &Self) -> Ordering {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         unsafe { self.u.cmp(&other.u) }
     }
 }
 impl PartialOrd for ieee754_double {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
@@ -77,7 +67,7 @@ impl Eq for ieee754_double {}
 
 impl Default for ieee754_double {
     fn default() -> Self {
-        ieee754_double { ul: [0; 2] }
+        ieee754_double { ieee: Ieee::new() }
     }
 }
 
@@ -103,7 +93,7 @@ impl CodingOfFrequentDoubleOrExponent {
 }
 type C = CodingOfFrequentDoubleOrExponent;
 impl Ord for CodingOfFrequentDoubleOrExponent {
-    fn cmp(&self, other: &Self) -> Ordering {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         let lhs = ieee754_double {
             d: unsafe { self.s.d },
         };
@@ -116,7 +106,7 @@ impl Ord for CodingOfFrequentDoubleOrExponent {
     }
 }
 impl PartialOrd for CodingOfFrequentDoubleOrExponent {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
@@ -165,7 +155,7 @@ fn get_c_o_f_d_o_e<'a>(bits: u32, nbits: u16) -> Option<&'a CodingOfFrequentDoub
         .map(|v| v as _)
 }
 
-pub fn read_double_from_reader<R: BitRead>(rdr: &mut R) -> io::Result<f64> {
+pub fn read_double_from_reader<R: BitRead>(rdr: &mut R) -> std::io::Result<f64> {
     let mut ucofdoe: u32 = 0;
     let mut value: ieee754_double = ieee754_double { d: 0.0 };
     let mut found: bool = false;
@@ -226,7 +216,7 @@ pub fn read_double_from_reader<R: BitRead>(rdr: &mut R) -> io::Result<f64> {
                 value.bytes[cbi as usize] = cb;
             }
         } else {
-            let mut offset: u8 = read_bits(rdr, 3)? & 0x07;
+            let offset: u8 = read_bits(rdr, 3)? & 0x07;
             if offset == 0 {
                 let b = unsafe { value.bytes[cbi as usize + 1] };
                 while cbi >= lbi {
@@ -271,7 +261,7 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
     let cofdoe = CodingOfFrequentDoubleOrExponent::new(ieee754_double { d });
     let idx = COFDOE.binary_search(&cofdoe);
     if idx.is_err() {
-        return Err(Error::other("Failed to find double exponent!"));
+        return Err(std::io::Error::other("Failed to find double exponent!"));
     }
     let mut idx: usize = idx.unwrap();
 
@@ -295,14 +285,14 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
         idx += 1;
     }
     if idx >= COFDOE.len() {
-        return Err(Error::other("Failed to find frequent coding!"));
+        return Err(std::io::Error::other("Failed to find frequent coding!"));
     }
 
     let mut bits_written = 0usize;
     let coding = COFDOE[idx];
 
     // write coding.bits
-    crate::builtin::write_bits_u32(w, coding.bits, coding.num_bits as u8)?;
+    write_bits_u32(w, coding.bits, coding.num_bits as u8)?;
     bits_written += coding.num_bits as usize;
 
     const ZERO: ieee754_double = D!(0x00000000, 0x00000000);
@@ -364,7 +354,7 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
         while value.bytes[stop] == value.bytes[stop + 1] && stop < 6 {
             stop += 1;
             if stop >= 7 {
-                return Err(Error::other("Failed to write double!"));
+                return Err(std::io::Error::other("Failed to write double!"));
             }
         }
 
@@ -2545,10 +2535,6 @@ mod tests {
     union d2u {
         d: f64,
         u: u64,
-    }
-
-    fn to_u64(d: f64) -> u64 {
-        unsafe { d2u { d }.u }
     }
 
     fn to_f64(u: u64) -> f64 {

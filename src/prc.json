@@ -1,7 +1,8 @@
 {"emacs": "-*- mode: rust; coding: utf-8-unix -*-",
     "SPDX-License-Identifier": "MIT",
     "SPDX-FileCopyrightText": "Copyright Kristóf Ralovich (C) 2025-2026. All rights reserved.",
-    "version": 8137,
+    "prc_spec_version": 8137,
+    "json_schema_version": 20261028,
     "builtins": [
         "String",
         "Boolean",
@@ -2186,7 +2187,7 @@
                         "condition_rust": "!!self.has_base_geometry"
                     },
                     {
-                        "name": "id",
+                        "name": "cad_identifier",
                         "data_type": "UnsignedInteger",
                         "condition_rust": "!!self.has_base_geometry"
                     },
@@ -3667,7 +3668,7 @@
                         "condition_rust": "!!self.has_base"
                     },
                     {
-                        "name": "id",
+                        "name": "cad_identifier",
                         "data_type": "UnsignedInteger",
                         "condition_rust": "!!self.has_base"
                     }
@@ -3822,7 +3823,7 @@
                         "condition_rust": "!!self.has_base_geometry"
                     },
                     {
-                        "name": "id",
+                        "name": "cad_identifier",
                         "data_type": "UnsignedInteger",
                         "condition_rust": "!!self.has_base_geometry"
                     },
@@ -5808,7 +5809,7 @@
                         "expected_value": ["PrcType", "PRC_TYPE_TOPO_CoEdge"]
                     },
                     {
-                        "name": "base_tolopogy",
+                        "name": "base_topology",
                         "data_type": "BaseTopology"
                     },
                     {
@@ -5850,7 +5851,7 @@
                         "expected_value": ["PrcType", "PRC_TYPE_TOPO_Loop"]
                     },
                     {
-                        "name": "base_tolopogy",
+                        "name": "base_topology",
                         "data_type": "BaseTopology"
                     },
                     {
@@ -5878,7 +5879,7 @@
                         "expected_value": ["PrcType", "PRC_TYPE_TOPO_Face"]
                     },
                     {
-                        "name": "base_tolopogy",
+                        "name": "base_topology",
                         "data_type": "BaseTopology"
                     },
                     {
@@ -5940,7 +5941,7 @@
                         "expected_value": ["PrcType", "PRC_TYPE_TOPO_Shell"]
                     },
                     {
-                        "name": "base_tolopogy",
+                        "name": "base_topology",
                         "data_type": "BaseTopology"
                     },
                     {
@@ -5968,7 +5969,7 @@
                         "expected_value": ["PrcType", "PRC_TYPE_TOPO_Connex"]
                     },
                     {
-                        "name": "base_tolopogy",
+                        "name": "base_topology",
                         "data_type": "BaseTopology"
                     },
                     {

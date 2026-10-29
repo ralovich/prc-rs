@@ -5,16 +5,12 @@
 // SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026.
 // All rights reserved.
 
-#![allow(unused)]
-
 /// Built-in structures that are byte-aligned.
 use crate::common::{
-    DecompressedSections, ParsedPrc, ParsedPrcFileStructure, ParsedSections, ParsingOptions,
-    PrcParsingContext,
+    DecompressedSections, ParsedPrc, ParsedPrcFileStructure, ParsingOptions, PrcParsingContext,
 };
 use crate::constants::PrcSectionKind;
 use crate::decompress::{compress, decompress};
-use crate::function;
 use crate::io_check_limit;
 use crate::prc_gen::{
     PRC_TYPE_ASM_FileStructureExtraGeometry, PRC_TYPE_ASM_FileStructureGeometry,
@@ -24,13 +20,10 @@ use crate::prc_gen::{
     UncompressedUniqueId,
 };
 use bitstream_io::{BitReader, BitWrite, BitWriter};
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use log::{debug, info, trace, warn};
 use measure_time::debug_time;
-use num_enum::TryFromPrimitive;
 use serde::{Deserialize, Serialize};
 use std::io::{Cursor, Read, Seek, Write};
-use std::path::Path;
 use std::{fmt, io};
 
 const ENDIAN: bitstream_io::BigEndian = bitstream_io::BigEndian;
@@ -287,7 +280,7 @@ impl UncompressedFileHeader {
                 Cursor::new(sections_decompressed[i][PrcSectionKind::Header as usize].as_slice());
             let header = UncompressedFileStructureHeader::from_reader(&mut r_head, &mut noctx)?;
             for (j, file) in header.files.iter().enumerate() {
-                let mut ext = if file.block.a.len() >= 4
+                let ext = if file.block.a.len() >= 4
                     && [255, 216, 255, 224] == file.block.a.as_slice()[0..4]
                 {
                     debug!("attachment: JFIF {} bytes", file.block.a.len());
@@ -426,7 +419,6 @@ impl UncompressedFileHeader {
                 bytes.len() * 8,
                 bytes.len()
             );
-            let now = std::time::Instant::now();
 
             let mut r_mf = BitReader::endian(Cursor::new(bytes), ENDIAN);
             mf_schema = crate::prc_gen::Schema::from_reader(&mut r_mf, &mut noctx)?;

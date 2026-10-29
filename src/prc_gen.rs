@@ -26,6 +26,8 @@ use std::io::{Error, Read, Seek, Write};
 use crate::constants::*;
 use crate::indent;
 
+extern crate static_assertions as sa;
+
 use crate::io_check_limit;
 
 macro_rules! prc_gen_assert {
@@ -39,6 +41,10 @@ macro_rules! prc_gen_assert {
         }
     };
 }
+
+// If this assertion fails, the library (lib.rs) and the code generator (prc.json) are out of sync!
+sa::const_assert_eq!(8137, crate::LIBPRC_PRC_SPEC_VERSION);
+sa::const_assert_eq!(20261028, crate::LIBPRC_JSON_SCHEMA_VERSION);
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[allow(non_camel_case_types)]
@@ -11508,7 +11514,7 @@ pub struct BaseTopology {
     pub has_base: Boolean,
     pub attribute_data: Option<AttributeData>,
     pub name: Option<Name>,
-    pub id: Option<UnsignedInteger>,
+    pub cad_identifier: Option<UnsignedInteger>,
 }
 impl BaseTopology {
     #[allow(unused_assignments)]
@@ -11534,10 +11540,10 @@ impl BaseTopology {
         if name_cond {
             name = Name::from_reader(rdr, _ctx)?;
         }
-        let id_cond = !!has_base;
-        let mut id: UnsignedInteger = Default::default();
-        if id_cond {
-            id = UnsignedInteger::from_reader(rdr)?;
+        let cad_identifier_cond = !!has_base;
+        let mut cad_identifier: UnsignedInteger = Default::default();
+        if cad_identifier_cond {
+            cad_identifier = UnsignedInteger::from_reader(rdr)?;
         }
         let rv = Self {
             has_base,
@@ -11547,7 +11553,11 @@ impl BaseTopology {
                 None
             },
             name: if name_cond { Some(name) } else { None },
-            id: if id_cond { Some(id) } else { None },
+            cad_identifier: if cad_identifier_cond {
+                Some(cad_identifier)
+            } else {
+                None
+            },
         };
         Ok(rv)
     }
@@ -11570,11 +11580,11 @@ impl BaseTopology {
             name = self.name.as_ref().unwrap();
             name.to_writer(w, _ctx)?;
         }
-        let id_cond = !!has_base;
-        let mut id: &UnsignedInteger = &Default::default();
-        if id_cond {
-            id = self.id.as_ref().unwrap();
-            id.to_writer(w)?;
+        let cad_identifier_cond = !!has_base;
+        let mut cad_identifier: &UnsignedInteger = &Default::default();
+        if cad_identifier_cond {
+            cad_identifier = self.cad_identifier.as_ref().unwrap();
+            cad_identifier.to_writer(w)?;
         }
         Ok(())
     }
@@ -11970,7 +11980,7 @@ pub struct ContentCurve {
     pub has_base_geometry: Boolean,
     pub attribute_data: Option<AttributeData>,
     pub name: Option<Name>,
-    pub id: Option<UnsignedInteger>,
+    pub cad_identifier: Option<UnsignedInteger>,
     pub extend_type: UnsignedInteger,
     pub is_3d_flag: Boolean,
 }
@@ -11998,10 +12008,10 @@ impl ContentCurve {
         if name_cond {
             name = Name::from_reader(rdr, _ctx)?;
         }
-        let id_cond = !!has_base_geometry;
-        let mut id: UnsignedInteger = Default::default();
-        if id_cond {
-            id = UnsignedInteger::from_reader(rdr)?;
+        let cad_identifier_cond = !!has_base_geometry;
+        let mut cad_identifier: UnsignedInteger = Default::default();
+        if cad_identifier_cond {
+            cad_identifier = UnsignedInteger::from_reader(rdr)?;
         }
         let mut extend_type: UnsignedInteger = Default::default();
         extend_type = UnsignedInteger::from_reader(rdr)?;
@@ -12016,7 +12026,11 @@ impl ContentCurve {
                 None
             },
             name: if name_cond { Some(name) } else { None },
-            id: if id_cond { Some(id) } else { None },
+            cad_identifier: if cad_identifier_cond {
+                Some(cad_identifier)
+            } else {
+                None
+            },
             extend_type,
             is_3d_flag,
         };
@@ -12041,11 +12055,11 @@ impl ContentCurve {
             name = self.name.as_ref().unwrap();
             name.to_writer(w, _ctx)?;
         }
-        let id_cond = !!has_base_geometry;
-        let mut id: &UnsignedInteger = &Default::default();
-        if id_cond {
-            id = self.id.as_ref().unwrap();
-            id.to_writer(w)?;
+        let cad_identifier_cond = !!has_base_geometry;
+        let mut cad_identifier: &UnsignedInteger = &Default::default();
+        if cad_identifier_cond {
+            cad_identifier = self.cad_identifier.as_ref().unwrap();
+            cad_identifier.to_writer(w)?;
         }
         let extend_type = self.extend_type.clone();
         extend_type.to_writer(w)?;
@@ -17635,7 +17649,7 @@ impl PRC_TYPE_TOPO_Edge {
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_CoEdge {
     pub id: UnsignedInteger,
-    pub base_tolopogy: BaseTopology,
+    pub base_topology: BaseTopology,
     pub ptr_topology: PtrTopology,
     pub ptr_curves: PtrCurve,
     pub coedge_orientation: Character,
@@ -17645,14 +17659,14 @@ impl Default for PRC_TYPE_TOPO_CoEdge {
     fn default() -> Self {
         let mut id: UnsignedInteger = Default::default();
         id.value = PrcType::PRC_TYPE_TOPO_CoEdge as u32;
-        let mut base_tolopogy: BaseTopology = Default::default();
+        let mut base_topology: BaseTopology = Default::default();
         let mut ptr_topology: PtrTopology = Default::default();
         let mut ptr_curves: PtrCurve = Default::default();
         let mut coedge_orientation: Character = Default::default();
         let mut uv_orientation: Character = Default::default();
         Self {
             id,
-            base_tolopogy,
+            base_topology,
             ptr_topology,
             ptr_curves,
             coedge_orientation,
@@ -17678,8 +17692,8 @@ impl PRC_TYPE_TOPO_CoEdge {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TOPO_CoEdge"));
         }
-        let mut base_tolopogy: BaseTopology = Default::default();
-        base_tolopogy = BaseTopology::from_reader(rdr, _ctx)?;
+        let mut base_topology: BaseTopology = Default::default();
+        base_topology = BaseTopology::from_reader(rdr, _ctx)?;
         let mut ptr_topology: PtrTopology = Default::default();
         ptr_topology = PtrTopology::from_reader(rdr, _ctx)?;
         let mut ptr_curves: PtrCurve = Default::default();
@@ -17691,7 +17705,7 @@ impl PRC_TYPE_TOPO_CoEdge {
         let _ = _ctx.se.eval(rdr, PRC_TYPE_TOPO_CoEdge as u32, false, 0);
         let rv = Self {
             id,
-            base_tolopogy,
+            base_topology,
             ptr_topology,
             ptr_curves,
             coedge_orientation,
@@ -17706,8 +17720,8 @@ impl PRC_TYPE_TOPO_CoEdge {
     ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(w)?;
-        let base_tolopogy = self.base_tolopogy.clone();
-        base_tolopogy.to_writer(w, _ctx)?;
+        let base_topology = self.base_topology.clone();
+        base_topology.to_writer(w, _ctx)?;
         let ptr_topology = self.ptr_topology.clone();
         ptr_topology.to_writer(w, _ctx)?;
         let ptr_curves = self.ptr_curves.clone();
@@ -17765,7 +17779,7 @@ impl CoedgeInLoop {
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_Loop {
     pub id: UnsignedInteger,
-    pub base_tolopogy: BaseTopology,
+    pub base_topology: BaseTopology,
     pub loop_orientation: Character,
     pub number_of_coedges: UnsignedInteger,
     pub coedge: Vec<CoedgeInLoop>,
@@ -17774,13 +17788,13 @@ impl Default for PRC_TYPE_TOPO_Loop {
     fn default() -> Self {
         let mut id: UnsignedInteger = Default::default();
         id.value = PrcType::PRC_TYPE_TOPO_Loop as u32;
-        let mut base_tolopogy: BaseTopology = Default::default();
+        let mut base_topology: BaseTopology = Default::default();
         let mut loop_orientation: Character = Default::default();
         let mut number_of_coedges: UnsignedInteger = Default::default();
         let mut coedge: Vec<CoedgeInLoop> = Default::default();
         Self {
             id,
-            base_tolopogy,
+            base_topology,
             loop_orientation,
             number_of_coedges,
             coedge,
@@ -17805,8 +17819,8 @@ impl PRC_TYPE_TOPO_Loop {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TOPO_Loop"));
         }
-        let mut base_tolopogy: BaseTopology = Default::default();
-        base_tolopogy = BaseTopology::from_reader(rdr, _ctx)?;
+        let mut base_topology: BaseTopology = Default::default();
+        base_topology = BaseTopology::from_reader(rdr, _ctx)?;
         let mut loop_orientation: Character = Default::default();
         loop_orientation = Character::from_reader(rdr)?;
         let mut number_of_coedges: UnsignedInteger = Default::default();
@@ -17824,7 +17838,7 @@ impl PRC_TYPE_TOPO_Loop {
         let _ = _ctx.se.eval(rdr, PRC_TYPE_TOPO_Loop as u32, false, 0);
         let rv = Self {
             id,
-            base_tolopogy,
+            base_topology,
             loop_orientation,
             number_of_coedges,
             coedge,
@@ -17838,8 +17852,8 @@ impl PRC_TYPE_TOPO_Loop {
     ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(w)?;
-        let base_tolopogy = self.base_tolopogy.clone();
-        base_tolopogy.to_writer(w, _ctx)?;
+        let base_topology = self.base_topology.clone();
+        base_topology.to_writer(w, _ctx)?;
         let loop_orientation = self.loop_orientation.clone();
         loop_orientation.to_writer(w)?;
         let number_of_coedges = self.number_of_coedges.clone();
@@ -17856,7 +17870,7 @@ impl PRC_TYPE_TOPO_Loop {
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_Face {
     pub id: UnsignedInteger,
-    pub base_tolopogy: BaseTopology,
+    pub base_topology: BaseTopology,
     pub surface_geometry: PtrSurface,
     pub is_trimmed: Boolean,
     pub trimmed_surface: Option<Domain>,
@@ -17870,7 +17884,7 @@ impl Default for PRC_TYPE_TOPO_Face {
     fn default() -> Self {
         let mut id: UnsignedInteger = Default::default();
         id.value = PrcType::PRC_TYPE_TOPO_Face as u32;
-        let mut base_tolopogy: BaseTopology = Default::default();
+        let mut base_topology: BaseTopology = Default::default();
         let mut surface_geometry: PtrSurface = Default::default();
         let mut is_trimmed: Boolean = Default::default();
         let mut trimmed_surface: Domain = Default::default();
@@ -17881,7 +17895,7 @@ impl Default for PRC_TYPE_TOPO_Face {
         let mut loops: Vec<PtrTopology> = Default::default();
         Self {
             id,
-            base_tolopogy,
+            base_topology,
             surface_geometry,
             is_trimmed,
             trimmed_surface: if !!is_trimmed {
@@ -17919,8 +17933,8 @@ impl PRC_TYPE_TOPO_Face {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TOPO_Face"));
         }
-        let mut base_tolopogy: BaseTopology = Default::default();
-        base_tolopogy = BaseTopology::from_reader(rdr, _ctx)?;
+        let mut base_topology: BaseTopology = Default::default();
+        base_topology = BaseTopology::from_reader(rdr, _ctx)?;
         let mut surface_geometry: PtrSurface = Default::default();
         surface_geometry = PtrSurface::from_reader(rdr, _ctx)?;
         let mut is_trimmed: Boolean = Default::default();
@@ -17954,7 +17968,7 @@ impl PRC_TYPE_TOPO_Face {
         let _ = _ctx.se.eval(rdr, PRC_TYPE_TOPO_Face as u32, false, 0);
         let rv = Self {
             id,
-            base_tolopogy,
+            base_topology,
             surface_geometry,
             is_trimmed,
             trimmed_surface: if trimmed_surface_cond {
@@ -17981,8 +17995,8 @@ impl PRC_TYPE_TOPO_Face {
     ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(w)?;
-        let base_tolopogy = self.base_tolopogy.clone();
-        base_tolopogy.to_writer(w, _ctx)?;
+        let base_topology = self.base_topology.clone();
+        base_topology.to_writer(w, _ctx)?;
         let surface_geometry = self.surface_geometry.clone();
         surface_geometry.to_writer(w, _ctx)?;
         let is_trimmed = self.is_trimmed.clone();
@@ -18055,7 +18069,7 @@ impl FacesInShell {
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_Shell {
     pub id: UnsignedInteger,
-    pub base_tolopogy: BaseTopology,
+    pub base_topology: BaseTopology,
     pub is_closed: Boolean,
     pub number_of_faces: UnsignedInteger,
     pub faces: Vec<FacesInShell>,
@@ -18064,13 +18078,13 @@ impl Default for PRC_TYPE_TOPO_Shell {
     fn default() -> Self {
         let mut id: UnsignedInteger = Default::default();
         id.value = PrcType::PRC_TYPE_TOPO_Shell as u32;
-        let mut base_tolopogy: BaseTopology = Default::default();
+        let mut base_topology: BaseTopology = Default::default();
         let mut is_closed: Boolean = Default::default();
         let mut number_of_faces: UnsignedInteger = Default::default();
         let mut faces: Vec<FacesInShell> = Default::default();
         Self {
             id,
-            base_tolopogy,
+            base_topology,
             is_closed,
             number_of_faces,
             faces,
@@ -18095,8 +18109,8 @@ impl PRC_TYPE_TOPO_Shell {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TOPO_Shell"));
         }
-        let mut base_tolopogy: BaseTopology = Default::default();
-        base_tolopogy = BaseTopology::from_reader(rdr, _ctx)?;
+        let mut base_topology: BaseTopology = Default::default();
+        base_topology = BaseTopology::from_reader(rdr, _ctx)?;
         let mut is_closed: Boolean = Default::default();
         is_closed = Boolean::from_reader(rdr)?;
         let mut number_of_faces: UnsignedInteger = Default::default();
@@ -18114,7 +18128,7 @@ impl PRC_TYPE_TOPO_Shell {
         let _ = _ctx.se.eval(rdr, PRC_TYPE_TOPO_Shell as u32, false, 0);
         let rv = Self {
             id,
-            base_tolopogy,
+            base_topology,
             is_closed,
             number_of_faces,
             faces,
@@ -18128,8 +18142,8 @@ impl PRC_TYPE_TOPO_Shell {
     ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(w)?;
-        let base_tolopogy = self.base_tolopogy.clone();
-        base_tolopogy.to_writer(w, _ctx)?;
+        let base_topology = self.base_topology.clone();
+        base_topology.to_writer(w, _ctx)?;
         let is_closed = self.is_closed.clone();
         is_closed.to_writer(w)?;
         let number_of_faces = self.number_of_faces.clone();
@@ -18146,7 +18160,7 @@ impl PRC_TYPE_TOPO_Shell {
 #[allow(non_camel_case_types)]
 pub struct PRC_TYPE_TOPO_Connex {
     pub id: UnsignedInteger,
-    pub base_tolopogy: BaseTopology,
+    pub base_topology: BaseTopology,
     pub number_of_shells: UnsignedInteger,
     pub shells: Vec<PtrTopology>,
 }
@@ -18154,12 +18168,12 @@ impl Default for PRC_TYPE_TOPO_Connex {
     fn default() -> Self {
         let mut id: UnsignedInteger = Default::default();
         id.value = PrcType::PRC_TYPE_TOPO_Connex as u32;
-        let mut base_tolopogy: BaseTopology = Default::default();
+        let mut base_topology: BaseTopology = Default::default();
         let mut number_of_shells: UnsignedInteger = Default::default();
         let mut shells: Vec<PtrTopology> = Default::default();
         Self {
             id,
-            base_tolopogy,
+            base_topology,
             number_of_shells,
             shells,
         }
@@ -18183,8 +18197,8 @@ impl PRC_TYPE_TOPO_Connex {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TOPO_Connex"));
         }
-        let mut base_tolopogy: BaseTopology = Default::default();
-        base_tolopogy = BaseTopology::from_reader(rdr, _ctx)?;
+        let mut base_topology: BaseTopology = Default::default();
+        base_topology = BaseTopology::from_reader(rdr, _ctx)?;
         let mut number_of_shells: UnsignedInteger = Default::default();
         number_of_shells = UnsignedInteger::from_reader(rdr)?;
         io_check_limit!(
@@ -18200,7 +18214,7 @@ impl PRC_TYPE_TOPO_Connex {
         let _ = _ctx.se.eval(rdr, PRC_TYPE_TOPO_Connex as u32, false, 0);
         let rv = Self {
             id,
-            base_tolopogy,
+            base_topology,
             number_of_shells,
             shells,
         };
@@ -18213,8 +18227,8 @@ impl PRC_TYPE_TOPO_Connex {
     ) -> io::Result<()> {
         let id = self.id.clone();
         id.to_writer(w)?;
-        let base_tolopogy = self.base_tolopogy.clone();
-        base_tolopogy.to_writer(w, _ctx)?;
+        let base_topology = self.base_topology.clone();
+        base_topology.to_writer(w, _ctx)?;
         let number_of_shells = self.number_of_shells.clone();
         number_of_shells.to_writer(w)?;
         let shells = self.shells.clone();

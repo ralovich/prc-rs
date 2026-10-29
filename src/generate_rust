@@ -30,7 +30,7 @@ def is_vbr_2param(f):
     return 'vbr' in f and 'data_type' in f and f['data_type'] in vbr_2param
 
 def codegen_rust(rs, d):
-    print(d['version'])
+    print(d['prc_spec_version'])
 
     global builtins
     builtins = d['builtins']
@@ -68,6 +68,8 @@ use crate::common::PrcParsingContext;
 use crate::constants::*;
 use crate::indent;
 
+extern crate static_assertions as sa;
+
 use crate::io_check_limit;
 
 macro_rules! prc_gen_assert {
@@ -83,6 +85,11 @@ macro_rules! prc_gen_assert {
 }
 
 ''')
+
+    rs.write(f'// If this assertion fails, the library (lib.rs) and the code generator (prc.json) are out of sync!\n')
+    rs.write(f'sa::const_assert_eq!({d['prc_spec_version']}, crate::LIBPRC_PRC_SPEC_VERSION);\n')
+    rs.write(f'sa::const_assert_eq!({d['json_schema_version']}, crate::LIBPRC_JSON_SCHEMA_VERSION);\n')
+    rs.write(f'\n')
 
     for structs in d['structures']:
         for struct_name in structs:

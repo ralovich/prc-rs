@@ -5,9 +5,6 @@
 // SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026.
 // All rights reserved.
 
-#![allow(unused)]
-
-use std::cell::Cell;
 use std::string::String;
 
 thread_local! {
@@ -21,8 +18,7 @@ pub fn indent() {
     //});
 
     INDENT.with(|indent| {
-        let mut prev: *mut std::string::String = Default::default();
-        prev = indent.as_ptr();
+        let prev: *mut std::string::String = indent.as_ptr();
         unsafe {
             (*prev).push(' ');
         }
@@ -35,8 +31,7 @@ pub fn indent() {
 pub fn dedent() {
     //INDENT.pop();
     INDENT.with(|indent| {
-        let mut prev: *mut std::string::String = Default::default();
-        prev = indent.as_ptr();
+        let prev: *mut std::string::String = indent.as_ptr();
         unsafe {
             (*prev).pop();
         }
@@ -46,8 +41,7 @@ pub fn dedent() {
 pub fn get() -> std::string::String {
     let mut s: std::string::String = String::new();
     INDENT.with(|indent| {
-        let mut prev: *mut std::string::String = Default::default();
-        prev = indent.as_ptr();
+        let prev: *mut std::string::String = indent.as_ptr();
         unsafe {
             s = (*prev).clone();
         }

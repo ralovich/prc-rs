@@ -5,8 +5,6 @@
 // SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026.
 // All rights reserved.
 
-#![allow(unused)]
-
 use deflate::deflate_bytes_zlib;
 use inflate::inflate_bytes_zlib;
 use std::io;
