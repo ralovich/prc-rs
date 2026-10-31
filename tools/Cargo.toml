@@ -1,6 +1,6 @@
 [package]
 name = "prc_tools"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Kristóf Ralovich <tade60@freemail.hu>"]
 edition = "2024"
 license = "MIT"
