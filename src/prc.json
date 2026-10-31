@@ -3057,7 +3057,7 @@
                     {
                         "name": "is_segment_color",
                         "data_type": "Boolean",
-                        "debug": true,
+                        "debug": false,
                         "comment": "asy does not write this field",
                         "comment1": "according to acrobat sdk 9, this field is there if written from 3DWireTess, but missing if written from TessFace",
                         "condition_rust": "_ctx.TESS_3D_Wire__is_inside()",
@@ -3140,7 +3140,7 @@
                     {
                         "name": "size_of_triangulateddata",
                         "data_type": "UnsignedInteger",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "triangulateddata",
@@ -3152,25 +3152,25 @@
                     {
                         "name": "number_of_textured_coordinate_indices",
                         "data_type": "UnsignedInteger",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "has_vertex_colors",
                         "data_type": "Boolean",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "SPECBUG": true,
                         "name": "vertex_color_data",
                         "data_type": "VertexColors",
                         "condition_rust": "!!self.has_vertex_colors",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "behavior",
                         "data_type": "UnsignedInteger",
                         "condition_rust": "self.size_of_line_attributes.value > 0",
-                        "debug": true
+                        "debug": false
                     }
                 ]
             },
@@ -3252,19 +3252,19 @@
                     {
                         "name": "number_of_face_tessellation",
                         "data_type": "UnsignedInteger",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "face_tessellation_data",
                         "data_type": "PRC_TYPE_TESS_Face",
                         "is_vec": true,
                         "size": "number_of_face_tessellation.value",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "number_of_texture_coordinates",
                         "data_type": "UnsignedInteger",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "texture_coordinates",
@@ -3302,7 +3302,7 @@
                     {
                         "name": "has_vertex_colors",
                         "data_type": "Boolean",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "vertex_color_data",
@@ -3329,7 +3329,7 @@
                         "data_type": "UnsignedInteger",
                         "on_set1": "prc_gen_assert!(/*last_integer_used_bit_number.value >= 0 &&*/ last_integer_used_bit_number.value <= 32)",
                         "on_set": "if last_integer_used_bit_number.value > 32 { return Err(std::io::Error::other(\"last_integer_used_bit_number.value > 32 failed!\")); }",
-                        "debug": true
+                        "debug": false
                     }
                 ]
             },
@@ -3394,12 +3394,12 @@
                     {
                         "name": "has_faces",
                         "data_type": "Boolean",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "tolerance",
                         "data_type": "Double",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "origin_array",
@@ -3412,7 +3412,7 @@
                     {
                         "name": "point_array",
                         "data_type": "CompressedIntegerArray",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "edge_status_array",
@@ -3420,19 +3420,19 @@
                         "data_type": "CharacterArray",
                         "vbr": "2",
                         "on_set": "if !edge_status_array.a.is_empty() { prc_gen_assert!(*edge_status_array.a.iter().max().unwrap() >= 0i8); }",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "triangle_face_array",
                         "comment": "represents, for each triangle, the index of the face to which it belongs.",
                         "data_type": "CompressedIndiceArray",
-                        "debug": true,
+                        "debug": false,
                         "on_set": "prc_gen_assert!(edge_status_array.a.len() == 3*triangle_face_array.a.len() || edge_status_array.a.len() == triangle_face_array.a.len())"
                     },
                     {
                         "name": "reference_array_size",
                         "data_type": "UnsignedInteger",
-                        "debug": true,
+                        "debug": false,
                         "on_set": "let num_disjoint_shells2 = reference_array_size.value - triangle_face_array.a.len() as u32; debug!(\"num_disjoint_shells={} num_disjoint_shells2={}\", num_disjoint_shells2/2, num_disjoint_shells2)"
                     },
                     {
@@ -3440,7 +3440,7 @@
                         "comment": "indicates whether a point is a reference",
                         "data_type": "UncompressedBoolArray",
                         "vbr": "reference_array_size.value",
-                        "debug": true,
+                        "debug": false,
                         "on_set": "debug!(\"number_of_referenced_points:{}\", _ctx.t3dc.number_of_referenced_points(&point_is_reference_array.a));\ndebug!(\"{}point_is_reference_array: {}\", indent::get(), format(&point_is_reference_array.a))"
                     },
                     {
@@ -3450,12 +3450,12 @@
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/427",
                         "comment": "in this case, the boolean value which indicates whether the character array is compressed is not stored. Its value is implicit and set to number_of_reference_points > 3",
                         "on_set": "prc_gen_assert!(_ctx.t3dc.number_of_referenced_points(&point_is_reference_array.a) as usize == point_reference_array.a.len())",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "must_recalculate_normals",
                         "data_type": "Boolean",
-                        "debug": true,
+                        "debug": false,
                         "on_set": "_ctx.t3dc.get_points(&origin_array, &point_array.a, tolerance.value, &point_is_reference_array.a, &point_reference_array.a, &edge_status_array.a, &triangle_face_array.a)",
                         "comment": "see also must_calculate_normals"
                     },
@@ -3470,7 +3470,7 @@
                         "name": "crease_angle",
                         "data_type": "Double",
                         "condition_rust": "!!self.must_recalculate_normals",
-                        "debug": true,
+                        "debug": false,
                         "comment": "definition similar to VRML"
                     },
                     {
@@ -3478,24 +3478,23 @@
                         "data_type": "Character",
                         "condition_rust": "!!self.must_recalculate_normals",
                         "comment": "Normal recalculation flags (not used; should be zero)",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "normal_angle_number_of_bits",
                         "data_type": "Character",
                         "condition_rust": "!self.must_recalculate_normals",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "normal_binary_data_size",
                         "data_type": "UnsignedInteger",
                         "condition_rust": "!self.must_recalculate_normals",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "normal_binary_data",
                         "data_type": "UncompressedBoolArray",
-                        "UNUSEDis_vec": true,
                         "vbr": "normal_binary_data_size.value",
                         "condition_rust": "!self.must_recalculate_normals",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/436",
@@ -3507,7 +3506,7 @@
                         "vbr": "normal_angle_number_of_bits.value as u8",
                         "vbr_spec": "16 as u8",
                         "condition_rust": "!self.must_recalculate_normals",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "is_face_planar",
@@ -3519,7 +3518,7 @@
                     {
                         "name": "is_point_color",
                         "data_type": "Boolean",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "is_point_color_on_face",
@@ -3535,12 +3534,12 @@
                         "condition_rust": "!!self.is_point_color",
                         "on_set": "_ctx.t3dc.on_point_color(&point_color_array.a)",
                         "comment": "point_color_array describes colors on vertices for each triangle. For each triangle vertex with point color, 5 characters are stored. The first character describe if the vertex has got RGB or RGBA components. Then 4 components are used to stored R, G, B, and alpha.",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "is_multiple_line_attribute",
                         "data_type": "Boolean",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "is_multiple_line_attribute_on_face",
@@ -3554,47 +3553,43 @@
                         "data_type": "ShortArray",
                         "vbr": "16",
                         "comment": "line_attribute_array describe indexes in a graphic array. If a face contains multiple attributes, one index per triangle is added in line_attribute_array. Otherwise, one index per face is added, when encountering the first triangle of this face.",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "no_texture",
                         "data_type": "Boolean",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "texture_data",
                         "data_type": "CompressedTextureParameter",
                         "condition_rust": "!self.no_texture",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "all_faces_have_texture",
                         "data_type": "Boolean",
                         "condition_rust": "!self.no_texture",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "face_has_texture",
                         "data_type": "UncompressedBoolArray",
-                        "UNUSEDis_vec": true,
                         "vbr": "_ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a)",
-                        "size1": "normal_binary_data_size.value",
-                        "comment": "above size if wrong, SPECBUG not in spec",
-                        "comment": "FIXME: above array size is guesswork",
                         "condition_rust": "!self.no_texture && !self.all_faces_have_texture.value",
                         "on_set": "debug!(\"{}face_has_texture: {}\", indent::get(), format(&face_has_texture.a))"
                     },
                     {
                         "name": "has_behaviors",
                         "data_type": "Boolean",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "behaviors_array",
                         "data_type": "CharacterArray",
                         "vbr": "8",
                         "condition_rust": "!!self.has_behaviors",
-                        "debug": true
+                        "debug": false
                     }
                 ]
             },
@@ -3631,14 +3626,14 @@
                     {
                         "name": "tess_count",
                         "data_type": "UnsignedInteger",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "tess",
                         "data_type": "PRC_TYPE_TESS",
                         "is_vec": true,
                         "size": "tess_count.value",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "user_data",
@@ -6436,7 +6431,7 @@
                     {
                         "name": "is_trimmed",
                         "data_type": "Boolean",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "trim_loop",
@@ -6452,7 +6447,7 @@
                         "data_type": "CompressedPoint",
                         "vbr": "_ctx.brep_data_compressed_tolerance / 100.0",
                         "condition_rust": "_ctx.ContentCompressedAnaFace_has_point_on_torus(is_trimmed.value)",
-                        "debug": true
+                        "debug": false
                     }
                 ]
             },
@@ -6652,13 +6647,13 @@
                         "name": "center",
                         "data_type": "CompressedPoint",
                         "vbr": "_ctx.brep_data_compressed_tolerance / 100.0",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "x_axis",
                         "data_type": "CompressedPoint",
                         "vbr": "_ctx.brep_data_compressed_tolerance / 100.0",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "y_axis",
@@ -6666,7 +6661,7 @@
                         "vbr": "_ctx.brep_data_compressed_tolerance / 100.0",
                         "data_type": "Vector3D",
                         "SPECBUG": "2014 spec says Vector3D, but SC2N570-PRC-WD and adobe sdk v9 says CompressedPoint",
-                        "debug": true
+                        "debug": false
                     }
                 ]
             },
@@ -7164,46 +7159,46 @@
                     {
                         "name": "curve0",
                         "data_type": "IsoNurbsTrimCurve",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "curve1",
                         "data_type": "IsoNurbsTrimCurve",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "curve2",
                         "data_type": "IsoNurbsTrimCurve",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "curve3",
                         "data_type": "IsoNurbsTrimCurve",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "loop_vertex3",
                         "data_type": "CompressedVertex",
                         "condition_rust": "!self.curve3.is_referenced.value && !self.curve0.is_referenced.value",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "loop_vertex0",
                         "data_type": "CompressedVertex",
                         "condition_rust": "!self.curve0.is_referenced.value && !self.curve1.is_referenced.value",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "loop_vertex1",
                         "data_type": "CompressedVertex",
                         "condition_rust": "!self.curve1.is_referenced.value && !self.curve2.is_referenced.value",
-                        "debug": true
+                        "debug": false
                     },
                     {
                         "name": "loop_vertex2",
                         "data_type": "CompressedVertex",
                         "condition_rust": "!self.curve2.is_referenced.value && !self.curve3.is_referenced.value",
-                        "debug": true
+                        "debug": false
                     }
                 ]
             },
@@ -7461,7 +7456,7 @@
                         "data_type": "PRC_TYPE_TOPO_Context",
                         "is_vec": true,
                         "size": "topo_context_count.value",
-                        "debug": true
+                        "debug": false
                     }
                 ]
             },

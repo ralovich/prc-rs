@@ -9728,7 +9728,6 @@ impl VertexColors {
         let mut is_segment_color: Boolean = Default::default();
         if is_segment_color_cond {
             is_segment_color = Boolean::from_reader(rdr)?;
-            trace!("{}is_segment_color: {:?}", indent::get(), &is_segment_color);
         }
         _ctx.t3dw.set1(is_segment_color.value);
         let mut b_optimized: Boolean = Default::default();
@@ -9969,11 +9968,6 @@ impl PRC_TYPE_TESS_Face {
         start_triangulated = UnsignedInteger::from_reader(rdr)?;
         let mut size_of_triangulateddata: UnsignedInteger = Default::default();
         size_of_triangulateddata = UnsignedInteger::from_reader(rdr)?;
-        trace!(
-            "{}size_of_triangulateddata: {:?}",
-            indent::get(),
-            &size_of_triangulateddata
-        );
         io_check_limit!(
             (size_of_triangulateddata.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -9988,33 +9982,17 @@ impl PRC_TYPE_TESS_Face {
         _ctx.set_num_vertex_colors_from_tess_3d_face(used_entities_flag.value, &triangulateddata)?;
         let mut number_of_textured_coordinate_indices: UnsignedInteger = Default::default();
         number_of_textured_coordinate_indices = UnsignedInteger::from_reader(rdr)?;
-        trace!(
-            "{}number_of_textured_coordinate_indices: {:?}",
-            indent::get(),
-            &number_of_textured_coordinate_indices
-        );
         let mut has_vertex_colors: Boolean = Default::default();
         has_vertex_colors = Boolean::from_reader(rdr)?;
-        trace!(
-            "{}has_vertex_colors: {:?}",
-            indent::get(),
-            &has_vertex_colors
-        );
         let vertex_color_data_cond = !!has_vertex_colors;
         let mut vertex_color_data: VertexColors = Default::default();
         if vertex_color_data_cond {
             vertex_color_data = VertexColors::from_reader(rdr, _ctx)?;
-            trace!(
-                "{}vertex_color_data: {:?}",
-                indent::get(),
-                &vertex_color_data
-            );
         }
         let behavior_cond = size_of_line_attributes.value > 0;
         let mut behavior: UnsignedInteger = Default::default();
         if behavior_cond {
             behavior = UnsignedInteger::from_reader(rdr)?;
-            trace!("{}behavior: {:?}", indent::get(), &behavior);
         }
         _ctx.se.eval(rdr, PRC_TYPE_TESS_Face, false, 0)?;
         let rv = Self {
@@ -10202,11 +10180,6 @@ impl PRC_TYPE_TESS_3D {
         }
         let mut number_of_face_tessellation: UnsignedInteger = Default::default();
         number_of_face_tessellation = UnsignedInteger::from_reader(rdr)?;
-        trace!(
-            "{}number_of_face_tessellation: {:?}",
-            indent::get(),
-            &number_of_face_tessellation
-        );
         io_check_limit!(
             (number_of_face_tessellation.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -10215,27 +10188,11 @@ impl PRC_TYPE_TESS_3D {
             Vec::with_capacity((number_of_face_tessellation.value) as usize);
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_face_tessellation.value) {
-            trace!(
-                "reading PRC_TYPE_TESS_Face[{} of {}]",
-                &_i, number_of_face_tessellation.value
-            );
             let element = PRC_TYPE_TESS_Face::from_reader(rdr, _ctx)?;
-            trace!(
-                "{}PRC_TYPE_TESS_3D.face_tessellation_data[{} of {}]: {:#?}",
-                indent::get(),
-                &_i,
-                number_of_face_tessellation.value,
-                &element
-            );
             face_tessellation_data.push(element);
         }
         let mut number_of_texture_coordinates: UnsignedInteger = Default::default();
         number_of_texture_coordinates = UnsignedInteger::from_reader(rdr)?;
-        trace!(
-            "{}number_of_texture_coordinates: {:?}",
-            indent::get(),
-            &number_of_texture_coordinates
-        );
         io_check_limit!(
             (number_of_texture_coordinates.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -10427,11 +10384,6 @@ impl PRC_TYPE_TESS_3D_Wire {
             .set0(&tessellation_coordinates.coordinates, &wire_indexes);
         let mut has_vertex_colors: Boolean = Default::default();
         has_vertex_colors = Boolean::from_reader(rdr)?;
-        trace!(
-            "{}has_vertex_colors: {:?}",
-            indent::get(),
-            &has_vertex_colors
-        );
         let vertex_color_data_cond = !!has_vertex_colors;
         let mut vertex_color_data: VertexColors = Default::default();
         if vertex_color_data_cond {
@@ -10514,11 +10466,6 @@ impl BinaryTextureData {
         }
         let mut last_integer_used_bit_number: UnsignedInteger = Default::default();
         last_integer_used_bit_number = UnsignedInteger::from_reader(rdr)?;
-        trace!(
-            "{}last_integer_used_bit_number: {:?}",
-            indent::get(),
-            &last_integer_used_bit_number
-        );
         if last_integer_used_bit_number.value > 32 {
             return Err(std::io::Error::other(
                 "last_integer_used_bit_number.value > 32 failed!",
@@ -10689,7 +10636,6 @@ pub struct PRC_TYPE_TESS_3D_Compressed {
     pub no_texture: Boolean,
     pub texture_data: Option<CompressedTextureParameter>,
     pub all_faces_have_texture: Option<Boolean>,
-    /// FIXME: above array size is guesswork
     pub face_has_texture: Option<UncompressedBoolArray>,
     pub has_behaviors: Boolean,
     pub behaviors_array: Option<CharacterArray>,
@@ -10717,10 +10663,8 @@ impl PRC_TYPE_TESS_3D_Compressed {
         is_calculated = Boolean::from_reader(rdr)?;
         let mut has_faces: Boolean = Default::default();
         has_faces = Boolean::from_reader(rdr)?;
-        trace!("{}has_faces: {:?}", indent::get(), &has_faces);
         let mut tolerance: Double = Default::default();
         tolerance = Double::from_reader(rdr)?;
-        trace!("{}tolerance: {:?}", indent::get(), &tolerance);
         let origin_array_cond = _ctx.get_authoring_version() >= 7031;
         let mut origin_array: [FloatAsBytes; 3] = [Default::default(); 3];
         if origin_array_cond {
@@ -10730,35 +10674,19 @@ impl PRC_TYPE_TESS_3D_Compressed {
         }
         let mut point_array: CompressedIntegerArray = Default::default();
         point_array = CompressedIntegerArray::from_reader(rdr)?;
-        trace!("{}point_array: {:?}", indent::get(), &point_array);
         let mut edge_status_array: CharacterArray = Default::default();
         edge_status_array = CharacterArray::from_reader(rdr, 2)?;
-        trace!(
-            "{}edge_status_array: {:?}",
-            indent::get(),
-            &edge_status_array
-        );
         if !edge_status_array.a.is_empty() {
             prc_gen_assert!(*edge_status_array.a.iter().max().unwrap() >= 0i8);
         };
         let mut triangle_face_array: CompressedIndiceArray = Default::default();
         triangle_face_array = CompressedIndiceArray::from_reader(rdr)?;
-        trace!(
-            "{}triangle_face_array: {:?}",
-            indent::get(),
-            &triangle_face_array
-        );
         prc_gen_assert!(
             edge_status_array.a.len() == 3 * triangle_face_array.a.len()
                 || edge_status_array.a.len() == triangle_face_array.a.len()
         );
         let mut reference_array_size: UnsignedInteger = Default::default();
         reference_array_size = UnsignedInteger::from_reader(rdr)?;
-        trace!(
-            "{}reference_array_size: {:?}",
-            indent::get(),
-            &reference_array_size
-        );
         let num_disjoint_shells2 = reference_array_size.value - triangle_face_array.a.len() as u32;
         debug!(
             "num_disjoint_shells={} num_disjoint_shells2={}",
@@ -10768,11 +10696,6 @@ impl PRC_TYPE_TESS_3D_Compressed {
         let mut point_is_reference_array: UncompressedBoolArray = Default::default();
         point_is_reference_array =
             UncompressedBoolArray::from_reader(rdr, reference_array_size.value)?;
-        trace!(
-            "{}point_is_reference_array: {:?}",
-            indent::get(),
-            &point_is_reference_array
-        );
         debug!(
             "number_of_referenced_points:{}",
             _ctx.t3dc
@@ -10790,11 +10713,6 @@ impl PRC_TYPE_TESS_3D_Compressed {
                 .number_of_referenced_points(&point_is_reference_array.a)
                 > 3,
         )?;
-        trace!(
-            "{}point_reference_array: {:?}",
-            indent::get(),
-            &point_reference_array
-        );
         prc_gen_assert!(
             _ctx.t3dc
                 .number_of_referenced_points(&point_is_reference_array.a) as usize
@@ -10802,11 +10720,6 @@ impl PRC_TYPE_TESS_3D_Compressed {
         );
         let mut must_recalculate_normals: Boolean = Default::default();
         must_recalculate_normals = Boolean::from_reader(rdr)?;
-        trace!(
-            "{}must_recalculate_normals: {:?}",
-            indent::get(),
-            &must_recalculate_normals
-        );
         _ctx.t3dc.get_points(
             &origin_array,
             &point_array.a,
@@ -10833,37 +10746,21 @@ impl PRC_TYPE_TESS_3D_Compressed {
         let mut crease_angle: Double = Default::default();
         if crease_angle_cond {
             crease_angle = Double::from_reader(rdr)?;
-            trace!("{}crease_angle: {:?}", indent::get(), &crease_angle);
         }
         let normal_recalculation_flags_cond = !!must_recalculate_normals;
         let mut normal_recalculation_flags: Character = Default::default();
         if normal_recalculation_flags_cond {
             normal_recalculation_flags = Character::from_reader(rdr)?;
-            trace!(
-                "{}normal_recalculation_flags: {:?}",
-                indent::get(),
-                &normal_recalculation_flags
-            );
         }
         let normal_angle_number_of_bits_cond = !must_recalculate_normals;
         let mut normal_angle_number_of_bits: Character = Default::default();
         if normal_angle_number_of_bits_cond {
             normal_angle_number_of_bits = Character::from_reader(rdr)?;
-            trace!(
-                "{}normal_angle_number_of_bits: {:?}",
-                indent::get(),
-                &normal_angle_number_of_bits
-            );
         }
         let normal_binary_data_size_cond = !must_recalculate_normals;
         let mut normal_binary_data_size: UnsignedInteger = Default::default();
         if normal_binary_data_size_cond {
             normal_binary_data_size = UnsignedInteger::from_reader(rdr)?;
-            trace!(
-                "{}normal_binary_data_size: {:?}",
-                indent::get(),
-                &normal_binary_data_size
-            );
         }
         let normal_binary_data_cond = !must_recalculate_normals;
         let mut normal_binary_data: UncompressedBoolArray = Default::default();
@@ -10883,11 +10780,6 @@ impl PRC_TYPE_TESS_3D_Compressed {
         if normal_angle_array_cond {
             normal_angle_array =
                 ShortArray::from_reader(rdr, normal_angle_number_of_bits.value as u8)?;
-            trace!(
-                "{}normal_angle_array: {:?}",
-                indent::get(),
-                &normal_angle_array
-            );
         }
         let is_face_planar_cond = !must_recalculate_normals;
         let mut is_face_planar: UncompressedBoolArray = Default::default();
@@ -10907,7 +10799,6 @@ impl PRC_TYPE_TESS_3D_Compressed {
         };
         let mut is_point_color: Boolean = Default::default();
         is_point_color = Boolean::from_reader(rdr)?;
-        trace!("{}is_point_color: {:?}", indent::get(), &is_point_color);
         let is_point_color_on_face_cond = !!is_point_color;
         let mut is_point_color_on_face: UncompressedBoolArray = Default::default();
         if is_point_color_on_face_cond {
@@ -10932,20 +10823,10 @@ impl PRC_TYPE_TESS_3D_Compressed {
         let mut point_color_array: CharacterArray = Default::default();
         if point_color_array_cond {
             point_color_array = CharacterArray::from_reader(rdr, 8)?;
-            trace!(
-                "{}point_color_array: {:?}",
-                indent::get(),
-                &point_color_array
-            );
         }
         _ctx.t3dc.on_point_color(&point_color_array.a);
         let mut is_multiple_line_attribute: Boolean = Default::default();
         is_multiple_line_attribute = Boolean::from_reader(rdr)?;
-        trace!(
-            "{}is_multiple_line_attribute: {:?}",
-            indent::get(),
-            &is_multiple_line_attribute
-        );
         let is_multiple_line_attribute_on_face_cond = !!is_multiple_line_attribute;
         let mut is_multiple_line_attribute_on_face: UncompressedBoolArray = Default::default();
         if is_multiple_line_attribute_on_face_cond {
@@ -10961,29 +10842,17 @@ impl PRC_TYPE_TESS_3D_Compressed {
         }
         let mut line_attribute_array: ShortArray = Default::default();
         line_attribute_array = ShortArray::from_reader(rdr, 16)?;
-        trace!(
-            "{}line_attribute_array: {:?}",
-            indent::get(),
-            &line_attribute_array
-        );
         let mut no_texture: Boolean = Default::default();
         no_texture = Boolean::from_reader(rdr)?;
-        trace!("{}no_texture: {:?}", indent::get(), &no_texture);
         let texture_data_cond = !no_texture;
         let mut texture_data: CompressedTextureParameter = Default::default();
         if texture_data_cond {
             texture_data = CompressedTextureParameter::from_reader(rdr, _ctx)?;
-            trace!("{}texture_data: {:?}", indent::get(), &texture_data);
         }
         let all_faces_have_texture_cond = !no_texture;
         let mut all_faces_have_texture: Boolean = Default::default();
         if all_faces_have_texture_cond {
             all_faces_have_texture = Boolean::from_reader(rdr)?;
-            trace!(
-                "{}all_faces_have_texture: {:?}",
-                indent::get(),
-                &all_faces_have_texture
-            );
         }
         let face_has_texture_cond = !no_texture && !all_faces_have_texture.value;
         let mut face_has_texture: UncompressedBoolArray = Default::default();
@@ -11001,12 +10870,10 @@ impl PRC_TYPE_TESS_3D_Compressed {
         );
         let mut has_behaviors: Boolean = Default::default();
         has_behaviors = Boolean::from_reader(rdr)?;
-        trace!("{}has_behaviors: {:?}", indent::get(), &has_behaviors);
         let behaviors_array_cond = !!has_behaviors;
         let mut behaviors_array: CharacterArray = Default::default();
         if behaviors_array_cond {
             behaviors_array = CharacterArray::from_reader(rdr, 8)?;
-            trace!("{}behaviors_array: {:?}", indent::get(), &behaviors_array);
         }
         _ctx.se.eval(rdr, PRC_TYPE_TESS_3D_Compressed, false, 0)?;
         _ctx.t3dc.leave();
@@ -11413,7 +11280,6 @@ impl PRC_TYPE_ASM_FileStructureTessellation {
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
         let mut tess_count: UnsignedInteger = Default::default();
         tess_count = UnsignedInteger::from_reader(rdr)?;
-        trace!("{}tess_count: {:?}", indent::get(), &tess_count);
         io_check_limit!(
             (tess_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -11421,15 +11287,7 @@ impl PRC_TYPE_ASM_FileStructureTessellation {
         let mut tess: Vec<PRC_TYPE_TESS> = Vec::with_capacity((tess_count.value) as usize);
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(tess_count.value) {
-            trace!("reading PRC_TYPE_TESS[{} of {}]", &_i, tess_count.value);
             let element = PRC_TYPE_TESS::from_reader(rdr, _ctx)?;
-            trace!(
-                "{}PRC_TYPE_ASM_FileStructureTessellation.tess[{} of {}]: {:#?}",
-                indent::get(),
-                &_i,
-                tess_count.value,
-                &element
-            );
             tess.push(element);
         }
         _ctx.se
@@ -19681,7 +19539,6 @@ impl ContentCompressedAnaFace {
         let _ig = indent::IndentGuard::new();
         let mut is_trimmed: Boolean = Default::default();
         is_trimmed = Boolean::from_reader(rdr)?;
-        trace!("{}is_trimmed: {:?}", indent::get(), &is_trimmed);
         let trim_loop_cond = !!is_trimmed.value;
         let mut trim_loop: Vec<AnaFaceTrimLoop> = Vec::new();
         if trim_loop_cond {
@@ -19702,7 +19559,6 @@ impl ContentCompressedAnaFace {
         if point_on_torus_cond {
             point_on_torus =
                 CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
-            trace!("{}point_on_torus: {:?}", indent::get(), &point_on_torus);
         }
         let rv = Self {
             is_trimmed,
@@ -20223,13 +20079,10 @@ impl PRC_HCG_AnaTorus {
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
         let mut center: CompressedPoint = Default::default();
         center = CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
-        trace!("{}center: {:?}", indent::get(), &center);
         let mut x_axis: CompressedPoint = Default::default();
         x_axis = CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
-        trace!("{}x_axis: {:?}", indent::get(), &x_axis);
         let mut y_axis: Vector3D = Default::default();
         y_axis = Vector3D::from_reader(rdr, _ctx)?;
-        trace!("{}y_axis: {:?}", indent::get(), &y_axis);
         _ctx.pop_face_type();
         _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
@@ -21695,39 +21548,31 @@ impl PRC_HCG_IsoNurbs {
         surface = CompressedNurbs::from_reader(rdr, _ctx)?;
         let mut curve0: IsoNurbsTrimCurve = Default::default();
         curve0 = IsoNurbsTrimCurve::from_reader(rdr, _ctx)?;
-        trace!("{}curve0: {:?}", indent::get(), &curve0);
         let mut curve1: IsoNurbsTrimCurve = Default::default();
         curve1 = IsoNurbsTrimCurve::from_reader(rdr, _ctx)?;
-        trace!("{}curve1: {:?}", indent::get(), &curve1);
         let mut curve2: IsoNurbsTrimCurve = Default::default();
         curve2 = IsoNurbsTrimCurve::from_reader(rdr, _ctx)?;
-        trace!("{}curve2: {:?}", indent::get(), &curve2);
         let mut curve3: IsoNurbsTrimCurve = Default::default();
         curve3 = IsoNurbsTrimCurve::from_reader(rdr, _ctx)?;
-        trace!("{}curve3: {:?}", indent::get(), &curve3);
         let loop_vertex3_cond = !curve3.is_referenced.value && !curve0.is_referenced.value;
         let mut loop_vertex3: CompressedVertex = Default::default();
         if loop_vertex3_cond {
             loop_vertex3 = CompressedVertex::from_reader(rdr, _ctx)?;
-            trace!("{}loop_vertex3: {:?}", indent::get(), &loop_vertex3);
         }
         let loop_vertex0_cond = !curve0.is_referenced.value && !curve1.is_referenced.value;
         let mut loop_vertex0: CompressedVertex = Default::default();
         if loop_vertex0_cond {
             loop_vertex0 = CompressedVertex::from_reader(rdr, _ctx)?;
-            trace!("{}loop_vertex0: {:?}", indent::get(), &loop_vertex0);
         }
         let loop_vertex1_cond = !curve1.is_referenced.value && !curve2.is_referenced.value;
         let mut loop_vertex1: CompressedVertex = Default::default();
         if loop_vertex1_cond {
             loop_vertex1 = CompressedVertex::from_reader(rdr, _ctx)?;
-            trace!("{}loop_vertex1: {:?}", indent::get(), &loop_vertex1);
         }
         let loop_vertex2_cond = !curve2.is_referenced.value && !curve3.is_referenced.value;
         let mut loop_vertex2: CompressedVertex = Default::default();
         if loop_vertex2_cond {
             loop_vertex2 = CompressedVertex::from_reader(rdr, _ctx)?;
-            trace!("{}loop_vertex2: {:?}", indent::get(), &loop_vertex2);
         }
         _ctx.set_compressed_iso_spline(false);
         _ctx.pop_face_type();
@@ -22657,18 +22502,7 @@ impl FileStructureExactGeometry {
             Vec::with_capacity((topo_context_count.value) as usize);
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(topo_context_count.value) {
-            trace!(
-                "reading PRC_TYPE_TOPO_Context[{} of {}]",
-                &_i, topo_context_count.value
-            );
             let element = PRC_TYPE_TOPO_Context::from_reader(rdr, _ctx)?;
-            trace!(
-                "{}FileStructureExactGeometry.topo_contexts[{} of {}]: {:#?}",
-                indent::get(),
-                &_i,
-                topo_context_count.value,
-                &element
-            );
             topo_contexts.push(element);
         }
         let rv = Self {
