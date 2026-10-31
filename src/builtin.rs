@@ -32,6 +32,7 @@ fn max(i: i32, j: i32, k: i32) -> i32 {
 }
 
 /// Print info about a Vec<T> without printing all elements.
+#[allow(unused)]
 pub fn format<T: std::cmp::Ord + std::fmt::Display>(v: &[T]) -> std::string::String {
     let min_value = v.iter().min();
     let max_value = v.iter().max();

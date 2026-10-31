@@ -1146,7 +1146,7 @@
                         "data_type": "Double",
                         "is_vec": true,
                         "size": "number_of_coordinates.value",
-                        "on_set": "debug!(\"{}coordinates: {}\", indent::get(), format(&coordinates))"
+                        "on_setUNUSED": "debug!(\"{}coordinates: {}\", indent::get(), format(&coordinates))"
                     }
                 ]
             },
@@ -3047,7 +3047,7 @@
             },
             "VertexColors": {
                 "comment": "The number_of_colors stored in the color_data must be calculated from the number of point indices\n- found in the wire_indexes array in the case of a PRC_TYPE_TESS_3D_Wire\n- found in the sizes_triangulated in the case of a PRC_TYPE_TESS_Face",
-                "on_enter": "debug!(\"{}_ctx.VertexColors_number_of_colors: {}\", indent::get(), _ctx.VertexColors_get_number_of_colors()?)",
+                "on_enterUNUSED": "debug!(\"{}_ctx.VertexColors_number_of_colors: {}\", indent::get(), _ctx.VertexColors_get_number_of_colors()?)",
                 "fields": [
                     {
                         "name": "is_rgba",
@@ -3432,8 +3432,7 @@
                     {
                         "name": "reference_array_size",
                         "data_type": "UnsignedInteger",
-                        "debug": false,
-                        "on_set": "let num_disjoint_shells2 = reference_array_size.value - triangle_face_array.a.len() as u32; debug!(\"num_disjoint_shells={} num_disjoint_shells2={}\", num_disjoint_shells2/2, num_disjoint_shells2)"
+                        "debug": false
                     },
                     {
                         "name": "point_is_reference_array",
@@ -3441,7 +3440,7 @@
                         "data_type": "UncompressedBoolArray",
                         "vbr": "reference_array_size.value",
                         "debug": false,
-                        "on_set": "debug!(\"number_of_referenced_points:{}\", _ctx.t3dc.number_of_referenced_points(&point_is_reference_array.a));\ndebug!(\"{}point_is_reference_array: {}\", indent::get(), format(&point_is_reference_array.a))"
+                        "on_setUNUSED": "debug!(\"number_of_referenced_points:{}\", _ctx.t3dc.number_of_referenced_points(&point_is_reference_array.a));\ndebug!(\"{}point_is_reference_array: {}\", indent::get(), format(&point_is_reference_array.a))"
                     },
                     {
                         "name": "point_reference_array",
@@ -3464,7 +3463,7 @@
                         "data_type": "UncompressedBoolArray",
                         "vbr": "triangle_face_array.a.len() as u32",
                         "condition_rust": "!!self.must_recalculate_normals",
-                        "on_set": "if !!must_recalculate_normals { debug!(\"{}normal_is_reversed: {}\", indent::get(), format(&normal_is_reversed.a)); }"
+                        "on_setUNUSED": "if !!must_recalculate_normals { debug!(\"{}normal_is_reversed: {}\", indent::get(), format(&normal_is_reversed.a)); }"
                     },
                     {
                         "name": "crease_angle",
@@ -3498,7 +3497,7 @@
                         "vbr": "normal_binary_data_size.value",
                         "condition_rust": "!self.must_recalculate_normals",
                         "bug": "https://github.com/pdf-association/pdf-issues/issues/436",
-                        "on_set": "if !must_recalculate_normals { debug!(\"{}normal_binary_data: {}\", indent::get(), format(&normal_binary_data.a)); }"
+                        "on_setUNUSED": "if !must_recalculate_normals { debug!(\"{}normal_binary_data: {}\", indent::get(), format(&normal_binary_data.a)); }"
                     },
                     {
                         "name": "normal_angle_array",
@@ -3513,7 +3512,7 @@
                         "data_type": "UncompressedBoolArray",
                         "vbr": "_ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a)",
                         "condition_rust": "!self.must_recalculate_normals",
-                        "on_set": "if !must_recalculate_normals { debug!(\"{}is_face_planar: {}\", indent::get(), format(&is_face_planar.a)); }"
+                        "on_setUNUSED": "if !must_recalculate_normals { debug!(\"{}is_face_planar: {}\", indent::get(), format(&is_face_planar.a)); }"
                     },
                     {
                         "name": "is_point_color",
@@ -3525,7 +3524,7 @@
                         "data_type": "UncompressedBoolArray",
                         "vbr": "if !has_faces.value { 1 } else { _ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a) }",
                         "condition_rust": "!!self.is_point_color",
-                        "on_set": "if !!is_point_color { debug!(\"{}is_point_color_on_face: {}\", indent::get(), format(&is_point_color_on_face.a)); }"
+                        "on_setUNUSED": "if !!is_point_color { debug!(\"{}is_point_color_on_face: {}\", indent::get(), format(&is_point_color_on_face.a)); }"
                     },
                     {
                         "name": "point_color_array",
@@ -3546,7 +3545,7 @@
                         "data_type": "UncompressedBoolArray",
                         "vbr": "if !has_faces.value { 1 } else { _ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a) }",
                         "condition_rust": "!!self.is_multiple_line_attribute",
-                        "on_set1": "debug!(\"{}is_multiple_line_attribute_on_face: {}\", indent::get(), format(&is_multiple_line_attribute_on_face.a))"
+                        "on_setUNUSED": "debug!(\"{}is_multiple_line_attribute_on_face: {}\", indent::get(), format(&is_multiple_line_attribute_on_face.a))"
                     },
                     {
                         "name": "line_attribute_array",
@@ -3577,7 +3576,7 @@
                         "data_type": "UncompressedBoolArray",
                         "vbr": "_ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a)",
                         "condition_rust": "!self.no_texture && !self.all_faces_have_texture.value",
-                        "on_set": "debug!(\"{}face_has_texture: {}\", indent::get(), format(&face_has_texture.a))"
+                        "on_setUNUSED": "debug!(\"{}face_has_texture: {}\", indent::get(), format(&face_has_texture.a))"
                     },
                     {
                         "name": "has_behaviors",
