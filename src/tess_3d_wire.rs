@@ -31,7 +31,7 @@ impl Tess3dWire {
     /// group___tf3_d_wire_tess_data_____serialize_content2.html
     /// Note that the number of colors is deduced from the number of point indices as calculated from wire_indexes * 3 or 4 (RGB or RGBA).
     /// It is important to remember that implicit points must also have a color (see Special flags for 3DWireTessData tessellation).
-    pub fn get_num_vertex_colors(&mut self) -> u32 {
+    pub fn get_num_vertex_colors(&mut self) -> std::io::Result<u32> {
         // TODO
         let mut wires: Vec<Vec<u32>> = vec![];
 
@@ -70,6 +70,9 @@ impl Tess3dWire {
             let start = i + 1;
             for j in 0..number_of_indices_per_wire_edge {
                 let id = start + j as usize;
+                if id >= self.wire_indexes.len() {
+                    return Err(std::io::Error::other("wire vertex color OOB"));
+                }
                 wires.last_mut().unwrap().push(self.wire_indexes[id]);
                 i += 1;
             }
@@ -96,6 +99,6 @@ impl Tess3dWire {
             "VertexColors_number_of_colors: {}",
             self.VertexColors_number_of_colors
         );
-        self.VertexColors_number_of_colors
+        Ok(self.VertexColors_number_of_colors)
     }
 }

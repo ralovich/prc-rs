@@ -66,6 +66,7 @@ pub struct ParsedSections {
     pub mf: PRC_TYPE_ASM_ModelFile,
 }
 
+/// Flags that control parsing and optionally enable dumping attached files.
 #[derive(Clone, Debug)]
 pub struct ParsingOptions {
     pub verbose: bool,
@@ -154,7 +155,7 @@ impl ParsedPrc {
     }
 }
 
-/// Accumulates state of parsing.
+/// Accumulates state during parsing.
 #[derive(Default, Clone)]
 pub struct PrcParsingContext {
     pub file_base_name: std::string::String,
@@ -471,11 +472,11 @@ impl PrcParsingContext {
         self.compressed_iso_spline
     }
 
-    pub fn VertexColors_get_number_of_colors(&mut self) -> u32 {
+    pub fn VertexColors_get_number_of_colors(&mut self) -> std::io::Result<u32> {
         if self.TESS_3D_Wire_inside {
             return self.t3dw.get_num_vertex_colors();
         }
-        self.VertexColors_number_of_colors
+        Ok(self.VertexColors_number_of_colors)
     }
 
     pub fn TESS_3D_Wire__enter(&mut self) {
@@ -496,22 +497,69 @@ impl PrcParsingContext {
         &mut self,
         used_entities_flag: u32,
         triangulated_data: &[UnsignedInteger],
-    ) {
-        // TODO
-
-        if used_entities_flag != PrcTessellationFlags::PRC_FACETESSDATA_Triangle as u32
-            && used_entities_flag != PrcTessellationFlags::PRC_FACETESSDATA_TriangleTextured as u32
-        {
-            warn!(
-                "Only PRC_FACETESSDATA_Triangle and PRC_FACETESSDATA_TriangleTextured are implemented! VertexColors_number_of_colors will be off!"
-            );
-        }
-        let num_colors_per_triangle = 3;
-
+    ) -> std::io::Result<()> {
         self.VertexColors_number_of_colors = 0;
-        for tdi in triangulated_data {
-            self.VertexColors_number_of_colors += num_colors_per_triangle * tdi.value;
+
+        let ue = PrcTessellationBitField::from_bytes(used_entities_flag.to_le_bytes());
+        if ue.PRC_FACETESSDATA_Polyface()
+            || ue.PRC_FACETESSDATA_PolyfaceOneNormal()
+            || ue.PRC_FACETESSDATA_PolyfaceTextured()
+            || ue.PRC_FACETESSDATA_PolyfaceOneNormalTextured()
+        {
+            return Err(std::io::Error::other(
+                "PRC_FACETESSDATA_Polyface... not implemented!",
+            ));
         }
+
+        use crate::constants::PrcTessellationFlags::*;
+        // flag, num_colors_per_triangle, separate_count_first
+        let modes = [
+            (PRC_FACETESSDATA_Triangle, 3u32, false),
+            (PRC_FACETESSDATA_TriangleFan, 1, true),
+            (PRC_FACETESSDATA_TriangleStrip, 1, true),
+            (PRC_FACETESSDATA_TriangleOneNormal, 3, false),
+            (PRC_FACETESSDATA_TriangleFanOneNormal, 1, true),
+            (PRC_FACETESSDATA_TriangleStripOneNormal, 1, true),
+            (PRC_FACETESSDATA_TriangleTextured, 3, false),
+            (PRC_FACETESSDATA_TriangleFanTextured, 1, true),
+            (PRC_FACETESSDATA_TriangleStripTextured, 1, true),
+            (PRC_FACETESSDATA_TriangleOneNormalTextured, 3, false),
+            (PRC_FACETESSDATA_TriangleFanOneNormalTextured, 1, true),
+            (PRC_FACETESSDATA_TriangleStripOneNormalTextured, 1, true),
+        ];
+
+        let mut i = 0usize; // index into triangulated_data
+        for (flag, num_colors_per_triangle, separate_count_first) in modes.iter() {
+            if used_entities_flag & (*flag as u32) == 0 {
+                continue;
+            }
+            if !separate_count_first {
+                if i >= triangulated_data.len() {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        "Not enough data to determine number of vertex colors",
+                    ));
+                }
+                self.VertexColors_number_of_colors +=
+                    num_colors_per_triangle * triangulated_data[i].value;
+                i += 1;
+            } else {
+                let num_strips = triangulated_data[i].value;
+                i += 1;
+                for _j in 0..num_strips {
+                    if i >= triangulated_data.len() {
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "Not enough data to determine number of vertex colors",
+                        ));
+                    }
+                    self.VertexColors_number_of_colors +=
+                        num_colors_per_triangle * triangulated_data[i].value;
+                    i += 1;
+                }
+            }
+        }
+        Ok(())
     }
 
     pub fn AnaFaceTrimLoop_start_new_loop(&mut self) {
@@ -818,6 +866,7 @@ impl PrcParsingContext {
     }
 }
 
+/// Parse PRC data from a byte array into internal representation.
 pub fn prc_describe(
     bytes: &[u8],
     file_base_name: &str,
@@ -829,6 +878,8 @@ pub fn prc_describe(
     let parsed = ctx.load_prc(bytes, file_base_name, parse, opts)?;
     Ok(parsed)
 }
+
+/// Parse PRC data from a file into internal representation.
 pub fn prc_describe_file(fname: &std::string::String, opts: &ParsingOptions) -> io::Result<()> {
     debug_time!("prc_describe_file \"{}\"", fname);
 

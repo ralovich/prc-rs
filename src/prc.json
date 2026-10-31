@@ -3047,7 +3047,7 @@
             },
             "VertexColors": {
                 "comment": "The number_of_colors stored in the color_data must be calculated from the number of point indices\n- found in the wire_indexes array in the case of a PRC_TYPE_TESS_3D_Wire\n- found in the sizes_triangulated in the case of a PRC_TYPE_TESS_Face",
-                "on_enter": "debug!(\"{}_ctx.VertexColors_number_of_colors: {}\", indent::get(), _ctx.VertexColors_get_number_of_colors())",
+                "on_enter": "debug!(\"{}_ctx.VertexColors_number_of_colors: {}\", indent::get(), _ctx.VertexColors_get_number_of_colors()?)",
                 "fields": [
                     {
                         "name": "is_rgba",
@@ -3066,7 +3066,8 @@
                     {
                         "name": "b_optimized",
                         "data_type": "Boolean",
-                        "debug": false
+                        "debug": false,
+                        "on_set": "if !b_optimized && _ctx.VertexColors_get_number_of_colors()? < 1 { return Err(std::io::Error::other(\"At least one color entry is required!\")); }"
                     },
                     {
                         "name": "color_data_rgb_first_vertex",
@@ -3077,7 +3078,7 @@
                         "name": "color_data_rgb_remaining_vertices",
                         "data_type": "ColorDataRemainderRGB",
                         "is_vec": false,
-                        "size": "_ctx.VertexColors_get_number_of_colors() - 1",
+                        "size": "_ctx.VertexColors_get_number_of_colors()? - 1",
                         "condition_rust": "!self.b_optimized && !self.is_rgba"
                     },
                     {
@@ -3089,7 +3090,7 @@
                         "name": "color_data_rgba_remaining_vertices",
                         "data_type": "ColorDataRemainderRGBA",
                         "is_vec": false,
-                        "size": "_ctx.VertexColors_get_number_of_colors() - 1",
+                        "size": "_ctx.VertexColors_get_number_of_colors()? - 1",
                         "condition_rust": "!self.b_optimized && !!self.is_rgba"
                     }
                 ]
@@ -3146,7 +3147,7 @@
                         "data_type": "UnsignedInteger",
                         "is_vec": true,
                         "size": "size_of_triangulateddata.value",
-                        "on_set": "_ctx.set_num_vertex_colors_from_tess_3d_face(used_entities_flag.value, &triangulateddata)"
+                        "on_set": "_ctx.set_num_vertex_colors_from_tess_3d_face(used_entities_flag.value, &triangulateddata)?"
                     },
                     {
                         "name": "number_of_textured_coordinate_indices",
@@ -3511,10 +3512,6 @@
                     {
                         "name": "is_face_planar",
                         "data_type": "UncompressedBoolArray",
-                        "UNUSEDis_vec": true,
-                        "size1": "normal_binary_data_size.value",
-                        "comment": "above size if wrong, SPECBUG not in spec",
-                        "FIXME": true,
                         "vbr": "_ctx.t3dc.number_of_faces_stored_in_mesh(&triangle_face_array.a)",
                         "condition_rust": "!self.must_recalculate_normals",
                         "on_set": "if !must_recalculate_normals { debug!(\"{}is_face_planar: {}\", indent::get(), format(&is_face_planar.a)); }"

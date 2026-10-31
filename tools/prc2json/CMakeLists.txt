@@ -12,39 +12,49 @@ set(BUILD_TESTING ON)
 enable_testing()
 
 
-set(RUST_DIR ../../../prc-rs)
+set(RUST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../)
+set(LIB_NAME "libprc.a")
 if (WIN32)
     set(LIB_NAME "prc.lib")
 endif (WIN32)
-if (UNIX)
-    set(LIB_NAME "libprc.a")
-endif (UNIX)
 
 include (ExternalProject)
 ExternalProject_Add(
     prc
     BUILD_ALWAYS ON
-    PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}
-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}
+    PREFIX ${RUST_DIR}
+    SOURCE_DIR ${RUST_DIR}
     DOWNLOAD_COMMAND ""
     CONFIGURE_COMMAND ""
-    BUILD_COMMAND cargo build --lib $<IF:$<CONFIG:Release>,--release,>
-    BUILD_BYPRODUCTS     ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/target/$<IF:$<CONFIG:Release>,release,debug>/${LIB_NAME}
-                         ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/include/prc.h
-    #BINARY_DIR "${PROJECT_SOURCE_DIR}/${RUST_DIR}"
-    #INSTALL_COMMAND "Get-ChildItem -Force -Path ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/target/release" COMMAND "Get-ChildItem -Force -Path ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/target/debug"
+    BUILD_COMMAND cargo build --lib --release COMMAND cargo build --lib
+    BUILD_BYPRODUCTS     ${RUST_DIR}/target/$<IF:$<CONFIG:Release>,release,debug>/${LIB_NAME}
+                         ${RUST_DIR}/include/prc.h
+    #BINARY_DIR "${RUST_DIR}"
+    #INSTALL_COMMAND "Get-ChildItem -Force -Path ${RUST_DIR}/target/release" COMMAND "Get-ChildItem -Force -Path ${RUST_DIR}/target/debug"
     INSTALL_COMMAND ""
     LOG_BUILD ON
     LOG_OUTPUT_ON_FAILURE ON
-    )
+)
 
 
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -std=gnu++2a")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcoroutines")
+add_library(prcrs STATIC IMPORTED)
+set_target_properties(
+  prcrs
+  PROPERTIES
+  IMPORTED_CONFIGURATIONS "debug;release"
+  IMPORTED_LOCATION_RELEASE ${RUST_DIR}/target/release/${LIB_NAME}
+  IMPORTED_LOCATION_DEBUG   ${RUST_DIR}/target/debug/${LIB_NAME}
+  INTERFACE_INCLUDE_DIRECTORIES "${RUST_DIR}/include"
+)
+
 ADD_EXECUTABLE(prc2json
   main.cpp
-  )
+)
 add_dependencies(prc2json prc)
+target_link_libraries(prc2json
+  PRIVATE
+  prcrs
+)
 
 SET(ADDITIONAL_LIBS "")
 if (WIN32)
@@ -52,20 +62,17 @@ if (WIN32)
 endif ()
 target_link_libraries(prc2json
   PRIVATE
-  debug     ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/target/debug/${LIB_NAME}
-  optimized ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/target/release/${LIB_NAME}
   ${ADDITIONAL_LIBS}
 )
-target_include_directories(prc2json PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/include)
 
 add_test(NAME remove_json
     COMMAND ${CMAKE_COMMAND} -E rm -f pmi_sample.stream-23.json
 )
 add_test(NAME prc2json_runs
-    COMMAND prc2json ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/testdata/pmi_sample.stream-23.prc pmi_sample.stream-23.json
+    COMMAND prc2json ${RUST_DIR}/testdata/pmi_sample.stream-23.prc pmi_sample.stream-23.json
 )
 set_tests_properties(prc2json_runs PROPERTIES DEPENDS "remove_json")
 add_test(NAME json_as_expected
-    COMMAND ${CMAKE_COMMAND} -E compare_files ${CMAKE_CURRENT_SOURCE_DIR}/${RUST_DIR}/testdata/pmi_sample.stream-23.json pmi_sample.stream-23.json
+    COMMAND ${CMAKE_COMMAND} -E compare_files ${RUST_DIR}/testdata/pmi_sample.stream-23.json pmi_sample.stream-23.json
 )
 set_tests_properties(json_as_expected PROPERTIES DEPENDS "prc2json_runs")

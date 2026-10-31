@@ -285,10 +285,14 @@ macro_rules! prc_gen_assert {
                     #    field_init = f"None"
                         rs.write(f'  let {f['name']}_cond = {rust_condition_to_reader_condition(f['condition_rust'])};\n')
                     if is_vec:
-                        rs.write(f'    io_check_limit!(({f["size"]}) as u32, crate::limits::MAX_NUM_ARRAY_ELEMENTS);\n')
-                        rs.write('    let mut %s: Vec<%s> = Vec::with_capacity((%s) as usize);\n' % (f['name'], field_type, f['size']) )
                         if is_conditional:
+                            rs.write(f'    let mut {f["name"]}: Vec<{field_type}> = Vec::new();\n')
                             rs.write(f'    if {f['name']}_cond {{\n')
+                            rs.write(f'      io_check_limit!(({f["size"]}) as u32, crate::limits::MAX_NUM_ARRAY_ELEMENTS);\n')
+                            rs.write(f'      {f["name"]} = Vec::with_capacity(({f["size"]}) as usize);\n')
+                        else:
+                            rs.write(f'    io_check_limit!(({f["size"]}) as u32, crate::limits::MAX_NUM_ARRAY_ELEMENTS);\n')
+                            rs.write(f'    let mut {f["name"]}: Vec<{field_type}> = Vec::with_capacity(({f["size"]}) as usize);\n')
                         rs.write('    #[allow(clippy::reversed_empty_ranges)]')
                         rs.write('    for _i in 0..(%s) {\n' % f['size'])
                         if do_debug:
@@ -330,7 +334,7 @@ macro_rules! prc_gen_assert {
                 if 'on_set' in f:
                     rs.write(f'    {f['on_set']};\n')
                 if call_schema_eval and f['name'] == emit_SEEval_after:
-                    rs.write('    let _ = _ctx.se.eval(rdr, %s as u32, false, 0);\n' % struct_name )
+                    rs.write('    _ctx.se.eval(rdr, %s, false, 0)?;\n' % struct_name )
                     call_schema_eval = False
             if 'on_leave' in d['structures'][0][struct_name]:
                 rs.write(f'  {d['structures'][0][struct_name]['on_leave']};\n')

@@ -695,6 +695,12 @@ impl UnsignedIntegerWithVariableBitNumber {
         //println!("UnsignedIntegerWithVariableBitNumber: {}", num_bits);
         //assert!(num_bits > 0);
         //assert!(num_bits < 31);
+        if num_bits >= 64 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "Too many bits for UnsignedIntegerWithVariableBitNumber!",
+            ));
+        }
         let mut value = 0u32;
         for u in 0..num_bits {
             let b: u32 = ((read_bits(r, 1)? as u8) & 0x01) as u32;
@@ -732,6 +738,13 @@ impl IntegerWithVariableBitNumber {
     pub fn from_reader<R: BitRead>(r: &mut R, num_bits: u32) -> io::Result<Self> {
         //assert!(num_bits >= 1);
         //assert!(num_bits < 31);
+
+        if num_bits == 0 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "IntegerWithVariableBitNumber requires at least 1 bit!",
+            ));
+        }
 
         let is_neg = read_bits(r, 1)? != 0;
         let ui = if num_bits == 1 {

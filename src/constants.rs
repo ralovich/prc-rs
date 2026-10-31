@@ -397,7 +397,7 @@ pub enum PrcTessellationFlags {
     PRC_FACETESSDATA_PolyfaceOneNormalTextured = 0x1000,
     PRC_FACETESSDATA_TriangleOneNormalTextured = 0x2000,
     PRC_FACETESSDATA_TriangleFanOneNormalTextured = 0x4000,
-    PRC_FACETESSDATA_TriangleStripeOneNormalTextured = 0x8000,
+    PRC_FACETESSDATA_TriangleStripOneNormalTextured = 0x8000,
     PRC_FACETESSDATA_NORMAL_Single = 0x40000000,
 }
 
@@ -405,22 +405,22 @@ pub enum PrcTessellationFlags {
 #[repr(u32)]
 #[derive(Debug)]
 pub struct PrcTessellationBitField {
-    pub PRC_FACETESSDATA_Polyface: bool,                     // 0x01
-    pub PRC_FACETESSDATA_Triangle: bool,                     // 0x02
-    pub PRC_FACETESSDATA_TriangleFan: bool,                  // 0x0004,
-    pub PRC_FACETESSDATA_TriangleStrip: bool,                // 0x08
-    pub PRC_FACETESSDATA_PolyfaceOneNormal: bool,            // 0x0010,
-    pub PRC_FACETESSDATA_TriangleOneNormal: bool,            // 0x0020,
-    pub PRC_FACETESSDATA_TriangleFanOneNormal: bool,         // 0x0040,
-    pub PRC_FACETESSDATA_TriangleStripOneNormal: bool,       // 0x0080,
-    pub PRC_FACETESSDATA_PolyfaceTextured: bool,             // 0x0100,
-    pub PRC_FACETESSDATA_TriangleTextured: bool,             // 0x0200,
-    pub PRC_FACETESSDATA_TriangleFanTextured: bool,          // 0x0400,
-    pub PRC_FACETESSDATA_TriangleStripTextured: bool,        // 0x0800,
-    pub PRC_FACETESSDATA_PolyfaceOneNormalTextured: bool,    // 0x1000,
-    pub PRC_FACETESSDATA_TriangleOneNormalTextured: bool,    // 0x2000,
-    pub PRC_FACETESSDATA_TriangleFanOneNormalTextured: bool, // 0x4000,
-    pub PRC_FACETESSDATA_TriangleStripeOneNormalTextured: bool, // 0x8000,
+    pub PRC_FACETESSDATA_Polyface: bool,                       // 0x01
+    pub PRC_FACETESSDATA_Triangle: bool,                       // 0x02
+    pub PRC_FACETESSDATA_TriangleFan: bool,                    // 0x0004,
+    pub PRC_FACETESSDATA_TriangleStrip: bool,                  // 0x08
+    pub PRC_FACETESSDATA_PolyfaceOneNormal: bool,              // 0x0010,
+    pub PRC_FACETESSDATA_TriangleOneNormal: bool,              // 0x0020,
+    pub PRC_FACETESSDATA_TriangleFanOneNormal: bool,           // 0x0040,
+    pub PRC_FACETESSDATA_TriangleStripOneNormal: bool,         // 0x0080,
+    pub PRC_FACETESSDATA_PolyfaceTextured: bool,               // 0x0100,
+    pub PRC_FACETESSDATA_TriangleTextured: bool,               // 0x0200,
+    pub PRC_FACETESSDATA_TriangleFanTextured: bool,            // 0x0400,
+    pub PRC_FACETESSDATA_TriangleStripTextured: bool,          // 0x0800,
+    pub PRC_FACETESSDATA_PolyfaceOneNormalTextured: bool,      // 0x1000,
+    pub PRC_FACETESSDATA_TriangleOneNormalTextured: bool,      // 0x2000,
+    pub PRC_FACETESSDATA_TriangleFanOneNormalTextured: bool,   // 0x4000,
+    pub PRC_FACETESSDATA_TriangleStripOneNormalTextured: bool, // 0x8000,
     #[skip]
     unused: modular_bitfield::specifiers::B14,
     pub PRC_FACETESSDATA_NORMAL_Single: bool, // 0x40000000,
