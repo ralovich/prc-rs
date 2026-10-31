@@ -16,9 +16,10 @@ std::vector<char> undump(const char* file_name)
                               std::istreambuf_iterator<char>());
 }
 
-void* allocate(const size_t num_bytes)
+// allocate with \c new so the standard \c unique_ptr may deallocate it later on
+void* allocate(const uint64_t num_bytes)
 {
-    return new unsigned char[num_bytes];
+    return new unsigned char[static_cast<size_t>(num_bytes)];
 }
 
 int main(int argc, char** argv)
@@ -42,7 +43,8 @@ int main(int argc, char** argv)
                              reinterpret_cast<unsigned char*>(bytes.data()),
                              allocate,
                              &dst,
-                             &json_returned_bytes);
+                             &json_returned_bytes,
+                             nullptr);
   //std::cout << json_returned_bytes << std::endl;
   //printf("%d %s\n", rv, ((rv==0)?"prc-rs returned SUCCESS":"FAIL"));
   if (rv != 0) {

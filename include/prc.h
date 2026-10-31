@@ -13,14 +13,16 @@
 extern "C" {
 #endif
 
+#define PRC_LIBPRC_VERSION 0.3.0
 #define PRC_LIBPRC_VER_MAJOR 0
-#define PRC_LIBPRC_VER_MINOR 2
+#define PRC_LIBPRC_VER_MINOR 3
 #define PRC_LIBPRC_VER_PATCH 0
+#define PRC_LIBPRC_JSON_SCHEMA_VERSION 20261028
 
   //! Function pointer to caller defined memory allocator. Memory allocated
   //! by this function needs to be released by the caller with a matching
   //! deallocator. The returned allocation should be at least 16 byte aligned.
-  typedef void* (*allocate_fn_t)(const size_t num_bytes);
+  typedef void* (*allocate_fn_t)(const uint64_t num_bytes);
 
   //! Return textual representation of a parsed PRC.
   //!
@@ -29,12 +31,14 @@ extern "C" {
   //! \param[in] allocate function pointer to caller defined memory allocator.
   //! \param[out] dst Address of pointer to data being returned. Allocated by \c allocate.
   //! \param[out] dst_actual_size Number of bytes used in \c dst.
+  //! \param reserved Reserved for future use.
   //! \returns 0 on success.
   extern int32_t prc_parse_to_json(const uint64_t src_len,
                                    const unsigned char *const src,
                                    allocate_fn_t allocate,
                                    unsigned char** dst,
-                                   uint64_t* dst_actual_size);
+                                   uint64_t* dst_actual_size,
+                                   void* reserved);
 
 
 #ifdef __cplusplus

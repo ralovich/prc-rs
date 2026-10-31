@@ -257,6 +257,7 @@ pub fn read_double_from_reader<R: BitRead>(rdr: &mut R) -> std::io::Result<f64> 
 
 pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::io::Result<usize> {
     let value: ieee754_double = ieee754_double { d };
+    let bytes = unsafe { value.bytes };
     //println!("{}", unsafe { value.u } );
     let cofdoe = CodingOfFrequentDoubleOrExponent::new(ieee754_double { d });
     let idx = COFDOE.binary_search(&cofdoe);
@@ -322,112 +323,96 @@ pub fn write_double_to_writer<W: BitWrite + ?Sized>(w: &mut W, d: f64) -> std::i
     bits_written += 1;
 
     let mut bi: usize = 6; // byte index same as pb in spec
-    let b4: u8 = unsafe { value.bytes[bi] } & 0x0F;
+    let b4: u8 = bytes[bi] & 0x0F;
     write_bits(w, b4, 4)?;
     bits_written += 4;
 
     bi -= 1;
-    let start = bi;
+    let start = 5;
 
     let end: usize = 0;
     let mut stop: usize = 0;
     let mut byte_save_at_end: u8 = 0;
-    let do_save_at_end: bool = unsafe { value.bytes[0] != value.bytes[1] };
+    let do_save_at_end: bool = bytes[0] != bytes[1];
     if do_save_at_end {
-        byte_save_at_end = unsafe { value.bytes[0] };
+        byte_save_at_end = bytes[0];
     }
     stop += 1;
 
+    while bytes[stop] == bytes[stop + 1] && stop < 6 {
+        stop += 1;
+    }
+
     fn memchr(bytes: &[u8; 8], start: usize, key: u8, n: usize) -> Option<usize> {
         let end = start + n;
-        for i in start..end {
-            assert!(i < bytes.len());
-            if bytes[i] == key {
-                assert_eq!(bytes[i], key);
-                return Some(i);
-            }
-        }
-        None
+        (start..end).find(|&i| bytes[i] == key)
     }
 
-    unsafe {
-        while value.bytes[stop] == value.bytes[stop + 1] && stop < 6 {
-            stop += 1;
-            if stop >= 7 {
-                return Err(std::io::Error::other("Failed to write double!"));
-            }
-        }
-
-        let mut result: usize = 0;
-        while bi >= stop {
-            let mut found: bool = false;
-            if bi != start {
-                match memchr(&value.bytes, bi + 1, value.bytes[bi], start - bi) {
-                    Some(x) => {
-                        result = x;
-                        found = true
-                    }
-                    None => found = false,
-                };
-            }
-            if bi != start && found {
-                write_bits(w, 0, 1)?;
-                bits_written += 1;
-                let b3: u8 = (result - bi) as u8 & 0x07;
-                write_bits(w, b3, 3)?;
-                bits_written += 3;
-            } else {
-                write_bits(w, 1, 1)?;
-                bits_written += 1;
-                let byte: u8 = value.bytes[bi];
-                write_bits(w, byte, 8)?;
-                bits_written += 8;
-            }
-
-            bi -= 1;
-        }
-
-        if !(end + 1 >= stop) {
-            if do_save_at_end {
-                write_bits(w, 0, 1)?;
-                bits_written += 1;
-                let b3: u8 = 6;
-                write_bits(w, b3, 3)?;
-                bits_written += 3;
-                write_bits(w, byte_save_at_end, 8)?;
-                bits_written += 8;
-            } else {
-                write_bits(w, 0, 1)?;
-                bits_written += 1;
-                write_bits(w, 0, 3)?;
-                bits_written += 3;
-            }
-        } else {
-            let found: bool = match memchr(&value.bytes, bi + 1, value.bytes[bi], start - bi) {
+    let mut result: usize = 0;
+    while bi >= stop {
+        let mut found: bool = false;
+        if bi != start {
+            match memchr(&bytes, bi + 1, bytes[bi], start - bi) {
                 Some(x) => {
                     result = x;
-                    true
+                    found = true
                 }
-                None => false,
+                None => found = false,
             };
-            if found {
-                write_bits(w, 0, 1)?;
-                bits_written += 1;
-                let b3 = (result - bi) as u8 & 0x07;
-                write_bits(w, b3, 3)?;
-                bits_written += 3;
-            } else {
-                write_bits(w, 1, 1)?;
-                bits_written += 1;
-                write_bits(w, value.bytes[bi], 8)?;
-                bits_written += 8;
+        }
+        if bi != start && found {
+            write_bits(w, 0, 1)?;
+            bits_written += 1;
+            let b3: u8 = (result - bi) as u8 & 0x07;
+            write_bits(w, b3, 3)?;
+            bits_written += 3;
+        } else {
+            write_bits(w, 1, 1)?;
+            bits_written += 1;
+            let byte: u8 = bytes[bi];
+            write_bits(w, byte, 8)?;
+            bits_written += 8;
+        }
+
+        bi -= 1;
+    }
+
+    if !(end + 1 >= stop) {
+        if do_save_at_end {
+            write_bits(w, 0, 1)?;
+            bits_written += 1;
+            let b3: u8 = 6;
+            write_bits(w, b3, 3)?;
+            bits_written += 3;
+            write_bits(w, byte_save_at_end, 8)?;
+            bits_written += 8;
+        } else {
+            write_bits(w, 0, 1)?;
+            bits_written += 1;
+            write_bits(w, 0, 3)?;
+            bits_written += 3;
+        }
+    } else {
+        let found: bool = match memchr(&bytes, bi + 1, bytes[bi], start - bi) {
+            Some(x) => {
+                result = x;
+                true
             }
+            None => false,
+        };
+        if found {
+            write_bits(w, 0, 1)?;
+            bits_written += 1;
+            let b3 = (result - bi) as u8 & 0x07;
+            write_bits(w, b3, 3)?;
+            bits_written += 3;
+        } else {
+            write_bits(w, 1, 1)?;
+            bits_written += 1;
+            write_bits(w, bytes[bi], 8)?;
+            bits_written += 8;
         }
     }
-    if bits_written > 71 {
-        //println!("{} needed {} bits", d, bits_written);
-    }
-    //assert!(bits_written <= 64);
 
     Ok(bits_written)
 }

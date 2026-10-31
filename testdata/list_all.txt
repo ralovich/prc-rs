@@ -1,12 +1,23 @@
+40851_2019_129_MOESM1_ESM.stream-12.prc
+FIGURR S1.stream-9.prc
+Figure S6 3D PDF of the Heterophrynus elaphus model flexed..stream-13.prc
+Figure S5 3D PDF of the Heterophrynus elaphus model outstretched..stream-13.prc
+Geoff_Vincents_specimen_interactive_3D.stream-7.prc
 Forensic_Pix4D_AutoPileUp_Demo_PDF3D.stream-69.prc
 3DPDF_DrivAer.stream-8.prc
 Chromalloy-PW4000_HPT1.stream-8.prc
+Figure S7 3D PDF of the conservative Anomalocaris canadensis model flexed..stream-13.prc
+Figure S2 3D PDF of the Anomalocaris canadensis model flexed..stream-12.prc
+Figure S1 3D PDF Anomalocaris canadensis model outstretched.stream-13.prc
 3D-PDF-Animated-Tea-Box.stream-42.prc
 PDF-3D_Chimney_story_dGB.stream-8.prc
 Miter-Saw-Assembly.stream-1653.prc
 Panorama_Demo_Construction_r11324.stream-64.prc
 Interactive_PDF_-_Dalyellia_callvucurai.stream-18.prc
+Figure S3 3D PDF of the Mastigoproctus giganteus model outstretched..stream-13.prc
+Figure S4 3D PDF of the Mastigoproctus giganteus model flexed..stream-13.prc
 Panorama_Demo_Construction.stream-23.prc
+joa12625-sup-0002-figs2.stream-12.prc
 MikeHerbolsheimer-360-Photo-Tank42A-DeckLayout.stream-49.prc
 sheldonian-theater-PDF3D.stream-58.prc
 PDF3D-Storage-Tank-Adjacent-to-Shallow-Gorge.stream-56.prc
@@ -22,6 +33,7 @@ MikeHerbolsheimer-360-Photo-DeckLayout-2.stream-54.prc
 3D-PDF-Sample-Shoe.stream-48.prc
 DotProduct-ElectricalControlPanel-CloudCompare-PDF3D.stream-81.prc
 MikeHerbolsheimer-PDF3D-360-Photo-in-PDF-WinterCanyon.stream-56.prc
+joa12625-sup-0003-figs3.stream-12.prc
 3dpdf-AEC-OfficeBuilding.stream-78.prc
 Panoramic_Demo_WisleyGlassHouse_r9148.stream-42.prc
 PartList-Helico.stream-435.prc
@@ -34,7 +46,9 @@ VRMesh_Decimate_Summer_House.stream-51.prc
 output.prc
 Castle_of_Bouvignes_Belgium_landscape.stream-48.prc
 hundehodepinne-3d.stream-14.prc
+joa12625-sup-0001-figs1.stream-12.prc
 3D_PDF_Mounted_Airless_Sprayer_Maintenance.stream-154.prc
+joa12625-sup-0004-figs4.stream-12.prc
 3D_PDF_PROSTEP-Seats.stream-12.prc
 3D_PDF_iPhone_Replacement.stream-171.prc
 PROSTEP-Change_Process_201408_3DData.stream-236.prc
@@ -43,14 +57,18 @@ Work Instruction.stream-331.prc
 6-fault-blocks.stream-14.prc
 cutaway-tunnel.stream-14.prc
 3D_PDF_PROSTEP-Auto_Carburetor.stream-78.prc
+ZooKeys-263-001-g004.stream-27.prc
+ZooKeys-263-001-g003.stream-33.prc
 3D-PDF-Sample-Chasis.stream-48.prc
 Panorama_Demo_RicohThetaS-Interior_r11324.stream-54.prc
 Work-In-Process-WIP-Report.stream-163.prc
 GoldenCap_Example_Animated.stream-18.prc
+isprsarchives-XXXVIII-5-W16-483-2011.stream-178.prc
 streamtubes.stream-14.prc
 3dpdf-Aero-Turbine.stream-105.prc
 DRL_3DPDF.stream-403.prc
 3dpdf-Industrial-Grinder.stream-180.prc
+ZooKeys-263-001-g009.stream-24.prc
 PRC example.stream-9.prc
 3D_PDF_PROSTEP-Advanced_Maintenance_Manual.stream-124.prc
 Portal-Plate-NC-Machine-Work-Instruction.stream-176.prc

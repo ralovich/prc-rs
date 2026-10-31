@@ -14,6 +14,7 @@ use num_enum::TryFromPrimitive;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
+use std::fmt::Formatter;
 
 #[repr(u32)]
 #[allow(non_camel_case_types)]
@@ -69,6 +70,14 @@ impl fmt::Display for SchemaTokens {
         // fmt::Debug::fmt(self, f)
     }
 }
+fn schema_token_as_string(tok: u32) -> String {
+    if let Ok(t) = SchemaTokens::try_from(tok) {
+        t.to_string()
+    } else {
+        format!("UnknownSchemaToken({})", tok)
+    }
+}
+
 pub fn print_schema(tokens: &[u32]) {
     use SchemaTokens::*;
 
@@ -106,7 +115,7 @@ pub fn print_schema(tokens: &[u32]) {
             debug!(
                 "{}{}",
                 (0..indent).map(|_| " ").collect::<String>(),
-                SchemaTokens::try_from(tok).unwrap()
+                schema_token_as_string(tok)
             );
         }
         if tok == EPRCSchema_Block_Start as u32
@@ -123,7 +132,7 @@ pub fn print_schema(tokens: &[u32]) {
     debug!("");
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub enum VariableKind {
     #[default]
     Invalid,
@@ -191,6 +200,11 @@ impl PartialEq for VariableKind {
     }
 }
 impl Eq for VariableKind {}
+impl fmt::Display for VariableKind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
 
 #[derive(Default, Debug)]
 struct VmState {
@@ -200,6 +214,18 @@ struct VmState {
     pub vars: HashMap<u32, VariableKind>, // map of <variable id, data> pairs
 }
 impl VmState {
+    pub fn pop_op(&mut self) -> std::io::Result<u32> {
+        match self.opstack.pop() {
+            Some(op) => Ok(op),
+            None => Err(std::io::Error::other("No instruction to pop!")),
+        }
+    }
+    pub fn pop_data(&mut self) -> std::io::Result<VariableKind> {
+        match self.dstack.pop() {
+            Some(data) => Ok(data),
+            None => Err(std::io::Error::other("No data to pop!")),
+        }
+    }
     pub fn i(&self) -> std::string::String {
         (0..self.indent).map(|_| " ").collect::<String>()
     }
@@ -210,7 +236,7 @@ impl VmState {
         }
         assert_eq!(self.dstack.len(), len_before + other.dstack.len());
         if !other.dstack.is_empty() {
-            assert_eq!(self.dstack.last().unwrap(), other.dstack.first().unwrap());
+            assert_eq!(self.dstack.last(), other.dstack.first());
         }
     }
 }
@@ -225,10 +251,8 @@ impl SchemaEvaluator {
         let mut ops_per_type: HashMap<u32, Vec<u32>> = HashMap::new();
         for sch in inp {
             let _type_name = match PrcType::try_from(sch.entity_type.value) {
+                Ok(val) => val.to_string(),
                 Err(_) => sch.entity_type.value.to_string(),
-                _ => PrcType::try_from(sch.entity_type.value)
-                    .unwrap()
-                    .to_string(),
             };
             debug!("Schema present for {}", _type_name);
             let mut v = Vec::new();
@@ -253,10 +277,19 @@ impl SchemaEvaluator {
     pub fn eval<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
         &mut self,
         rdr: &mut BitReader<R, E>,
+        type_to_eval: PrcType,
+        skip: bool,
+        indent: u32,
+    ) -> std::io::Result<Vec<VariableKind>> {
+        self.evalu(rdr, type_to_eval as u32, skip, indent)
+    }
+    pub fn evalu<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
+        &mut self,
+        rdr: &mut BitReader<R, E>,
         type_to_eval: u32,
         skip: bool,
         indent: u32,
-    ) -> Result<Vec<VariableKind>, E> {
+    ) -> std::io::Result<Vec<VariableKind>> {
         // no instructions for this type
         if !self.ops_per_type.contains_key(&type_to_eval) {
             //println!("No schema to evaluate for {}", type_to_eval);
@@ -287,16 +320,11 @@ impl SchemaEvaluator {
             /*self.*/
             s.opstack.push(op);
         }
-        assert_eq!(
-            /*self.*/ s.opstack.first().unwrap(),
-            ops.last().unwrap()
-        );
 
         //while let Some(op) = self.s.opstack.pop() {
         while !/*self.*/s.opstack.is_empty() {
-            self.do_eval(rdr, &mut /*self.*/s, skip);
+            self.do_eval(rdr, &mut /*self.*/s, skip)?;
         }
-        assert!(s.opstack.is_empty());
 
         let mut variables_to_return = Vec::new();
         for v in s.dstack.iter() {
@@ -311,21 +339,21 @@ impl SchemaEvaluator {
         rdr: &mut BitReader<R, E>,
         s: &mut VmState,
         skip: bool,
-    ) {
+    ) -> std::io::Result<()> {
         use SchemaTokens::*;
 
         if s.opstack.is_empty() {
-            return;
+            return Ok(());
         }
 
         s.indent += 1;
-        let instr = s.opstack.pop().unwrap();
+        let instr = s.pop_op()?;
         match instr {
             val if val == EPRCSchema_Data_Boolean as u32 => {
                 if skip {
                     debug!("{}SKIP READB", s.i());
                 } else {
-                    let tmp = builtin::Boolean::from_reader(rdr).unwrap().value;
+                    let tmp = builtin::Boolean::from_reader(rdr)?.value;
                     debug!("{}READB {}", s.i(), tmp);
                     s.dstack.push(VariableKind::Boolean(tmp));
                 }
@@ -334,7 +362,7 @@ impl SchemaEvaluator {
                 if skip {
                     debug!("{}SKIP READD", s.i());
                 } else {
-                    let tmp = builtin::Double::from_reader(rdr).unwrap().value;
+                    let tmp = builtin::Double::from_reader(rdr)?.value;
                     debug!("{}READD {}", s.i(), tmp);
                     s.dstack.push(VariableKind::Double(tmp));
                 }
@@ -343,7 +371,7 @@ impl SchemaEvaluator {
                 if skip {
                     debug!("{}SKIP READC", s.i());
                 } else {
-                    let tmp = builtin::UnsignedCharacter::from_reader(rdr).unwrap().value;
+                    let tmp = builtin::UnsignedCharacter::from_reader(rdr)?.value;
                     debug!("{}READC {}", s.i(), tmp);
                     s.dstack.push(VariableKind::Char(tmp));
                 }
@@ -352,7 +380,7 @@ impl SchemaEvaluator {
                 if skip {
                     debug!("{}SKIP READU", s.i());
                 } else {
-                    let tmp = builtin::UnsignedInteger::from_reader(rdr).unwrap().value;
+                    let tmp = builtin::UnsignedInteger::from_reader(rdr)?.value;
                     debug!("{}READU {}", s.i(), tmp);
                     s.dstack.push(VariableKind::Unsigned(tmp));
                 }
@@ -361,7 +389,7 @@ impl SchemaEvaluator {
                 if skip {
                     debug!("{}SKIP READI", s.i());
                 } else {
-                    let tmp = builtin::Integer::from_reader(rdr).unwrap().value;
+                    let tmp = builtin::Integer::from_reader(rdr)?.value;
                     debug!("{}READI {}", s.i(), tmp);
                     s.dstack.push(VariableKind::Integer(tmp));
                 }
@@ -370,19 +398,19 @@ impl SchemaEvaluator {
                 if skip {
                     debug!("{}SKIP READS", s.i());
                 } else {
-                    let tmp = builtin::String::from_reader(rdr).unwrap().value;
+                    let tmp = builtin::String::from_reader(rdr)?.value;
                     debug!("{}READS \"{}\"", s.i(), tmp);
                     s.dstack.push(VariableKind::String(tmp));
                 }
             }
             val if val == EPRCSchema_Father_Type as u32 => {
-                let father_type_id = s.opstack.pop().unwrap();
+                let father_type_id = s.pop_op()?;
                 if skip {
                     debug!("{}SKIP FATHER {}", s.i(), father_type_id);
                 } else {
                     debug!("{}FATHER {}", s.i(), father_type_id);
                     let mut nested = self.clone();
-                    let _ = nested.eval(rdr, father_type_id, skip, s.indent);
+                    let _ = nested.evalu(rdr, father_type_id, skip, s.indent)?;
                     self.merge_from(&nested);
                 }
             }
@@ -391,8 +419,8 @@ impl SchemaEvaluator {
                     debug!("{}SKIP READV2D", s.i());
                 } else {
                     let tmp: [f64; 2] = [
-                        builtin::Double::from_reader(rdr).unwrap().value,
-                        builtin::Double::from_reader(rdr).unwrap().value,
+                        builtin::Double::from_reader(rdr)?.value,
+                        builtin::Double::from_reader(rdr)?.value,
                     ];
                     debug!("{}READV2D {:?}", s.i(), tmp);
                     s.dstack.push(VariableKind::Vector2D(tmp[0], tmp[1]));
@@ -403,9 +431,9 @@ impl SchemaEvaluator {
                     debug!("{}SKIP READV3D", s.i());
                 } else {
                     let tmp: [f64; 3] = [
-                        builtin::Double::from_reader(rdr).unwrap().value,
-                        builtin::Double::from_reader(rdr).unwrap().value,
-                        builtin::Double::from_reader(rdr).unwrap().value,
+                        builtin::Double::from_reader(rdr)?.value,
+                        builtin::Double::from_reader(rdr)?.value,
+                        builtin::Double::from_reader(rdr)?.value,
                     ];
                     debug!("{}READV3D {:?}", s.i(), tmp);
                     s.dstack
@@ -417,10 +445,10 @@ impl SchemaEvaluator {
                     debug!("{}SKIP READExtent_2D", s.i());
                 } else {
                     let tmp: [f64; 4] = [
-                        builtin::Double::from_reader(rdr).unwrap().value,
-                        builtin::Double::from_reader(rdr).unwrap().value,
-                        builtin::Double::from_reader(rdr).unwrap().value,
-                        builtin::Double::from_reader(rdr).unwrap().value,
+                        builtin::Double::from_reader(rdr)?.value,
+                        builtin::Double::from_reader(rdr)?.value,
+                        builtin::Double::from_reader(rdr)?.value,
+                        builtin::Double::from_reader(rdr)?.value,
                     ];
                     debug!("{}READExtent_2D {:?}", s.i(), tmp);
                     s.dstack.push(VariableKind::Vector2D(tmp[0], tmp[1]));
@@ -432,12 +460,12 @@ impl SchemaEvaluator {
                     debug!("{}SKIP READExtent_3D", s.i());
                 } else {
                     let tmp: [f64; 6] = [
-                        builtin::Double::from_reader(rdr).unwrap().value,
-                        builtin::Double::from_reader(rdr).unwrap().value,
-                        builtin::Double::from_reader(rdr).unwrap().value,
-                        builtin::Double::from_reader(rdr).unwrap().value,
-                        builtin::Double::from_reader(rdr).unwrap().value,
-                        builtin::Double::from_reader(rdr).unwrap().value,
+                        builtin::Double::from_reader(rdr)?.value,
+                        builtin::Double::from_reader(rdr)?.value,
+                        builtin::Double::from_reader(rdr)?.value,
+                        builtin::Double::from_reader(rdr)?.value,
+                        builtin::Double::from_reader(rdr)?.value,
+                        builtin::Double::from_reader(rdr)?.value,
                     ];
                     debug!("{}READExtent_3D {:?}", s.i(), tmp);
                     s.dstack
@@ -451,9 +479,8 @@ impl SchemaEvaluator {
                     debug!("{}SKIP READPtr_Surface", s.i());
                 } else {
                     let mut ctx: PrcParsingContext = Default::default();
-                    let tmp = crate::prc_gen::PRC_TYPE_SURF::from_reader(rdr, &mut ctx)
-                        .unwrap()
-                        .id_concrete;
+                    let tmp =
+                        crate::prc_gen::PRC_TYPE_SURF::from_reader(rdr, &mut ctx)?.id_concrete;
                     debug!("{}READPtr_Surface {:?}", s.i(), tmp);
                     // TODO: push on dstack?
                 }
@@ -463,9 +490,7 @@ impl SchemaEvaluator {
                     debug!("{}SKIP READPtr_Curve", s.i());
                 } else {
                     let mut ctx: PrcParsingContext = Default::default();
-                    let tmp = crate::prc_gen::PRC_TYPE_CRV::from_reader(rdr, &mut ctx)
-                        .unwrap()
-                        .id_concrete;
+                    let tmp = crate::prc_gen::PRC_TYPE_CRV::from_reader(rdr, &mut ctx)?.id_concrete;
                     debug!("{}READPtr_Curve {:?}", s.i(), tmp);
                     // TODO: push on dstack?
                 }
@@ -473,16 +498,18 @@ impl SchemaEvaluator {
             val if val == EPRCSchema_For as u32 => {
                 if skip {
                     debug!("{}SKIP FOR", s.i());
-                    self.do_eval(rdr, s, true); // skip number of iterations
-                    self.do_eval(rdr, s, true); // skip loop body
+                    self.do_eval(rdr, s, true)?; // skip number of iterations
+                    self.do_eval(rdr, s, true)?; // skip loop body
                 } else {
-                    self.do_eval(rdr, s, skip); // retrieve number of iterations
-                    let n = match s.dstack.pop().unwrap() {
+                    self.do_eval(rdr, s, skip)?; // retrieve number of iterations
+                    let n = match s.pop_data()? {
                         VariableKind::Integer(i) => i,
                         VariableKind::Unsigned(u) => u as i32,
-                        _ => {
-                            warn!("EPRCSchema_For unsupported iteration limit type!");
-                            0
+                        unk => {
+                            return Err(std::io::Error::other(format!(
+                                "EPRCSchema_For unsupported iteration limit type: {}!",
+                                unk
+                            )));
                         }
                     };
                     debug!("{}FOR {:?}", s.i(), n);
@@ -494,22 +521,22 @@ impl SchemaEvaluator {
                             dstack: Default::default(),
                             vars: Default::default(),
                         };
-                        self.do_eval(rdr, &mut s_tmp, false);
+                        self.do_eval(rdr, &mut s_tmp, false)?;
                         s.merge_from(&s_tmp);
                     }
                     if n > 0 {
-                        self.do_eval(rdr, s, false);
+                        self.do_eval(rdr, s, false)?;
                     } else {
-                        self.do_eval(rdr, s, true);
+                        self.do_eval(rdr, s, true)?;
                     }
                 }
             }
             val if val == EPRCSchema_SimpleFor as u32 => {
                 if skip {
                     debug!("{}SKIP SIMPLEFOR", s.i());
-                    self.do_eval(rdr, s, true); // skip loop body
+                    self.do_eval(rdr, s, true)?; // skip loop body
                 } else {
-                    let n = builtin::Integer::from_reader(rdr).unwrap().value; // retrieve number of iterations
+                    let n = builtin::Integer::from_reader(rdr)?.value; // retrieve number of iterations
                     debug!("{}READI {}", s.i(), n);
                     debug!("{}SIMPLEFOR {}", s.i(), n);
                     // eval next instruction or block N times in a loop
@@ -520,55 +547,57 @@ impl SchemaEvaluator {
                             dstack: Default::default(),
                             vars: Default::default(),
                         };
-                        self.do_eval(rdr, &mut s_tmp, false);
+                        self.do_eval(rdr, &mut s_tmp, false)?;
                         s.merge_from(&s_tmp);
                     }
                     if n > 0 {
-                        self.do_eval(rdr, s, false);
+                        self.do_eval(rdr, s, false)?;
                     } else {
-                        self.do_eval(rdr, s, true);
+                        self.do_eval(rdr, s, true)?;
                     }
                 }
             }
             val if val == EPRCSchema_If as u32 => {
                 if skip {
                     debug!("{}SKIP IF", s.i());
-                    self.do_eval(rdr, s, true); // skip conditional
-                    self.do_eval(rdr, s, true); // skip THEN branch
-                    if *s.opstack.last().unwrap() == EPRCSchema_Else as u32 {
-                        self.do_eval(rdr, s, true); // skip ELSE branch
+                    self.do_eval(rdr, s, true)?; // skip conditional
+                    self.do_eval(rdr, s, true)?; // skip THEN branch
+                    if s.opstack.last() == Some(&(EPRCSchema_Else as u32)) {
+                        self.do_eval(rdr, s, true)?; // skip ELSE branch
                     }
                 } else {
                     debug!("{}IF", s.i());
                     // eval conditional
-                    self.do_eval(rdr, s, false);
-                    let conditional = s.dstack.pop().unwrap();
+                    self.do_eval(rdr, s, false)?;
+                    let conditional = s.pop_data()?;
                     let cond_is_true: bool = match conditional {
                         VariableKind::Boolean(b) => b,
                         VariableKind::Double(d) => d != 0.0,
                         VariableKind::Char(c) => c != 0,
                         VariableKind::Integer(i) => i != 0,
                         VariableKind::Unsigned(u) => u != 0,
-                        _ => {
-                            warn!("EPRCSchema_If conditional must be a scalar expression!");
-                            false
+                        unk => {
+                            return Err(std::io::Error::other(format!(
+                                "EPRCSchema_If conditional must be a scalar expression: {}!",
+                                unk
+                            )));
                         }
                     };
                     if cond_is_true {
                         debug!("{}THEN branch", s.i());
-                        self.do_eval(rdr, s, false); // evaluate THEN branch
-                        if *s.opstack.last().unwrap() == EPRCSchema_Else as u32 {
+                        self.do_eval(rdr, s, false)?; // evaluate THEN branch
+                        if s.opstack.last() == Some(&(EPRCSchema_Else as u32)) {
                             debug!("{}SKIP ELSE branch", s.i());
-                            self.do_eval(rdr, s, true); // skip ELSE branch
+                            self.do_eval(rdr, s, true)?; // skip ELSE branch
                         }
                     }
                     // if no - skip then branch and eval else branch
                     else {
                         debug!("{}SKIP THEN branch", s.i());
-                        self.do_eval(rdr, s, true); // skip over the THEN branch
+                        self.do_eval(rdr, s, true)?; // skip over the THEN branch
                         debug!("{}ELSE branch", s.i());
-                        if *s.opstack.last().unwrap() == EPRCSchema_Else as u32 {
-                            self.do_eval(rdr, s, false);
+                        if s.opstack.last() == Some(&(EPRCSchema_Else as u32)) {
+                            self.do_eval(rdr, s, false)?;
                         }
                     }
                 }
@@ -582,23 +611,23 @@ impl SchemaEvaluator {
                 }
                 s.indent += 1;
                 // continue on next token or block
-                self.do_eval(rdr, s, skip);
+                self.do_eval(rdr, s, skip)?;
             }
             val if val == EPRCSchema_Value_DeclareAndSet as u32 => {
-                let variable_id = s.opstack.pop().unwrap();
+                let variable_id = s.pop_op()?;
                 if skip {
                     debug!("{}SKIP DECLARE VAR{}", s.i(), variable_id);
-                    self.do_eval(rdr, s, true);
+                    self.do_eval(rdr, s, true)?;
                 } else {
                     debug!("{}DECLARE VAR{}", s.i(), variable_id);
-                    self.do_eval(rdr, s, false);
-                    let variable_value = s.dstack.pop().unwrap();
+                    self.do_eval(rdr, s, false)?;
+                    let variable_value = s.pop_data()?;
                     debug!("{}SET VAR{} TO {:?}", s.i(), variable_id, variable_value);
                     s.vars.insert(variable_id, variable_value);
                 }
             }
             val if val == EPRCSchema_Value as u32 => {
-                let variable_id = s.opstack.pop().unwrap();
+                let variable_id = s.pop_op()?;
                 if skip {
                     debug!("{}SKIP READ VAR{}", s.i(), variable_id);
                 } else {
@@ -608,20 +637,19 @@ impl SchemaEvaluator {
                 }
             }
             val if val == EPRCSchema_Value_Constant as u32 => {
-                let value = s.opstack.pop().unwrap();
+                let value = s.pop_op()?;
                 if !skip {
                     s.dstack.push(VariableKind::Unsigned(value));
                 }
             }
             val if val == EPRCSchema_Operator_EQ as u32 => {
-                self.do_eval(rdr, s, skip); // eval LHS
-                self.do_eval(rdr, s, skip); // eval RHS
+                self.do_eval(rdr, s, skip)?; // eval LHS
+                self.do_eval(rdr, s, skip)?; // eval RHS
                 if skip {
                     debug!("{}SKIP EQ", s.i());
                 } else {
-                    assert!(s.dstack.len() >= 2);
-                    let a = s.dstack.pop().unwrap();
-                    let b = s.dstack.pop().unwrap();
+                    let a = s.pop_data()?;
+                    let b = s.pop_data()?;
                     let eq: bool = a == b;
                     debug!("{}EQ {:?} {:?}? -> {}", s.i(), a, b, eq);
                     s.dstack.push(VariableKind::Boolean(eq));
@@ -633,10 +661,12 @@ impl SchemaEvaluator {
                 } else {
                     debug!("{}BLOCK_START", s.i());
                 }
-                while *s.opstack.last().unwrap() != EPRCSchema_Block_End as u32 {
-                    self.do_eval(rdr, s, skip);
+                while !s.opstack.is_empty()
+                    && s.opstack.last() != Some(&(EPRCSchema_Block_End as u32))
+                {
+                    self.do_eval(rdr, s, skip)?;
                 }
-                self.do_eval(rdr, s, skip); // eval EPRCSchema_Block_End too
+                self.do_eval(rdr, s, skip)?; // eval EPRCSchema_Block_End too
             }
             val if val == EPRCSchema_Block_End as u32 => {
                 s.indent -= 1;
@@ -650,14 +680,16 @@ impl SchemaEvaluator {
             val if val == EPRCSchema_Block_Version as u32 => {
                 if skip {
                     debug!("{}SKIP BLOCK_VERSION", s.i());
-                    self.do_eval(rdr, s, skip); // version token
-                    while *s.opstack.last().unwrap() != EPRCSchema_Block_End as u32 {
-                        self.do_eval(rdr, s, skip);
+                    self.do_eval(rdr, s, skip)?; // version token
+                    while !s.opstack.is_empty()
+                        && s.opstack.last() != Some(&(EPRCSchema_Block_End as u32))
+                    {
+                        self.do_eval(rdr, s, skip)?;
                     }
-                    self.do_eval(rdr, s, skip); // eval EPRCSchema_Block_End too
+                    self.do_eval(rdr, s, skip)?; // eval EPRCSchema_Block_End too
                 } else {
                     // version is the next token
-                    let version = s.opstack.pop().unwrap();
+                    let version = s.pop_op()?;
                     debug!(
                         "{}BLOCK_VERSION {} < {}?",
                         s.i(),
@@ -665,16 +697,20 @@ impl SchemaEvaluator {
                         version
                     );
                     if self.stored_version < version {
-                        while *s.opstack.last().unwrap() != EPRCSchema_Block_End as u32 {
-                            self.do_eval(rdr, s, skip);
+                        while !s.opstack.is_empty()
+                            && s.opstack.last() != Some(&(EPRCSchema_Block_End as u32))
+                        {
+                            self.do_eval(rdr, s, skip)?;
                         }
-                        self.do_eval(rdr, s, skip); // eval EPRCSchema_Block_End too
+                        self.do_eval(rdr, s, skip)?; // eval EPRCSchema_Block_End too
                     } else {
                         // skip block
-                        while *s.opstack.last().unwrap() != EPRCSchema_Block_End as u32 {
-                            self.do_eval(rdr, s, true);
+                        while !s.opstack.is_empty()
+                            && s.opstack.last() != Some(&(EPRCSchema_Block_End as u32))
+                        {
+                            self.do_eval(rdr, s, true)?;
                         }
-                        self.do_eval(rdr, s, skip); // eval EPRCSchema_Block_End too
+                        self.do_eval(rdr, s, skip)?; // eval EPRCSchema_Block_End too
                     }
                 }
             }
@@ -686,9 +722,15 @@ impl SchemaEvaluator {
                 // skip/swallow the next token
                 s.opstack.pop();
             }
-            _x => warn!("SchemaEvaluator::do_eval(): Unhandled token: {}!", _x),
+            unk => {
+                return Err(std::io::Error::other(format!(
+                    "SchemaEvaluator::do_eval(): Unhandled token: {}!",
+                    schema_token_as_string(unk)
+                )));
+            }
         }
         s.indent -= 1;
+        Ok(())
     }
 }
 
@@ -709,7 +751,7 @@ mod tests {
         let mut se: SchemaEvaluator = Default::default();
         let _ = se.eval(
             &mut r,
-            PrcType::PRC_TYPE_GRAPH_SceneDisplayParameters as u32,
+            PrcType::PRC_TYPE_GRAPH_SceneDisplayParameters,
             false,
             0,
         );
@@ -788,39 +830,34 @@ mod tests {
             stored_version: PRCVersion,
             ops_per_type,
         };
-        let mut vars = se.eval(&mut r, 0, false, 0).unwrap();
+        let mut vars = se.evalu(&mut r, 0, false, 0).unwrap();
         assert_eq!(vars.len(), 0usize);
 
-        vars = se.eval(&mut r, 1, false, 0).unwrap();
+        vars = se.evalu(&mut r, 1, false, 0).unwrap();
         assert_eq!(vars.len(), 2usize);
         assert_eq!(vars[0], VariableKind::Integer(-1));
         assert_eq!(vars[1], VariableKind::Integer(-2));
 
-        vars = se.eval(&mut r, 2, false, 0).unwrap();
+        vars = se.evalu(&mut r, 2, false, 0).unwrap();
         assert_eq!(vars.len(), 1usize);
         assert_eq!(vars[0], VariableKind::Double(456.789));
 
-        vars = se.eval(&mut r, 2, false, 0).unwrap();
+        vars = se.evalu(&mut r, 2, false, 0).unwrap();
         assert_eq!(vars.len(), 1usize);
         assert_eq!(vars[0], VariableKind::String("test-string".to_owned()));
 
-        vars = se.eval(&mut r, 3, false, 0).unwrap();
+        vars = se.evalu(&mut r, 3, false, 0).unwrap();
         assert_eq!(vars.len(), 2usize);
         assert_eq!(vars[0], VariableKind::Double(-4.0));
         assert_eq!(vars[1], VariableKind::Double(8.0));
 
-        vars = se.eval(&mut r, 3, false, 0).unwrap();
+        vars = se.evalu(&mut r, 3, false, 0).unwrap();
         assert_eq!(vars.len(), 2usize);
         assert_eq!(vars[0], VariableKind::String("test-string1".to_owned()));
         assert_eq!(vars[1], VariableKind::String("test-string2".to_owned()));
 
         vars = se
-            .eval(
-                &mut r,
-                PRC_TYPE_GRAPH_SceneDisplayParameters as u32,
-                false,
-                0,
-            )
+            .eval(&mut r, PRC_TYPE_GRAPH_SceneDisplayParameters, false, 0)
             .unwrap();
         assert_eq!(vars.len(), 0usize);
         //assert_eq!(vars[0], VariableKind::Boolean(true));
@@ -887,28 +924,28 @@ mod tests {
             ops_per_type,
         };
 
-        let mut type_id = PRC_TYPE_MISC_GeneralTransformation as u32;
+        let type_id = PRC_TYPE_MISC_GeneralTransformation;
         let mut vars = se.eval(&mut r, type_id, false, 0).unwrap();
         assert_eq!(vars.len(), 0usize);
 
-        type_id = 4;
-        vars = se.eval(&mut r, type_id, false, 0).unwrap();
+        let type_id = 4;
+        vars = se.evalu(&mut r, type_id, false, 0).unwrap();
         assert_eq!(vars.len(), 16usize);
         for i in (0..16).rev() {
             assert_eq!(VariableKind::Double(i as f64 - 0.5), vars[i]);
         }
 
-        type_id = PRC_TYPE_MKP_View as u32;
+        let type_id = PRC_TYPE_MKP_View;
         vars = se.eval(&mut r, type_id, false, 0).unwrap();
         assert_eq!(vars.len(), 0usize);
 
-        type_id = 5;
-        vars = se.eval(&mut r, type_id, false, 0).unwrap();
+        let type_id = 5;
+        vars = se.evalu(&mut r, type_id, false, 0).unwrap();
         assert_eq!(vars.len(), 1usize);
         assert_eq!(VariableKind::Unsigned(1), vars[0]);
 
-        type_id = 6;
-        vars = se.eval(&mut r, type_id, false, 0).unwrap();
+        let type_id = 6;
+        vars = se.evalu(&mut r, type_id, false, 0).unwrap();
         assert_eq!(vars.len(), 3_usize);
         assert_eq!(VariableKind::Boolean(true), vars[0]);
         assert_eq!(VariableKind::Boolean(true), vars[1]);
@@ -952,7 +989,7 @@ mod tests {
         let mut num_trailing_pad_bits = 0;
         {
             let mut w = BitWriter::endian(&mut bytes, bitstream_io::BigEndian);
-            // 303
+            // 303 PRC_TYPE_ASM_FileStructureGlobals
             UnsignedInteger { value: 0 }.to_writer(&mut w).unwrap();
             Double { value: 0.5 }.to_writer(&mut w).unwrap();
             String {
@@ -979,7 +1016,7 @@ mod tests {
             ops_per_type,
         };
 
-        let type_id = 303u32;
+        let type_id = PRC_TYPE_ASM_FileStructureGlobals;
         let vars = se.eval(&mut r, type_id, false, 0).unwrap();
         assert_eq!(vars.len(), 1usize);
         assert_eq!(VariableKind::Double(0.0), vars[0]);

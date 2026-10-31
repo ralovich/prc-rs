@@ -42,14 +42,14 @@ mod vec3;
 
 /// Library/crate version.
 #[allow(unused)]
-const LIBPRC_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const LIBPRC_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[allow(unused)]
-const LIBPRC_VERSION_MAJOR: &str = env!("CARGO_PKG_VERSION_MAJOR");
+pub const LIBPRC_VERSION_MAJOR: &str = env!("CARGO_PKG_VERSION_MAJOR");
 #[allow(unused)]
-const LIBPRC_VERSION_MINOR: &str = env!("CARGO_PKG_VERSION_MINOR");
+pub const LIBPRC_VERSION_MINOR: &str = env!("CARGO_PKG_VERSION_MINOR");
 #[allow(unused)]
-const LIBPRC_VERSION_PATCH: &str = env!("CARGO_PKG_VERSION_PATCH");
+pub const LIBPRC_VERSION_PATCH: &str = env!("CARGO_PKG_VERSION_PATCH");
 /// Version of the PRC specification implemented.
-const LIBPRC_PRC_SPEC_VERSION: u32 = 8137;
+pub const LIBPRC_PRC_SPEC_VERSION: u32 = 8137;
 /// Version of the JSON representation.
-const LIBPRC_JSON_SCHEMA_VERSION: u32 = 20261028;
+pub const LIBPRC_JSON_SCHEMA_VERSION: u32 = 20261028;

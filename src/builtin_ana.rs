@@ -19,7 +19,7 @@ impl AnaFaceTrimLoop {
     /// https://github.com/pdf-association/pdf-issues/issues/696
     pub fn from_reader_while_loop<R: std::io::Read + std::io::Seek, E: bitstream_io::Endianness>(
         rdr: &mut BitReader<R, E>,
-        _ctx: &mut PrcParsingContext,
+        ctx: &mut PrcParsingContext,
     ) -> io::Result<Vec<Self>> {
         trace!(
             "{}AnaFaceTrimLoop::from_reader_while_loop() bp={}",
@@ -33,7 +33,7 @@ impl AnaFaceTrimLoop {
         let mut loops = vec![];
 
         while curve_type == PrcCompressedFaceType::PRC_HCG_NewLoop as u8 {
-            _ctx.AnaFaceTrimLoop_start_new_loop();
+            ctx.AnaFaceTrimLoop_start_new_loop();
             let mut curves: Vec<RefOrCompressedCurve> = Vec::new();
 
             loop_surface_orientation = Boolean::from_reader(rdr)?;
@@ -55,18 +55,18 @@ impl AnaFaceTrimLoop {
                         curve_type = CompressedEntityType::from_reader(rdr)?.value;
                         break;
                     }
-                    curve.compressed_curve = Some(CompressedCurve::from_reader(rdr, _ctx)?);
+                    curve.compressed_curve = Some(CompressedCurve::from_reader(rdr, ctx)?);
                 } else {
                     curve.index_compressed_curve =
                         Some(UnsignedIntegerWithVariableBitNumber::from_reader(
                             rdr,
-                            _ctx.BrepDataCompress_number_of_bits_to_store_reference,
+                            ctx.BrepDataCompress_number_of_bits_to_store_reference,
                         )?);
                 }
-                _ctx.AnaFaceTrimLoop_add_curve_to_loop(curve.clone());
+                ctx.AnaFaceTrimLoop_add_curve_to_loop(curve.clone());
                 curves.push(curve);
             }
-            _ctx.AnaFaceTrimLoop_store_loop();
+            ctx.AnaFaceTrimLoop_store_loop();
             loops.push(Self {
                 loop_surface_orientation,
                 curves,
