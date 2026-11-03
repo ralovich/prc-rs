@@ -562,13 +562,13 @@ impl PrcParsingContext {
             if used_entities_flag & (*flag as u32) == 0 {
                 continue;
             }
+            if i >= triangulated_data.len() {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "Not enough data to determine number of vertex colors",
+                ));
+            }
             if !separate_count_first {
-                if i >= triangulated_data.len() {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::InvalidData,
-                        "Not enough data to determine number of vertex colors",
-                    ));
-                }
                 self.VertexColors_number_of_colors +=
                     num_colors_per_triangle * triangulated_data[i].value;
                 i += 1;
