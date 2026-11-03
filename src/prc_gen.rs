@@ -71,13 +71,16 @@ impl Name {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("Name");
         let _ig = indent::IndentGuard::new();
         let mut same_name: Boolean = Default::default();
         same_name = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let name_cond = !same_name;
         let mut name: String = Default::default();
         if name_cond {
             name = String::from_reader(rdr)?;
+            _ctx.on_read_begin("String");
         }
         _ctx.current_name = name.value.clone();
         let rv = Self {
@@ -133,18 +136,22 @@ impl AttributeEntry {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("AttributeEntry");
         let _ig = indent::IndentGuard::new();
         let mut flag: Boolean = Default::default();
         flag = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let integer_title_cond = !!flag;
         let mut integer_title: UnsignedInteger = Default::default();
         if integer_title_cond {
             integer_title = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         let string_title_cond = !flag;
         let mut string_title: String = Default::default();
         if string_title_cond {
             string_title = String::from_reader(rdr)?;
+            _ctx.on_read_begin("String");
         }
         let rv = Self {
             flag,
@@ -237,40 +244,49 @@ impl AttributeKeyValue {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("AttributeKeyValue");
         let _ig = indent::IndentGuard::new();
         let mut title: AttributeEntry = Default::default();
         title = AttributeEntry::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("AttributeEntry");
         let mut type_: UnsignedInteger = Default::default();
         type_ = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let valuei_cond = type_.value == 1;
         let mut valuei: Integer = Default::default();
         if valuei_cond {
             valuei = Integer::from_reader(rdr)?;
+            _ctx.on_read_begin("Integer");
         }
         let valued_cond = type_.value == 2;
         let mut valued: Double = Default::default();
         if valued_cond {
             valued = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         let valuet_cond = type_.value == 3;
         let mut valuet: Integer = Default::default();
         if valuet_cond {
             valuet = Integer::from_reader(rdr)?;
+            _ctx.on_read_begin("Integer");
         }
         let values_cond = type_.value == 4;
         let mut values: String = Default::default();
         if values_cond {
             values = String::from_reader(rdr)?;
+            _ctx.on_read_begin("String");
         }
         let value_msp_cond = type_.value == 5;
         let mut value_msp: Integer = Default::default();
         if value_msp_cond {
             value_msp = Integer::from_reader(rdr)?;
+            _ctx.on_read_begin("Integer");
         }
         let value_lsp_cond = type_.value == 5;
         let mut value_lsp: UnsignedInteger = Default::default();
         if value_lsp_cond {
             value_lsp = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         let rv = Self {
             title,
@@ -376,17 +392,21 @@ impl PRC_TYPE_MISC_Attribute {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MISC_Attribute");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MISC_Attribute) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_MISC_Attribute"));
         }
         let mut attribute_title: AttributeEntry = Default::default();
         attribute_title = AttributeEntry::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("AttributeEntry");
         let mut number_of_attributes: UnsignedInteger = Default::default();
         number_of_attributes = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_attributes.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -396,6 +416,7 @@ impl PRC_TYPE_MISC_Attribute {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_attributes.value) {
             let element = AttributeKeyValue::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("AttributeKeyValue");
             attributes.push(element);
         }
         _ctx.se.eval(rdr, PRC_TYPE_MISC_Attribute, false, 0)?;
@@ -442,9 +463,11 @@ impl AttributeData {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("AttributeData");
         let _ig = indent::IndentGuard::new();
         let mut attribute_count: UnsignedInteger = Default::default();
         attribute_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (attribute_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -454,6 +477,7 @@ impl AttributeData {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(attribute_count.value) {
             let element = PRC_TYPE_MISC_Attribute::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_MISC_Attribute");
             attributes.push(element);
         }
         let rv = Self {
@@ -493,11 +517,14 @@ impl ContentPRCBase {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ContentPRCBase");
         let _ig = indent::IndentGuard::new();
         let mut attribute_data: AttributeData = Default::default();
         attribute_data = AttributeData::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("AttributeData");
         let mut entity_name: Name = Default::default();
         entity_name = Name::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Name");
         let rv = Self {
             attribute_data,
             entity_name,
@@ -536,25 +563,30 @@ impl ElementGraphicsBehavior {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ElementGraphicsBehavior");
         let _ig = indent::IndentGuard::new();
         let mut use_context: Boolean = Default::default();
         use_context = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let biased_layer_index_cond = !use_context;
         let mut biased_layer_index: UnsignedInteger = Default::default();
         if biased_layer_index_cond {
             biased_layer_index = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         _ctx.layer_index = biased_layer_index.value + 1;
         let biased_index_of_line_style_cond = !use_context;
         let mut biased_index_of_line_style: UnsignedInteger = Default::default();
         if biased_index_of_line_style_cond {
             biased_index_of_line_style = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         _ctx.index_of_line_style = biased_index_of_line_style.value + 1;
         let behavior_bit_field_cond = !use_context;
         let mut behavior_bit_field: UnsignedShort = Default::default();
         if behavior_bit_field_cond {
             behavior_bit_field = UnsignedShort::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedShort");
         }
         _ctx.behavior_bit_field = behavior_bit_field.value;
         debug!(
@@ -628,9 +660,11 @@ impl GeometrySummary {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("GeometrySummary");
         let _ig = indent::IndentGuard::new();
         let mut number_of_bodies: UnsignedInteger = Default::default();
         number_of_bodies = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_bodies.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -640,6 +674,7 @@ impl GeometrySummary {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_bodies.value) {
             let element = BodyInformation::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("BodyInformation");
             bodies.push(element);
         }
         let rv = Self {
@@ -679,15 +714,18 @@ impl BodyInformation {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("BodyInformation");
         let _ig = indent::IndentGuard::new();
         let mut body_serial_type: UnsignedInteger = Default::default();
         body_serial_type = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let tolerance_cond = body_serial_type.value == PRC_TYPE_TOPO_BrepDataCompress as u32
             || body_serial_type.value == PRC_TYPE_TOPO_SingleWireBodyCompress as u32
             || body_serial_type.value == PRC_TYPE_TESS_3D_Compressed as u32;
         let mut tolerance: Double = Default::default();
         if tolerance_cond {
             tolerance = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         let rv = Self {
             body_serial_type,
@@ -735,9 +773,11 @@ impl ContextGraphics {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ContextGraphics");
         let _ig = indent::IndentGuard::new();
         let mut number_of_treat_type: UnsignedInteger = Default::default();
         number_of_treat_type = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_treat_type.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -747,6 +787,7 @@ impl ContextGraphics {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_treat_type.value) {
             let element = GraphicsInformation::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("GraphicsInformation");
             treat_types.push(element);
         }
         let rv = Self {
@@ -787,11 +828,14 @@ impl GraphicsInformation {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("GraphicsInformation");
         let _ig = indent::IndentGuard::new();
         let mut element_type: UnsignedInteger = Default::default();
         element_type = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut number_of_element: UnsignedInteger = Default::default();
         number_of_element = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_element.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -801,6 +845,7 @@ impl GraphicsInformation {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_element.value) {
             let element = ElementInformation::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("ElementInformation");
             treat_types.push(element);
         }
         let rv = Self {
@@ -843,13 +888,16 @@ impl ElementInformation {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ElementInformation");
         let _ig = indent::IndentGuard::new();
         let mut has_graphics: Boolean = Default::default();
         has_graphics = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let graphic_behavior_cond = !!has_graphics;
         let mut graphic_behavior: ElementGraphicsBehavior = Default::default();
         if graphic_behavior_cond {
             graphic_behavior = ElementGraphicsBehavior::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("ElementGraphicsBehavior");
         }
         let rv = Self {
             has_graphics,
@@ -895,11 +943,14 @@ impl ExtraGeometry {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ExtraGeometry");
         let _ig = indent::IndentGuard::new();
         let mut summary: GeometrySummary = Default::default();
         summary = GeometrySummary::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("GeometrySummary");
         let mut context_data: ContextGraphics = Default::default();
         context_data = ContextGraphics::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContextGraphics");
         let rv = Self {
             summary,
             context_data,
@@ -958,9 +1009,11 @@ impl PRC_TYPE_ASM_FileStructureExtraGeometry {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_ASM_FileStructureExtraGeometry");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_ASM_FileStructureExtraGeometry) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other(
@@ -969,8 +1022,10 @@ impl PRC_TYPE_ASM_FileStructureExtraGeometry {
         }
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCBase");
         let mut extra_geom_count: UnsignedInteger = Default::default();
         extra_geom_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (extra_geom_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -980,12 +1035,14 @@ impl PRC_TYPE_ASM_FileStructureExtraGeometry {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(extra_geom_count.value) {
             let element = ExtraGeometry::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("ExtraGeometry");
             extra_geom.push(element);
         }
         _ctx.se
             .eval(rdr, PRC_TYPE_ASM_FileStructureExtraGeometry, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             base,
@@ -1033,11 +1090,14 @@ impl Entity_schema_definition {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("Entity_schema_definition");
         let _ig = indent::IndentGuard::new();
         let mut entity_type: UnsignedInteger = Default::default();
         entity_type = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut token_count: UnsignedInteger = Default::default();
         token_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (token_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -1047,6 +1107,7 @@ impl Entity_schema_definition {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(token_count.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
             schema_tokens.push(element);
         }
         let rv = Self {
@@ -1089,9 +1150,11 @@ impl Schema {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("Schema");
         let _ig = indent::IndentGuard::new();
         let mut schema_count: UnsignedInteger = Default::default();
         schema_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (schema_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -1101,6 +1164,7 @@ impl Schema {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(schema_count.value) {
             let element = Entity_schema_definition::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Entity_schema_definition");
             schemas.push(element);
         }
         let rv = Self {
@@ -1142,15 +1206,20 @@ impl UniqueId {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("UniqueId");
         let _ig = indent::IndentGuard::new();
         let mut unique_id0: UnsignedInteger = Default::default();
         unique_id0 = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut unique_id1: UnsignedInteger = Default::default();
         unique_id1 = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut unique_id2: UnsignedInteger = Default::default();
         unique_id2 = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut unique_id3: UnsignedInteger = Default::default();
         unique_id3 = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let rv = Self {
             unique_id0,
             unique_id1,
@@ -1193,11 +1262,14 @@ impl FontKey {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("FontKey");
         let _ig = indent::IndentGuard::new();
         let mut font_size: UnsignedInteger = Default::default();
         font_size = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut font_attributes: Character = Default::default();
         font_attributes = Character::from_reader(rdr)?;
+        _ctx.on_read_begin("Character");
         let rv = Self {
             font_size,
             font_attributes,
@@ -1236,13 +1308,17 @@ impl FontKeysSameFont {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("FontKeysSameFont");
         let _ig = indent::IndentGuard::new();
         let mut font_name: String = Default::default();
         font_name = String::from_reader(rdr)?;
+        _ctx.on_read_begin("String");
         let mut character_set: UnsignedInteger = Default::default();
         character_set = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut key_count: UnsignedInteger = Default::default();
         key_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (key_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -1251,6 +1327,7 @@ impl FontKeysSameFont {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(key_count.value) {
             let element = FontKey::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("FontKey");
             font_key_list.push(element);
         }
         let rv = Self {
@@ -1297,11 +1374,14 @@ impl MarkupSerializationHelper {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("MarkupSerializationHelper");
         let _ig = indent::IndentGuard::new();
         let mut default_font_family_name: String = Default::default();
         default_font_family_name = String::from_reader(rdr)?;
+        _ctx.on_read_begin("String");
         let mut font_keys_count: UnsignedInteger = Default::default();
         font_keys_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (font_keys_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -1311,6 +1391,7 @@ impl MarkupSerializationHelper {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(font_keys_count.value) {
             let element = FontKeysSameFont::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("FontKeysSameFont");
             font_keys_of_font.push(element);
         }
         let rv = Self {
@@ -1354,13 +1435,17 @@ impl RgbColor {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("RgbColor");
         let _ig = indent::IndentGuard::new();
         let mut red: Double = Default::default();
         red = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut green: Double = Default::default();
         green = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut blue: Double = Default::default();
         blue = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let rv = Self { red, green, blue };
         Ok(rv)
     }
@@ -1421,23 +1506,30 @@ impl PRC_TYPE_GRAPH_Picture {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_GRAPH_Picture");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_GRAPH_Picture) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_GRAPH_Picture"));
         }
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCBase");
         let mut format: UnsignedInteger = Default::default();
         format = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut biased_uncompressed_file_index: UnsignedInteger = Default::default();
         biased_uncompressed_file_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut pixel_width: UnsignedInteger = Default::default();
         pixel_width = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut pixel_height: UnsignedInteger = Default::default();
         pixel_height = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         _ctx.se.eval(rdr, PRC_TYPE_GRAPH_Picture, false, 0)?;
         let rv = Self {
             id,
@@ -1487,11 +1579,14 @@ impl Vector2D {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("Vector2D");
         let _ig = indent::IndentGuard::new();
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut y: Double = Default::default();
         y = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let rv = Self { x, y };
         Ok(rv)
     }
@@ -1526,13 +1621,17 @@ impl Vector3D {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("Vector3D");
         let _ig = indent::IndentGuard::new();
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut y: Double = Default::default();
         y = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut z: Double = Default::default();
         z = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let rv = Self { x, y, z };
         Ok(rv)
     }
@@ -1573,9 +1672,11 @@ impl Transformation2D {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("Transformation2D");
         let _ig = indent::IndentGuard::new();
         let mut behavior: Character = Default::default();
         behavior = Character::from_reader(rdr)?;
+        _ctx.on_read_begin("Character");
         debug!(
             "{}behavior: {:?}",
             indent::get(),
@@ -1585,12 +1686,14 @@ impl Transformation2D {
         let mut translation: Vector2D = Default::default();
         if translation_cond {
             translation = Vector2D::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Vector2D");
         }
         let non_ortho_matrix_cond = (behavior.value & PRC_TRANSFORMATION_NonOrtho as i8) != 0;
         let mut non_ortho_matrix: [Vector2D; 2] = [Default::default(); 2];
         if non_ortho_matrix_cond {
             for i in 0..2 {
                 non_ortho_matrix[i as usize] = Vector2D::from_reader(rdr, _ctx)?;
+                _ctx.on_read_begin("Vector2D");
             }
         }
         let rotation_cond = ((behavior.value & PRC_TRANSFORMATION_Rotate as i8) != 0)
@@ -1598,23 +1701,27 @@ impl Transformation2D {
         let mut rotation: Vector2D = Default::default();
         if rotation_cond {
             rotation = Vector2D::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Vector2D");
         }
         let non_uniform_scale_cond =
             (behavior.value & PRC_TRANSFORMATION_NonUniformScale as i8) != 0;
         let mut non_uniform_scale: Vector2D = Default::default();
         if non_uniform_scale_cond {
             non_uniform_scale = Vector2D::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Vector2D");
         }
         let scale_cond = (behavior.value & PRC_TRANSFORMATION_Scale as i8) != 0;
         let mut scale: Double = Default::default();
         if scale_cond {
             scale = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         let homogeneous_cond = (behavior.value & PRC_TRANSFORMATION_Homogeneous as i8) != 0;
         let mut homogeneous: [Double; 3] = [Default::default(); 3];
         if homogeneous_cond {
             for i in 0..3 {
                 homogeneous[i as usize] = Double::from_reader(rdr)?;
+                _ctx.on_read_begin("Double");
             }
         }
         let rv = Self {
@@ -1708,13 +1815,16 @@ impl Transformation2DWithBit {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("Transformation2DWithBit");
         let _ig = indent::IndentGuard::new();
         let mut has_transformation: Boolean = Default::default();
         has_transformation = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let transformation_cond = !!has_transformation;
         let mut transformation: Transformation2D = Default::default();
         if transformation_cond {
             transformation = Transformation2D::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation2D");
         }
         let rv = Self {
             has_transformation,
@@ -1765,9 +1875,11 @@ impl Transformation3D {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("Transformation3D");
         let _ig = indent::IndentGuard::new();
         let mut behavior: Character = Default::default();
         behavior = Character::from_reader(rdr)?;
+        _ctx.on_read_begin("Character");
         debug!(
             "{}behavior: {:?}",
             indent::get(),
@@ -1777,12 +1889,14 @@ impl Transformation3D {
         let mut translation: Vector3D = Default::default();
         if translation_cond {
             translation = Vector3D::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Vector3D");
         }
         let non_ortho_matrix_cond = (behavior.value as u8 & PRC_TRANSFORMATION_NonOrtho as u8) != 0;
         let mut non_ortho_matrix: [Vector3D; 3] = [Default::default(); 3];
         if non_ortho_matrix_cond {
             for i in 0..3 {
                 non_ortho_matrix[i as usize] = Vector3D::from_reader(rdr, _ctx)?;
+                _ctx.on_read_begin("Vector3D");
             }
         }
         let rotation_cond = ((behavior.value as u8 & PRC_TRANSFORMATION_Rotate as u8) != 0)
@@ -1791,6 +1905,7 @@ impl Transformation3D {
         if rotation_cond {
             for i in 0..2 {
                 rotation[i as usize] = Vector3D::from_reader(rdr, _ctx)?;
+                _ctx.on_read_begin("Vector3D");
             }
         }
         let non_uniform_scale_cond =
@@ -1798,17 +1913,20 @@ impl Transformation3D {
         let mut non_uniform_scale: Vector3D = Default::default();
         if non_uniform_scale_cond {
             non_uniform_scale = Vector3D::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Vector3D");
         }
         let scale_cond = (behavior.value as u8 & PRC_TRANSFORMATION_Scale as u8) != 0;
         let mut scale: Double = Default::default();
         if scale_cond {
             scale = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         let homogeneous_cond = (behavior.value as u8 & PRC_TRANSFORMATION_Homogeneous as u8) != 0;
         let mut homogeneous: [Double; 4] = [Default::default(); 4];
         if homogeneous_cond {
             for i in 0..4 {
                 homogeneous[i as usize] = Double::from_reader(rdr)?;
+                _ctx.on_read_begin("Double");
             }
         }
         let rv = Self {
@@ -1902,13 +2020,16 @@ impl Transformation3DWithBit {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("Transformation3DWithBit");
         let _ig = indent::IndentGuard::new();
         let mut has_transformation: Boolean = Default::default();
         has_transformation = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let transformation_cond = !!has_transformation;
         let mut transformation: Transformation3D = Default::default();
         if transformation_cond {
             transformation = Transformation3D::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation3D");
         }
         let rv = Self {
             has_transformation,
@@ -1963,9 +2084,11 @@ impl PRC_TYPE_MISC_CartesianTransformation {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MISC_CartesianTransformation");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MISC_CartesianTransformation) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other(
@@ -1974,6 +2097,7 @@ impl PRC_TYPE_MISC_CartesianTransformation {
         }
         let mut transform: Transformation3D = Default::default();
         transform = Transformation3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Transformation3D");
         _ctx.se
             .eval(rdr, PRC_TYPE_MISC_CartesianTransformation, false, 0)?;
         let rv = Self { id, transform };
@@ -2021,9 +2145,11 @@ impl PRC_TYPE_MISC_GeneralTransformation {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MISC_GeneralTransformation");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MISC_GeneralTransformation) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_MISC_GeneralTransformation"));
@@ -2031,6 +2157,7 @@ impl PRC_TYPE_MISC_GeneralTransformation {
         let mut general_transform: [Double; 16] = [Default::default(); 16];
         for i in 0..16 {
             general_transform[i as usize] = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         _ctx.se
             .eval(rdr, PRC_TYPE_MISC_GeneralTransformation, false, 0)?;
@@ -2096,9 +2223,11 @@ impl PRC_TYPE_GRAPH_TextureTransformation {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_GRAPH_TextureTransformation");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_GRAPH_TextureTransformation) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other(
@@ -2107,10 +2236,13 @@ impl PRC_TYPE_GRAPH_TextureTransformation {
         }
         let mut invert_s: Boolean = Default::default();
         invert_s = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut invert_t: Boolean = Default::default();
         invert_t = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut transform_2d: Boolean = Default::default();
         transform_2d = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         if !transform_2d.value {
             return Err(std::io::Error::other("2d transform expected!"));
         };
@@ -2118,6 +2250,7 @@ impl PRC_TYPE_GRAPH_TextureTransformation {
         let mut transform: Transformation2D = Default::default();
         if transform_cond {
             transform = Transformation2D::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation2D");
         }
         _ctx.se
             .eval(rdr, PRC_TYPE_GRAPH_TextureTransformation, false, 0)?;
@@ -2176,15 +2309,20 @@ impl ContentPRCRefBase {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ContentPRCRefBase");
         let _ig = indent::IndentGuard::new();
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCBase");
         let mut nonpersistent_id: UnsignedInteger = Default::default();
         nonpersistent_id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut unique_id_cad: UnsignedInteger = Default::default();
         unique_id_cad = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut unique_id: UnsignedInteger = Default::default();
         unique_id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let rv = Self {
             base,
             nonpersistent_id,
@@ -2380,47 +2518,58 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_GRAPH_TextureDefinition");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_GRAPH_TextureDefinition) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_GRAPH_TextureDefinition"));
         }
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCRefBase");
         let mut biased_picture_index: UnsignedInteger = Default::default();
         biased_picture_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut texture_dimension: Character = Default::default();
         texture_dimension = Character::from_reader(rdr)?;
+        _ctx.on_read_begin("Character");
         if texture_dimension.value != 2 as i8 {
             return Err(std::io::Error::other("texture_dimension of 2 expected!"));
         };
         let mut texture_mapping_type: Integer = Default::default();
         texture_mapping_type = Integer::from_reader(rdr)?;
+        _ctx.on_read_begin("Integer");
         let texture_mapping_operator_cond =
             texture_mapping_type.value as i32 == TextureMappingType::Operator as i32;
         let mut texture_mapping_operator: Integer = Default::default();
         if texture_mapping_operator_cond {
             texture_mapping_operator = Integer::from_reader(rdr)?;
+            _ctx.on_read_begin("Integer");
         }
         let has_transformation_cond =
             texture_mapping_type.value == TextureMappingType::Operator as i32;
         let mut has_transformation: Boolean = Default::default();
         if has_transformation_cond {
             has_transformation = Boolean::from_reader(rdr)?;
+            _ctx.on_read_begin("Boolean");
         }
         let transformation_cond = texture_mapping_type.value == TextureMappingType::Operator as i32
             && !!has_transformation.value;
         let mut transformation: PRC_TYPE_MISC_CartesianTransformation = Default::default();
         if transformation_cond {
             transformation = PRC_TYPE_MISC_CartesianTransformation::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_MISC_CartesianTransformation");
         }
         let mut texture_mapping_attributes: UnsignedInteger = Default::default();
         texture_mapping_attributes = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut number_of_texture_mapping_attributes_intensities: UnsignedInteger =
             Default::default();
         number_of_texture_mapping_attributes_intensities = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if number_of_texture_mapping_attributes_intensities.value != 0
             && number_of_texture_mapping_attributes_intensities.value != 1
         {
@@ -2442,12 +2591,14 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
             #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(number_of_texture_mapping_attributes_intensities.value) {
                 let element = Double::from_reader(rdr)?;
+                _ctx.on_read_begin("Double");
                 texture_mapping_attributes_intensities.push(element);
             }
         }
         let mut number_of_texture_mapping_attributes_components: UnsignedInteger =
             Default::default();
         number_of_texture_mapping_attributes_components = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if number_of_texture_mapping_attributes_components.value != 0
             && number_of_texture_mapping_attributes_components.value != 1
         {
@@ -2469,16 +2620,19 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
             #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(number_of_texture_mapping_attributes_components.value) {
                 let element = Character::from_reader(rdr)?;
+                _ctx.on_read_begin("Character");
                 texture_mapping_attributes_components.push(element);
             }
         }
         let mut texture_function: Integer = Default::default();
         texture_function = Integer::from_reader(rdr)?;
+        _ctx.on_read_begin("Integer");
         let blend_src_cond = texture_function.value as i32 == TextureFunction::Blend as i32;
         let mut blend_src: [Double; 4] = [Default::default(); 4];
         if blend_src_cond {
             for i in 0..4 {
                 blend_src[i as usize] = Double::from_reader(rdr)?;
+                _ctx.on_read_begin("Double");
             }
         }
         for idx in 0..4 {
@@ -2486,50 +2640,62 @@ impl PRC_TYPE_GRAPH_TextureDefinition {
         }
         let mut blend_src_rgb: Integer = Default::default();
         blend_src_rgb = Integer::from_reader(rdr)?;
+        _ctx.on_read_begin("Integer");
         let blend_dst_rgb_cond = blend_src_rgb.value != 0 as i32;
         let mut blend_dst_rgb: Integer = Default::default();
         if blend_dst_rgb_cond {
             blend_dst_rgb = Integer::from_reader(rdr)?;
+            _ctx.on_read_begin("Integer");
         }
         let mut blend_src_alpha: Integer = Default::default();
         blend_src_alpha = Integer::from_reader(rdr)?;
+        _ctx.on_read_begin("Integer");
         let blend_dst_alpha_cond = blend_src_alpha.value != 0 as i32;
         let mut blend_dst_alpha: Integer = Default::default();
         if blend_dst_alpha_cond {
             blend_dst_alpha = Integer::from_reader(rdr)?;
+            _ctx.on_read_begin("Integer");
         }
         let mut texture_application_mode: Character = Default::default();
         texture_application_mode = Character::from_reader(rdr)?;
+        _ctx.on_read_begin("Character");
         let alpha_test_cond =
             (texture_application_mode.value as u16 & TextureApplicationMode::AlphaTest as u16) != 0;
         let mut alpha_test: Integer = Default::default();
         if alpha_test_cond {
             alpha_test = Integer::from_reader(rdr)?;
+            _ctx.on_read_begin("Integer");
         }
         let alpha_test_reference_cond =
             (texture_application_mode.value as u16 & TextureApplicationMode::AlphaTest as u16) != 0;
         let mut alpha_test_reference: Double = Default::default();
         if alpha_test_reference_cond {
             alpha_test_reference = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         let mut texture_wrapping_mode_s: Integer = Default::default();
         texture_wrapping_mode_s = Integer::from_reader(rdr)?;
+        _ctx.on_read_begin("Integer");
         let texture_wrapping_mode_t_cond = texture_dimension.value > 1;
         let mut texture_wrapping_mode_t: Integer = Default::default();
         if texture_wrapping_mode_t_cond {
             texture_wrapping_mode_t = Integer::from_reader(rdr)?;
+            _ctx.on_read_begin("Integer");
         }
         let texture_wrapping_mode_r_cond = texture_dimension.value > 2;
         let mut texture_wrapping_mode_r: Integer = Default::default();
         if texture_wrapping_mode_r_cond {
             texture_wrapping_mode_r = Integer::from_reader(rdr)?;
+            _ctx.on_read_begin("Integer");
         }
         let mut has_texture_transformation: Boolean = Default::default();
         has_texture_transformation = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let texture_transformation_cond = !!has_texture_transformation;
         let mut texture_transformation: PRC_TYPE_GRAPH_TextureTransformation = Default::default();
         if texture_transformation_cond {
             texture_transformation = PRC_TYPE_GRAPH_TextureTransformation::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_GRAPH_TextureTransformation");
         }
         _ctx.se
             .eval(rdr, PRC_TYPE_GRAPH_TextureDefinition, false, 0)?;
@@ -2796,33 +2962,45 @@ impl PRC_TYPE_GRAPH_Material {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_GRAPH_Material");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_GRAPH_Material) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_GRAPH_Material"));
         }
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCRefBase");
         let mut biased_ambient_index: UnsignedInteger = Default::default();
         biased_ambient_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut biased_diffuse_index: UnsignedInteger = Default::default();
         biased_diffuse_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut biased_emissive_index: UnsignedInteger = Default::default();
         biased_emissive_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut biased_specular_index: UnsignedInteger = Default::default();
         biased_specular_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut shininess: Double = Default::default();
         shininess = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut ambient_alpha: Double = Default::default();
         ambient_alpha = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut diffuse_alpha: Double = Default::default();
         diffuse_alpha = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut emissive_alpha: Double = Default::default();
         emissive_alpha = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut specular_alpha: Double = Default::default();
         specular_alpha = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         _ctx.se.eval(rdr, PRC_TYPE_GRAPH_Material, false, 0)?;
         let rv = Self {
             id,
@@ -2911,23 +3089,30 @@ impl PRC_TYPE_GRAPH_TextureApplication {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_GRAPH_TextureApplication");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_GRAPH_TextureApplication) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_GRAPH_TextureApplication"));
         }
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCRefBase");
         let mut biased_material_generic_index: UnsignedInteger = Default::default();
         biased_material_generic_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut biased_texture_definition_index: UnsignedInteger = Default::default();
         biased_texture_definition_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut biased_next_texture_index: UnsignedInteger = Default::default();
         biased_next_texture_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut biased_uv_coordinates_index: UnsignedInteger = Default::default();
         biased_uv_coordinates_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         _ctx.se
             .eval(rdr, PRC_TYPE_GRAPH_TextureApplication, false, 0)?;
         let rv = Self {
@@ -2977,6 +3162,7 @@ impl Material {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("Material");
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: Material_idConcrete = Material_idConcrete::Invalid(id_type_id);
@@ -3075,17 +3261,21 @@ impl PRC_TYPE_GRAPH_LinePattern {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_GRAPH_LinePattern");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_GRAPH_LinePattern) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_GRAPH_LinePattern"));
         }
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCRefBase");
         let mut number_of_elements: UnsignedInteger = Default::default();
         number_of_elements = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_elements.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -3094,12 +3284,15 @@ impl PRC_TYPE_GRAPH_LinePattern {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_elements.value) {
             let element = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
             length.push(element);
         }
         let mut start_offset: Double = Default::default();
         start_offset = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut scale: Boolean = Default::default();
         scale = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         _ctx.se.eval(rdr, PRC_TYPE_GRAPH_LinePattern, false, 0)?;
         let rv = Self {
             id,
@@ -3219,52 +3412,68 @@ impl PRC_TYPE_GRAPH_Style {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_GRAPH_Style");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_GRAPH_Style) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_GRAPH_Style"));
         }
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCRefBase");
         let mut line_width: Double = Default::default();
         line_width = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut is_vpicture: Boolean = Default::default();
         is_vpicture = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut biased_pattern_index: UnsignedInteger = Default::default();
         biased_pattern_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut is_material: Boolean = Default::default();
         is_material = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut biased_color_index: UnsignedInteger = Default::default();
         biased_color_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut is_transparency: Boolean = Default::default();
         is_transparency = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let transparency_cond = !!is_transparency;
         let mut transparency: Character = Default::default();
         if transparency_cond {
             transparency = Character::from_reader(rdr)?;
+            _ctx.on_read_begin("Character");
         }
         let mut is_rendering_parameters: Boolean = Default::default();
         is_rendering_parameters = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let rendering_parameters_cond = !!is_rendering_parameters;
         let mut rendering_parameters: Character = Default::default();
         if rendering_parameters_cond {
             rendering_parameters = Character::from_reader(rdr)?;
+            _ctx.on_read_begin("Character");
         }
         let mut is_rendering_parameters2: Boolean = Default::default();
         is_rendering_parameters2 = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let rendering_parameters2_cond = !!is_rendering_parameters2;
         let mut rendering_parameters2: Character = Default::default();
         if rendering_parameters2_cond {
             rendering_parameters2 = Character::from_reader(rdr)?;
+            _ctx.on_read_begin("Character");
         }
         let mut is_rendering_parameters3: Boolean = Default::default();
         is_rendering_parameters3 = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let rendering_parameters3_cond = !!is_rendering_parameters3;
         let mut rendering_parameters3: Character = Default::default();
         if rendering_parameters3_cond {
             rendering_parameters3 = Character::from_reader(rdr)?;
+            _ctx.on_read_begin("Character");
         }
         _ctx.se.eval(rdr, PRC_TYPE_GRAPH_Style, false, 0)?;
         let rv = Self {
@@ -3398,23 +3607,30 @@ impl PRC_TYPE_GRAPH_DottingPattern {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_GRAPH_DottingPattern");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_GRAPH_DottingPattern) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_GRAPH_DottingPattern"));
         }
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCRefBase");
         let mut biased_next_pattern_index: UnsignedInteger = Default::default();
         biased_next_pattern_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut pitch: Double = Default::default();
         pitch = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut is_offset: Boolean = Default::default();
         is_offset = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut biased_color_index: Integer = Default::default();
         biased_color_index = Integer::from_reader(rdr)?;
+        _ctx.on_read_begin("Integer");
         _ctx.se.eval(rdr, PRC_TYPE_GRAPH_DottingPattern, false, 0)?;
         let rv = Self {
             id,
@@ -3466,15 +3682,20 @@ impl HatchingLine {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("HatchingLine");
         let _ig = indent::IndentGuard::new();
         let mut start_point: Vector2D = Default::default();
         start_point = Vector2D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector2D");
         let mut end_point: Vector2D = Default::default();
         end_point = Vector2D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector2D");
         let mut angle: Double = Default::default();
         angle = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut biased_index_of_line_style: Integer = Default::default();
         biased_index_of_line_style = Integer::from_reader(rdr)?;
+        _ctx.on_read_begin("Integer");
         let rv = Self {
             start_point,
             end_point,
@@ -3538,19 +3759,24 @@ impl PRC_TYPE_GRAPH_HatchingPattern {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_GRAPH_HatchingPattern");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_GRAPH_HatchingPattern) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_GRAPH_HatchingPattern"));
         }
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCRefBase");
         let mut biased_next_pattern_index: UnsignedInteger = Default::default();
         biased_next_pattern_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut number_of_hatching_lines: UnsignedInteger = Default::default();
         number_of_hatching_lines = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_hatching_lines.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -3560,6 +3786,7 @@ impl PRC_TYPE_GRAPH_HatchingPattern {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_hatching_lines.value) {
             let element = HatchingLine::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("HatchingLine");
             hatch.push(element);
         }
         _ctx.se
@@ -3642,28 +3869,35 @@ impl PRC_TYPE_GRAPH_SolidPattern {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_GRAPH_SolidPattern");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_GRAPH_SolidPattern) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_GRAPH_SolidPattern"));
         }
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCRefBase");
         let mut biased_next_pattern_index: UnsignedInteger = Default::default();
         biased_next_pattern_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut is_material: Boolean = Default::default();
         is_material = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let biased_material_index_cond = !!is_material;
         let mut biased_material_index: UnsignedInteger = Default::default();
         if biased_material_index_cond {
             biased_material_index = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         let biased_color_index_cond = !is_material;
         let mut biased_color_index: UnsignedInteger = Default::default();
         if biased_color_index_cond {
             biased_color_index = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         _ctx.se.eval(rdr, PRC_TYPE_GRAPH_SolidPattern, false, 0)?;
         let rv = Self {
@@ -3731,11 +3965,14 @@ impl ContentBaseTessData {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ContentBaseTessData");
         let _ig = indent::IndentGuard::new();
         let mut is_calculated: Boolean = Default::default();
         is_calculated = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut number_of_coordinates: UnsignedInteger = Default::default();
         number_of_coordinates = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_coordinates.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -3745,6 +3982,7 @@ impl ContentBaseTessData {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_coordinates.value) {
             let element = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
             coordinates.push(element);
         }
         let rv = Self {
@@ -3817,17 +4055,21 @@ impl PRC_TYPE_TESS_Markup {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TESS_Markup");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TESS_Markup) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TESS_Markup"));
         }
         let mut tessellation_coordinates: ContentBaseTessData = Default::default();
         tessellation_coordinates = ContentBaseTessData::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentBaseTessData");
         let mut number_of_codes: UnsignedInteger = Default::default();
         number_of_codes = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_codes.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -3837,10 +4079,12 @@ impl PRC_TYPE_TESS_Markup {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_codes.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
             code_numbers.push(element);
         }
         let mut number_of_text_strings: UnsignedInteger = Default::default();
         number_of_text_strings = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_text_strings.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -3850,12 +4094,15 @@ impl PRC_TYPE_TESS_Markup {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_text_strings.value) {
             let element = String::from_reader(rdr)?;
+            _ctx.on_read_begin("String");
             text_strings.push(element);
         }
         let mut tessellation_label: String = Default::default();
         tessellation_label = String::from_reader(rdr)?;
+        _ctx.on_read_begin("String");
         let mut behavior: Character = Default::default();
         behavior = Character::from_reader(rdr)?;
+        _ctx.on_read_begin("Character");
         _ctx.se.eval(rdr, PRC_TYPE_TESS_Markup, false, 0)?;
         let rv = Self {
             id,
@@ -3935,23 +4182,29 @@ impl PRC_TYPE_GRAPH_VPicturePattern {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_GRAPH_VPicturePattern");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_GRAPH_VPicturePattern) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_GRAPH_VPicturePattern"));
         }
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCRefBase");
         let mut biased_next_pattern_index: UnsignedInteger = Default::default();
         biased_next_pattern_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut pattern_dimensions: [Double; 2] = [Default::default(); 2];
         for i in 0..2 {
             pattern_dimensions[i as usize] = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         let mut markup: PRC_TYPE_TESS_Markup = Default::default();
         markup = PRC_TYPE_TESS_Markup::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_TESS_Markup");
         _ctx.se
             .eval(rdr, PRC_TYPE_GRAPH_VPicturePattern, false, 0)?;
         let rv = Self {
@@ -3999,6 +4252,7 @@ impl PRC_TYPE_GRAPH_FillPattern {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_GRAPH_FillPattern");
         let _ig = indent::IndentGuard::new();
         let mut data_type_id: u32 = 0;
         let mut data_concrete: PRC_TYPE_GRAPH_FillPattern_dataConcrete =
@@ -4088,13 +4342,17 @@ impl GraphicsContent {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("GraphicsContent");
         let _ig = indent::IndentGuard::new();
         let mut biased_layer_index: UnsignedInteger = Default::default();
         biased_layer_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut biased_index_of_line_style: UnsignedInteger = Default::default();
         biased_index_of_line_style = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut behavior_bit_field: UnsignedShort = Default::default();
         behavior_bit_field = UnsignedShort::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedShort");
         debug!(
             "{}behavior_bit_field: {:?}",
             indent::get(),
@@ -4156,15 +4414,19 @@ impl PRC_TYPE_ROOT_PRCBaseWithGraphics {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_ROOT_PRCBaseWithGraphics");
         let _ig = indent::IndentGuard::new();
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCRefBase");
         let mut same_graphics: Boolean = Default::default();
         same_graphics = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let graphics_content_cond = !same_graphics;
         let mut graphics_content: GraphicsContent = Default::default();
         if graphics_content_cond {
             graphics_content = GraphicsContent::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("GraphicsContent");
         }
         _ctx.se
             .eval(rdr, PRC_TYPE_ROOT_PRCBaseWithGraphics, false, 0)?;
@@ -4216,13 +4478,17 @@ impl RepresentationItemContent {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("RepresentationItemContent");
         let _ig = indent::IndentGuard::new();
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_ROOT_PRCBaseWithGraphics");
         let mut biased_index_local_coordinate_system: UnsignedInteger = Default::default();
         biased_index_local_coordinate_system = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut biased_index_tessellation: UnsignedInteger = Default::default();
         biased_index_tessellation = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let rv = Self {
             base,
             biased_index_local_coordinate_system,
@@ -4282,15 +4548,18 @@ impl PRC_TYPE_RI_CoordinateSystem {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_RI_CoordinateSystem");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_RI_CoordinateSystem) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_RI_CoordinateSystem"));
         }
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("RepresentationItemContent");
         let mut transform_type_id: u32 = 0;
         let mut transform_concrete: PRC_TYPE_RI_CoordinateSystem_transformConcrete =
             PRC_TYPE_RI_CoordinateSystem_transformConcrete::Invalid(transform_type_id);
@@ -4324,6 +4593,7 @@ impl PRC_TYPE_RI_CoordinateSystem {
         _ctx.se.eval(rdr, PRC_TYPE_RI_CoordinateSystem, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             item_content,
@@ -4403,15 +4673,20 @@ impl FileStructureInternalGlobalData {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("FileStructureInternalGlobalData");
         let _ig = indent::IndentGuard::new();
         let mut tess_chord: Double = Default::default();
         tess_chord = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut tess_angle: Double = Default::default();
         tess_angle = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut serialize_help: MarkupSerializationHelper = Default::default();
         serialize_help = MarkupSerializationHelper::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("MarkupSerializationHelper");
         let mut color_count: UnsignedInteger = Default::default();
         color_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (color_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -4420,10 +4695,12 @@ impl FileStructureInternalGlobalData {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(color_count.value) {
             let element = RgbColor::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("RgbColor");
             colors.push(element);
         }
         let mut picture_count: UnsignedInteger = Default::default();
         picture_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (picture_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -4433,10 +4710,12 @@ impl FileStructureInternalGlobalData {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(picture_count.value) {
             let element = PRC_TYPE_GRAPH_Picture::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_GRAPH_Picture");
             pictures.push(element);
         }
         let mut texture_count: UnsignedInteger = Default::default();
         texture_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (texture_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -4446,10 +4725,12 @@ impl FileStructureInternalGlobalData {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(texture_count.value) {
             let element = PRC_TYPE_GRAPH_TextureDefinition::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_GRAPH_TextureDefinition");
             textures.push(element);
         }
         let mut material_count: UnsignedInteger = Default::default();
         material_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (material_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -4458,10 +4739,12 @@ impl FileStructureInternalGlobalData {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(material_count.value) {
             let element = Material::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Material");
             materials.push(element);
         }
         let mut line_pattern_count: UnsignedInteger = Default::default();
         line_pattern_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (line_pattern_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -4471,10 +4754,12 @@ impl FileStructureInternalGlobalData {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(line_pattern_count.value) {
             let element = PRC_TYPE_GRAPH_LinePattern::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_GRAPH_LinePattern");
             line_patterns.push(element);
         }
         let mut style_count: UnsignedInteger = Default::default();
         style_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (style_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -4484,10 +4769,12 @@ impl FileStructureInternalGlobalData {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(style_count.value) {
             let element = PRC_TYPE_GRAPH_Style::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_GRAPH_Style");
             styles.push(element);
         }
         let mut fill_count: UnsignedInteger = Default::default();
         fill_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (fill_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -4497,10 +4784,12 @@ impl FileStructureInternalGlobalData {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(fill_count.value) {
             let element = PRC_TYPE_GRAPH_FillPattern::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_GRAPH_FillPattern");
             fills.push(element);
         }
         let mut ref_coord_count: UnsignedInteger = Default::default();
         ref_coord_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (ref_coord_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -4510,6 +4799,7 @@ impl FileStructureInternalGlobalData {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(ref_coord_count.value) {
             let element = PRC_TYPE_RI_CoordinateSystem::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_RI_CoordinateSystem");
             ref_coords.push(element);
         }
         let rv = Self {
@@ -4632,17 +4922,21 @@ impl PRC_TYPE_ASM_FileStructureGlobals {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_ASM_FileStructureGlobals");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_ASM_FileStructureGlobals) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_ASM_FileStructureGlobals"));
         }
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCBase");
         let mut file_count: UnsignedInteger = Default::default();
         file_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (file_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -4651,14 +4945,17 @@ impl PRC_TYPE_ASM_FileStructureGlobals {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(file_count.value) {
             let element = UniqueId::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("UniqueId");
             unique_ids.push(element);
         }
         let mut global_data: FileStructureInternalGlobalData = Default::default();
         global_data = FileStructureInternalGlobalData::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("FileStructureInternalGlobalData");
         _ctx.se
             .eval(rdr, PRC_TYPE_ASM_FileStructureGlobals, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             base,
@@ -4709,13 +5006,17 @@ impl ProductOccurrenceReference {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ProductOccurrenceReference");
         let _ig = indent::IndentGuard::new();
         let mut unique_id: UniqueId = Default::default();
         unique_id = UniqueId::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UniqueId");
         let mut root_index: UnsignedInteger = Default::default();
         root_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut product_occurrence_is_active: Boolean = Default::default();
         product_occurrence_is_active = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let rv = Self {
             unique_id,
             root_index,
@@ -4788,21 +5089,27 @@ impl PRC_TYPE_ASM_ModelFile {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_ASM_ModelFile");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_ASM_ModelFile) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_ASM_ModelFile"));
         }
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCBase");
         let mut units_from_cad_file: Boolean = Default::default();
         units_from_cad_file = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut units_in_mm: Double = Default::default();
         units_in_mm = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut number_of_root_product_occurrences: UnsignedInteger = Default::default();
         number_of_root_product_occurrences = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_root_product_occurrences.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -4812,6 +5119,7 @@ impl PRC_TYPE_ASM_ModelFile {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_root_product_occurrences.value) {
             let element = ProductOccurrenceReference::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("ProductOccurrenceReference");
             product_occurrences.push(element);
         }
         io_check_limit!(
@@ -4823,11 +5131,13 @@ impl PRC_TYPE_ASM_ModelFile {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(_ctx.get_num_fsi()) {
             let element = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
             file_structure_index_in_model_file.push(element);
         }
         _ctx.se.eval(rdr, PRC_TYPE_ASM_ModelFile, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             base,
@@ -4884,11 +5194,14 @@ impl BoundingBox {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("BoundingBox");
         let _ig = indent::IndentGuard::new();
         let mut minimum_corner: Vector3D = Default::default();
         minimum_corner = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut maximum_corner: Vector3D = Default::default();
         maximum_corner = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let rv = Self {
             minimum_corner,
             maximum_corner,
@@ -4960,32 +5273,40 @@ impl PRC_TYPE_RI_BrepModel {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_RI_BrepModel");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_RI_BrepModel) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_RI_BrepModel"));
         }
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("RepresentationItemContent");
         let mut exact_geometry: Boolean = Default::default();
         exact_geometry = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let index_topological_context_cond = !!exact_geometry;
         let mut index_topological_context: UnsignedInteger = Default::default();
         if index_topological_context_cond {
             index_topological_context = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         let index_body_cond = !!exact_geometry;
         let mut index_body: UnsignedInteger = Default::default();
         if index_body_cond {
             index_body = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         let mut is_closed: Boolean = Default::default();
         is_closed = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         _ctx.se.eval(rdr, PRC_TYPE_RI_BrepModel, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             item_content,
@@ -5085,30 +5406,37 @@ impl PRC_TYPE_RI_Curve {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_RI_Curve");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_RI_Curve) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_RI_Curve"));
         }
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("RepresentationItemContent");
         let mut exact_geometry: Boolean = Default::default();
         exact_geometry = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let index_topological_context_cond = !!exact_geometry;
         let mut index_topological_context: UnsignedInteger = Default::default();
         if index_topological_context_cond {
             index_topological_context = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         let index_body_cond = !!exact_geometry;
         let mut index_body: UnsignedInteger = Default::default();
         if index_body_cond {
             index_body = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         _ctx.se.eval(rdr, PRC_TYPE_RI_Curve, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             item_content,
@@ -5197,27 +5525,34 @@ impl PRC_TYPE_RI_Direction {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_RI_Direction");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_RI_Direction) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_RI_Direction"));
         }
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("RepresentationItemContent");
         let mut has_orgin: Boolean = Default::default();
         has_orgin = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let origin_cond = !!has_orgin;
         let mut origin: Vector3D = Default::default();
         if origin_cond {
             origin = Vector3D::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Vector3D");
         }
         let mut direction: Vector3D = Default::default();
         direction = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         _ctx.se.eval(rdr, PRC_TYPE_RI_Direction, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             item_content,
@@ -5302,30 +5637,37 @@ impl PRC_TYPE_RI_Plane {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_RI_Plane");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_RI_Plane) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_RI_Plane"));
         }
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("RepresentationItemContent");
         let mut exact_geometry: Boolean = Default::default();
         exact_geometry = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let index_topological_context_cond = !!exact_geometry;
         let mut index_topological_context: UnsignedInteger = Default::default();
         if index_topological_context_cond {
             index_topological_context = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         let index_body_cond = !!exact_geometry;
         let mut index_body: UnsignedInteger = Default::default();
         if index_body_cond {
             index_body = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         _ctx.se.eval(rdr, PRC_TYPE_RI_Plane, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             item_content,
@@ -5411,17 +5753,21 @@ impl PRC_TYPE_RI_PointSet {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_RI_PointSet");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_RI_PointSet) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_RI_PointSet"));
         }
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("RepresentationItemContent");
         let mut number_of_points: UnsignedInteger = Default::default();
         number_of_points = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_points.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -5430,11 +5776,13 @@ impl PRC_TYPE_RI_PointSet {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_points.value) {
             let element = Vector3D::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Vector3D");
             points.push(element);
         }
         _ctx.se.eval(rdr, PRC_TYPE_RI_PointSet, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             item_content,
@@ -5499,20 +5847,25 @@ impl PRC_TYPE_RI_PolyBrepModel {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_RI_PolyBrepModel");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_RI_PolyBrepModel) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_RI_PolyBrepModel"));
         }
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("RepresentationItemContent");
         let mut is_closed: Boolean = Default::default();
         is_closed = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         _ctx.se.eval(rdr, PRC_TYPE_RI_PolyBrepModel, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             item_content,
@@ -5570,18 +5923,22 @@ impl PRC_TYPE_RI_PolyWire {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_RI_PolyWire");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_RI_PolyWire) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_RI_PolyWire"));
         }
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("RepresentationItemContent");
         _ctx.se.eval(rdr, PRC_TYPE_RI_PolyWire, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             item_content,
@@ -5642,17 +5999,21 @@ impl PRC_TYPE_RI_Set {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_RI_Set");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_RI_Set) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_RI_Set"));
         }
         let mut item_content: RepresentationItemContent = Default::default();
         item_content = RepresentationItemContent::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("RepresentationItemContent");
         let mut number_of_items: UnsignedInteger = Default::default();
         number_of_items = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_items.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -5662,11 +6023,13 @@ impl PRC_TYPE_RI_Set {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_items.value) {
             let element = PRC_TYPE_RI_RepresentationItem::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_RI_RepresentationItem");
             representation_items.push(element);
         }
         _ctx.se.eval(rdr, PRC_TYPE_RI_Set, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             item_content,
@@ -5712,6 +6075,7 @@ impl PRC_TYPE_RI_RepresentationItem {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_RI_RepresentationItem");
         let _ig = indent::IndentGuard::new();
         let mut data_type_id: u32 = 0;
         let mut data_concrete: PRC_TYPE_RI_RepresentationItem_dataConcrete =
@@ -5830,20 +6194,26 @@ impl AdditionalTargetData {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("AdditionalTargetData");
         let _ig = indent::IndentGuard::new();
         let mut flag: Boolean = Default::default();
         flag = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let unique_id_cond = !flag;
         let mut unique_id: UniqueId = Default::default();
         if unique_id_cond {
             unique_id = UniqueId::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("UniqueId");
         }
         let mut index_of_topological_index: UnsignedInteger = Default::default();
         index_of_topological_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut index_of_body: UnsignedInteger = Default::default();
         index_of_body = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut number_of_indices: UnsignedInteger = Default::default();
         number_of_indices = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_indices.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -5853,6 +6223,7 @@ impl AdditionalTargetData {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_indices.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
             indices.push(element);
         }
         let rv = Self {
@@ -5930,15 +6301,18 @@ impl PRC_TYPE_MISC_ReferenceOnTopology {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MISC_ReferenceOnTopology");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MISC_ReferenceOnTopology) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_MISC_ReferenceOnTopology"));
         }
         let mut type_of_entity: UnsignedInteger = Default::default();
         type_of_entity = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TOPO_Face) != PrcType::try_from(type_of_entity.value)
             && Ok(PRC_TYPE_TOPO_Edge) != PrcType::try_from(type_of_entity.value)
             && Ok(PRC_TYPE_TOPO_CoEdge) != PrcType::try_from(type_of_entity.value)
@@ -5951,10 +6325,12 @@ impl PRC_TYPE_MISC_ReferenceOnTopology {
         };
         let mut flag: Boolean = Default::default();
         flag = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let data_cond = !!flag;
         let mut data: AdditionalTargetData = Default::default();
         if data_cond {
             data = AdditionalTargetData::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("AdditionalTargetData");
         }
         _ctx.se
             .eval(rdr, PRC_TYPE_MISC_ReferenceOnTopology, false, 0)?;
@@ -6029,24 +6405,30 @@ impl PRC_TYPE_MISC_ReferenceOnPRCBase {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MISC_ReferenceOnPRCBase");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MISC_ReferenceOnPRCBase) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_MISC_ReferenceOnPRCBase"));
         }
         let mut type_of_entity: UnsignedInteger = Default::default();
         type_of_entity = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut flag: Boolean = Default::default();
         flag = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let different_unique_id_cond = !flag;
         let mut different_unique_id: UniqueId = Default::default();
         if different_unique_id_cond {
             different_unique_id = UniqueId::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("UniqueId");
         }
         let mut unique_id: UnsignedInteger = Default::default();
         unique_id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         _ctx.se
             .eval(rdr, PRC_TYPE_MISC_ReferenceOnPRCBase, false, 0)?;
         let rv = Self {
@@ -6101,6 +6483,7 @@ impl ReferenceData {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ReferenceData");
         let _ig = indent::IndentGuard::new();
         let mut data_type_id: u32 = 0;
         let mut data_concrete: ReferenceData_dataConcrete =
@@ -6182,17 +6565,22 @@ impl ContentEntityReference {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ContentEntityReference");
         let _ig = indent::IndentGuard::new();
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_ROOT_PRCBaseWithGraphics");
         let mut index_of_local_coordinate_system: UnsignedInteger = Default::default();
         index_of_local_coordinate_system = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut flag: Boolean = Default::default();
         flag = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let reference_data_cond = !!flag;
         let mut reference_data: ReferenceData = Default::default();
         if reference_data_cond {
             reference_data = ReferenceData::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("ReferenceData");
         }
         let rv = Self {
             base,
@@ -6245,15 +6633,19 @@ impl ContentExtendedEntityReference {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ContentExtendedEntityReference");
         let _ig = indent::IndentGuard::new();
         let mut content_entity_reference: ContentEntityReference = Default::default();
         content_entity_reference = ContentEntityReference::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentEntityReference");
         let mut has_reference_data: Boolean = Default::default();
         has_reference_data = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let reference_data_cond = !!has_reference_data;
         let mut reference_data: ReferenceData = Default::default();
         if reference_data_cond {
             reference_data = ReferenceData::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("ReferenceData");
         }
         let rv = Self {
             content_entity_reference,
@@ -6329,9 +6721,11 @@ impl PRC_TYPE_MISC_MarkupLinkedItem {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MISC_MarkupLinkedItem");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MISC_MarkupLinkedItem) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_MISC_MarkupLinkedItem"));
@@ -6339,18 +6733,24 @@ impl PRC_TYPE_MISC_MarkupLinkedItem {
         let mut content_extended_entity_reference: ContentExtendedEntityReference =
             Default::default();
         content_extended_entity_reference = ContentExtendedEntityReference::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentExtendedEntityReference");
         let mut show_markup: Boolean = Default::default();
         show_markup = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut delete_markup: Boolean = Default::default();
         delete_markup = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut show_leader: Boolean = Default::default();
         show_leader = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut delete_leader: Boolean = Default::default();
         delete_leader = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         _ctx.se
             .eval(rdr, PRC_TYPE_MISC_MarkupLinkedItem, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             content_extended_entity_reference,
@@ -6441,34 +6841,43 @@ impl PRC_TYPE_MKP_Leader {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MKP_Leader");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MKP_Leader) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_MKP_Leader"));
         }
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_ROOT_PRCBaseWithGraphics");
         let mut is_first_linked_item: Boolean = Default::default();
         is_first_linked_item = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let first_linked_item_cond = !!is_first_linked_item;
         let mut first_linked_item: PRC_TYPE_MISC_ReferenceOnPRCBase = Default::default();
         if first_linked_item_cond {
             first_linked_item = PRC_TYPE_MISC_ReferenceOnPRCBase::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_MISC_ReferenceOnPRCBase");
         }
         let mut is_second_linked_item: Boolean = Default::default();
         is_second_linked_item = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let second_linked_item_cond = !!is_second_linked_item;
         let mut second_linked_item: PRC_TYPE_MISC_ReferenceOnPRCBase = Default::default();
         if second_linked_item_cond {
             second_linked_item = PRC_TYPE_MISC_ReferenceOnPRCBase::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_MISC_ReferenceOnPRCBase");
         }
         let mut biased_index_tessellation: UnsignedInteger = Default::default();
         biased_index_tessellation = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         _ctx.se.eval(rdr, PRC_TYPE_MKP_Leader, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             base,
@@ -6575,21 +6984,27 @@ impl PRC_TYPE_MKP_Markup {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MKP_Markup");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MKP_Markup) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_MKP_Markup"));
         }
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_ROOT_PRCBaseWithGraphics");
         let mut markup_type: UnsignedInteger = Default::default();
         markup_type = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut markup_subtype: UnsignedInteger = Default::default();
         markup_subtype = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut number_of_linked_items: UnsignedInteger = Default::default();
         number_of_linked_items = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_linked_items.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -6599,10 +7014,12 @@ impl PRC_TYPE_MKP_Markup {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_linked_items.value) {
             let element = PRC_TYPE_MISC_ReferenceOnPRCBase::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_MISC_ReferenceOnPRCBase");
             linked_items.push(element);
         }
         let mut number_of_leaders: UnsignedInteger = Default::default();
         number_of_leaders = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_leaders.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -6612,13 +7029,16 @@ impl PRC_TYPE_MKP_Markup {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_leaders.value) {
             let element = PRC_TYPE_MISC_ReferenceOnPRCBase::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_MISC_ReferenceOnPRCBase");
             leaders.push(element);
         }
         let mut biased_index_tessellation: UnsignedInteger = Default::default();
         biased_index_tessellation = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         _ctx.se.eval(rdr, PRC_TYPE_MKP_Markup, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             base,
@@ -6699,20 +7119,25 @@ impl PRC_TYPE_MKP_AnnotationItem {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MKP_AnnotationItem");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MKP_AnnotationItem) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_MKP_AnnotationItem"));
         }
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_ROOT_PRCBaseWithGraphics");
         let mut unique_id: PRC_TYPE_MISC_ReferenceOnPRCBase = Default::default();
         unique_id = PRC_TYPE_MISC_ReferenceOnPRCBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_MISC_ReferenceOnPRCBase");
         _ctx.se.eval(rdr, PRC_TYPE_MKP_AnnotationItem, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             base,
@@ -6776,17 +7201,21 @@ impl PRC_TYPE_MKP_AnnotationSet {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MKP_AnnotationSet");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MKP_AnnotationSet) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_MKP_AnnotationSet"));
         }
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_ROOT_PRCBaseWithGraphics");
         let mut number_of_annotations: UnsignedInteger = Default::default();
         number_of_annotations = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_annotations.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -6796,11 +7225,13 @@ impl PRC_TYPE_MKP_AnnotationSet {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_annotations.value) {
             let element = AnnotationEntity::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("AnnotationEntity");
             annotations.push(element);
         }
         _ctx.se.eval(rdr, PRC_TYPE_MKP_AnnotationSet, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             base,
@@ -6868,17 +7299,21 @@ impl PRC_TYPE_MKP_AnnotationReference {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MKP_AnnotationReference");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MKP_AnnotationReference) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_MKP_AnnotationReference"));
         }
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_ROOT_PRCBaseWithGraphics");
         let mut number_of_linked_items: UnsignedInteger = Default::default();
         number_of_linked_items = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_linked_items.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -6888,12 +7323,14 @@ impl PRC_TYPE_MKP_AnnotationReference {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_linked_items.value) {
             let element = PRC_TYPE_MISC_ReferenceOnPRCBase::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_MISC_ReferenceOnPRCBase");
             linked_items.push(element);
         }
         _ctx.se
             .eval(rdr, PRC_TYPE_MKP_AnnotationReference, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             base,
@@ -6939,6 +7376,7 @@ impl AnnotationEntity {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("AnnotationEntity");
         let _ig = indent::IndentGuard::new();
         let mut data_type_id: u32 = 0;
         let mut data_concrete: AnnotationEntity_dataConcrete =
@@ -7025,9 +7463,11 @@ impl MarkupData {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("MarkupData");
         let _ig = indent::IndentGuard::new();
         let mut number_of_linked_items: UnsignedInteger = Default::default();
         number_of_linked_items = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_linked_items.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -7037,10 +7477,12 @@ impl MarkupData {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_linked_items.value) {
             let element = PRC_TYPE_MISC_MarkupLinkedItem::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_MISC_MarkupLinkedItem");
             linked_items.push(element);
         }
         let mut number_of_leaders: UnsignedInteger = Default::default();
         number_of_leaders = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_leaders.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -7050,10 +7492,12 @@ impl MarkupData {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_leaders.value) {
             let element = PRC_TYPE_MKP_Leader::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_MKP_Leader");
             leaders.push(element);
         }
         let mut number_of_markups: UnsignedInteger = Default::default();
         number_of_markups = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_markups.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -7063,10 +7507,12 @@ impl MarkupData {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_markups.value) {
             let element = PRC_TYPE_MKP_Markup::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_MKP_Markup");
             markups.push(element);
         }
         let mut number_of_annotation_entities: UnsignedInteger = Default::default();
         number_of_annotation_entities = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_annotation_entities.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -7076,6 +7522,7 @@ impl MarkupData {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_annotation_entities.value) {
             let element = AnnotationEntity::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("AnnotationEntity");
             annotation_entities.push(element);
         }
         let rv = Self {
@@ -7140,26 +7587,32 @@ impl ContentSurface {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ContentSurface");
         let _ig = indent::IndentGuard::new();
         let mut has_base_geometry: Boolean = Default::default();
         has_base_geometry = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let attribute_data_cond = !!has_base_geometry;
         let mut attribute_data: AttributeData = Default::default();
         if attribute_data_cond {
             attribute_data = AttributeData::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("AttributeData");
         }
         let name_cond = !!has_base_geometry;
         let mut name: Name = Default::default();
         if name_cond {
             name = Name::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Name");
         }
         let id_cond = !!has_base_geometry;
         let mut id: UnsignedInteger = Default::default();
         if id_cond {
             id = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         let mut extend_type: UnsignedInteger = Default::default();
         extend_type = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let rv = Self {
             has_base_geometry,
             attribute_data: if attribute_data_cond {
@@ -7221,11 +7674,14 @@ impl Domain {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("Domain");
         let _ig = indent::IndentGuard::new();
         let mut min_uv: Vector2D = Default::default();
         min_uv = Vector2D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector2D");
         let mut max_uv: Vector2D = Default::default();
         max_uv = Vector2D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector2D");
         let rv = Self { min_uv, max_uv };
         Ok(rv)
     }
@@ -7290,27 +7746,36 @@ impl PRC_TYPE_SURF_Plane {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_SURF_Plane");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_SURF_Plane) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_SURF_Plane"));
         }
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentSurface");
         let mut transform: Transformation3D = Default::default();
         transform = Transformation3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Transformation3D");
         let mut parameterization: Domain = Default::default();
         parameterization = Domain::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Domain");
         let mut u_parameter_coeff_a: Double = Default::default();
         u_parameter_coeff_a = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut v_parameter_coeff_a: Double = Default::default();
         v_parameter_coeff_a = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut u_parameter_coeff_b: Double = Default::default();
         u_parameter_coeff_b = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut v_parameter_coeff_b: Double = Default::default();
         v_parameter_coeff_b = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         _ctx.se.eval(rdr, PRC_TYPE_SURF_Plane, false, 0)?;
         let rv = Self {
             id,
@@ -7388,21 +7853,27 @@ impl PRC_TYPE_GRAPH_AmbientLight {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_GRAPH_AmbientLight");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_GRAPH_AmbientLight) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_GRAPH_AmbientLight"));
         }
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCRefBase");
         let mut biased_ambient_index: UnsignedInteger = Default::default();
         biased_ambient_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut biased_diffuse_index: UnsignedInteger = Default::default();
         biased_diffuse_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut biased_specular_index: UnsignedInteger = Default::default();
         biased_specular_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         _ctx.se.eval(rdr, PRC_TYPE_GRAPH_AmbientLight, false, 0)?;
         let rv = Self {
             id,
@@ -7483,29 +7954,39 @@ impl PRC_TYPE_GRAPH_PointLight {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_GRAPH_PointLight");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_GRAPH_PointLight) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_GRAPH_PointLight"));
         }
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCRefBase");
         let mut biased_ambient_index: UnsignedInteger = Default::default();
         biased_ambient_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut biased_diffuse_index: UnsignedInteger = Default::default();
         biased_diffuse_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut biased_specular_index: UnsignedInteger = Default::default();
         biased_specular_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut location: Vector3D = Default::default();
         location = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut constant_attenuation_factor: Double = Default::default();
         constant_attenuation_factor = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut linear_attenuation_factor: Double = Default::default();
         linear_attenuation_factor = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut quadratic_attenuation_factor: Double = Default::default();
         quadratic_attenuation_factor = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         _ctx.se.eval(rdr, PRC_TYPE_GRAPH_PointLight, false, 0)?;
         let rv = Self {
             id,
@@ -7572,27 +8053,35 @@ impl PRC_TYPE_GRAPH_DirectionalLight {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_GRAPH_DirectionalLight");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_GRAPH_DirectionalLight) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_GRAPH_DirectionalLight"));
         }
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCRefBase");
         let mut biased_ambient_index: UnsignedInteger = Default::default();
         biased_ambient_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut biased_diffuse_index: UnsignedInteger = Default::default();
         biased_diffuse_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut biased_specular_index: UnsignedInteger = Default::default();
         biased_specular_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut direction: Vector3D = Default::default();
         direction = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let intensity_cond = _ctx.get_authoring_version() >= 8030;
         let mut intensity: Double = Default::default();
         if intensity_cond {
             intensity = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         _ctx.se
             .eval(rdr, PRC_TYPE_GRAPH_DirectionalLight, false, 0)?;
@@ -7698,35 +8187,48 @@ impl PRC_TYPE_GRAPH_SpotLight {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_GRAPH_SpotLight");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_GRAPH_SpotLight) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_GRAPH_SpotLight"));
         }
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCRefBase");
         let mut biased_ambient_index: UnsignedInteger = Default::default();
         biased_ambient_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut biased_diffuse_index: UnsignedInteger = Default::default();
         biased_diffuse_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut biased_specular_index: UnsignedInteger = Default::default();
         biased_specular_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut location: Vector3D = Default::default();
         location = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut constant_attenuation_factor: Double = Default::default();
         constant_attenuation_factor = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut linear_attenuation_factor: Double = Default::default();
         linear_attenuation_factor = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut quadratic_attenuation_factor: Double = Default::default();
         quadratic_attenuation_factor = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut direction: Vector3D = Default::default();
         direction = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut fall_off_angle: Double = Default::default();
         fall_off_angle = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut fall_off_exponent: Double = Default::default();
         fall_off_exponent = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         _ctx.se.eval(rdr, PRC_TYPE_GRAPH_SpotLight, false, 0)?;
         let rv = Self {
             id,
@@ -7793,6 +8295,7 @@ impl Light {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("Light");
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: Light_idConcrete = Light_idConcrete::Invalid(id_type_id);
@@ -7916,35 +8419,48 @@ impl PRC_TYPE_GRAPH_Camera {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_GRAPH_Camera");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_GRAPH_Camera) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_GRAPH_Camera"));
         }
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCRefBase");
         let mut is_orthographic: Boolean = Default::default();
         is_orthographic = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut position: Vector3D = Default::default();
         position = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut look: Vector3D = Default::default();
         look = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut up: Vector3D = Default::default();
         up = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut y: Double = Default::default();
         y = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut ratio: Double = Default::default();
         ratio = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut clip_near: Double = Default::default();
         clip_near = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut clip_far: Double = Default::default();
         clip_far = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut zoom: Double = Default::default();
         zoom = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         _ctx.se.eval(rdr, PRC_TYPE_GRAPH_Camera, false, 0)?;
         let rv = Self {
             id,
@@ -8026,9 +8542,11 @@ impl PRC_TYPE_GRAPH_SceneDisplayParameters {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_GRAPH_SceneDisplayParameters");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_GRAPH_SceneDisplayParameters) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other(
@@ -8037,10 +8555,13 @@ impl PRC_TYPE_GRAPH_SceneDisplayParameters {
         }
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCRefBase");
         let mut is_active: Boolean = Default::default();
         is_active = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut number_of_lights: UnsignedInteger = Default::default();
         number_of_lights = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_lights.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -8049,24 +8570,30 @@ impl PRC_TYPE_GRAPH_SceneDisplayParameters {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_lights.value) {
             let element = Light::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Light");
             lights.push(element);
         }
         let mut camera_defined: Boolean = Default::default();
         camera_defined = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let camera_cond = !!camera_defined;
         let mut camera: PRC_TYPE_GRAPH_Camera = Default::default();
         if camera_cond {
             camera = PRC_TYPE_GRAPH_Camera::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_GRAPH_Camera");
         }
         let mut rotation_center_defined: Boolean = Default::default();
         rotation_center_defined = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let rotation_center_cond = !!rotation_center_defined;
         let mut rotation_center: Vector3D = Default::default();
         if rotation_center_cond {
             rotation_center = Vector3D::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Vector3D");
         }
         let mut number_of_clipping_planes: UnsignedInteger = Default::default();
         number_of_clipping_planes = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_clipping_planes.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -8076,14 +8603,18 @@ impl PRC_TYPE_GRAPH_SceneDisplayParameters {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_clipping_planes.value) {
             let element = PRC_TYPE_SURF_Plane::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_SURF_Plane");
             clipping_planes.push(element);
         }
         let mut biased_index_of_line_style_background: UnsignedInteger = Default::default();
         biased_index_of_line_style_background = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut biased_index_of_line_style_default: UnsignedInteger = Default::default();
         biased_index_of_line_style_default = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut number_default_styles: UnsignedInteger = Default::default();
         number_default_styles = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (2 * number_default_styles.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -8093,12 +8624,14 @@ impl PRC_TYPE_GRAPH_SceneDisplayParameters {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(2 * number_default_styles.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
             styles.push(element);
         }
         let is_absolute_cond = _ctx.get_authoring_version() >= 8137;
         let mut is_absolute: Boolean = Default::default();
         if is_absolute_cond {
             is_absolute = Boolean::from_reader(rdr)?;
+            _ctx.on_read_begin("Boolean");
         }
         _ctx.se
             .eval(rdr, PRC_TYPE_GRAPH_SceneDisplayParameters, false, 0)?;
@@ -8205,11 +8738,14 @@ impl ContentLayerFilterItems {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ContentLayerFilterItems");
         let _ig = indent::IndentGuard::new();
         let mut b_is_inclusive: Boolean = Default::default();
         b_is_inclusive = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut number_of_layers: UnsignedInteger = Default::default();
         number_of_layers = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_layers.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -8219,6 +8755,7 @@ impl ContentLayerFilterItems {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_layers.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
             layers.push(element);
         }
         let rv = Self {
@@ -8276,18 +8813,22 @@ impl PRC_TYPE_MISC_EntityReference {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MISC_EntityReference");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MISC_EntityReference) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_MISC_EntityReference"));
         }
         let mut content_entity_reference: ContentEntityReference = Default::default();
         content_entity_reference = ContentEntityReference::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentEntityReference");
         _ctx.se.eval(rdr, PRC_TYPE_MISC_EntityReference, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             content_entity_reference,
@@ -8328,11 +8869,14 @@ impl ContentEntityFilterItems {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ContentEntityFilterItems");
         let _ig = indent::IndentGuard::new();
         let mut b_is_inclusive: Boolean = Default::default();
         b_is_inclusive = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut number_of_entities: UnsignedInteger = Default::default();
         number_of_entities = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_entities.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -8342,6 +8886,7 @@ impl ContentEntityFilterItems {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_entities.value) {
             let element = PRC_TYPE_MISC_EntityReference::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_MISC_EntityReference");
             entities.push(element);
         }
         let rv = Self {
@@ -8408,24 +8953,31 @@ impl PRC_TYPE_ASM_Filter {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_ASM_Filter");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_ASM_Filter) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_ASM_Filter"));
         }
         let mut base: ContentPRCRefBase = Default::default();
         base = ContentPRCRefBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCRefBase");
         let mut is_active: Boolean = Default::default();
         is_active = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut layer_filter: ContentLayerFilterItems = Default::default();
         layer_filter = ContentLayerFilterItems::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentLayerFilterItems");
         let mut entity_filter: ContentEntityFilterItems = Default::default();
         entity_filter = ContentEntityFilterItems::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentEntityFilterItems");
         _ctx.se.eval(rdr, PRC_TYPE_ASM_Filter, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             base,
@@ -8487,17 +9039,21 @@ impl PRC_TYPE_MKP_View {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MKP_View");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MKP_View) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_MKP_View"));
         }
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_ROOT_PRCBaseWithGraphics");
         let mut number_of_annotations: UnsignedInteger = Default::default();
         number_of_annotations = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_annotations.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -8507,38 +9063,46 @@ impl PRC_TYPE_MKP_View {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_annotations.value) {
             let element = PRC_TYPE_MISC_ReferenceOnPRCBase::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_MISC_ReferenceOnPRCBase");
             annotations.push(element);
         }
         let mut annotation_plane: PRC_TYPE_SURF_Plane = Default::default();
         annotation_plane = PRC_TYPE_SURF_Plane::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_SURF_Plane");
         let mut has_parameters: Boolean = Default::default();
         has_parameters = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let scene_display_parameters_cond = !!has_parameters;
         let mut scene_display_parameters: PRC_TYPE_GRAPH_SceneDisplayParameters =
             Default::default();
         if scene_display_parameters_cond {
             scene_display_parameters =
                 PRC_TYPE_GRAPH_SceneDisplayParameters::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_GRAPH_SceneDisplayParameters");
         }
         let is_annotation_view_cond = _ctx.get_authoring_version() >= 8137;
         let mut is_annotation_view: Boolean = Default::default();
         if is_annotation_view_cond {
             is_annotation_view = Boolean::from_reader(rdr)?;
+            _ctx.on_read_begin("Boolean");
         }
         let is_default_view_cond = _ctx.get_authoring_version() >= 8137;
         let mut is_default_view: Boolean = Default::default();
         if is_default_view_cond {
             is_default_view = Boolean::from_reader(rdr)?;
+            _ctx.on_read_begin("Boolean");
         }
         let is_direction_cond = _ctx.get_authoring_version() >= 8137;
         let mut is_direction: Boolean = Default::default();
         if is_direction_cond {
             is_direction = Boolean::from_reader(rdr)?;
+            _ctx.on_read_begin("Boolean");
         }
         let number_of_linked_items_cond = _ctx.get_authoring_version() >= 8137;
         let mut number_of_linked_items: UnsignedInteger = Default::default();
         if number_of_linked_items_cond {
             number_of_linked_items = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         let linked_items_cond = _ctx.get_authoring_version() >= 8137;
         let mut linked_items: Vec<PRC_TYPE_MISC_ReferenceOnPRCBase> = Vec::new();
@@ -8551,6 +9115,7 @@ impl PRC_TYPE_MKP_View {
             #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(number_of_linked_items.value) {
                 let element = PRC_TYPE_MISC_ReferenceOnPRCBase::from_reader(rdr, _ctx)?;
+                _ctx.on_read_begin("PRC_TYPE_MISC_ReferenceOnPRCBase");
                 linked_items.push(element);
             }
         }
@@ -8558,6 +9123,7 @@ impl PRC_TYPE_MKP_View {
         let mut number_of_filters: UnsignedInteger = Default::default();
         if number_of_filters_cond {
             number_of_filters = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         let filters_cond = _ctx.get_authoring_version() >= 8137;
         let mut filters: Vec<PRC_TYPE_ASM_Filter> = Vec::new();
@@ -8570,12 +9136,14 @@ impl PRC_TYPE_MKP_View {
             #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(number_of_filters.value) {
                 let element = PRC_TYPE_ASM_Filter::from_reader(rdr, _ctx)?;
+                _ctx.on_read_begin("PRC_TYPE_ASM_Filter");
                 filters.push(element);
             }
         }
         _ctx.se.eval(rdr, PRC_TYPE_MKP_View, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             base,
@@ -8744,19 +9312,24 @@ impl PRC_TYPE_ASM_PartDefinition {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_ASM_PartDefinition");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_ASM_PartDefinition) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_ASM_PartDefinition"));
         }
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_ROOT_PRCBaseWithGraphics");
         let mut bounding_box: BoundingBox = Default::default();
         bounding_box = BoundingBox::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("BoundingBox");
         let mut number_of_representation_items: UnsignedInteger = Default::default();
         number_of_representation_items = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_representation_items.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -8766,12 +9339,15 @@ impl PRC_TYPE_ASM_PartDefinition {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_representation_items.value) {
             let element = PRC_TYPE_RI_RepresentationItem::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_RI_RepresentationItem");
             representation_items.push(element);
         }
         let mut markups: MarkupData = Default::default();
         markups = MarkupData::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("MarkupData");
         let mut number_of_views: UnsignedInteger = Default::default();
         number_of_views = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_views.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -8781,11 +9357,13 @@ impl PRC_TYPE_ASM_PartDefinition {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_views.value) {
             let element = PRC_TYPE_MKP_View::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_MKP_View");
             views.push(element);
         }
         _ctx.se.eval(rdr, PRC_TYPE_ASM_PartDefinition, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             base,
@@ -8845,13 +9423,16 @@ impl FileIdentifier {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("FileIdentifier");
         let _ig = indent::IndentGuard::new();
         let mut flag: Boolean = Default::default();
         flag = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let unique_id_cond = !flag;
         let mut unique_id: UniqueId = Default::default();
         if unique_id_cond {
             unique_id = UniqueId::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("UniqueId");
         }
         let rv = Self {
             flag,
@@ -8902,25 +9483,32 @@ impl ReferencesOfProductOccurrence {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ReferencesOfProductOccurrence");
         let _ig = indent::IndentGuard::new();
         let mut biased_index_part: UnsignedInteger = Default::default();
         biased_index_part = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut biased_index_prototype: UnsignedInteger = Default::default();
         biased_index_prototype = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let prototype_in_same_file_structure_cond = biased_index_prototype.value != 0;
         let mut prototype_in_same_file_structure: FileIdentifier = Default::default();
         if prototype_in_same_file_structure_cond {
             prototype_in_same_file_structure = FileIdentifier::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("FileIdentifier");
         }
         let mut biased_index_external_data: UnsignedInteger = Default::default();
         biased_index_external_data = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let external_data_in_same_file_structure_cond = biased_index_external_data.value != 0;
         let mut external_data_in_same_file_structure: FileIdentifier = Default::default();
         if external_data_in_same_file_structure_cond {
             external_data_in_same_file_structure = FileIdentifier::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("FileIdentifier");
         }
         let mut number_of_child_product_occurrences: UnsignedInteger = Default::default();
         number_of_child_product_occurrences = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_child_product_occurrences.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -8930,6 +9518,7 @@ impl ReferencesOfProductOccurrence {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_child_product_occurrences.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
             index_child_occurrence.push(element);
         }
         let rv = Self {
@@ -9004,15 +9593,20 @@ impl ProductInformation {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ProductInformation");
         let _ig = indent::IndentGuard::new();
         let mut unit_from_cad_file: Boolean = Default::default();
         unit_from_cad_file = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut unit: Double = Default::default();
         unit = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut product_information_flags: Character = Default::default();
         product_information_flags = Character::from_reader(rdr)?;
+        _ctx.on_read_begin("Character");
         let mut product_load_status: Integer = Default::default();
         product_load_status = Integer::from_reader(rdr)?;
+        _ctx.on_read_begin("Integer");
         let rv = Self {
             unit_from_cad_file,
             unit,
@@ -9072,23 +9666,30 @@ impl PRC_TYPE_ASM_ProductOccurrence {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_ASM_ProductOccurrence");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_ASM_ProductOccurrence) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_ASM_ProductOccurrence"));
         }
         let mut base: PRC_TYPE_ROOT_PRCBaseWithGraphics = Default::default();
         base = PRC_TYPE_ROOT_PRCBaseWithGraphics::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_ROOT_PRCBaseWithGraphics");
         let mut references_product_occurrence: ReferencesOfProductOccurrence = Default::default();
         references_product_occurrence = ReferencesOfProductOccurrence::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ReferencesOfProductOccurrence");
         let mut product_behavior: Character = Default::default();
         product_behavior = Character::from_reader(rdr)?;
+        _ctx.on_read_begin("Character");
         let mut product_information: ProductInformation = Default::default();
         product_information = ProductInformation::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ProductInformation");
         let mut has_transformation: Boolean = Default::default();
         has_transformation = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let location_cond = !!has_transformation;
         let mut location_type_id: u32 = 0;
         let mut location_concrete: PRC_TYPE_ASM_ProductOccurrence_locationConcrete =
@@ -9124,6 +9725,7 @@ impl PRC_TYPE_ASM_ProductOccurrence {
         }
         let mut entity_ref_count: UnsignedInteger = Default::default();
         entity_ref_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (entity_ref_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -9133,12 +9735,15 @@ impl PRC_TYPE_ASM_ProductOccurrence {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(entity_ref_count.value) {
             let element = PRC_TYPE_MISC_EntityReference::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_MISC_EntityReference");
             entity_reference.push(element);
         }
         let mut markups: MarkupData = Default::default();
         markups = MarkupData::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("MarkupData");
         let mut number_of_views: UnsignedInteger = Default::default();
         number_of_views = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_views.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -9148,17 +9753,21 @@ impl PRC_TYPE_ASM_ProductOccurrence {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_views.value) {
             let element = PRC_TYPE_MKP_View::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_MKP_View");
             views.push(element);
         }
         let mut has_filter: Boolean = Default::default();
         has_filter = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let entity_filter_cond = !!has_filter;
         let mut entity_filter: PRC_TYPE_ASM_Filter = Default::default();
         if entity_filter_cond {
             entity_filter = PRC_TYPE_ASM_Filter::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_ASM_Filter");
         }
         let mut number_of_display_filters: UnsignedInteger = Default::default();
         number_of_display_filters = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_display_filters.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -9168,10 +9777,12 @@ impl PRC_TYPE_ASM_ProductOccurrence {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_display_filters.value) {
             let element = PRC_TYPE_ASM_Filter::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_ASM_Filter");
             display_filters.push(element);
         }
         let mut number_of_scene_parameters: UnsignedInteger = Default::default();
         number_of_scene_parameters = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_scene_parameters.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -9181,12 +9792,14 @@ impl PRC_TYPE_ASM_ProductOccurrence {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_scene_parameters.value) {
             let element = PRC_TYPE_GRAPH_SceneDisplayParameters::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_GRAPH_SceneDisplayParameters");
             scene_display_parameters.push(element);
         }
         _ctx.se
             .eval(rdr, PRC_TYPE_ASM_ProductOccurrence, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             base,
@@ -9326,19 +9939,24 @@ impl PRC_TYPE_ASM_FileStructure {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_ASM_FileStructure");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_ASM_FileStructure) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_ASM_FileStructure"));
         }
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCBase");
         let mut next_available_index: UnsignedInteger = Default::default();
         next_available_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut index_product_occurrence: UnsignedInteger = Default::default();
         index_product_occurrence = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         _ctx.se.eval(rdr, PRC_TYPE_ASM_FileStructure, false, 0)?;
         let rv = Self {
             id,
@@ -9413,17 +10031,21 @@ impl PRC_TYPE_ASM_FileStructureTree {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_ASM_FileStructureTree");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_ASM_FileStructureTree) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_ASM_FileStructureTree"));
         }
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCBase");
         let mut part_count: UnsignedInteger = Default::default();
         part_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (part_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -9433,10 +10055,12 @@ impl PRC_TYPE_ASM_FileStructureTree {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(part_count.value) {
             let element = PRC_TYPE_ASM_PartDefinition::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_ASM_PartDefinition");
             parts.push(element);
         }
         let mut product_count: UnsignedInteger = Default::default();
         product_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (product_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -9446,14 +10070,17 @@ impl PRC_TYPE_ASM_FileStructureTree {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(product_count.value) {
             let element = PRC_TYPE_ASM_ProductOccurrence::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_ASM_ProductOccurrence");
             products.push(element);
         }
         let mut internal_data: PRC_TYPE_ASM_FileStructure = Default::default();
         internal_data = PRC_TYPE_ASM_FileStructure::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_ASM_FileStructure");
         _ctx.se
             .eval(rdr, PRC_TYPE_ASM_FileStructureTree, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             base,
@@ -9509,10 +10136,12 @@ impl ColorRGB {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ColorRGB");
         let _ig = indent::IndentGuard::new();
         let mut color: [UnsignedCharacter; 3] = [Default::default(); 3];
         for i in 0..3 {
             color[i as usize] = UnsignedCharacter::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedCharacter");
         }
         let rv = Self { color };
         Ok(rv)
@@ -9545,10 +10174,12 @@ impl ColorRGBA {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ColorRGBA");
         let _ig = indent::IndentGuard::new();
         let mut color: [UnsignedCharacter; 4] = [Default::default(); 4];
         for i in 0..4 {
             color[i as usize] = UnsignedCharacter::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedCharacter");
         }
         let rv = Self { color };
         Ok(rv)
@@ -9582,13 +10213,16 @@ impl ColorDataRemainderRGB {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ColorDataRemainderRGB");
         let _ig = indent::IndentGuard::new();
         let mut is_same: Boolean = Default::default();
         is_same = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let color_cond = !is_same;
         let mut color: ColorRGB = Default::default();
         if color_cond {
             color = ColorRGB::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("ColorRGB");
         }
         let rv = Self {
             is_same,
@@ -9630,13 +10264,16 @@ impl ColorDataRemainderRGBA {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ColorDataRemainderRGBA");
         let _ig = indent::IndentGuard::new();
         let mut is_same: Boolean = Default::default();
         is_same = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let color_cond = !is_same;
         let mut color: ColorRGBA = Default::default();
         if color_cond {
             color = ColorRGBA::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("ColorRGBA");
         }
         let rv = Self {
             is_same,
@@ -9687,39 +10324,40 @@ impl VertexColors {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("VertexColors");
         let _ig = indent::IndentGuard::new();
         let mut is_rgba: Boolean = Default::default();
         is_rgba = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let is_segment_color_cond = _ctx.TESS_3D_Wire__is_inside();
         let mut is_segment_color: Boolean = Default::default();
         if is_segment_color_cond {
             is_segment_color = Boolean::from_reader(rdr)?;
+            _ctx.on_read_begin("Boolean");
         }
         _ctx.t3dw.set1(is_segment_color.value);
         let mut b_optimized: Boolean = Default::default();
         b_optimized = Boolean::from_reader(rdr)?;
-        if !b_optimized && _ctx.VertexColors_get_number_of_colors()? < 1 {
-            return Err(std::io::Error::other(
-                "At least one color entry is required!",
-            ));
-        };
+        _ctx.on_read_begin("Boolean");
         let color_data_rgb_first_vertex_cond = !b_optimized && !is_rgba;
         let mut color_data_rgb_first_vertex: ColorRGB = Default::default();
         if color_data_rgb_first_vertex_cond {
             color_data_rgb_first_vertex = ColorRGB::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("ColorRGB");
         }
         let color_data_rgb_remaining_vertices_cond = !b_optimized && !is_rgba;
         let mut color_data_rgb_remaining_vertices: Vec<ColorDataRemainderRGB> = Vec::new();
         if color_data_rgb_remaining_vertices_cond {
             io_check_limit!(
-                (_ctx.VertexColors_get_number_of_colors()? - 1) as u32,
+                (_ctx.VertexColors_get_num_colors_remainder()?) as u32,
                 crate::limits::MAX_NUM_ARRAY_ELEMENTS
             );
             color_data_rgb_remaining_vertices =
-                Vec::with_capacity((_ctx.VertexColors_get_number_of_colors()? - 1) as usize);
+                Vec::with_capacity((_ctx.VertexColors_get_num_colors_remainder()?) as usize);
             #[allow(clippy::reversed_empty_ranges)]
-            for _i in 0..(_ctx.VertexColors_get_number_of_colors()? - 1) {
+            for _i in 0..(_ctx.VertexColors_get_num_colors_remainder()?) {
                 let element = ColorDataRemainderRGB::from_reader(rdr, _ctx)?;
+                _ctx.on_read_begin("ColorDataRemainderRGB");
                 color_data_rgb_remaining_vertices.push(element);
             }
         }
@@ -9727,19 +10365,21 @@ impl VertexColors {
         let mut color_data_rgba_first_vertex: ColorRGBA = Default::default();
         if color_data_rgba_first_vertex_cond {
             color_data_rgba_first_vertex = ColorRGBA::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("ColorRGBA");
         }
         let color_data_rgba_remaining_vertices_cond = !b_optimized && !!is_rgba;
         let mut color_data_rgba_remaining_vertices: Vec<ColorDataRemainderRGBA> = Vec::new();
         if color_data_rgba_remaining_vertices_cond {
             io_check_limit!(
-                (_ctx.VertexColors_get_number_of_colors()? - 1) as u32,
+                (_ctx.VertexColors_get_num_colors_remainder()?) as u32,
                 crate::limits::MAX_NUM_ARRAY_ELEMENTS
             );
             color_data_rgba_remaining_vertices =
-                Vec::with_capacity((_ctx.VertexColors_get_number_of_colors()? - 1) as usize);
+                Vec::with_capacity((_ctx.VertexColors_get_num_colors_remainder()?) as usize);
             #[allow(clippy::reversed_empty_ranges)]
-            for _i in 0..(_ctx.VertexColors_get_number_of_colors()? - 1) {
+            for _i in 0..(_ctx.VertexColors_get_num_colors_remainder()?) {
                 let element = ColorDataRemainderRGBA::from_reader(rdr, _ctx)?;
+                _ctx.on_read_begin("ColorDataRemainderRGBA");
                 color_data_rgba_remaining_vertices.push(element);
             }
         }
@@ -9888,15 +10528,18 @@ impl PRC_TYPE_TESS_Face {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TESS_Face");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TESS_Face) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TESS_Face"));
         }
         let mut size_of_line_attributes: UnsignedInteger = Default::default();
         size_of_line_attributes = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (size_of_line_attributes.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -9906,12 +10549,15 @@ impl PRC_TYPE_TESS_Face {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(size_of_line_attributes.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
             line_attributes.push(element);
         }
         let mut start_of_wire_data: UnsignedInteger = Default::default();
         start_of_wire_data = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut size_of_sizes_wire: UnsignedInteger = Default::default();
         size_of_sizes_wire = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (size_of_sizes_wire.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -9921,18 +10567,22 @@ impl PRC_TYPE_TESS_Face {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(size_of_sizes_wire.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
             sizes_wire.push(element);
         }
         let mut used_entities_flag: UnsignedInteger = Default::default();
         used_entities_flag = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         debug!(
             "used_entities_flag: {:?}",
             PrcTessellationBitField::from_bytes(used_entities_flag.value.to_le_bytes())
         );
         let mut start_triangulated: UnsignedInteger = Default::default();
         start_triangulated = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut size_of_triangulateddata: UnsignedInteger = Default::default();
         size_of_triangulateddata = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (size_of_triangulateddata.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -9942,22 +10592,30 @@ impl PRC_TYPE_TESS_Face {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(size_of_triangulateddata.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
             triangulateddata.push(element);
         }
-        _ctx.set_num_vertex_colors_from_tess_3d_face(used_entities_flag.value, &triangulateddata)?;
+        _ctx.VertexColors_set_num_vertex_colors_from_tess_3d_face(
+            used_entities_flag.value,
+            &triangulateddata,
+        )?;
         let mut number_of_textured_coordinate_indices: UnsignedInteger = Default::default();
         number_of_textured_coordinate_indices = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut has_vertex_colors: Boolean = Default::default();
         has_vertex_colors = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let vertex_color_data_cond = !!has_vertex_colors;
         let mut vertex_color_data: VertexColors = Default::default();
         if vertex_color_data_cond {
             vertex_color_data = VertexColors::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("VertexColors");
         }
         let behavior_cond = size_of_line_attributes.value > 0;
         let mut behavior: UnsignedInteger = Default::default();
         if behavior_cond {
             behavior = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         _ctx.se.eval(rdr, PRC_TYPE_TESS_Face, false, 0)?;
         let rv = Self {
@@ -10068,41 +10726,50 @@ impl PRC_TYPE_TESS_3D {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TESS_3D");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TESS_3D) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TESS_3D"));
         }
         let mut tessellation_coordinates: ContentBaseTessData = Default::default();
         tessellation_coordinates = ContentBaseTessData::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentBaseTessData");
         let mut has_faces: Boolean = Default::default();
         has_faces = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let has_loops_cond = _ctx.get_authoring_version() >= 7039;
         let mut has_loops: Boolean = Default::default();
         if has_loops_cond {
             has_loops = Boolean::from_reader(rdr)?;
+            _ctx.on_read_begin("Boolean");
         }
         let must_calculate_normals_cond = _ctx.get_authoring_version() >= 7047;
         let mut must_calculate_normals: Boolean = Default::default();
         if must_calculate_normals_cond {
             must_calculate_normals = Boolean::from_reader(rdr)?;
+            _ctx.on_read_begin("Boolean");
         }
         let normal_recalculation_flags_cond =
             !!must_calculate_normals.value && _ctx.get_authoring_version() >= 7047;
         let mut normal_recalculation_flags: Character = Default::default();
         if normal_recalculation_flags_cond {
             normal_recalculation_flags = Character::from_reader(rdr)?;
+            _ctx.on_read_begin("Character");
         }
         let crease_angle_cond =
             !!must_calculate_normals.value && _ctx.get_authoring_version() >= 7047;
         let mut crease_angle: Double = Default::default();
         if crease_angle_cond {
             crease_angle = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         let mut number_of_normal_coordinates: UnsignedInteger = Default::default();
         number_of_normal_coordinates = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_normal_coordinates.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -10112,10 +10779,12 @@ impl PRC_TYPE_TESS_3D {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_normal_coordinates.value) {
             let element = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
             normal_coordinates.push(element);
         }
         let mut number_of_wire_indices: UnsignedInteger = Default::default();
         number_of_wire_indices = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_wire_indices.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -10125,10 +10794,12 @@ impl PRC_TYPE_TESS_3D {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_wire_indices.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
             wire_indices.push(element);
         }
         let mut number_of_triangulated_indicies: UnsignedInteger = Default::default();
         number_of_triangulated_indicies = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_triangulated_indicies.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -10138,10 +10809,12 @@ impl PRC_TYPE_TESS_3D {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_triangulated_indicies.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
             triangulated_index_array.push(element);
         }
         let mut number_of_face_tessellation: UnsignedInteger = Default::default();
         number_of_face_tessellation = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_face_tessellation.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -10151,10 +10824,12 @@ impl PRC_TYPE_TESS_3D {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_face_tessellation.value) {
             let element = PRC_TYPE_TESS_Face::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_TESS_Face");
             face_tessellation_data.push(element);
         }
         let mut number_of_texture_coordinates: UnsignedInteger = Default::default();
         number_of_texture_coordinates = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_texture_coordinates.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -10164,6 +10839,7 @@ impl PRC_TYPE_TESS_3D {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_texture_coordinates.value) {
             let element = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
             texture_coordinates.push(element);
         }
         _ctx.se.eval(rdr, PRC_TYPE_TESS_3D, false, 0)?;
@@ -10315,18 +10991,22 @@ impl PRC_TYPE_TESS_3D_Wire {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TESS_3D_Wire");
         let _ig = indent::IndentGuard::new();
         _ctx.TESS_3D_Wire__enter();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TESS_3D_Wire) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TESS_3D_Wire"));
         }
         let mut tessellation_coordinates: ContentBaseTessData = Default::default();
         tessellation_coordinates = ContentBaseTessData::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentBaseTessData");
         let mut number_of_wire_indexes: UnsignedInteger = Default::default();
         number_of_wire_indexes = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_wire_indexes.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -10336,16 +11016,19 @@ impl PRC_TYPE_TESS_3D_Wire {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_wire_indexes.value) {
             let element = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
             wire_indexes.push(element);
         }
         _ctx.t3dw
             .set0(&tessellation_coordinates.coordinates, &wire_indexes);
         let mut has_vertex_colors: Boolean = Default::default();
         has_vertex_colors = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let vertex_color_data_cond = !!has_vertex_colors;
         let mut vertex_color_data: VertexColors = Default::default();
         if vertex_color_data_cond {
             vertex_color_data = VertexColors::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("VertexColors");
         }
         _ctx.se.eval(rdr, PRC_TYPE_TESS_3D_Wire, false, 0)?;
         _ctx.TESS_3D_Wire__leave();
@@ -10407,9 +11090,11 @@ impl BinaryTextureData {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("BinaryTextureData");
         let _ig = indent::IndentGuard::new();
         let mut texture_binary_data_size: UnsignedInteger = Default::default();
         texture_binary_data_size = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (texture_binary_data_size.value as usize * 4usize) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -10419,10 +11104,12 @@ impl BinaryTextureData {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(texture_binary_data_size.value as usize * 4usize) {
             let element = UnsignedCharacter::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedCharacter");
             texture_binary_data.push(element);
         }
         let mut last_integer_used_bit_number: UnsignedInteger = Default::default();
         last_integer_used_bit_number = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if last_integer_used_bit_number.value > 32 {
             return Err(std::io::Error::other(
                 "last_integer_used_bit_number.value > 32 failed!",
@@ -10473,11 +11160,14 @@ impl CompressedTextureParameter {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CompressedTextureParameter");
         let _ig = indent::IndentGuard::new();
         let mut binary_texture_data: BinaryTextureData = Default::default();
         binary_texture_data = BinaryTextureData::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("BinaryTextureData");
         let mut reference_array_size: UnsignedInteger = Default::default();
         reference_array_size = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (reference_array_size.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -10487,10 +11177,12 @@ impl CompressedTextureParameter {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(reference_array_size.value) {
             let element = NumberOfBitsThenUnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("NumberOfBitsThenUnsignedInteger");
             reference_array.push(element);
         }
         let mut texture_parameters_tolerance: Double = Default::default();
         texture_parameters_tolerance = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         if texture_parameters_tolerance.value < 0.0 || texture_parameters_tolerance.value > 1.0 {
             return Err(std::io::Error::other(
                 "OOB value in texture_parameters_tolerance",
@@ -10498,6 +11190,7 @@ impl CompressedTextureParameter {
         };
         let mut texture_parameters_size: UnsignedInteger = Default::default();
         texture_parameters_size = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if texture_parameters_size.value == 0 {
             return Err(std::io::Error::other("texture_parameters_size==0"));
         };
@@ -10510,6 +11203,7 @@ impl CompressedTextureParameter {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(texture_parameters_size.value) {
             let element = FloatAsBytes::from_reader(rdr)?;
+            _ctx.on_read_begin("FloatAsBytes");
             texture_parameters.push(element);
         }
         let rv = Self {
@@ -10605,45 +11299,56 @@ impl PRC_TYPE_TESS_3D_Compressed {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TESS_3D_Compressed");
         let _ig = indent::IndentGuard::new();
         _ctx.t3dc.enter();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TESS_3D_Compressed) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TESS_3D_Compressed"));
         }
         let mut is_calculated: Boolean = Default::default();
         is_calculated = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut has_faces: Boolean = Default::default();
         has_faces = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut tolerance: Double = Default::default();
         tolerance = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let origin_array_cond = _ctx.get_authoring_version() >= 7031;
         let mut origin_array: [FloatAsBytes; 3] = [Default::default(); 3];
         if origin_array_cond {
             for i in 0..3 {
                 origin_array[i as usize] = FloatAsBytes::from_reader(rdr)?;
+                _ctx.on_read_begin("FloatAsBytes");
             }
         }
         let mut point_array: CompressedIntegerArray = Default::default();
         point_array = CompressedIntegerArray::from_reader(rdr)?;
+        _ctx.on_read_begin("CompressedIntegerArray");
         let mut edge_status_array: CharacterArray = Default::default();
         edge_status_array = CharacterArray::from_reader(rdr, 2)?;
+        _ctx.on_read_begin("CharacterArray");
         if !edge_status_array.a.is_empty() {
             prc_gen_assert!(*edge_status_array.a.iter().max().unwrap() >= 0i8);
         };
         let mut triangle_face_array: CompressedIndiceArray = Default::default();
         triangle_face_array = CompressedIndiceArray::from_reader(rdr)?;
+        _ctx.on_read_begin("CompressedIndiceArray");
         prc_gen_assert!(
             edge_status_array.a.len() == 3 * triangle_face_array.a.len()
                 || edge_status_array.a.len() == triangle_face_array.a.len()
         );
         let mut reference_array_size: UnsignedInteger = Default::default();
         reference_array_size = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut point_is_reference_array: UncompressedBoolArray = Default::default();
         point_is_reference_array =
             UncompressedBoolArray::from_reader(rdr, reference_array_size.value)?;
+        _ctx.on_read_begin("UncompressedBoolArray");
         let mut point_reference_array: CompressedIndiceArrayWithoutBit = Default::default();
         point_reference_array = CompressedIndiceArrayWithoutBit::from_reader(
             rdr,
@@ -10651,6 +11356,7 @@ impl PRC_TYPE_TESS_3D_Compressed {
                 .number_of_referenced_points(&point_is_reference_array.a)
                 > 3,
         )?;
+        _ctx.on_read_begin("CompressedIndiceArrayWithoutBit");
         prc_gen_assert!(
             _ctx.t3dc
                 .number_of_referenced_points(&point_is_reference_array.a) as usize
@@ -10658,6 +11364,7 @@ impl PRC_TYPE_TESS_3D_Compressed {
         );
         let mut must_recalculate_normals: Boolean = Default::default();
         must_recalculate_normals = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         _ctx.t3dc.get_points(
             &origin_array,
             &point_array.a,
@@ -10672,38 +11379,45 @@ impl PRC_TYPE_TESS_3D_Compressed {
         if normal_is_reversed_cond {
             normal_is_reversed =
                 UncompressedBoolArray::from_reader(rdr, triangle_face_array.a.len() as u32)?;
+            _ctx.on_read_begin("UncompressedBoolArray");
         }
         let crease_angle_cond = !!must_recalculate_normals;
         let mut crease_angle: Double = Default::default();
         if crease_angle_cond {
             crease_angle = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         let normal_recalculation_flags_cond = !!must_recalculate_normals;
         let mut normal_recalculation_flags: Character = Default::default();
         if normal_recalculation_flags_cond {
             normal_recalculation_flags = Character::from_reader(rdr)?;
+            _ctx.on_read_begin("Character");
         }
         let normal_angle_number_of_bits_cond = !must_recalculate_normals;
         let mut normal_angle_number_of_bits: Character = Default::default();
         if normal_angle_number_of_bits_cond {
             normal_angle_number_of_bits = Character::from_reader(rdr)?;
+            _ctx.on_read_begin("Character");
         }
         let normal_binary_data_size_cond = !must_recalculate_normals;
         let mut normal_binary_data_size: UnsignedInteger = Default::default();
         if normal_binary_data_size_cond {
             normal_binary_data_size = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         let normal_binary_data_cond = !must_recalculate_normals;
         let mut normal_binary_data: UncompressedBoolArray = Default::default();
         if normal_binary_data_cond {
             normal_binary_data =
                 UncompressedBoolArray::from_reader(rdr, normal_binary_data_size.value)?;
+            _ctx.on_read_begin("UncompressedBoolArray");
         }
         let normal_angle_array_cond = !must_recalculate_normals;
         let mut normal_angle_array: ShortArray = Default::default();
         if normal_angle_array_cond {
             normal_angle_array =
                 ShortArray::from_reader(rdr, normal_angle_number_of_bits.value as u8)?;
+            _ctx.on_read_begin("ShortArray");
         }
         let is_face_planar_cond = !must_recalculate_normals;
         let mut is_face_planar: UncompressedBoolArray = Default::default();
@@ -10713,9 +11427,11 @@ impl PRC_TYPE_TESS_3D_Compressed {
                 _ctx.t3dc
                     .number_of_faces_stored_in_mesh(&triangle_face_array.a),
             )?;
+            _ctx.on_read_begin("UncompressedBoolArray");
         }
         let mut is_point_color: Boolean = Default::default();
         is_point_color = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let is_point_color_on_face_cond = !!is_point_color;
         let mut is_point_color_on_face: UncompressedBoolArray = Default::default();
         if is_point_color_on_face_cond {
@@ -10728,15 +11444,18 @@ impl PRC_TYPE_TESS_3D_Compressed {
                         .number_of_faces_stored_in_mesh(&triangle_face_array.a)
                 },
             )?;
+            _ctx.on_read_begin("UncompressedBoolArray");
         }
         let point_color_array_cond = !!is_point_color;
         let mut point_color_array: CharacterArray = Default::default();
         if point_color_array_cond {
             point_color_array = CharacterArray::from_reader(rdr, 8)?;
+            _ctx.on_read_begin("CharacterArray");
         }
         _ctx.t3dc.on_point_color(&point_color_array.a);
         let mut is_multiple_line_attribute: Boolean = Default::default();
         is_multiple_line_attribute = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let is_multiple_line_attribute_on_face_cond = !!is_multiple_line_attribute;
         let mut is_multiple_line_attribute_on_face: UncompressedBoolArray = Default::default();
         if is_multiple_line_attribute_on_face_cond {
@@ -10749,20 +11468,25 @@ impl PRC_TYPE_TESS_3D_Compressed {
                         .number_of_faces_stored_in_mesh(&triangle_face_array.a)
                 },
             )?;
+            _ctx.on_read_begin("UncompressedBoolArray");
         }
         let mut line_attribute_array: ShortArray = Default::default();
         line_attribute_array = ShortArray::from_reader(rdr, 16)?;
+        _ctx.on_read_begin("ShortArray");
         let mut no_texture: Boolean = Default::default();
         no_texture = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let texture_data_cond = !no_texture;
         let mut texture_data: CompressedTextureParameter = Default::default();
         if texture_data_cond {
             texture_data = CompressedTextureParameter::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedTextureParameter");
         }
         let all_faces_have_texture_cond = !no_texture;
         let mut all_faces_have_texture: Boolean = Default::default();
         if all_faces_have_texture_cond {
             all_faces_have_texture = Boolean::from_reader(rdr)?;
+            _ctx.on_read_begin("Boolean");
         }
         let face_has_texture_cond = !no_texture && !all_faces_have_texture.value;
         let mut face_has_texture: UncompressedBoolArray = Default::default();
@@ -10772,13 +11496,16 @@ impl PRC_TYPE_TESS_3D_Compressed {
                 _ctx.t3dc
                     .number_of_faces_stored_in_mesh(&triangle_face_array.a),
             )?;
+            _ctx.on_read_begin("UncompressedBoolArray");
         }
         let mut has_behaviors: Boolean = Default::default();
         has_behaviors = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let behaviors_array_cond = !!has_behaviors;
         let mut behaviors_array: CharacterArray = Default::default();
         if behaviors_array_cond {
             behaviors_array = CharacterArray::from_reader(rdr, 8)?;
+            _ctx.on_read_begin("CharacterArray");
         }
         _ctx.se.eval(rdr, PRC_TYPE_TESS_3D_Compressed, false, 0)?;
         _ctx.t3dc.leave();
@@ -11064,6 +11791,7 @@ impl PRC_TYPE_TESS {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TESS");
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_TESS_idConcrete =
@@ -11172,9 +11900,11 @@ impl PRC_TYPE_ASM_FileStructureTessellation {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_ASM_FileStructureTessellation");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_ASM_FileStructureTessellation) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other(
@@ -11183,8 +11913,10 @@ impl PRC_TYPE_ASM_FileStructureTessellation {
         }
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCBase");
         let mut tess_count: UnsignedInteger = Default::default();
         tess_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (tess_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -11193,12 +11925,14 @@ impl PRC_TYPE_ASM_FileStructureTessellation {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(tess_count.value) {
             let element = PRC_TYPE_TESS::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_TESS");
             tess.push(element);
         }
         _ctx.se
             .eval(rdr, PRC_TYPE_ASM_FileStructureTessellation, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             base,
@@ -11247,23 +11981,28 @@ impl BaseTopology {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("BaseTopology");
         let _ig = indent::IndentGuard::new();
         let mut has_base: Boolean = Default::default();
         has_base = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let attribute_data_cond = !!has_base;
         let mut attribute_data: AttributeData = Default::default();
         if attribute_data_cond {
             attribute_data = AttributeData::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("AttributeData");
         }
         let name_cond = !!has_base;
         let mut name: Name = Default::default();
         if name_cond {
             name = Name::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Name");
         }
         let cad_identifier_cond = !!has_base;
         let mut cad_identifier: UnsignedInteger = Default::default();
         if cad_identifier_cond {
             cad_identifier = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         let rv = Self {
             has_base,
@@ -11327,11 +12066,14 @@ impl ContentBody {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ContentBody");
         let _ig = indent::IndentGuard::new();
         let mut base: BaseTopology = Default::default();
         base = BaseTopology::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("BaseTopology");
         let mut bounding_box_behavior: Character = Default::default();
         bounding_box_behavior = Character::from_reader(rdr)?;
+        _ctx.on_read_begin("Character");
         debug!(
             "{}bounding_box_behavior: {:?}",
             indent::get(),
@@ -11393,17 +12135,21 @@ impl PRC_TYPE_TOPO_MultipleVertex {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TOPO_MultipleVertex");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TOPO_MultipleVertex) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TOPO_MultipleVertex"));
         }
         let mut base: BaseTopology = Default::default();
         base = BaseTopology::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("BaseTopology");
         let mut number_of_points: UnsignedInteger = Default::default();
         number_of_points = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_points.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -11412,6 +12158,7 @@ impl PRC_TYPE_TOPO_MultipleVertex {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_points.value) {
             let element = Vector3D::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Vector3D");
             points.push(element);
         }
         _ctx.se.eval(rdr, PRC_TYPE_TOPO_MultipleVertex, false, 0)?;
@@ -11483,23 +12230,29 @@ impl PRC_TYPE_TOPO_UniqueVertex {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TOPO_UniqueVertex");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TOPO_UniqueVertex) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TOPO_UniqueVertex"));
         }
         let mut base: BaseTopology = Default::default();
         base = BaseTopology::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("BaseTopology");
         let mut vertex: Vector3D = Default::default();
         vertex = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut has_tolerance: Boolean = Default::default();
         has_tolerance = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let tolerance_cond = !!has_tolerance;
         let mut tolerance: Double = Default::default();
         if tolerance_cond {
             tolerance = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         _ctx.se.eval(rdr, PRC_TYPE_TOPO_UniqueVertex, false, 0)?;
         let rv = Self {
@@ -11555,11 +12308,14 @@ impl Interval {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("Interval");
         let _ig = indent::IndentGuard::new();
         let mut min_value: Double = Default::default();
         min_value = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut max_value: Double = Default::default();
         max_value = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let rv = Self {
             min_value,
             max_value,
@@ -11597,13 +12353,17 @@ impl Parameterization {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("Parameterization");
         let _ig = indent::IndentGuard::new();
         let mut trim_interval: Interval = Default::default();
         trim_interval = Interval::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Interval");
         let mut coeff_a: Double = Default::default();
         coeff_a = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut coeff_b: Double = Default::default();
         coeff_b = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let rv = Self {
             trim_interval,
             coeff_a,
@@ -11647,19 +12407,26 @@ impl UVParameterization {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("UVParameterization");
         let _ig = indent::IndentGuard::new();
         let mut swap_uv: Boolean = Default::default();
         swap_uv = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut suface_domain: Domain = Default::default();
         suface_domain = Domain::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Domain");
         let mut u_param_coeff_a: Double = Default::default();
         u_param_coeff_a = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut v_param_coeff_a: Double = Default::default();
         v_param_coeff_a = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut u_param_coeff_b: Double = Default::default();
         u_param_coeff_b = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut v_param_coeff_b: Double = Default::default();
         v_param_coeff_b = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let rv = Self {
             swap_uv,
             suface_domain,
@@ -11712,28 +12479,35 @@ impl ContentCurve {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ContentCurve");
         let _ig = indent::IndentGuard::new();
         let mut has_base_geometry: Boolean = Default::default();
         has_base_geometry = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let attribute_data_cond = !!has_base_geometry;
         let mut attribute_data: AttributeData = Default::default();
         if attribute_data_cond {
             attribute_data = AttributeData::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("AttributeData");
         }
         let name_cond = !!has_base_geometry;
         let mut name: Name = Default::default();
         if name_cond {
             name = Name::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Name");
         }
         let cad_identifier_cond = !!has_base_geometry;
         let mut cad_identifier: UnsignedInteger = Default::default();
         if cad_identifier_cond {
             cad_identifier = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         let mut extend_type: UnsignedInteger = Default::default();
         extend_type = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut is_3d_flag: Boolean = Default::default();
         is_3d_flag = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         _ctx.ContentCurve_is_3d_flag = is_3d_flag.value;
         let rv = Self {
             has_base_geometry,
@@ -11822,34 +12596,43 @@ impl PRC_TYPE_CRV_Blend02Boundary {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_CRV_Blend02Boundary");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_CRV_Blend02Boundary) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_CRV_Blend02Boundary"));
         }
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCurve");
         prc_gen_assert!(curve_data.is_3d_flag.value);
         let transform2d_cond = !curve_data.is_3d_flag.value;
         let mut transform2d: Transformation2DWithBit = Default::default();
         if transform2d_cond {
             transform2d = Transformation2DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation2DWithBit");
         }
         let transform3d_cond = !!curve_data.is_3d_flag.value;
         let mut transform3d: Transformation3DWithBit = Default::default();
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation3DWithBit");
         }
         let mut parameterization: Parameterization = Default::default();
         parameterization = Parameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Parameterization");
         let mut surface: PtrSurface = Default::default();
         surface = PtrSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrSurface");
         let mut bound: Integer = Default::default();
         bound = Integer::from_reader(rdr)?;
+        _ctx.on_read_begin("Integer");
         let mut number_of_crossing_points: UnsignedInteger = Default::default();
         number_of_crossing_points = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_crossing_points.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -11859,32 +12642,45 @@ impl PRC_TYPE_CRV_Blend02Boundary {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_crossing_points.value) {
             let element = Vector3D::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Vector3D");
             crossing_points.push(element);
         }
         let mut chord_error: Double = Default::default();
         chord_error = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut angle_error: Double = Default::default();
         angle_error = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut bound_surface: PtrSurface = Default::default();
         bound_surface = PtrSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrSurface");
         let mut sense_bound_surface: Boolean = Default::default();
         sense_bound_surface = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut intersection_order: Boolean = Default::default();
         intersection_order = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut sense_intersection_order: Boolean = Default::default();
         sense_intersection_order = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut base_parameter: Double = Default::default();
         base_parameter = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut base_scale: Double = Default::default();
         base_scale = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut start_limit_point: Vector3D = Default::default();
         start_limit_point = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut start_limit_type: UnsignedInteger = Default::default();
         start_limit_type = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut end_limit_point: Vector3D = Default::default();
         end_limit_point = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut end_limit_type: UnsignedInteger = Default::default();
         end_limit_type = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         _ctx.se.eval(rdr, PRC_TYPE_CRV_Blend02Boundary, false, 0)?;
         let rv = Self {
             id,
@@ -11998,20 +12794,25 @@ impl ControlPointsNurbsCrv {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ControlPointsNurbsCrv");
         let _ig = indent::IndentGuard::new();
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut y: Double = Default::default();
         y = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let z_cond = _ctx.ContentCurve_is_3d_flag;
         let mut z: Double = Default::default();
         if z_cond {
             z = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         let ww_cond = _ctx.PRC_TYPE_CRV_NURBS_is_rational;
         let mut ww: Double = Default::default();
         if ww_cond {
             ww = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         let rv = Self {
             x,
@@ -12099,24 +12900,31 @@ impl PRC_TYPE_CRV_NURBS {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_CRV_NURBS");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_CRV_NURBS) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_CRV_NURBS"));
         }
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCurve");
         let mut is_rational: Boolean = Default::default();
         is_rational = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         _ctx.PRC_TYPE_CRV_NURBS_is_rational = is_rational.value;
         let mut degree: UnsignedInteger = Default::default();
         degree = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut highest_index_of_control_points: UnsignedInteger = Default::default();
         highest_index_of_control_points = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut highest_index_of_knots: UnsignedInteger = Default::default();
         highest_index_of_knots = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (highest_index_of_control_points.value + 1) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -12126,6 +12934,7 @@ impl PRC_TYPE_CRV_NURBS {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(highest_index_of_control_points.value + 1) {
             let element = ControlPointsNurbsCrv::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("ControlPointsNurbsCrv");
             p.push(element);
         }
         io_check_limit!(
@@ -12136,6 +12945,7 @@ impl PRC_TYPE_CRV_NURBS {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(highest_index_of_knots.value + 1) {
             let element = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
             u.push(element);
         }
         prc_gen_assert!(
@@ -12144,8 +12954,10 @@ impl PRC_TYPE_CRV_NURBS {
         );
         let mut knot_type: UnsignedInteger = Default::default();
         knot_type = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut curve_form: UnsignedInteger = Default::default();
         curve_form = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         _ctx.se.eval(rdr, PRC_TYPE_CRV_NURBS, false, 0)?;
         let rv = Self {
             id,
@@ -12213,29 +13025,36 @@ impl PRC_TYPE_CRV_Circle {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_CRV_Circle");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_CRV_Circle) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_CRV_Circle"));
         }
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCurve");
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: Transformation2DWithBit = Default::default();
         if transform2d_cond {
             transform2d = Transformation2DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation2DWithBit");
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: Transformation3DWithBit = Default::default();
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation3DWithBit");
         }
         let mut parameterization: Parameterization = Default::default();
         parameterization = Parameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Parameterization");
         let mut radius: Double = Default::default();
         radius = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         _ctx.se.eval(rdr, PRC_TYPE_CRV_Circle, false, 0)?;
         let rv = Self {
             id,
@@ -12301,11 +13120,14 @@ impl CompositeSubCurve {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CompositeSubCurve");
         let _ig = indent::IndentGuard::new();
         let mut subcurve: PtrCurve = Default::default();
         subcurve = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         let mut sense: Boolean = Default::default();
         sense = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let rv = Self { subcurve, sense };
         Ok(rv)
     }
@@ -12345,29 +13167,36 @@ impl PRC_TYPE_CRV_Composite {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_CRV_Composite");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_CRV_Composite) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_CRV_Composite"));
         }
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCurve");
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: Transformation2DWithBit = Default::default();
         if transform2d_cond {
             transform2d = Transformation2DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation2DWithBit");
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: Transformation3DWithBit = Default::default();
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation3DWithBit");
         }
         let mut parameterization: Parameterization = Default::default();
         parameterization = Parameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Parameterization");
         let mut number_of_subcurves: UnsignedInteger = Default::default();
         number_of_subcurves = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_subcurves.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -12377,10 +13206,12 @@ impl PRC_TYPE_CRV_Composite {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_subcurves.value) {
             let element = CompositeSubCurve::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompositeSubCurve");
             subcurves.push(element);
         }
         let mut is_closed: Boolean = Default::default();
         is_closed = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         _ctx.se.eval(rdr, PRC_TYPE_CRV_Composite, false, 0)?;
         let rv = Self {
             id,
@@ -12460,35 +13291,45 @@ impl PRC_TYPE_CRV_OnSurf {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_CRV_OnSurf");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_CRV_OnSurf) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_CRV_OnSurf"));
         }
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCurve");
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: Transformation2DWithBit = Default::default();
         if transform2d_cond {
             transform2d = Transformation2DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation2DWithBit");
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: Transformation3DWithBit = Default::default();
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation3DWithBit");
         }
         let mut parameterization: Parameterization = Default::default();
         parameterization = Parameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Parameterization");
         let mut tolerance: Double = Default::default();
         tolerance = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut uv_curve: PtrCurve = Default::default();
         uv_curve = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         let mut surface: PtrSurface = Default::default();
         surface = PtrSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrSurface");
         let mut uv_domain: Domain = Default::default();
         uv_domain = Domain::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Domain");
         _ctx.se.eval(rdr, PRC_TYPE_CRV_OnSurf, false, 0)?;
         let rv = Self {
             id,
@@ -12568,31 +13409,39 @@ impl PRC_TYPE_CRV_Ellipse {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_CRV_Ellipse");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_CRV_Ellipse) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_CRV_Ellipse"));
         }
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCurve");
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: Transformation2DWithBit = Default::default();
         if transform2d_cond {
             transform2d = Transformation2DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation2DWithBit");
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: Transformation3DWithBit = Default::default();
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation3DWithBit");
         }
         let mut parameterization: Parameterization = Default::default();
         parameterization = Parameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Parameterization");
         let mut rx: Double = Default::default();
         rx = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut ry: Double = Default::default();
         ry = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         _ctx.se.eval(rdr, PRC_TYPE_CRV_Ellipse, false, 0)?;
         let rv = Self {
             id,
@@ -12676,15 +13525,18 @@ impl PRC_TYPE_MATH_FCT_1D_Polynom {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_1D_Polynom");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MATH_FCT_1D_Polynom) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_MATH_FCT_1D_Polynom"));
         }
         let mut number_of_coefficients: UnsignedInteger = Default::default();
         number_of_coefficients = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_coefficients.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -12694,6 +13546,7 @@ impl PRC_TYPE_MATH_FCT_1D_Polynom {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_coefficients.value) {
             let element = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
             coefficient.push(element);
         }
         _ctx.se.eval(rdr, PRC_TYPE_MATH_FCT_1D_Polynom, false, 0)?;
@@ -12758,21 +13611,27 @@ impl PRC_TYPE_MATH_FCT_1D_Trigonometric {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_1D_Trigonometric");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MATH_FCT_1D_Trigonometric) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_MATH_FCT_1D_Trigonometric"));
         }
         let mut amplitude: Double = Default::default();
         amplitude = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut phase: Double = Default::default();
         phase = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut freq: Double = Default::default();
         freq = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut dc_offset: Double = Default::default();
         dc_offset = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         _ctx.se
             .eval(rdr, PRC_TYPE_MATH_FCT_1D_Trigonometric, false, 0)?;
         let rv = Self {
@@ -12821,17 +13680,21 @@ impl PRC_TYPE_MATH_FCT_1D_Fraction {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_1D_Fraction");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MATH_FCT_1D_Fraction) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_MATH_FCT_1D_Fraction"));
         }
         let mut numerator: Box<PRC_TYPE_MATH_FCT_1D> = Box::new(Default::default());
         numerator = Box::from(PRC_TYPE_MATH_FCT_1D::from_reader(rdr, _ctx)?);
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_1D");
         let mut denominator: Box<PRC_TYPE_MATH_FCT_1D> = Box::new(Default::default());
         denominator = Box::from(PRC_TYPE_MATH_FCT_1D::from_reader(rdr, _ctx)?);
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_1D");
         _ctx.se.eval(rdr, PRC_TYPE_MATH_FCT_1D_Fraction, false, 0)?;
         let rv = Self {
             id,
@@ -12896,23 +13759,30 @@ impl PRC_TYPE_MATH_FCT_1D_ArctanCos {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_1D_ArctanCos");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MATH_FCT_1D_ArctanCos) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_MATH_FCT_1D_ArctanCos"));
         }
         let mut a: Double = Default::default();
         a = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut amplitude: Double = Default::default();
         amplitude = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut frequency: Double = Default::default();
         frequency = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut phase: Double = Default::default();
         phase = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut e: Double = Default::default();
         e = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         _ctx.se
             .eval(rdr, PRC_TYPE_MATH_FCT_1D_ArctanCos, false, 0)?;
         let rv = Self {
@@ -12963,11 +13833,14 @@ impl CombinationFunctions {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CombinationFunctions");
         let _ig = indent::IndentGuard::new();
         let mut coefficient: Double = Default::default();
         coefficient = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut function: Box<PRC_TYPE_MATH_FCT_1D> = Box::new(Default::default());
         function = Box::from(PRC_TYPE_MATH_FCT_1D::from_reader(rdr, _ctx)?);
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_1D");
         let rv = Self {
             coefficient,
             function,
@@ -13019,15 +13892,18 @@ impl PRC_TYPE_MATH_FCT_1D_Combination {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_1D_Combination");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MATH_FCT_1D_Combination) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_MATH_FCT_1D_Combination"));
         }
         let mut number_of_coefficients: UnsignedInteger = Default::default();
         number_of_coefficients = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_coefficients.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -13037,6 +13913,7 @@ impl PRC_TYPE_MATH_FCT_1D_Combination {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_coefficients.value) {
             let element = CombinationFunctions::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CombinationFunctions");
             coefficient.push(element);
         }
         _ctx.se
@@ -13080,6 +13957,7 @@ impl PRC_TYPE_MATH_FCT_1D {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_1D");
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_MATH_FCT_1D_idConcrete =
@@ -13182,9 +14060,11 @@ impl PRC_TYPE_MATH_FCT_3D_Linear {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_3D_Linear");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MATH_FCT_3D_Linear) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_MATH_FCT_3D_Linear"));
@@ -13192,9 +14072,11 @@ impl PRC_TYPE_MATH_FCT_3D_Linear {
         let mut mat: [Vector3D; 3] = [Default::default(); 3];
         for i in 0..3 {
             mat[i as usize] = Vector3D::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Vector3D");
         }
         let mut vect: Vector3D = Default::default();
         vect = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         _ctx.se.eval(rdr, PRC_TYPE_MATH_FCT_3D_Linear, false, 0)?;
         let rv = Self { id, mat, vect };
         Ok(rv)
@@ -13238,27 +14120,36 @@ impl PRC_TYPE_MATH_FCT_3D_NonLinear {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_3D_NonLinear");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_MATH_FCT_3D_NonLinear) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_MATH_FCT_3D_NonLinear"));
         }
         let mut left_transformation: Box<PRC_TYPE_MATH_FCT_3D> = Box::new(Default::default());
         left_transformation = Box::from(PRC_TYPE_MATH_FCT_3D::from_reader(rdr, _ctx)?);
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_3D");
         let mut right_transformation: Box<PRC_TYPE_MATH_FCT_3D> = Box::new(Default::default());
         right_transformation = Box::from(PRC_TYPE_MATH_FCT_3D::from_reader(rdr, _ctx)?);
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_3D");
         let mut d2: Double = Default::default();
         d2 = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut reserved_double: Double = Default::default();
         reserved_double = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut reserved_int_1: Integer = Default::default();
         reserved_int_1 = Integer::from_reader(rdr)?;
+        _ctx.on_read_begin("Integer");
         let mut reserved_int_2: Integer = Default::default();
         reserved_int_2 = Integer::from_reader(rdr)?;
+        _ctx.on_read_begin("Integer");
         let mut reserved_int_3: Integer = Default::default();
         reserved_int_3 = Integer::from_reader(rdr)?;
+        _ctx.on_read_begin("Integer");
         _ctx.se
             .eval(rdr, PRC_TYPE_MATH_FCT_3D_NonLinear, false, 0)?;
         let rv = Self {
@@ -13314,6 +14205,7 @@ impl PRC_TYPE_MATH_FCT_3D {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_3D");
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_MATH_FCT_3D_idConcrete =
@@ -13397,37 +14289,47 @@ impl PRC_TYPE_CRV_Equation {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_CRV_Equation");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_CRV_Equation) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_CRV_Equation"));
         }
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCurve");
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: Transformation2DWithBit = Default::default();
         if transform2d_cond {
             transform2d = Transformation2DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation2DWithBit");
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: Transformation3DWithBit = Default::default();
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation3DWithBit");
         }
         let mut parameterization: Parameterization = Default::default();
         parameterization = Parameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Parameterization");
         let mut interval: Interval = Default::default();
         interval = Interval::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Interval");
         let mut x_function: PRC_TYPE_MATH_FCT_1D = Default::default();
         x_function = PRC_TYPE_MATH_FCT_1D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_1D");
         let mut y_function: PRC_TYPE_MATH_FCT_1D = Default::default();
         y_function = PRC_TYPE_MATH_FCT_1D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_1D");
         let z_function_cond = _ctx.ContentCurve_is_3d_flag;
         let mut z_function: PRC_TYPE_MATH_FCT_1D = Default::default();
         if z_function_cond {
             z_function = PRC_TYPE_MATH_FCT_1D::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_MATH_FCT_1D");
         }
         _ctx.se.eval(rdr, PRC_TYPE_CRV_Equation, false, 0)?;
         let rv = Self {
@@ -13517,23 +14419,32 @@ impl Type0HelixData {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("Type0HelixData");
         let _ig = indent::IndentGuard::new();
         let mut origin0: Double = Default::default();
         origin0 = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut direction0: Double = Default::default();
         direction0 = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut origin1: Double = Default::default();
         origin1 = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut direction1: Double = Default::default();
         direction1 = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut origin2: Double = Default::default();
         origin2 = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut direction2: Double = Default::default();
         direction2 = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut pitch: Double = Default::default();
         pitch = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut radius: Double = Default::default();
         radius = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let rv = Self {
             origin0,
             direction0,
@@ -13596,29 +14507,40 @@ impl Type1HelixData {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("Type1HelixData");
         let _ig = indent::IndentGuard::new();
         let mut unit_z0: Double = Default::default();
         unit_z0 = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut unit_u0: Double = Default::default();
         unit_u0 = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut unit_z1: Double = Default::default();
         unit_z1 = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut unit_u1: Double = Default::default();
         unit_u1 = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut unit_z2: Double = Default::default();
         unit_z2 = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut unit_u2: Double = Default::default();
         unit_u2 = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut reserved_double: [Double; 4] = [Default::default(); 4];
         for i in 0..4 {
             reserved_double[i as usize] = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         let mut radius_law: PRC_TYPE_MATH_FCT_1D = Default::default();
         radius_law = PRC_TYPE_MATH_FCT_1D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_1D");
         let mut z_law: PRC_TYPE_MATH_FCT_1D = Default::default();
         z_law = PRC_TYPE_MATH_FCT_1D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_1D");
         let mut theta_law: PRC_TYPE_MATH_FCT_1D = Default::default();
         theta_law = PRC_TYPE_MATH_FCT_1D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_1D");
         let rv = Self {
             unit_z0,
             unit_u0,
@@ -13688,38 +14610,49 @@ impl PRC_TYPE_CRV_Helix {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_CRV_Helix");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_CRV_Helix) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_CRV_Helix"));
         }
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCurve");
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: Transformation2DWithBit = Default::default();
         if transform2d_cond {
             transform2d = Transformation2DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation2DWithBit");
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: Transformation3DWithBit = Default::default();
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation3DWithBit");
         }
         let mut parameterization: Parameterization = Default::default();
         parameterization = Parameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Parameterization");
         let mut _type: Character = Default::default();
         _type = Character::from_reader(rdr)?;
+        _ctx.on_read_begin("Character");
         prc_gen_assert!(_type.value == 0 || _type.value == 1);
         let mut orientation: Boolean = Default::default();
         orientation = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut start: Vector3D = Default::default();
         start = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut type0_helix: Type0HelixData = Default::default();
         type0_helix = Type0HelixData::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Type0HelixData");
         let mut type1_helix: Type1HelixData = Default::default();
         type1_helix = Type1HelixData::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Type1HelixData");
         _ctx.se.eval(rdr, PRC_TYPE_CRV_Helix, false, 0)?;
         let rv = Self {
             id,
@@ -13803,33 +14736,42 @@ impl PRC_TYPE_CRV_Hyperbola {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_CRV_Hyperbola");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_CRV_Hyperbola) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_CRV_Hyperbola"));
         }
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCurve");
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: Transformation2DWithBit = Default::default();
         if transform2d_cond {
             transform2d = Transformation2DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation2DWithBit");
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: Transformation3DWithBit = Default::default();
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation3DWithBit");
         }
         let mut parameterization: Parameterization = Default::default();
         parameterization = Parameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Parameterization");
         let mut semi_axis: Double = Default::default();
         semi_axis = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut semi_image_axis: Double = Default::default();
         semi_image_axis = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut _type: Character = Default::default();
         _type = Character::from_reader(rdr)?;
+        _ctx.on_read_begin("Character");
         prc_gen_assert!(_type.value == 0 || _type.value == 1);
         _ctx.se.eval(rdr, PRC_TYPE_CRV_Hyperbola, false, 0)?;
         let rv = Self {
@@ -13907,21 +14849,29 @@ impl CrossingPointsCrvIntersection {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CrossingPointsCrvIntersection");
         let _ig = indent::IndentGuard::new();
         let mut position: Vector3D = Default::default();
         position = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut uv_surface_1: Vector2D = Default::default();
         uv_surface_1 = Vector2D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector2D");
         let mut uv_surface_2: Vector2D = Default::default();
         uv_surface_2 = Vector2D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector2D");
         let mut tangent: Vector3D = Default::default();
         tangent = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut parameter: Double = Default::default();
         parameter = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut scale: Double = Default::default();
         scale = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut flags: Character = Default::default();
         flags = Character::from_reader(rdr)?;
+        _ctx.on_read_begin("Character");
         let rv = Self {
             position,
             uv_surface_1,
@@ -13990,39 +14940,51 @@ impl PRC_TYPE_CRV_Intersection {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_CRV_Intersection");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_CRV_Intersection) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_CRV_Intersection"));
         }
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCurve");
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: Transformation2DWithBit = Default::default();
         if transform2d_cond {
             transform2d = Transformation2DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation2DWithBit");
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: Transformation3DWithBit = Default::default();
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation3DWithBit");
         }
         let mut parameterization: Parameterization = Default::default();
         parameterization = Parameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Parameterization");
         let mut surface_1: PtrSurface = Default::default();
         surface_1 = PtrSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrSurface");
         let mut surface_2: PtrSurface = Default::default();
         surface_2 = PtrSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrSurface");
         let mut sense_1: Boolean = Default::default();
         sense_1 = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut sense_2: Boolean = Default::default();
         sense_2 = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut sense_cross: Boolean = Default::default();
         sense_cross = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut number_of_crossings: UnsignedInteger = Default::default();
         number_of_crossings = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_crossings.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -14032,22 +14994,30 @@ impl PRC_TYPE_CRV_Intersection {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_crossings.value) {
             let element = CrossingPointsCrvIntersection::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CrossingPointsCrvIntersection");
             crossings.push(element);
         }
         let mut start_limit: Vector3D = Default::default();
         start_limit = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut start_limit_type: UnsignedInteger = Default::default();
         start_limit_type = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut end_limit: Vector3D = Default::default();
         end_limit = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut end_limit_type: UnsignedInteger = Default::default();
         end_limit_type = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut chord_error: Double = Default::default();
         chord_error = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut angle_error: Double = Default::default();
         angle_error = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut param_respected: Boolean = Default::default();
         param_respected = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         _ctx.se.eval(rdr, PRC_TYPE_CRV_Intersection, false, 0)?;
         let rv = Self {
             id,
@@ -14156,27 +15126,33 @@ impl PRC_TYPE_CRV_Line {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_CRV_Line");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_CRV_Line) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_CRV_Line"));
         }
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCurve");
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: Transformation2DWithBit = Default::default();
         if transform2d_cond {
             transform2d = Transformation2DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation2DWithBit");
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: Transformation3DWithBit = Default::default();
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation3DWithBit");
         }
         let mut parameterization: Parameterization = Default::default();
         parameterization = Parameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Parameterization");
         _ctx.se.eval(rdr, PRC_TYPE_CRV_Line, false, 0)?;
         let rv = Self {
             id,
@@ -14245,34 +15221,43 @@ impl PRC_TYPE_CRV_Offset {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_CRV_Offset");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_CRV_Offset) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_CRV_Offset"));
         }
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCurve");
         prc_gen_assert!(curve_data.is_3d_flag.value);
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: Transformation2DWithBit = Default::default();
         if transform2d_cond {
             transform2d = Transformation2DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation2DWithBit");
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: Transformation3DWithBit = Default::default();
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation3DWithBit");
         }
         let mut parameterization: Parameterization = Default::default();
         parameterization = Parameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Parameterization");
         let mut base_curve: PtrCurve = Default::default();
         base_curve = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         let mut offset_plane_normal: Vector3D = Default::default();
         offset_plane_normal = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut offset: Double = Default::default();
         offset = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         _ctx.se.eval(rdr, PRC_TYPE_CRV_Offset, false, 0)?;
         let rv = Self {
             id,
@@ -14349,31 +15334,39 @@ impl PRC_TYPE_CRV_Parabola {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_CRV_Parabola");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_CRV_Parabola) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_CRV_Parabola"));
         }
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCurve");
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: Transformation2DWithBit = Default::default();
         if transform2d_cond {
             transform2d = Transformation2DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation2DWithBit");
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: Transformation3DWithBit = Default::default();
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation3DWithBit");
         }
         let mut parameterization: Parameterization = Default::default();
         parameterization = Parameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Parameterization");
         let mut focal_length: Double = Default::default();
         focal_length = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut _type: Character = Default::default();
         _type = Character::from_reader(rdr)?;
+        _ctx.on_read_begin("Character");
         prc_gen_assert!(_type.value == 0 || _type.value == 1);
         _ctx.se.eval(rdr, PRC_TYPE_CRV_Parabola, false, 0)?;
         let rv = Self {
@@ -14449,29 +15442,36 @@ impl PRC_TYPE_CRV_PolyLine {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_CRV_PolyLine");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_CRV_PolyLine) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_CRV_PolyLine"));
         }
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCurve");
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: Transformation2DWithBit = Default::default();
         if transform2d_cond {
             transform2d = Transformation2DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation2DWithBit");
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: Transformation3DWithBit = Default::default();
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation3DWithBit");
         }
         let mut parameterization: Parameterization = Default::default();
         parameterization = Parameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Parameterization");
         let mut number_of_points: UnsignedInteger = Default::default();
         number_of_points = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let points_3d_cond = curve_data.is_3d_flag.value;
         let mut points_3d: Vec<Vector3D> = Vec::new();
         if points_3d_cond {
@@ -14483,6 +15483,7 @@ impl PRC_TYPE_CRV_PolyLine {
             #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(number_of_points.value) {
                 let element = Vector3D::from_reader(rdr, _ctx)?;
+                _ctx.on_read_begin("Vector3D");
                 points_3d.push(element);
             }
         }
@@ -14497,6 +15498,7 @@ impl PRC_TYPE_CRV_PolyLine {
             #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(number_of_points.value) {
                 let element = Vector2D::from_reader(rdr, _ctx)?;
+                _ctx.on_read_begin("Vector2D");
                 points_2d.push(element);
             }
         }
@@ -14590,31 +15592,39 @@ impl PRC_TYPE_CRV_Transform {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_CRV_Transform");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_CRV_Transform) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_CRV_Transform"));
         }
         let mut curve_data: ContentCurve = Default::default();
         curve_data = ContentCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCurve");
         let transform2d_cond = !_ctx.ContentCurve_is_3d_flag;
         let mut transform2d: Transformation2DWithBit = Default::default();
         if transform2d_cond {
             transform2d = Transformation2DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation2DWithBit");
         }
         let transform3d_cond = _ctx.ContentCurve_is_3d_flag;
         let mut transform3d: Transformation3DWithBit = Default::default();
         if transform3d_cond {
             transform3d = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Transformation3DWithBit");
         }
         let mut parameterization: Parameterization = Default::default();
         parameterization = Parameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Parameterization");
         let mut base_curve: PtrCurve = Default::default();
         base_curve = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         let mut math_transformation: PRC_TYPE_MATH_FCT_3D = Default::default();
         math_transformation = PRC_TYPE_MATH_FCT_3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_3D");
         _ctx.se.eval(rdr, PRC_TYPE_CRV_Transform, false, 0)?;
         let rv = Self {
             id,
@@ -14682,6 +15692,7 @@ impl PRC_TYPE_CRV {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_CRV");
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_CRV_idConcrete = PRC_TYPE_CRV_idConcrete::Invalid(id_type_id);
@@ -14828,18 +15839,22 @@ impl PtrCurve {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PtrCurve");
         let _ig = indent::IndentGuard::new();
         let mut is_referenced: Boolean = Default::default();
         is_referenced = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let curve_cond = !is_referenced;
         let mut curve: Box<PRC_TYPE_CRV> = Box::new(Default::default());
         if curve_cond {
             curve = Box::from(PRC_TYPE_CRV::from_reader(rdr, _ctx)?);
+            _ctx.on_read_begin("PRC_TYPE_CRV");
         }
         let curve_identifier_cond = !!is_referenced;
         let mut curve_identifier: UnsignedInteger = Default::default();
         if curve_identifier_cond {
             curve_identifier = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         let rv = Self {
             is_referenced,
@@ -14920,25 +15935,33 @@ impl PRC_TYPE_SURF_Blend01 {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_SURF_Blend01");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_SURF_Blend01) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_SURF_Blend01"));
         }
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentSurface");
         let mut tranform: Transformation3DWithBit = Default::default();
         tranform = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Transformation3DWithBit");
         let mut parameterization: UVParameterization = Default::default();
         parameterization = UVParameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UVParameterization");
         let mut center_curve: PtrCurve = Default::default();
         center_curve = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         let mut orgin_cruve: PtrCurve = Default::default();
         orgin_cruve = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         let mut tangent_curve: PtrCurve = Default::default();
         tangent_curve = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         _ctx.se.eval(rdr, PRC_TYPE_SURF_Blend01, false, 0)?;
         let rv = Self {
             id,
@@ -15049,45 +16072,63 @@ impl PRC_TYPE_SURF_Blend02 {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_SURF_Blend02");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_SURF_Blend02) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_SURF_Blend02"));
         }
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentSurface");
         let mut tranform: Transformation3DWithBit = Default::default();
         tranform = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Transformation3DWithBit");
         let mut parameterization: UVParameterization = Default::default();
         parameterization = UVParameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UVParameterization");
         let mut bound_surface_0: PtrSurface = Default::default();
         bound_surface_0 = PtrSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrSurface");
         let mut bound_curve_0: PtrCurve = Default::default();
         bound_curve_0 = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         let mut bound_surface_1: PtrSurface = Default::default();
         bound_surface_1 = PtrSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrSurface");
         let mut bound_curve_1: PtrCurve = Default::default();
         bound_curve_1 = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         let mut center_curve: PtrCurve = Default::default();
         center_curve = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         let mut center_curve_sense: Boolean = Default::default();
         center_curve_sense = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut bound_surface_0_sense: Boolean = Default::default();
         bound_surface_0_sense = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut bound_surface_1_sense: Boolean = Default::default();
         bound_surface_1_sense = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut radius_0: Double = Default::default();
         radius_0 = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut radius_1: Double = Default::default();
         radius_1 = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut cliff_suface_0: PtrSurface = Default::default();
         cliff_suface_0 = PtrSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrSurface");
         let mut cliff_surface_1: PtrSurface = Default::default();
         cliff_surface_1 = PtrSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrSurface");
         let mut parameterization_type: Character = Default::default();
         parameterization_type = Character::from_reader(rdr)?;
+        _ctx.on_read_begin("Character");
         _ctx.se.eval(rdr, PRC_TYPE_SURF_Blend02, false, 0)?;
         let rv = Self {
             id,
@@ -15240,21 +16281,27 @@ impl PRC_TYPE_SURF_Blend03 {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_SURF_Blend03");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_SURF_Blend03) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_SURF_Blend03"));
         }
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentSurface");
         let mut transform: Transformation3DWithBit = Default::default();
         transform = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Transformation3DWithBit");
         let mut parameterization: UVParameterization = Default::default();
         parameterization = UVParameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UVParameterization");
         let mut number_of_elements: UnsignedInteger = Default::default();
         number_of_elements = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_elements.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -15263,6 +16310,7 @@ impl PRC_TYPE_SURF_Blend03 {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_elements.value) {
             let element = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
             parameters.push(element);
         }
         io_check_limit!(
@@ -15274,6 +16322,7 @@ impl PRC_TYPE_SURF_Blend03 {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_elements.value) {
             let element = Integer::from_reader(rdr)?;
+            _ctx.on_read_begin("Integer");
             multiplicities.push(element);
         }
         io_check_limit!(
@@ -15284,6 +16333,7 @@ impl PRC_TYPE_SURF_Blend03 {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_elements.value * 3) {
             let element = Vector3D::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Vector3D");
             points.push(element);
         }
         io_check_limit!(
@@ -15295,6 +16345,7 @@ impl PRC_TYPE_SURF_Blend03 {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_elements.value) {
             let element = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
             rail_2_angles_v.push(element);
         }
         io_check_limit!(
@@ -15306,6 +16357,7 @@ impl PRC_TYPE_SURF_Blend03 {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_elements.value * 3) {
             let element = Vector3D::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Vector3D");
             tangents.push(element);
         }
         io_check_limit!(
@@ -15317,6 +16369,7 @@ impl PRC_TYPE_SURF_Blend03 {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_elements.value) {
             let element = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
             rail_2_derivatives_v.push(element);
         }
         io_check_limit!(
@@ -15328,6 +16381,7 @@ impl PRC_TYPE_SURF_Blend03 {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_elements.value * 3) {
             let element = Vector3D::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Vector3D");
             second_derivatives.push(element);
         }
         io_check_limit!(
@@ -15339,24 +16393,31 @@ impl PRC_TYPE_SURF_Blend03 {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_elements.value) {
             let element = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
             rail_2_second_derivatives.push(element);
         }
         let mut rail_2_parameter_v: Double = Default::default();
         rail_2_parameter_v = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut trim_v_min: Double = Default::default();
         trim_v_min = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut trim_v_max: Double = Default::default();
         trim_v_max = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut reserved_int: [Integer; 6] = [Default::default(); 6];
         for i in 0..6 {
             reserved_int[i as usize] = Integer::from_reader(rdr)?;
+            _ctx.on_read_begin("Integer");
         }
         let mut reserved_char: [Character; 3] = [Default::default(); 3];
         for i in 0..3 {
             reserved_char[i as usize] = Character::from_reader(rdr)?;
+            _ctx.on_read_begin("Character");
         }
         let mut number_of_supplimental_doubles: UnsignedInteger = Default::default();
         number_of_supplimental_doubles = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_supplimental_doubles.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -15366,6 +16427,7 @@ impl PRC_TYPE_SURF_Blend03 {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_supplimental_doubles.value) {
             let element = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
             supplimental_doubles.push(element);
         }
         _ctx.se.eval(rdr, PRC_TYPE_SURF_Blend03, false, 0)?;
@@ -15471,13 +16533,17 @@ impl ControlPointsNurbsSurf3 {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ControlPointsNurbsSurf3");
         let _ig = indent::IndentGuard::new();
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut y: Double = Default::default();
         y = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut z: Double = Default::default();
         z = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let rv = Self { x, y, z };
         Ok(rv)
     }
@@ -15515,15 +16581,20 @@ impl ControlPointsNurbsSurf4 {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ControlPointsNurbsSurf4");
         let _ig = indent::IndentGuard::new();
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut y: Double = Default::default();
         y = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut z: Double = Default::default();
         z = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut ww: Double = Default::default();
         ww = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let rv = Self { x, y, z, ww };
         Ok(rv)
     }
@@ -15612,29 +16683,39 @@ impl PRC_TYPE_SURF_NURBS {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_SURF_NURBS");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_SURF_NURBS) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_SURF_NURBS"));
         }
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentSurface");
         let mut is_rational: Boolean = Default::default();
         is_rational = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut du: UnsignedInteger = Default::default();
         du = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut dv: UnsignedInteger = Default::default();
         dv = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut highest_index_of_control_points_in_u: UnsignedInteger = Default::default();
         highest_index_of_control_points_in_u = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut highest_index_of_control_points_in_v: UnsignedInteger = Default::default();
         highest_index_of_control_points_in_v = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut highest_index_of_knots_in_u: UnsignedInteger = Default::default();
         highest_index_of_knots_in_u = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut highest_index_of_knots_in_v: UnsignedInteger = Default::default();
         highest_index_of_knots_in_v = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let p3_cond = !is_rational;
         let mut p3: Vec<ControlPointsNurbsSurf3> = Vec::new();
         if p3_cond {
@@ -15652,6 +16733,7 @@ impl PRC_TYPE_SURF_NURBS {
                 * (highest_index_of_control_points_in_v.value + 1))
             {
                 let element = ControlPointsNurbsSurf3::from_reader(rdr, _ctx)?;
+                _ctx.on_read_begin("ControlPointsNurbsSurf3");
                 p3.push(element);
             }
         }
@@ -15672,6 +16754,7 @@ impl PRC_TYPE_SURF_NURBS {
                 * (highest_index_of_control_points_in_v.value + 1))
             {
                 let element = ControlPointsNurbsSurf4::from_reader(rdr, _ctx)?;
+                _ctx.on_read_begin("ControlPointsNurbsSurf4");
                 p4.push(element);
             }
         }
@@ -15684,6 +16767,7 @@ impl PRC_TYPE_SURF_NURBS {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(highest_index_of_knots_in_u.value + 1) {
             let element = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
             ku.push(element);
         }
         io_check_limit!(
@@ -15695,12 +16779,15 @@ impl PRC_TYPE_SURF_NURBS {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(highest_index_of_knots_in_v.value + 1) {
             let element = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
             kv.push(element);
         }
         let mut knot_type: UnsignedInteger = Default::default();
         knot_type = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut surface_form: UnsignedInteger = Default::default();
         surface_form = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         _ctx.se.eval(rdr, PRC_TYPE_SURF_NURBS, false, 0)?;
         let rv = Self {
             id,
@@ -15811,23 +16898,30 @@ impl PRC_TYPE_SURF_Cone {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_SURF_Cone");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_SURF_Cone) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_SURF_Cone"));
         }
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentSurface");
         let mut transform: Transformation3DWithBit = Default::default();
         transform = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Transformation3DWithBit");
         let mut parameterization: UVParameterization = Default::default();
         parameterization = UVParameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UVParameterization");
         let mut radius: Double = Default::default();
         radius = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut semi_angle: Double = Default::default();
         semi_angle = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         _ctx.se.eval(rdr, PRC_TYPE_SURF_Cone, false, 0)?;
         let rv = Self {
             id,
@@ -15898,21 +16992,27 @@ impl PRC_TYPE_SURF_Cylinder {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_SURF_Cylinder");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_SURF_Cylinder) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_SURF_Cylinder"));
         }
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentSurface");
         let mut transform: Transformation3DWithBit = Default::default();
         transform = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Transformation3DWithBit");
         let mut parameterization: UVParameterization = Default::default();
         parameterization = UVParameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UVParameterization");
         let mut radius: Double = Default::default();
         radius = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         _ctx.se.eval(rdr, PRC_TYPE_SURF_Cylinder, false, 0)?;
         let rv = Self {
             id,
@@ -15983,23 +17083,30 @@ impl PRC_TYPE_SURF_Cylindrical {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_SURF_Cylindrical");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_SURF_Cylindrical) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_SURF_Cylindrical"));
         }
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentSurface");
         let mut transform: Transformation3DWithBit = Default::default();
         transform = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Transformation3DWithBit");
         let mut parameterization: UVParameterization = Default::default();
         parameterization = UVParameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UVParameterization");
         let mut base_surface: PtrSurface = Default::default();
         base_surface = PtrSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrSurface");
         let mut tolerance: Double = Default::default();
         tolerance = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         _ctx.se.eval(rdr, PRC_TYPE_SURF_Cylindrical, false, 0)?;
         let rv = Self {
             id,
@@ -16073,23 +17180,30 @@ impl PRC_TYPE_SURF_Offset {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_SURF_Offset");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_SURF_Offset) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_SURF_Offset"));
         }
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentSurface");
         let mut transform: Transformation3DWithBit = Default::default();
         transform = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Transformation3DWithBit");
         let mut parameterization: UVParameterization = Default::default();
         parameterization = UVParameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UVParameterization");
         let mut base_surface: PtrSurface = Default::default();
         base_surface = PtrSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrSurface");
         let mut offset_distance: Double = Default::default();
         offset_distance = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         _ctx.se.eval(rdr, PRC_TYPE_SURF_Offset, false, 0)?;
         let rv = Self {
             id,
@@ -16166,25 +17280,33 @@ impl PRC_TYPE_SURF_Pipe {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_SURF_Pipe");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_SURF_Pipe) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_SURF_Pipe"));
         }
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentSurface");
         let mut transform: Transformation3DWithBit = Default::default();
         transform = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Transformation3DWithBit");
         let mut parameterization: UVParameterization = Default::default();
         parameterization = UVParameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UVParameterization");
         let mut center_curve: PtrCurve = Default::default();
         center_curve = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         let mut orgin_curve: PtrCurve = Default::default();
         orgin_curve = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         let mut radius: Double = Default::default();
         radius = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         _ctx.se.eval(rdr, PRC_TYPE_SURF_Pipe, false, 0)?;
         let rv = Self {
             id,
@@ -16261,23 +17383,30 @@ impl PRC_TYPE_SURF_Ruled {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_SURF_Ruled");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_SURF_Ruled) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_SURF_Ruled"));
         }
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentSurface");
         let mut transform: Transformation3DWithBit = Default::default();
         transform = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Transformation3DWithBit");
         let mut parameterization: UVParameterization = Default::default();
         parameterization = UVParameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UVParameterization");
         let mut first_curve: PtrCurve = Default::default();
         first_curve = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         let mut second_curve: PtrCurve = Default::default();
         second_curve = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         _ctx.se.eval(rdr, PRC_TYPE_SURF_Ruled, false, 0)?;
         let rv = Self {
             id,
@@ -16348,21 +17477,27 @@ impl PRC_TYPE_SURF_Sphere {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_SURF_Sphere");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_SURF_Sphere) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_SURF_Sphere"));
         }
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentSurface");
         let mut transform: Transformation3DWithBit = Default::default();
         transform = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Transformation3DWithBit");
         let mut parameterization: UVParameterization = Default::default();
         parameterization = UVParameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UVParameterization");
         let mut radius: Double = Default::default();
         radius = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         _ctx.se.eval(rdr, PRC_TYPE_SURF_Sphere, false, 0)?;
         let rv = Self {
             id,
@@ -16442,29 +17577,39 @@ impl PRC_TYPE_SURF_Revolution {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_SURF_Revolution");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_SURF_Revolution) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_SURF_Revolution"));
         }
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentSurface");
         let mut transform: Transformation3DWithBit = Default::default();
         transform = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Transformation3DWithBit");
         let mut parameterization: UVParameterization = Default::default();
         parameterization = UVParameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UVParameterization");
         let mut tolerance: Double = Default::default();
         tolerance = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut origin: Vector3D = Default::default();
         origin = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut x_axis: Vector3D = Default::default();
         x_axis = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut y_axis: Vector3D = Default::default();
         y_axis = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut base_curve: PtrCurve = Default::default();
         base_curve = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         _ctx.se.eval(rdr, PRC_TYPE_SURF_Revolution, false, 0)?;
         let rv = Self {
             id,
@@ -16547,23 +17692,30 @@ impl PRC_TYPE_SURF_Extrusion {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_SURF_Extrusion");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_SURF_Extrusion) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_SURF_Extrusion"));
         }
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentSurface");
         let mut transform: Transformation3DWithBit = Default::default();
         transform = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Transformation3DWithBit");
         let mut parameterization: UVParameterization = Default::default();
         parameterization = UVParameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UVParameterization");
         let mut sweep_vector: Vector3D = Default::default();
         sweep_vector = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut base_curve: PtrCurve = Default::default();
         base_curve = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         _ctx.se.eval(rdr, PRC_TYPE_SURF_Extrusion, false, 0)?;
         let rv = Self {
             id,
@@ -16640,25 +17792,33 @@ impl PRC_TYPE_SURF_FromCurves {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_SURF_FromCurves");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_SURF_FromCurves) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_SURF_FromCurves"));
         }
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentSurface");
         let mut transform: Transformation3DWithBit = Default::default();
         transform = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Transformation3DWithBit");
         let mut parameterization: UVParameterization = Default::default();
         parameterization = UVParameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UVParameterization");
         let mut origin: Vector3D = Default::default();
         origin = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         let mut first_curve: PtrCurve = Default::default();
         first_curve = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         let mut second_curve: PtrCurve = Default::default();
         second_curve = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         _ctx.se.eval(rdr, PRC_TYPE_SURF_FromCurves, false, 0)?;
         let rv = Self {
             id,
@@ -16735,23 +17895,30 @@ impl PRC_TYPE_SURF_Torus {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_SURF_Torus");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_SURF_Torus) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_SURF_Torus"));
         }
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentSurface");
         let mut transform: Transformation3DWithBit = Default::default();
         transform = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Transformation3DWithBit");
         let mut parameterization: UVParameterization = Default::default();
         parameterization = UVParameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UVParameterization");
         let mut major_radius: Double = Default::default();
         major_radius = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut minor_radius: Double = Default::default();
         minor_radius = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         _ctx.se.eval(rdr, PRC_TYPE_SURF_Torus, false, 0)?;
         let rv = Self {
             id,
@@ -16825,23 +17992,30 @@ impl PRC_TYPE_SURF_Transform {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_SURF_Transform");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_SURF_Transform) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_SURF_Transform"));
         }
         let mut curve_data: ContentSurface = Default::default();
         curve_data = ContentSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentSurface");
         let mut transform: Transformation3DWithBit = Default::default();
         transform = Transformation3DWithBit::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Transformation3DWithBit");
         let mut parameterization: UVParameterization = Default::default();
         parameterization = UVParameterization::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UVParameterization");
         let mut base_surface: PtrSurface = Default::default();
         base_surface = PtrSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrSurface");
         let mut math_transformation: PRC_TYPE_MATH_FCT_3D = Default::default();
         math_transformation = PRC_TYPE_MATH_FCT_3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_MATH_FCT_3D");
         _ctx.se.eval(rdr, PRC_TYPE_SURF_Transform, false, 0)?;
         let rv = Self {
             id,
@@ -16888,6 +18062,7 @@ impl PRC_TYPE_SURF_Blend04 {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_SURF_Blend04");
         let _ig = indent::IndentGuard::new();
         return Err(Error::other("PRC_TYPE_SURF_Blend04 not implemented"));
         let rv = Self {};
@@ -16918,6 +18093,7 @@ impl PRC_TYPE_SURF {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_SURF");
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_SURF_idConcrete =
@@ -17080,18 +18256,22 @@ impl PtrSurface {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PtrSurface");
         let _ig = indent::IndentGuard::new();
         let mut is_referenced: Boolean = Default::default();
         is_referenced = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let surface_cond = !is_referenced;
         let mut surface: Box<PRC_TYPE_SURF> = Box::new(Default::default());
         if surface_cond {
             surface = Box::from(PRC_TYPE_SURF::from_reader(rdr, _ctx)?);
+            _ctx.on_read_begin("PRC_TYPE_SURF");
         }
         let surface_identifier_cond = !!is_referenced;
         let mut surface_identifier: UnsignedInteger = Default::default();
         if surface_identifier_cond {
             surface_identifier = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         let rv = Self {
             is_referenced,
@@ -17146,17 +18326,22 @@ impl ContentWireEdge {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ContentWireEdge");
         let _ig = indent::IndentGuard::new();
         let mut base: BaseTopology = Default::default();
         base = BaseTopology::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("BaseTopology");
         let mut ptr_curve: PtrCurve = Default::default();
         ptr_curve = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         let mut is_trimmed: Boolean = Default::default();
         is_trimmed = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let trim_interval_cond = !!is_trimmed;
         let mut trim_interval: Interval = Default::default();
         if trim_interval_cond {
             trim_interval = Interval::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Interval");
         }
         let rv = Self {
             base,
@@ -17217,15 +18402,18 @@ impl PRC_TYPE_TOPO_WireEdge {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TOPO_WireEdge");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TOPO_WireEdge) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TOPO_WireEdge"));
         }
         let mut curve: ContentWireEdge = Default::default();
         curve = ContentWireEdge::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentWireEdge");
         _ctx.se.eval(rdr, PRC_TYPE_TOPO_WireEdge, false, 0)?;
         let rv = Self { id, curve };
         Ok(rv)
@@ -17288,25 +18476,32 @@ impl PRC_TYPE_TOPO_Edge {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TOPO_Edge");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TOPO_Edge) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TOPO_Edge"));
         }
         let mut wire_edge: ContentWireEdge = Default::default();
         wire_edge = ContentWireEdge::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentWireEdge");
         let mut start_vertex: PtrTopology = Default::default();
         start_vertex = PtrTopology::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrTopology");
         let mut end_vertex: PtrTopology = Default::default();
         end_vertex = PtrTopology::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrTopology");
         let mut has_tolerance: Boolean = Default::default();
         has_tolerance = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let tolerance_cond = !!has_tolerance;
         let mut tolerance: Double = Default::default();
         if tolerance_cond {
             tolerance = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         _ctx.se.eval(rdr, PRC_TYPE_TOPO_Edge, false, 0)?;
         let rv = Self {
@@ -17389,23 +18584,30 @@ impl PRC_TYPE_TOPO_CoEdge {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TOPO_CoEdge");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TOPO_CoEdge) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TOPO_CoEdge"));
         }
         let mut base_topology: BaseTopology = Default::default();
         base_topology = BaseTopology::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("BaseTopology");
         let mut ptr_topology: PtrTopology = Default::default();
         ptr_topology = PtrTopology::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrTopology");
         let mut ptr_curves: PtrCurve = Default::default();
         ptr_curves = PtrCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrCurve");
         let mut coedge_orientation: Character = Default::default();
         coedge_orientation = Character::from_reader(rdr)?;
+        _ctx.on_read_begin("Character");
         let mut uv_orientation: Character = Default::default();
         uv_orientation = Character::from_reader(rdr)?;
+        _ctx.on_read_begin("Character");
         _ctx.se.eval(rdr, PRC_TYPE_TOPO_CoEdge, false, 0)?;
         let rv = Self {
             id,
@@ -17455,11 +18657,14 @@ impl CoedgeInLoop {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CoedgeInLoop");
         let _ig = indent::IndentGuard::new();
         let mut next_coedge: PtrTopology = Default::default();
         next_coedge = PtrTopology::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrTopology");
         let mut neighbor_index: UnsignedInteger = Default::default();
         neighbor_index = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let rv = Self {
             next_coedge,
             neighbor_index,
@@ -17517,19 +18722,24 @@ impl PRC_TYPE_TOPO_Loop {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TOPO_Loop");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TOPO_Loop) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TOPO_Loop"));
         }
         let mut base_topology: BaseTopology = Default::default();
         base_topology = BaseTopology::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("BaseTopology");
         let mut loop_orientation: Character = Default::default();
         loop_orientation = Character::from_reader(rdr)?;
+        _ctx.on_read_begin("Character");
         let mut number_of_coedges: UnsignedInteger = Default::default();
         number_of_coedges = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_coedges.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -17538,6 +18748,7 @@ impl PRC_TYPE_TOPO_Loop {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_coedges.value) {
             let element = CoedgeInLoop::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CoedgeInLoop");
             coedge.push(element);
         }
         _ctx.se.eval(rdr, PRC_TYPE_TOPO_Loop, false, 0)?;
@@ -17631,35 +18842,45 @@ impl PRC_TYPE_TOPO_Face {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TOPO_Face");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TOPO_Face) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TOPO_Face"));
         }
         let mut base_topology: BaseTopology = Default::default();
         base_topology = BaseTopology::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("BaseTopology");
         let mut surface_geometry: PtrSurface = Default::default();
         surface_geometry = PtrSurface::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrSurface");
         let mut is_trimmed: Boolean = Default::default();
         is_trimmed = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let trimmed_surface_cond = !!is_trimmed;
         let mut trimmed_surface: Domain = Default::default();
         if trimmed_surface_cond {
             trimmed_surface = Domain::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("Domain");
         }
         let mut has_tolerance: Boolean = Default::default();
         has_tolerance = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let tolerance_cond = !!has_tolerance;
         let mut tolerance: Double = Default::default();
         if tolerance_cond {
             tolerance = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         let mut number_of_loops: UnsignedInteger = Default::default();
         number_of_loops = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut index_of_outer_loop: Integer = Default::default();
         index_of_outer_loop = Integer::from_reader(rdr)?;
+        _ctx.on_read_begin("Integer");
         io_check_limit!(
             (number_of_loops.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -17668,6 +18889,7 @@ impl PRC_TYPE_TOPO_Face {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_loops.value) {
             let element = PtrTopology::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PtrTopology");
             loops.push(element);
         }
         _ctx.se.eval(rdr, PRC_TYPE_TOPO_Face, false, 0)?;
@@ -17748,11 +18970,14 @@ impl FacesInShell {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("FacesInShell");
         let _ig = indent::IndentGuard::new();
         let mut face: PtrTopology = Default::default();
         face = PtrTopology::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrTopology");
         let mut orientation: Character = Default::default();
         orientation = Character::from_reader(rdr)?;
+        _ctx.on_read_begin("Character");
         let rv = Self { face, orientation };
         Ok(rv)
     }
@@ -17807,19 +19032,24 @@ impl PRC_TYPE_TOPO_Shell {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TOPO_Shell");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TOPO_Shell) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TOPO_Shell"));
         }
         let mut base_topology: BaseTopology = Default::default();
         base_topology = BaseTopology::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("BaseTopology");
         let mut is_closed: Boolean = Default::default();
         is_closed = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut number_of_faces: UnsignedInteger = Default::default();
         number_of_faces = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_faces.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -17828,6 +19058,7 @@ impl PRC_TYPE_TOPO_Shell {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_faces.value) {
             let element = FacesInShell::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("FacesInShell");
             faces.push(element);
         }
         _ctx.se.eval(rdr, PRC_TYPE_TOPO_Shell, false, 0)?;
@@ -17895,17 +19126,21 @@ impl PRC_TYPE_TOPO_Connex {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TOPO_Connex");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TOPO_Connex) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TOPO_Connex"));
         }
         let mut base_topology: BaseTopology = Default::default();
         base_topology = BaseTopology::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("BaseTopology");
         let mut number_of_shells: UnsignedInteger = Default::default();
         number_of_shells = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_shells.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -17914,6 +19149,7 @@ impl PRC_TYPE_TOPO_Connex {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_shells.value) {
             let element = PtrTopology::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PtrTopology");
             shells.push(element);
         }
         _ctx.se.eval(rdr, PRC_TYPE_TOPO_Connex, false, 0)?;
@@ -17967,9 +19203,11 @@ impl PRC_TYPE_ROOT {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_ROOT");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_ROOT) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_ROOT"));
@@ -18005,6 +19243,7 @@ impl PRC_TYPE_TOPO {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TOPO");
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_TOPO_idConcrete =
@@ -18122,18 +19361,22 @@ impl PtrTopology {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PtrTopology");
         let _ig = indent::IndentGuard::new();
         let mut is_stored: Boolean = Default::default();
         is_stored = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let topo_cond = !is_stored;
         let mut topo: Box<PRC_TYPE_TOPO> = Box::new(Default::default());
         if topo_cond {
             topo = Box::from(PRC_TYPE_TOPO::from_reader(rdr, _ctx)?);
+            _ctx.on_read_begin("PRC_TYPE_TOPO");
         }
         let topo_identifier_cond = !!is_stored;
         let mut topo_identifier: UnsignedInteger = Default::default();
         if topo_identifier_cond {
             topo_identifier = UnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UnsignedInteger");
         }
         let rv = Self {
             is_stored,
@@ -18201,17 +19444,21 @@ impl PRC_TYPE_TOPO_SingleWireBody {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TOPO_SingleWireBody");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TOPO_SingleWireBody) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TOPO_SingleWireBody"));
         }
         let mut base: ContentBody = Default::default();
         base = ContentBody::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentBody");
         let mut wire_body: PtrTopology = Default::default();
         wire_body = PtrTopology::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PtrTopology");
         _ctx.se.eval(rdr, PRC_TYPE_TOPO_SingleWireBody, false, 0)?;
         let rv = Self {
             id,
@@ -18256,17 +19503,21 @@ impl PRC_TYPE_TOPO_BrepData {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TOPO_BrepData");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TOPO_BrepData) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TOPO_BrepData"));
         }
         let mut base: ContentBody = Default::default();
         base = ContentBody::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentBody");
         let mut number_of_connex: UnsignedInteger = Default::default();
         number_of_connex = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_connex.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -18275,12 +19526,14 @@ impl PRC_TYPE_TOPO_BrepData {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_connex.value) {
             let element = PtrTopology::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PtrTopology");
             connex.push(element);
         }
         let bounding_box_cond = have_bbox(base.bounding_box_behavior.value);
         let mut bounding_box: BoundingBox = Default::default();
         if bounding_box_cond {
             bounding_box = BoundingBox::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("BoundingBox");
         }
         _ctx.se.eval(rdr, PRC_TYPE_TOPO_BrepData, false, 0)?;
         let rv = Self {
@@ -18338,10 +19591,12 @@ impl CompressedVertex {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CompressedVertex");
         let _ig = indent::IndentGuard::new();
         prc_gen_assert!(_ctx.is_curve_trimming_face());
         let mut already_stored: Boolean = Default::default();
         already_stored = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let point_index_cond = !already_stored.value;
         let mut point_index: UnsignedIntegerWithVariableBitNumber = Default::default();
         if point_index_cond {
@@ -18349,6 +19604,7 @@ impl CompressedVertex {
                 rdr,
                 _ctx.BrepDataCompress_number_of_bits_to_store_reference,
             )?;
+            _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         }
         if !already_stored.value {
             _ctx.BrepDataCompress_CompressedVertex_get(point_index.value);
@@ -18358,6 +19614,7 @@ impl CompressedVertex {
         if point_data_cond {
             point_data =
                 CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
+            _ctx.on_read_begin("CompressedPoint");
         }
         if !!already_stored.value {
             _ctx.BrepDataCompress_CompressedVertex_add(point_data);
@@ -18421,31 +19678,37 @@ impl ParticularCircle {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ParticularCircle");
         let _ig = indent::IndentGuard::new();
         let mut full_circle: Boolean = Default::default();
         full_circle = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let start_end_data_cond = !_ctx.is_compressed_iso_spline();
         let mut start_end_data: StartEndData = Default::default();
         if start_end_data_cond {
             start_end_data = StartEndData::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("StartEndData");
         }
         let center_cond = full_circle.value;
         let mut center: CompressedPoint = Default::default();
         if center_cond {
             center =
                 CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
+            _ctx.on_read_begin("CompressedPoint");
         }
         let normal_cond = full_circle.value;
         let mut normal: CompressedPoint = Default::default();
         if normal_cond {
             normal =
                 CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
+            _ctx.on_read_begin("CompressedPoint");
         }
         let middle_of_arc_cond = !full_circle.value;
         let mut middle_of_arc: CompressedPoint = Default::default();
         if middle_of_arc_cond {
             middle_of_arc =
                 CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
+            _ctx.on_read_begin("CompressedPoint");
         }
         let rv = Self {
             full_circle,
@@ -18518,16 +19781,20 @@ impl GeneralCircle {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("GeneralCircle");
         let _ig = indent::IndentGuard::new();
         let start_end_data_cond = !_ctx.is_compressed_iso_spline();
         let mut start_end_data: StartEndData = Default::default();
         if start_end_data_cond {
             start_end_data = StartEndData::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("StartEndData");
         }
         let mut center: CompressedPoint = Default::default();
         center = CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
+        _ctx.on_read_begin("CompressedPoint");
         let mut circle_angle: Boolean = Default::default();
         circle_angle = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let rv = Self {
             start_end_data: if start_end_data_cond {
                 Some(start_end_data)
@@ -18577,28 +19844,33 @@ impl StartEndData {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("StartEndData");
         let _ig = indent::IndentGuard::new();
         let start_vertex_cond = !!_ctx.is_curve_trimming_face();
         let mut start_vertex: CompressedVertex = Default::default();
         if start_vertex_cond {
             start_vertex = CompressedVertex::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedVertex");
         }
         let end_vertex_cond = !!_ctx.is_curve_trimming_face();
         let mut end_vertex: CompressedVertex = Default::default();
         if end_vertex_cond {
             end_vertex = CompressedVertex::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedVertex");
         }
         let start_point_cond = !_ctx.is_curve_trimming_face();
         let mut start_point: CompressedPoint = Default::default();
         if start_point_cond {
             start_point =
                 CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
+            _ctx.on_read_begin("CompressedPoint");
         }
         let end_point_cond = !_ctx.is_curve_trimming_face();
         let mut end_point: CompressedPoint = Default::default();
         if end_point_cond {
             end_point =
                 CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
+            _ctx.on_read_begin("CompressedPoint");
         }
         let rv = Self {
             start_vertex: if start_vertex_cond {
@@ -18675,15 +19947,18 @@ impl PRC_HCG_Line {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_HCG_Line");
         let _ig = indent::IndentGuard::new();
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        _ctx.on_read_begin("CompressedEntityType");
         if Ok(PRC_HCG_Line) != (PrcCompressedCurveType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_HCG_Line"));
         }
         let mut start_end_data: StartEndData = Default::default();
         start_end_data = StartEndData::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("StartEndData");
         let rv = Self { id, start_end_data };
         Ok(rv)
     }
@@ -18721,11 +19996,13 @@ impl PRC_HCG_Circle {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_HCG_Circle");
         let _ig = indent::IndentGuard::new();
         let id_cond = !_ctx.is_compressed_iso_spline();
         let mut id: CompressedEntityType = Default::default();
         if id_cond {
             id = CompressedEntityType::from_reader(rdr)?;
+            _ctx.on_read_begin("CompressedEntityType");
             if Ok(PRC_HCG_Circle) != (PrcCompressedCurveType::try_from(id.value)) {
                 /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
                 return Err(Error::other("expected PRC_HCG_Circle"));
@@ -18733,15 +20010,18 @@ impl PRC_HCG_Circle {
         }
         let mut is_particular_circle: Boolean = Default::default();
         is_particular_circle = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let particular_circle_cond = is_particular_circle.value;
         let mut particular_circle: ParticularCircle = Default::default();
         if particular_circle_cond {
             particular_circle = ParticularCircle::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("ParticularCircle");
         }
         let general_circle_cond = !is_particular_circle.value;
         let mut general_circle: GeneralCircle = Default::default();
         if general_circle_cond {
             general_circle = GeneralCircle::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("GeneralCircle");
         }
         let rv = Self {
             id: if id_cond { Some(id) } else { None },
@@ -18814,21 +20094,27 @@ impl PRC_HCG_BSplineHermiteCurve {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_HCG_BSplineHermiteCurve");
         let _ig = indent::IndentGuard::new();
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        _ctx.on_read_begin("CompressedEntityType");
         if Ok(PRC_HCG_BSplineHermiteCurve) != (PrcCompressedCurveType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_HCG_BSplineHermiteCurve"));
         }
         let mut start_end_data: StartEndData = Default::default();
         start_end_data = StartEndData::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("StartEndData");
         let mut number_bits: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_bits = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 4)?;
+        _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         let mut number_points: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_points = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, number_bits.value)?;
+        _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         let mut point_number_bits: UnsignedIntegerWithVariableBitNumber = Default::default();
         point_number_bits = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 6)?;
+        _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         let points_cond = point_number_bits.value > 30;
         let mut points: Vec<Vector3D> = Vec::new();
         if points_cond {
@@ -18840,6 +20126,7 @@ impl PRC_HCG_BSplineHermiteCurve {
             #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(number_points.value - 2) {
                 let element = Vector3D::from_reader(rdr, _ctx)?;
+                _ctx.on_read_begin("Vector3D");
                 points.push(element);
             }
         }
@@ -18858,11 +20145,13 @@ impl PRC_HCG_BSplineHermiteCurve {
                     point_number_bits.value,
                     _ctx.brep_data_compressed_tolerance,
                 )?;
+                _ctx.on_read_begin("Point3DWithVariableBitNumber");
                 compressed_points.push(element);
             }
         }
         let mut tangent_number_bits: UnsignedIntegerWithVariableBitNumber = Default::default();
         tangent_number_bits = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 6)?;
+        _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         let tangents_cond = tangent_number_bits.value > 30;
         let mut tangents: Vec<Vector3D> = Vec::new();
         if tangents_cond {
@@ -18874,6 +20163,7 @@ impl PRC_HCG_BSplineHermiteCurve {
             #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(number_points.value) {
                 let element = Vector3D::from_reader(rdr, _ctx)?;
+                _ctx.on_read_begin("Vector3D");
                 tangents.push(element);
             }
         }
@@ -18892,6 +20182,7 @@ impl PRC_HCG_BSplineHermiteCurve {
                     tangent_number_bits.value,
                     _ctx.brep_data_compressed_tolerance,
                 )?;
+                _ctx.on_read_begin("Point3DWithVariableBitNumber");
                 compressed_tangents.push(element);
             }
         }
@@ -18987,21 +20278,27 @@ impl PRC_HCG_CompositeCurve {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_HCG_CompositeCurve");
         let _ig = indent::IndentGuard::new();
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        _ctx.on_read_begin("CompressedEntityType");
         if Ok(PRC_HCG_CompositeCurve) != (PrcCompressedCurveType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_HCG_CompositeCurve"));
         }
         let mut start_end_data: StartEndData = Default::default();
         start_end_data = StartEndData::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("StartEndData");
         let mut dimension: UnsignedInteger = Default::default();
         dimension = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         let mut is_closed: Boolean = Default::default();
         is_closed = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut number_of_curves: UnsignedInteger = Default::default();
         number_of_curves = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_curves.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -19011,6 +20308,7 @@ impl PRC_HCG_CompositeCurve {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_curves.value) {
             let element = RefOrCompressedCurve::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("RefOrCompressedCurve");
             curves.push(element);
         }
         let rv = Self {
@@ -19061,12 +20359,14 @@ impl PRC_HCG_Ellipse {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_HCG_Ellipse");
         let _ig = indent::IndentGuard::new();
         return Err(std::io::Error::other(
             "The curve type PRC_HCG_Ellipse is reserved for future use!",
         ));
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        _ctx.on_read_begin("CompressedEntityType");
         if Ok(PRC_HCG_Ellipse) != (PrcCompressedCurveType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_HCG_Ellipse"));
@@ -19102,6 +20402,7 @@ impl CompressedCurve {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CompressedCurve");
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: CompressedCurve_idConcrete =
@@ -19200,15 +20501,20 @@ impl ContentCompressedIsoFace {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ContentCompressedIsoFace");
         let _ig = indent::IndentGuard::new();
         let mut orientation_loop_with_surface: Boolean = Default::default();
         orientation_loop_with_surface = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut first_trim_curve: RefOrCompressedCurve = Default::default();
         first_trim_curve = RefOrCompressedCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("RefOrCompressedCurve");
         let mut second_trim_curve: RefOrCompressedCurve = Default::default();
         second_trim_curve = RefOrCompressedCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("RefOrCompressedCurve");
         let mut third_trim_curve_is_not_yet_saved: Boolean = Default::default();
         third_trim_curve_is_not_yet_saved = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let third_trim_curve_cond = !third_trim_curve_is_not_yet_saved.value;
         let mut third_trim_curve: UnsignedIntegerWithVariableBitNumber = Default::default();
         if third_trim_curve_cond {
@@ -19216,9 +20522,11 @@ impl ContentCompressedIsoFace {
                 rdr,
                 _ctx.BrepDataCompress_number_of_bits_to_store_reference,
             )?;
+            _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         }
         let mut fourth_trim_curve_is_not_yet_saved: Boolean = Default::default();
         fourth_trim_curve_is_not_yet_saved = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let fourth_trim_curve_cond = !fourth_trim_curve_is_not_yet_saved.value;
         let mut fourth_trim_curve: UnsignedIntegerWithVariableBitNumber = Default::default();
         if fourth_trim_curve_cond {
@@ -19226,12 +20534,14 @@ impl ContentCompressedIsoFace {
                 rdr,
                 _ctx.BrepDataCompress_number_of_bits_to_store_reference,
             )?;
+            _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         }
         let common_third_fourth_vertex_cond =
             third_trim_curve_is_not_yet_saved.value && fourth_trim_curve_is_not_yet_saved.value;
         let mut common_third_fourth_vertex: CompressedVertex = Default::default();
         if common_third_fourth_vertex_cond {
             common_third_fourth_vertex = CompressedVertex::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedVertex");
         }
         let rv = Self {
             orientation_loop_with_surface,
@@ -19315,9 +20625,11 @@ impl RefOrCompressedCurve {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("RefOrCompressedCurve");
         let _ig = indent::IndentGuard::new();
         let mut curve_is_not_already_stored: Boolean = Default::default();
         curve_is_not_already_stored = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let index_compressed_curve_cond = !curve_is_not_already_stored.value;
         let mut index_compressed_curve: UnsignedIntegerWithVariableBitNumber = Default::default();
         if index_compressed_curve_cond {
@@ -19325,11 +20637,13 @@ impl RefOrCompressedCurve {
                 rdr,
                 _ctx.BrepDataCompress_number_of_bits_to_store_reference,
             )?;
+            _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         }
         let compressed_curve_cond = !!curve_is_not_already_stored.value;
         let mut compressed_curve: CompressedCurve = Default::default();
         if compressed_curve_cond {
             compressed_curve = CompressedCurve::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedCurve");
         }
         let rv = Self {
             curve_is_not_already_stored,
@@ -19387,14 +20701,17 @@ impl AnaFaceTrimLoop {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("AnaFaceTrimLoop");
         let _ig = indent::IndentGuard::new();
         let mut loop_surface_orientation: Boolean = Default::default();
         loop_surface_orientation = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         io_check_limit!((0) as u32, crate::limits::MAX_NUM_ARRAY_ELEMENTS);
         let mut curves: Vec<RefOrCompressedCurve> = Vec::with_capacity((0) as usize);
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(0) {
             let element = RefOrCompressedCurve::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("RefOrCompressedCurve");
             curves.push(element);
         }
         let rv = Self {
@@ -19435,9 +20752,11 @@ impl ContentCompressedAnaFace {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ContentCompressedAnaFace");
         let _ig = indent::IndentGuard::new();
         let mut is_trimmed: Boolean = Default::default();
         is_trimmed = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let trim_loop_cond = !!is_trimmed.value;
         let mut trim_loop: Vec<AnaFaceTrimLoop> = Vec::new();
         if trim_loop_cond {
@@ -19446,6 +20765,7 @@ impl ContentCompressedAnaFace {
             #[allow(clippy::reversed_empty_ranges)]
             for _i in 0..(0) {
                 let element = AnaFaceTrimLoop::from_reader(rdr, _ctx)?;
+                _ctx.on_read_begin("AnaFaceTrimLoop");
                 trim_loop.push(element);
             }
         }
@@ -19458,6 +20778,7 @@ impl ContentCompressedAnaFace {
         if point_on_torus_cond {
             point_on_torus =
                 CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
+            _ctx.on_read_begin("CompressedPoint");
         }
         let rv = Self {
             is_trimmed,
@@ -19514,18 +20835,22 @@ impl ContentCompressedFace {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("ContentCompressedFace");
         let _ig = indent::IndentGuard::new();
         let mut orientation_surface_with_shell: Boolean = Default::default();
         orientation_surface_with_shell = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let iso_face_cond = _ctx.ContentCompressedFace_owner_is_an_iso_face();
         let mut iso_face: ContentCompressedIsoFace = Default::default();
         if iso_face_cond {
             iso_face = ContentCompressedIsoFace::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("ContentCompressedIsoFace");
         }
         let ana_face_cond = !_ctx.ContentCompressedFace_owner_is_an_iso_face();
         let mut ana_face: ContentCompressedAnaFace = Default::default();
         if ana_face_cond {
             ana_face = ContentCompressedAnaFace::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("ContentCompressedAnaFace");
         }
         let rv = Self {
             orientation_surface_with_shell,
@@ -19577,10 +20902,12 @@ impl PRC_HCG_IsoPlane {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_HCG_IsoPlane");
         let _ig = indent::IndentGuard::new();
         _ctx.ContentCompressedFace_owner_enter(true);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        _ctx.on_read_begin("CompressedEntityType");
         if Ok(PRC_HCG_IsoPlane) != (PrcCompressedFaceType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_HCG_IsoPlane"));
@@ -19588,12 +20915,16 @@ impl PRC_HCG_IsoPlane {
         _ctx.push_face_type(id);
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut y: Double = Default::default();
         y = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut positive_z: Boolean = Default::default();
         positive_z = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCompressedFace");
         _ctx.pop_face_type();
         _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
@@ -19641,10 +20972,12 @@ impl PRC_HCG_IsoCylinder {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_HCG_IsoCylinder");
         let _ig = indent::IndentGuard::new();
         _ctx.ContentCompressedFace_owner_enter(true);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        _ctx.on_read_begin("CompressedEntityType");
         if Ok(PRC_HCG_IsoCylinder) != (PrcCompressedFaceType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_HCG_IsoCylinder"));
@@ -19652,6 +20985,7 @@ impl PRC_HCG_IsoCylinder {
         _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCompressedFace");
         _ctx.pop_face_type();
         _ctx.ContentCompressedFace_owner_leave();
         let rv = Self { id, face };
@@ -19688,10 +21022,12 @@ impl PRC_HCG_IsoTorus {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_HCG_IsoTorus");
         let _ig = indent::IndentGuard::new();
         _ctx.ContentCompressedFace_owner_enter(true);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        _ctx.on_read_begin("CompressedEntityType");
         if Ok(PRC_HCG_IsoTorus) != (PrcCompressedFaceType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_HCG_IsoTorus"));
@@ -19699,8 +21035,10 @@ impl PRC_HCG_IsoTorus {
         _ctx.push_face_type(id);
         let mut is_major_radius: Boolean = Default::default();
         is_major_radius = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCompressedFace");
         _ctx.pop_face_type();
         _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
@@ -19742,10 +21080,12 @@ impl PRC_HCG_IsoSphere {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_HCG_IsoSphere");
         let _ig = indent::IndentGuard::new();
         _ctx.ContentCompressedFace_owner_enter(true);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        _ctx.on_read_begin("CompressedEntityType");
         if Ok(PRC_HCG_IsoSphere) != (PrcCompressedFaceType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_HCG_IsoSphere"));
@@ -19753,6 +21093,7 @@ impl PRC_HCG_IsoSphere {
         _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCompressedFace");
         _ctx.pop_face_type();
         _ctx.ContentCompressedFace_owner_leave();
         let rv = Self { id, face };
@@ -19788,10 +21129,12 @@ impl PRC_HCG_IsoCone {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_HCG_IsoCone");
         let _ig = indent::IndentGuard::new();
         _ctx.ContentCompressedFace_owner_enter(true);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        _ctx.on_read_begin("CompressedEntityType");
         if Ok(PRC_HCG_IsoCone) != (PrcCompressedFaceType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_HCG_IsoCone"));
@@ -19799,6 +21142,7 @@ impl PRC_HCG_IsoCone {
         _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCompressedFace");
         _ctx.pop_face_type();
         _ctx.ContentCompressedFace_owner_leave();
         let rv = Self { id, face };
@@ -19837,10 +21181,12 @@ impl PRC_HCG_AnaPlane {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_HCG_AnaPlane");
         let _ig = indent::IndentGuard::new();
         _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        _ctx.on_read_begin("CompressedEntityType");
         if Ok(PRC_HCG_AnaPlane) != (PrcCompressedFaceType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_HCG_AnaPlane"));
@@ -19848,12 +21194,16 @@ impl PRC_HCG_AnaPlane {
         _ctx.push_face_type(id);
         let mut x: Double = Default::default();
         x = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut y: Double = Default::default();
         y = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut facepositive_z: Boolean = Default::default();
         facepositive_z = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCompressedFace");
         _ctx.pop_face_type();
         _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
@@ -19903,10 +21253,12 @@ impl PRC_HCG_AnaCylinder {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_HCG_AnaCylinder");
         let _ig = indent::IndentGuard::new();
         _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        _ctx.on_read_begin("CompressedEntityType");
         if Ok(PRC_HCG_AnaCylinder) != (PrcCompressedFaceType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_HCG_AnaCylinder"));
@@ -19914,10 +21266,13 @@ impl PRC_HCG_AnaCylinder {
         _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCompressedFace");
         let mut point: CompressedPoint = Default::default();
         point = CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
+        _ctx.on_read_begin("CompressedPoint");
         let mut direction: CompressedPoint = Default::default();
         direction = CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
+        _ctx.on_read_begin("CompressedPoint");
         _ctx.pop_face_type();
         _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
@@ -19965,10 +21320,12 @@ impl PRC_HCG_AnaTorus {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_HCG_AnaTorus");
         let _ig = indent::IndentGuard::new();
         _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        _ctx.on_read_begin("CompressedEntityType");
         if Ok(PRC_HCG_AnaTorus) != (PrcCompressedFaceType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_HCG_AnaTorus"));
@@ -19976,12 +21333,16 @@ impl PRC_HCG_AnaTorus {
         _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCompressedFace");
         let mut center: CompressedPoint = Default::default();
         center = CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
+        _ctx.on_read_begin("CompressedPoint");
         let mut x_axis: CompressedPoint = Default::default();
         x_axis = CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
+        _ctx.on_read_begin("CompressedPoint");
         let mut y_axis: Vector3D = Default::default();
         y_axis = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         _ctx.pop_face_type();
         _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
@@ -20030,10 +21391,12 @@ impl PRC_HCG_AnaSphere {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_HCG_AnaSphere");
         let _ig = indent::IndentGuard::new();
         _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        _ctx.on_read_begin("CompressedEntityType");
         if Ok(PRC_HCG_AnaSphere) != (PrcCompressedFaceType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_HCG_AnaSphere"));
@@ -20041,9 +21404,11 @@ impl PRC_HCG_AnaSphere {
         _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCompressedFace");
         let mut sphere_center: CompressedPoint = Default::default();
         sphere_center =
             CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
+        _ctx.on_read_begin("CompressedPoint");
         _ctx.pop_face_type();
         _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
@@ -20087,10 +21452,12 @@ impl PRC_HCG_AnaCone {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_HCG_AnaCone");
         let _ig = indent::IndentGuard::new();
         _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        _ctx.on_read_begin("CompressedEntityType");
         if Ok(PRC_HCG_AnaCone) != (PrcCompressedFaceType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_HCG_AnaCone"));
@@ -20098,12 +21465,15 @@ impl PRC_HCG_AnaCone {
         _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCompressedFace");
         let mut axis_point: CompressedPoint = Default::default();
         axis_point =
             CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
+        _ctx.on_read_begin("CompressedPoint");
         let mut apex_point: CompressedPoint = Default::default();
         apex_point =
             CompressedPoint::from_reader(rdr, _ctx.brep_data_compressed_tolerance / 100.0)?;
+        _ctx.on_read_begin("CompressedPoint");
         _ctx.pop_face_type();
         _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
@@ -20149,10 +21519,12 @@ impl PRC_HCG_AnaNurbs {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_HCG_AnaNurbs");
         let _ig = indent::IndentGuard::new();
         _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        _ctx.on_read_begin("CompressedEntityType");
         if Ok(PRC_HCG_AnaNurbs) != (PrcCompressedFaceType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_HCG_AnaNurbs"));
@@ -20160,8 +21532,10 @@ impl PRC_HCG_AnaNurbs {
         _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCompressedFace");
         let mut compressed_surface: CompressedNurbs = Default::default();
         compressed_surface = CompressedNurbs::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("CompressedNurbs");
         _ctx.pop_face_type();
         _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
@@ -20204,10 +21578,12 @@ impl PRC_HCG_AnaGenericFace {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_HCG_AnaGenericFace");
         let _ig = indent::IndentGuard::new();
         _ctx.ContentCompressedFace_owner_enter(false);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        _ctx.on_read_begin("CompressedEntityType");
         if Ok(PRC_HCG_AnaGenericFace) != (PrcCompressedFaceType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_HCG_AnaGenericFace"));
@@ -20215,8 +21591,10 @@ impl PRC_HCG_AnaGenericFace {
         _ctx.push_face_type(id);
         let mut face: ContentCompressedFace = Default::default();
         face = ContentCompressedFace::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentCompressedFace");
         let mut surface_definition: PRC_TYPE_SURF = Default::default();
         surface_definition = PRC_TYPE_SURF::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("PRC_TYPE_SURF");
         _ctx.pop_face_type();
         _ctx.ContentCompressedFace_owner_leave();
         let rv = Self {
@@ -20259,9 +21637,11 @@ impl CompressedMultiplicitiesU {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CompressedMultiplicitiesU");
         let _ig = indent::IndentGuard::new();
         let mut multiplicity_is_not_stored: Boolean = Default::default();
         multiplicity_is_not_stored = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let multiplicity_cond = !multiplicity_is_not_stored;
         let mut multiplicity: UnsignedIntegerWithVariableBitNumber = Default::default();
         if multiplicity_cond {
@@ -20269,6 +21649,7 @@ impl CompressedMultiplicitiesU {
                 rdr,
                 _ctx.compressed_nurbs.number_bits_u,
             )?;
+            _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         }
         let rv = Self {
             multiplicity_is_not_stored,
@@ -20315,9 +21696,11 @@ impl CompressedMultiplicitiesV {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CompressedMultiplicitiesV");
         let _ig = indent::IndentGuard::new();
         let mut multiplicity_is_not_stored: Boolean = Default::default();
         multiplicity_is_not_stored = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let multiplicity_cond = !multiplicity_is_not_stored;
         let mut multiplicity: UnsignedIntegerWithVariableBitNumber = Default::default();
         if multiplicity_cond {
@@ -20325,6 +21708,7 @@ impl CompressedMultiplicitiesV {
                 rdr,
                 _ctx.compressed_nurbs.number_bits_v,
             )?;
+            _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         }
         let rv = Self {
             multiplicity_is_not_stored,
@@ -20375,9 +21759,11 @@ impl InteriorCompressedControlPoints {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("InteriorCompressedControlPoints");
         let _ig = indent::IndentGuard::new();
         let mut _type: UnsignedIntegerWithVariableBitNumber = Default::default();
         _type = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 2)?;
+        _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         let p1z_cond = _type.value == 1;
         let mut p1z: DoubleWithVariableBitNumber = Default::default();
         if p1z_cond {
@@ -20386,6 +21772,7 @@ impl InteriorCompressedControlPoints {
                 _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
+            _ctx.on_read_begin("DoubleWithVariableBitNumber");
         }
         let p2x_cond = _type.value == 2;
         let mut p2x: DoubleWithVariableBitNumber = Default::default();
@@ -20395,6 +21782,7 @@ impl InteriorCompressedControlPoints {
                 _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
+            _ctx.on_read_begin("DoubleWithVariableBitNumber");
         }
         let p2y_cond = _type.value == 2;
         let mut p2y: DoubleWithVariableBitNumber = Default::default();
@@ -20404,6 +21792,7 @@ impl InteriorCompressedControlPoints {
                 _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
+            _ctx.on_read_begin("DoubleWithVariableBitNumber");
         }
         let p3x_cond = _type.value == 3;
         let mut p3x: DoubleWithVariableBitNumber = Default::default();
@@ -20413,6 +21802,7 @@ impl InteriorCompressedControlPoints {
                 _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
+            _ctx.on_read_begin("DoubleWithVariableBitNumber");
         }
         let p3y_cond = _type.value == 3;
         let mut p3y: DoubleWithVariableBitNumber = Default::default();
@@ -20422,6 +21812,7 @@ impl InteriorCompressedControlPoints {
                 _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
+            _ctx.on_read_begin("DoubleWithVariableBitNumber");
         }
         let p3z_cond = _type.value == 3;
         let mut p3z: DoubleWithVariableBitNumber = Default::default();
@@ -20431,6 +21822,7 @@ impl InteriorCompressedControlPoints {
                 _ctx.compressed_nurbs.number_of_bits_for_rest + 1,
                 _ctx.nurbs_tolerance,
             )?;
+            _ctx.on_read_begin("DoubleWithVariableBitNumber");
         }
         let rv = Self {
             _type,
@@ -20533,9 +21925,11 @@ impl CompressedControlPoints {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CompressedControlPoints");
         let _ig = indent::IndentGuard::new();
         let mut p00: Vector3D = Default::default();
         p00 = Vector3D::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("Vector3D");
         io_check_limit!(
             (_ctx.compressed_nurbs.number_ccpt_in_v - 1) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -20549,6 +21943,7 @@ impl CompressedControlPoints {
                 _ctx.compressed_nurbs.number_of_bits_for_isomin + 1,
                 _ctx.nurbs_tolerance,
             )?;
+            _ctx.on_read_begin("Point3DWithVariableBitNumber");
             ccpt_in_v.push(element);
         }
         io_check_limit!(
@@ -20564,6 +21959,7 @@ impl CompressedControlPoints {
                 _ctx.compressed_nurbs.number_of_bits_for_isomin + 1,
                 _ctx.nurbs_tolerance,
             )?;
+            _ctx.on_read_begin("Point3DWithVariableBitNumber");
             ccpt_in_u.push(element);
         }
         io_check_limit!(
@@ -20580,6 +21976,7 @@ impl CompressedControlPoints {
             * (_ctx.compressed_nurbs.number_ccpt_in_u - 1))
         {
             let element = InteriorCompressedControlPoints::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("InteriorCompressedControlPoints");
             ccpt_interior.push(element);
         }
         let rv = Self {
@@ -20635,11 +22032,13 @@ impl CompressedKnot {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CompressedKnot");
         let _ig = indent::IndentGuard::new();
         let knot_cond = _ctx.compressed_nurbs.number_bit_parameter > 30;
         let mut knot: Double = Default::default();
         if knot_cond {
             knot = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         let knot_vbr_cond = _ctx.compressed_nurbs.number_bit_parameter <= 30;
         let mut knot_vbr: DoubleWithVariableBitNumber = Default::default();
@@ -20649,6 +22048,7 @@ impl CompressedKnot {
                 _ctx.compressed_nurbs.number_bit_parameter + 1,
                 _ctx.compressed_nurbs.tolerance_parameter,
             )?;
+            _ctx.on_read_begin("DoubleWithVariableBitNumber");
         }
         let rv = Self {
             knot: if knot_cond { Some(knot) } else { None },
@@ -20701,16 +22101,20 @@ impl CompressedKnotsU {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CompressedKnotsU");
         let _ig = indent::IndentGuard::new();
         let mut is_unknown_form: Boolean = Default::default();
         is_unknown_form = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let is_pseudo_uniform_cond = !is_unknown_form.value;
         let mut is_pseudo_uniform: Boolean = Default::default();
         if is_pseudo_uniform_cond {
             is_pseudo_uniform = Boolean::from_reader(rdr)?;
+            _ctx.on_read_begin("Boolean");
         }
         let mut number_bit_parameter: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_bit_parameter = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 6)?;
+        _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         _ctx.compressed_nurbs.number_bit_parameter = number_bit_parameter.value;
         _ctx.compressed_nurbs.tolerance_parameter =
             1.0_f64 / 2.0_f64.powi(number_bit_parameter.value as i32 - 1);
@@ -20736,6 +22140,7 @@ impl CompressedKnotsU {
             _ctx.compressed_nurbs.number_of_knots_in_u
         }) {
             let element = CompressedKnot::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedKnot");
             compressed_knots.push(element);
         }
         let rv = Self {
@@ -20792,16 +22197,20 @@ impl CompressedKnotsV {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CompressedKnotsV");
         let _ig = indent::IndentGuard::new();
         let mut is_unknown_form: Boolean = Default::default();
         is_unknown_form = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let is_pseudo_uniform_cond = !is_unknown_form.value;
         let mut is_pseudo_uniform: Boolean = Default::default();
         if is_pseudo_uniform_cond {
             is_pseudo_uniform = Boolean::from_reader(rdr)?;
+            _ctx.on_read_begin("Boolean");
         }
         let mut number_bit_parameter: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_bit_parameter = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 6)?;
+        _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         _ctx.compressed_nurbs.number_bit_parameter = number_bit_parameter.value;
         _ctx.compressed_nurbs.tolerance_parameter =
             1.0_f64 / 2.0_f64.powi(number_bit_parameter.value as i32 - 1);
@@ -20827,6 +22236,7 @@ impl CompressedKnotsV {
             _ctx.compressed_nurbs.number_of_knots_in_v
         }) {
             let element = CompressedKnot::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedKnot");
             compressed_knots.push(element);
         }
         let rv = Self {
@@ -20881,13 +22291,16 @@ impl CompressedKnotVectorU {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CompressedKnotVectorU");
         let _ig = indent::IndentGuard::new();
         let mut is_uniform: Boolean = Default::default();
         is_uniform = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let knots_cond = !is_uniform.value;
         let mut knots: CompressedKnotsU = Default::default();
         if knots_cond {
             knots = CompressedKnotsU::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedKnotsU");
         }
         let rv = Self {
             is_uniform,
@@ -20930,13 +22343,16 @@ impl CompressedKnotVectorV {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CompressedKnotVectorV");
         let _ig = indent::IndentGuard::new();
         let mut is_uniform: Boolean = Default::default();
         is_uniform = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let knots_cond = !is_uniform.value;
         let mut knots: CompressedKnotsV = Default::default();
         if knots_cond {
             knots = CompressedKnotsV::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedKnotsV");
         }
         let rv = Self {
             is_uniform,
@@ -20980,9 +22396,11 @@ impl CompressedWeights {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CompressedWeights");
         let _ig = indent::IndentGuard::new();
         let mut number_bit_weight: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_bit_weight = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 6)?;
+        _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         let weights_cond = number_bit_weight.value > 30;
         let mut weights: Vec<Double> = Vec::new();
         if weights_cond {
@@ -21000,6 +22418,7 @@ impl CompressedWeights {
                 0..(_ctx.compressed_nurbs.number_ccpt_in_u * _ctx.compressed_nurbs.number_ccpt_in_v)
             {
                 let element = Double::from_reader(rdr)?;
+                _ctx.on_read_begin("Double");
                 weights.push(element);
             }
         }
@@ -21007,6 +22426,7 @@ impl CompressedWeights {
         let mut weight_tolerance: Double = Default::default();
         if weight_tolerance_cond {
             weight_tolerance = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         let compressed_weights_cond = number_bit_weight.value <= 30;
         let mut compressed_weights: Vec<DoubleWithVariableBitNumber> = Vec::new();
@@ -21029,6 +22449,7 @@ impl CompressedWeights {
                     number_bit_weight.value + 1,
                     weight_tolerance.value,
                 )?;
+                _ctx.on_read_begin("DoubleWithVariableBitNumber");
                 compressed_weights.push(element);
             }
         }
@@ -21107,13 +22528,17 @@ impl CompressedNurbs {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CompressedNurbs");
         let _ig = indent::IndentGuard::new();
         let mut degree_in_u: UnsignedIntegerWithVariableBitNumber = Default::default();
         degree_in_u = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 5)?;
+        _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         let mut degree_in_v: UnsignedIntegerWithVariableBitNumber = Default::default();
         degree_in_v = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 5)?;
+        _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         let mut number_stored_knots_in_u: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_stored_knots_in_u = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 16)?;
+        _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         _ctx.compressed_nurbs.set0(
             degree_in_u.value,
             degree_in_v.value,
@@ -21128,10 +22553,12 @@ impl CompressedNurbs {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_stored_knots_in_u.value) {
             let element = CompressedMultiplicitiesU::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedMultiplicitiesU");
             mult_u.push(element);
         }
         let mut number_stored_knots_in_v: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_stored_knots_in_v = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 16)?;
+        _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         _ctx.compressed_nurbs
             .set1(&mult_u, number_stored_knots_in_v.value);
         io_check_limit!(
@@ -21143,19 +22570,24 @@ impl CompressedNurbs {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_stored_knots_in_v.value) {
             let element = CompressedMultiplicitiesV::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedMultiplicitiesV");
             mult_v.push(element);
         }
         _ctx.compressed_nurbs.set2(&mult_v);
         let mut is_closed_in_u: Boolean = Default::default();
         is_closed_in_u = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut is_closed_in_v: Boolean = Default::default();
         is_closed_in_v = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut number_of_bits_for_isomin: UnsignedIntegerWithVariableBitNumber =
             Default::default();
         number_of_bits_for_isomin = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 20)?;
+        _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         _ctx.compressed_nurbs.number_of_bits_for_isomin = number_of_bits_for_isomin.value;
         let mut number_of_bits_for_rest: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_of_bits_for_rest = UnsignedIntegerWithVariableBitNumber::from_reader(rdr, 20)?;
+        _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         _ctx.compressed_nurbs.set3(
             is_closed_in_u.value,
             is_closed_in_v.value,
@@ -21164,19 +22596,24 @@ impl CompressedNurbs {
         );
         let mut compressed_control_points: CompressedControlPoints = Default::default();
         compressed_control_points = CompressedControlPoints::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("CompressedControlPoints");
         _ctx.compressed_nurbs.set4(&compressed_control_points);
         let mut knot_vector_u: CompressedKnotVectorU = Default::default();
         knot_vector_u = CompressedKnotVectorU::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("CompressedKnotVectorU");
         _ctx.compressed_nurbs.set5(&knot_vector_u);
         let mut knot_vector_v: CompressedKnotVectorV = Default::default();
         knot_vector_v = CompressedKnotVectorV::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("CompressedKnotVectorV");
         _ctx.compressed_nurbs.set6(&knot_vector_v);
         let mut is_rational: Boolean = Default::default();
         is_rational = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let weights_cond = !!is_rational;
         let mut weights: CompressedWeights = Default::default();
         if weights_cond {
             weights = CompressedWeights::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedWeights");
         }
         let rv = Self {
             degree_in_u,
@@ -21261,13 +22698,16 @@ impl IsoNurbsTrimCrv {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("IsoNurbsTrimCrv");
         let _ig = indent::IndentGuard::new();
         let mut iso_boundary: Boolean = Default::default();
         iso_boundary = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let is_a_circle_cond = !iso_boundary.value;
         let mut is_a_circle: Boolean = Default::default();
         if is_a_circle_cond {
             is_a_circle = Boolean::from_reader(rdr)?;
+            _ctx.on_read_begin("Boolean");
         }
         if !iso_boundary.value && !is_a_circle.value {
             error!("No PRC_HCG_Line stored! TODO: ends are to be calculated based on LoopVertexN.");
@@ -21276,6 +22716,7 @@ impl IsoNurbsTrimCrv {
         let mut compressed_circle: PRC_HCG_Circle = Default::default();
         if compressed_circle_cond {
             compressed_circle = PRC_HCG_Circle::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_HCG_Circle");
         }
         let rv = Self {
             iso_boundary,
@@ -21333,9 +22774,11 @@ impl IsoNurbsTrimCurve {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("IsoNurbsTrimCurve");
         let _ig = indent::IndentGuard::new();
         let mut is_referenced: Boolean = Default::default();
         is_referenced = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let trim_curve_index_cond = is_referenced.value;
         let mut trim_curve_index: UnsignedIntegerWithVariableBitNumber = Default::default();
         if trim_curve_index_cond {
@@ -21343,11 +22786,13 @@ impl IsoNurbsTrimCurve {
                 rdr,
                 _ctx.BrepDataCompress_number_of_bits_to_store_reference,
             )?;
+            _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         }
         let trim_curve_cond = !is_referenced.value;
         let mut trim_curve: IsoNurbsTrimCrv = Default::default();
         if trim_curve_cond {
             trim_curve = IsoNurbsTrimCrv::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("IsoNurbsTrimCrv");
         }
         let rv = Self {
             is_referenced,
@@ -21416,11 +22861,13 @@ impl PRC_HCG_IsoNurbs {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_HCG_IsoNurbs");
         let _ig = indent::IndentGuard::new();
         _ctx.set_compressed_iso_spline(true);
         _ctx.ContentCompressedFace_owner_enter(true);
         let mut id: CompressedEntityType = Default::default();
         id = CompressedEntityType::from_reader(rdr)?;
+        _ctx.on_read_begin("CompressedEntityType");
         if Ok(PRC_HCG_IsoNurbs) != (PrcCompressedFaceType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_HCG_IsoNurbs"));
@@ -21428,41 +22875,53 @@ impl PRC_HCG_IsoNurbs {
         _ctx.push_face_type(id);
         let mut orientation_surface_with_shell: Boolean = Default::default();
         orientation_surface_with_shell = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut orientation_loop_with_surface: Boolean = Default::default();
         orientation_loop_with_surface = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut sense_array: [Boolean; 3] = [Default::default(); 3];
         for i in 0..3 {
             sense_array[i as usize] = Boolean::from_reader(rdr)?;
+            _ctx.on_read_begin("Boolean");
         }
         let mut surface: CompressedNurbs = Default::default();
         surface = CompressedNurbs::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("CompressedNurbs");
         let mut curve0: IsoNurbsTrimCurve = Default::default();
         curve0 = IsoNurbsTrimCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("IsoNurbsTrimCurve");
         let mut curve1: IsoNurbsTrimCurve = Default::default();
         curve1 = IsoNurbsTrimCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("IsoNurbsTrimCurve");
         let mut curve2: IsoNurbsTrimCurve = Default::default();
         curve2 = IsoNurbsTrimCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("IsoNurbsTrimCurve");
         let mut curve3: IsoNurbsTrimCurve = Default::default();
         curve3 = IsoNurbsTrimCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("IsoNurbsTrimCurve");
         let loop_vertex3_cond = !curve3.is_referenced.value && !curve0.is_referenced.value;
         let mut loop_vertex3: CompressedVertex = Default::default();
         if loop_vertex3_cond {
             loop_vertex3 = CompressedVertex::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedVertex");
         }
         let loop_vertex0_cond = !curve0.is_referenced.value && !curve1.is_referenced.value;
         let mut loop_vertex0: CompressedVertex = Default::default();
         if loop_vertex0_cond {
             loop_vertex0 = CompressedVertex::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedVertex");
         }
         let loop_vertex1_cond = !curve1.is_referenced.value && !curve2.is_referenced.value;
         let mut loop_vertex1: CompressedVertex = Default::default();
         if loop_vertex1_cond {
             loop_vertex1 = CompressedVertex::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedVertex");
         }
         let loop_vertex2_cond = !curve2.is_referenced.value && !curve3.is_referenced.value;
         let mut loop_vertex2: CompressedVertex = Default::default();
         if loop_vertex2_cond {
             loop_vertex2 = CompressedVertex::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedVertex");
         }
         _ctx.set_compressed_iso_spline(false);
         _ctx.pop_face_type();
@@ -21568,6 +23027,7 @@ impl CompressedFace {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CompressedFace");
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: CompressedFace_idConcrete =
@@ -21701,13 +23161,16 @@ impl CompressedShell {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CompressedShell");
         let _ig = indent::IndentGuard::new();
         let mut single_face: Boolean = Default::default();
         single_face = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let number_of_faces_cond = !single_face;
         let mut number_of_faces: NumberOfBitsThenUnsignedInteger = Default::default();
         if number_of_faces_cond {
             number_of_faces = NumberOfBitsThenUnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("NumberOfBitsThenUnsignedInteger");
         }
         _ctx.BrepDataCompress_register_faces(if !!single_face {
             1
@@ -21736,6 +23199,7 @@ impl CompressedShell {
             number_of_faces.value
         }) {
             let element = CompressedFace::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedFace");
             faces.push(element);
         }
         io_check_limit!(
@@ -21760,6 +23224,7 @@ impl CompressedShell {
             number_of_faces.value
         }) {
             let element = Boolean::from_reader(rdr)?;
+            _ctx.on_read_begin("Boolean");
             is_an_iso_face.push(element);
         }
         _ctx.CompressedShell_reorder_faces();
@@ -21815,9 +23280,11 @@ impl CompressedConnex {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("CompressedConnex");
         let _ig = indent::IndentGuard::new();
         let mut number_of_shells: NumberOfBitsThenUnsignedInteger = Default::default();
         number_of_shells = NumberOfBitsThenUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("NumberOfBitsThenUnsignedInteger");
         io_check_limit!(
             (number_of_shells.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -21827,6 +23294,7 @@ impl CompressedConnex {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_shells.value) {
             let element = CompressedShell::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedShell");
             shells.push(element);
         }
         let rv = Self {
@@ -21866,9 +23334,11 @@ impl MultipleCompressedConnex {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("MultipleCompressedConnex");
         let _ig = indent::IndentGuard::new();
         let mut number_of_connex: NumberOfBitsThenUnsignedInteger = Default::default();
         number_of_connex = NumberOfBitsThenUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("NumberOfBitsThenUnsignedInteger");
         io_check_limit!(
             (number_of_connex.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -21878,6 +23348,7 @@ impl MultipleCompressedConnex {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_connex.value) {
             let element = CompressedConnex::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedConnex");
             connex.push(element);
         }
         let rv = Self {
@@ -21923,10 +23394,12 @@ impl PRC_TYPE_TOPO_SingleWireBodyCompress {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TOPO_SingleWireBodyCompress");
         let _ig = indent::IndentGuard::new();
         prc_gen_assert!(!_ctx.is_curve_trimming_face());
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TOPO_SingleWireBodyCompress) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other(
@@ -21935,14 +23408,18 @@ impl PRC_TYPE_TOPO_SingleWireBodyCompress {
         }
         let mut base: ContentBody = Default::default();
         base = ContentBody::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentBody");
         let mut curve_tolerance: Double = Default::default();
         curve_tolerance = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         _ctx.brep_data_compressed_tolerance = curve_tolerance.value;
         _ctx.nurbs_tolerance = _ctx.brep_data_compressed_tolerance / 5.0;
         let mut unknown: Boolean = Default::default();
         unknown = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let mut compressed_curve: CompressedCurve = Default::default();
         compressed_curve = CompressedCurve::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("CompressedCurve");
         _ctx.se
             .eval(rdr, PRC_TYPE_TOPO_SingleWireBodyCompress, false, 0)?;
         let rv = Self {
@@ -22000,23 +23477,28 @@ impl PRC_TYPE_TOPO_BrepDataCompress {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TOPO_BrepDataCompress");
         let _ig = indent::IndentGuard::new();
         _ctx.BrepDataCompress_enter();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TOPO_BrepDataCompress) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TOPO_BrepDataCompress"));
         }
         let mut base: ContentBody = Default::default();
         base = ContentBody::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentBody");
         let mut brep_data_compressed_tolerance: Double = Default::default();
         brep_data_compressed_tolerance = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         _ctx.brep_data_compressed_tolerance = brep_data_compressed_tolerance.value;
         _ctx.nurbs_tolerance = _ctx.brep_data_compressed_tolerance / 5.0;
         let mut number_of_bits_to_store_reference: NumberOfBitsThenUnsignedInteger =
             Default::default();
         number_of_bits_to_store_reference = NumberOfBitsThenUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("NumberOfBitsThenUnsignedInteger");
         _ctx.BrepDataCompress_number_of_bits_to_store_reference =
             number_of_bits_to_store_reference.value;
         let mut number_vertex_references: UnsignedIntegerWithVariableBitNumber = Default::default();
@@ -22024,22 +23506,27 @@ impl PRC_TYPE_TOPO_BrepDataCompress {
             rdr,
             number_of_bits_to_store_reference.value,
         )?;
+        _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         let mut number_edge_references: UnsignedIntegerWithVariableBitNumber = Default::default();
         number_edge_references = UnsignedIntegerWithVariableBitNumber::from_reader(
             rdr,
             number_of_bits_to_store_reference.value,
         )?;
+        _ctx.on_read_begin("UnsignedIntegerWithVariableBitNumber");
         let mut single_connex: Boolean = Default::default();
         single_connex = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let single_cond = !!single_connex;
         let mut single: CompressedShell = Default::default();
         if single_cond {
             single = CompressedShell::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("CompressedShell");
         }
         let multi_cond = !single_connex;
         let mut multi: MultipleCompressedConnex = Default::default();
         if multi_cond {
             multi = MultipleCompressedConnex::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("MultipleCompressedConnex");
         }
         io_check_limit!(
             (_ctx.BrepDataCompress_get_sum_num_faces()) as u32,
@@ -22050,6 +23537,7 @@ impl PRC_TYPE_TOPO_BrepDataCompress {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(_ctx.BrepDataCompress_get_sum_num_faces()) {
             let element = BaseTopology::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("BaseTopology");
             base_topology_data.push(element);
         }
         _ctx.se
@@ -22123,6 +23611,7 @@ impl PRC_TYPE_TOPO_Body {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TOPO_Body");
         let _ig = indent::IndentGuard::new();
         let mut id_type_id: u32 = 0;
         let mut id_concrete: PRC_TYPE_TOPO_Body_idConcrete =
@@ -22255,37 +23744,48 @@ impl PRC_TYPE_TOPO_Context {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_TOPO_Context");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_TOPO_Context) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_TOPO_Context"));
         }
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCBase");
         let mut behavior: Character = Default::default();
         behavior = Character::from_reader(rdr)?;
+        _ctx.on_read_begin("Character");
         let mut granularity: Double = Default::default();
         granularity = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut tolerance: Double = Default::default();
         tolerance = Double::from_reader(rdr)?;
+        _ctx.on_read_begin("Double");
         let mut has_face_thickness: Boolean = Default::default();
         has_face_thickness = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let face_thicknes_cond = !!has_face_thickness;
         let mut face_thicknes: Double = Default::default();
         if face_thicknes_cond {
             face_thicknes = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         let mut has_scale: Boolean = Default::default();
         has_scale = Boolean::from_reader(rdr)?;
+        _ctx.on_read_begin("Boolean");
         let scale_cond = !!has_scale;
         let mut scale: Double = Default::default();
         if scale_cond {
             scale = Double::from_reader(rdr)?;
+            _ctx.on_read_begin("Double");
         }
         let mut number_of_bodies: UnsignedInteger = Default::default();
         number_of_bodies = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (number_of_bodies.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -22295,6 +23795,7 @@ impl PRC_TYPE_TOPO_Context {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(number_of_bodies.value) {
             let element = PRC_TYPE_TOPO_Body::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_TOPO_Body");
             bodies.push(element);
         }
         _ctx.se.eval(rdr, PRC_TYPE_TOPO_Context, false, 0)?;
@@ -22375,9 +23876,11 @@ impl FileStructureExactGeometry {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("FileStructureExactGeometry");
         let _ig = indent::IndentGuard::new();
         let mut topo_context_count: UnsignedInteger = Default::default();
         topo_context_count = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         io_check_limit!(
             (topo_context_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -22387,6 +23890,7 @@ impl FileStructureExactGeometry {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(topo_context_count.value) {
             let element = PRC_TYPE_TOPO_Context::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("PRC_TYPE_TOPO_Context");
             topo_contexts.push(element);
         }
         let rv = Self {
@@ -22445,21 +23949,26 @@ impl PRC_TYPE_ASM_FileStructureGeometry {
             indent::get(),
             rdr.position_in_bits()?
         );
+        _ctx.on_read_begin("PRC_TYPE_ASM_FileStructureGeometry");
         let _ig = indent::IndentGuard::new();
         let mut id: UnsignedInteger = Default::default();
         id = UnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UnsignedInteger");
         if Ok(PRC_TYPE_ASM_FileStructureGeometry) != (PrcType::try_from(id.value)) {
             /*warn!("next assertion will fail, bp={}", rdr.position_in_bits()?);*/
             return Err(Error::other("expected PRC_TYPE_ASM_FileStructureGeometry"));
         }
         let mut base: ContentPRCBase = Default::default();
         base = ContentPRCBase::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("ContentPRCBase");
         let mut exact_geometry: FileStructureExactGeometry = Default::default();
         exact_geometry = FileStructureExactGeometry::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("FileStructureExactGeometry");
         _ctx.se
             .eval(rdr, PRC_TYPE_ASM_FileStructureGeometry, false, 0)?;
         let mut user_data: UserData = Default::default();
         user_data = UserData::from_reader(rdr)?;
+        _ctx.on_read_begin("UserData");
         let rv = Self {
             id,
             base,
@@ -22501,10 +24010,12 @@ impl UncompressedUniqueId {
             indent::get(),
             position(rdr)?
         );
+        _ctx.on_read_begin("UncompressedUniqueId");
         let _ig = indent::IndentGuard::new();
         let mut unique_id: [UncompressedUnsignedInteger; 4] = [Default::default(); 4];
         for i in 0..4 {
             unique_id[i as usize] = UncompressedUnsignedInteger::from_reader(rdr)?;
+            _ctx.on_read_begin("UncompressedUnsignedInteger");
         }
         let rv = Self { unique_id };
         Ok(rv)
@@ -22534,12 +24045,15 @@ impl UncompressedBlock {
             indent::get(),
             position(rdr)?
         );
+        _ctx.on_read_begin("UncompressedBlock");
         let _ig = indent::IndentGuard::new();
         let mut block_size: UncompressedUnsignedInteger = Default::default();
         block_size = UncompressedUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UncompressedUnsignedInteger");
         io_check_limit!(block_size.value, crate::limits::MAX_NUM_SECTION_BYTES);
         let mut block: UncompressedByteArray = Default::default();
         block = UncompressedByteArray::from_reader(rdr, block_size.value)?;
+        _ctx.on_read_begin("UncompressedByteArray");
         let rv = Self { block_size, block };
         Ok(rv)
     }
@@ -22574,26 +24088,33 @@ impl UncompressedFileStructureHeader {
             indent::get(),
             position(rdr)?
         );
+        _ctx.on_read_begin("UncompressedFileStructureHeader");
         let _ig = indent::IndentGuard::new();
         let mut magic: UncompressedByteArray = Default::default();
         magic = UncompressedByteArray::from_reader(rdr, 3)?;
+        _ctx.on_read_begin("UncompressedByteArray");
         if b"PRC" != magic.a.as_slice() {
             return Err(std::io::Error::other("Invalid magic bytes!"));
         };
         let mut minimal_version_for_read: UncompressedUnsignedInteger = Default::default();
         minimal_version_for_read = UncompressedUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UncompressedUnsignedInteger");
         io_check_limit!(
             minimal_version_for_read.value,
             crate::LIBPRC_PRC_SPEC_VERSION
         );
         let mut authoring_version: UncompressedUnsignedInteger = Default::default();
         authoring_version = UncompressedUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UncompressedUnsignedInteger");
         let mut unique_id_file: UncompressedUniqueId = Default::default();
         unique_id_file = UncompressedUniqueId::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UncompressedUniqueId");
         let mut unique_id_application: UncompressedUniqueId = Default::default();
         unique_id_application = UncompressedUniqueId::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UncompressedUniqueId");
         let mut file_count: UncompressedUnsignedInteger = Default::default();
         file_count = UncompressedUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UncompressedUnsignedInteger");
         io_check_limit!(
             (file_count.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -22602,6 +24123,7 @@ impl UncompressedFileStructureHeader {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(file_count.value) {
             let element = UncompressedBlock::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("UncompressedBlock");
             files.push(element);
         }
         let rv = Self {
@@ -22659,28 +24181,38 @@ impl UncompressedFileStructureDescription {
             indent::get(),
             position(rdr)?
         );
+        _ctx.on_read_begin("UncompressedFileStructureDescription");
         let _ig = indent::IndentGuard::new();
         let mut unique_id: UncompressedUniqueId = Default::default();
         unique_id = UncompressedUniqueId::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UncompressedUniqueId");
         let mut reserved: UncompressedUnsignedInteger = Default::default();
         reserved = UncompressedUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UncompressedUnsignedInteger");
         let mut section_count: UncompressedUnsignedInteger = Default::default();
         section_count = UncompressedUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UncompressedUnsignedInteger");
         if section_count.value != 6 {
             return Err(std::io::Error::other("Expected 6 sections!"));
         };
         let mut header_start_offset: UncompressedUnsignedInteger = Default::default();
         header_start_offset = UncompressedUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UncompressedUnsignedInteger");
         let mut glob_start_offset: UncompressedUnsignedInteger = Default::default();
         glob_start_offset = UncompressedUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UncompressedUnsignedInteger");
         let mut tree_start_offset: UncompressedUnsignedInteger = Default::default();
         tree_start_offset = UncompressedUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UncompressedUnsignedInteger");
         let mut tess_start_offset: UncompressedUnsignedInteger = Default::default();
         tess_start_offset = UncompressedUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UncompressedUnsignedInteger");
         let mut geom_start_offset: UncompressedUnsignedInteger = Default::default();
         geom_start_offset = UncompressedUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UncompressedUnsignedInteger");
         let mut extg_start_offset: UncompressedUnsignedInteger = Default::default();
         extg_start_offset = UncompressedUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UncompressedUnsignedInteger");
         let rv = Self {
             unique_id,
             reserved,
@@ -22743,26 +24275,33 @@ impl UncompressedFileHeader {
             indent::get(),
             position(rdr)?
         );
+        _ctx.on_read_begin("UncompressedFileHeader");
         let _ig = indent::IndentGuard::new();
         let mut magic: UncompressedByteArray = Default::default();
         magic = UncompressedByteArray::from_reader(rdr, 3)?;
+        _ctx.on_read_begin("UncompressedByteArray");
         if b"PRC" != magic.a.as_slice() {
             return Err(std::io::Error::other("Invalid magic bytes!"));
         };
         let mut minimal_version_for_read: UncompressedUnsignedInteger = Default::default();
         minimal_version_for_read = UncompressedUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UncompressedUnsignedInteger");
         io_check_limit!(
             minimal_version_for_read.value,
             crate::LIBPRC_PRC_SPEC_VERSION
         );
         let mut authoring_version: UncompressedUnsignedInteger = Default::default();
         authoring_version = UncompressedUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UncompressedUnsignedInteger");
         let mut unique_id_file: UncompressedUniqueId = Default::default();
         unique_id_file = UncompressedUniqueId::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UncompressedUniqueId");
         let mut unique_id_application: UncompressedUniqueId = Default::default();
         unique_id_application = UncompressedUniqueId::from_reader(rdr, _ctx)?;
+        _ctx.on_read_begin("UncompressedUniqueId");
         let mut num_file_structs: UncompressedUnsignedInteger = Default::default();
         num_file_structs = UncompressedUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UncompressedUnsignedInteger");
         io_check_limit!(
             (num_file_structs.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -22772,14 +24311,18 @@ impl UncompressedFileHeader {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(num_file_structs.value) {
             let element = UncompressedFileStructureDescription::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("UncompressedFileStructureDescription");
             ufsd.push(element);
         }
         let mut mf_start_offset: UncompressedUnsignedInteger = Default::default();
         mf_start_offset = UncompressedUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UncompressedUnsignedInteger");
         let mut mf_end_offset: UncompressedUnsignedInteger = Default::default();
         mf_end_offset = UncompressedUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UncompressedUnsignedInteger");
         let mut num_uncompr_files: UncompressedUnsignedInteger = Default::default();
         num_uncompr_files = UncompressedUnsignedInteger::from_reader(rdr)?;
+        _ctx.on_read_begin("UncompressedUnsignedInteger");
         io_check_limit!(
             (num_uncompr_files.value) as u32,
             crate::limits::MAX_NUM_ARRAY_ELEMENTS
@@ -22789,6 +24332,7 @@ impl UncompressedFileHeader {
         #[allow(clippy::reversed_empty_ranges)]
         for _i in 0..(num_uncompr_files.value) {
             let element = UncompressedBlock::from_reader(rdr, _ctx)?;
+            _ctx.on_read_begin("UncompressedBlock");
             uncompressed_files.push(element);
         }
         let rv = Self {

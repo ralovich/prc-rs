@@ -26,6 +26,7 @@ impl AnaFaceTrimLoop {
             indent::get(),
             rdr.position_in_bits()?
         );
+        ctx.on_read_begin("AnaFaceTrimLoop");
         let _ig = indent::IndentGuard::new();
         let mut loop_surface_orientation: Boolean;
         let mut curve_type: u8 = PrcCompressedFaceType::PRC_HCG_NewLoop as u8;

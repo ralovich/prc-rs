@@ -226,6 +226,7 @@ macro_rules! prc_gen_assert {
             else:
                 rs.write(f'  trace!("{{}}{struct_name}::from_reader() byp={{}}", indent::get(), position(rdr)?);\n')
             #rs.write(f'  indent::indent();\n')
+            rs.write(f'  _ctx.on_read_begin(\"{struct_name}\");\n')
             rs.write(f'  let _ig = indent::IndentGuard::new();\n')
             if 'FIXME' in d['structures'][0][struct_name]:
                 rs.write(f'  warn!("{struct_name} structure contains FIXME!");\n')
@@ -302,6 +303,7 @@ macro_rules! prc_gen_assert {
                         #if do_debug:
                         #    rs.write(f'      let _at = "{struct_name}.{f['name']}";trace!("{struct_name}.{f['name']}[{{}}]: {{}}", &_i, &_at);\n')
                         rs.write('      let element = %s;\n' %  field_reader )
+                        rs.write(f'      _ctx.on_read_begin(\"{f['data_type']}\");\n')
                         if do_debug:
                             rs.write(f'      trace!("{{}}{struct_name}.{f['name']}[{{}} of {{}}]: {{:#?}}", indent::get(), &_i, {f['size']}, &element);\n')
                         rs.write('      %s.push(element);\n' % f['name'])
@@ -315,6 +317,7 @@ macro_rules! prc_gen_assert {
                             #rs.write(f'    {f['name']} = Some(Default::default());\n')
                         rs.write(f'    for i in 0..{f['multiplicity']} {{\n')
                         rs.write(f'      {f['name']}[i as usize] = {field_reader};\n')
+                        rs.write(f'      _ctx.on_read_begin(\"{f['data_type']}\");\n')
                         if do_debug:
                             rs.write(f'      trace!("{f['name']}[{{}}]: {{:#?}}", i, &{f['name']}[i as usize]);\n')
                         rs.write(f'    }}\n')
@@ -325,6 +328,7 @@ macro_rules! prc_gen_assert {
                         if is_conditional:
                             rs.write(f'    if {f['name']}_cond {{\n')
                         rs.write('      %s = %s;\n' % (f['name'], field_reader) )
+                        rs.write(f'      _ctx.on_read_begin(\"{f['data_type']}\");\n')
                         if do_debug:
                             rs.write(f'      trace!("{{}}{f['name']}: {{:?}}", indent::get(), &{f['name']});\n')
                             #rs.write (f'      trace!("{f['name']}: {{:?}}", );\n')

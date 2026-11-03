@@ -31,7 +31,7 @@ Build the CMake project under `src/tools/prc2json`. Afterwards run `prc2json inp
 
 `prc` is licensed under the MIT License - see the `LICENSE` file for details.
 
-For commercial support, reach out to the main author.
+For commercial support and consulting reach out to the main author, Kristóf Ralovich.
 
 ## PRC Documentation
 

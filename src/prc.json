@@ -3067,7 +3067,7 @@
                         "name": "b_optimized",
                         "data_type": "Boolean",
                         "debug": false,
-                        "on_set": "if !b_optimized && _ctx.VertexColors_get_number_of_colors()? < 1 { return Err(std::io::Error::other(\"At least one color entry is required!\")); }"
+                        "on_setUNUSED": "if !b_optimized && _ctx.VertexColors_get_number_of_colors()? < 1 { return Err(std::io::Error::other(\"At least one color entry is required!\")); }"
                     },
                     {
                         "name": "color_data_rgb_first_vertex",
@@ -3078,7 +3078,7 @@
                         "name": "color_data_rgb_remaining_vertices",
                         "data_type": "ColorDataRemainderRGB",
                         "is_vec": false,
-                        "size": "_ctx.VertexColors_get_number_of_colors()? - 1",
+                        "size": "_ctx.VertexColors_get_num_colors_remainder()?",
                         "condition_rust": "!self.b_optimized && !self.is_rgba"
                     },
                     {
@@ -3090,7 +3090,7 @@
                         "name": "color_data_rgba_remaining_vertices",
                         "data_type": "ColorDataRemainderRGBA",
                         "is_vec": false,
-                        "size": "_ctx.VertexColors_get_number_of_colors()? - 1",
+                        "size": "_ctx.VertexColors_get_num_colors_remainder()?",
                         "condition_rust": "!self.b_optimized && !!self.is_rgba"
                     }
                 ]
@@ -3147,7 +3147,7 @@
                         "data_type": "UnsignedInteger",
                         "is_vec": true,
                         "size": "size_of_triangulateddata.value",
-                        "on_set": "_ctx.set_num_vertex_colors_from_tess_3d_face(used_entities_flag.value, &triangulateddata)?"
+                        "on_set": "_ctx.VertexColors_set_num_vertex_colors_from_tess_3d_face(used_entities_flag.value, &triangulateddata)?"
                     },
                     {
                         "name": "number_of_textured_coordinate_indices",

@@ -5,7 +5,7 @@
 // SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026.
 // All rights reserved.
 
-pub const MAX_NUM_STR_LEN: u32 = 4096;
+pub const MAX_NUM_STR_LEN: u32 = 1024 * 16;
 pub const MAX_NUM_USERDATA_BITS: u32 = 8 * 1024 * 256;
 pub const MAX_NUM_ARRAY_ELEMENTS: u32 = 1024 * 1024 * 22;
 pub const MAX_NUM_SECTION_BYTES: u32 = 1024 * 1024 * 384;

@@ -5,7 +5,6 @@
 // SPDX-FileCopyrightText: Copyright Kristóf Ralovich (C) 2025-2026.
 // All rights reserved.
 
-#![debugger_visualizer(gdb_script_file = "gdb_debugger_visualizer_prc.py")]
 //#![allow(unreachable_code)]
 //#![allow(unused)]
 
