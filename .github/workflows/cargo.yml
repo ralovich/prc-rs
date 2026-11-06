@@ -84,8 +84,8 @@ jobs:
       if: runner.os != 'Windows'
       run: |
         cd prc-db/prcs
-        echo "RUST_LOG=debug RUST_BACKTRACE=1 DESCRIBE=../../target/${{env.BUILD_TYPE}}/prc-describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt"
-        RUST_LOG=debug RUST_BACKTRACE=1 DESCRIBE=../../target/${{env.BUILD_TYPE}}/prc-describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt
+        echo "RUST_LOG=info RUST_BACKTRACE=1 DESCRIBE=../../target/${{env.BUILD_TYPE}}/prc-describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt"
+        RUST_LOG=info RUST_BACKTRACE=1 DESCRIBE=../../target/${{env.BUILD_TYPE}}/prc-describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt
         #echo "du -d 1 -h"
         #du -d 1 -h
         cd ../..
@@ -94,8 +94,8 @@ jobs:
       if: runner.os == 'Windows'
       run: |
         cd prc-db/prcs
-        echo "RUST_LOG=debug RUST_BACKTRACE=1 DESCRIBE=../../target/${{env.BUILD_TYPE}}/prc-describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt"
-        $env:RUST_LOG="debug";
+        echo "RUST_LOG=info RUST_BACKTRACE=1 DESCRIBE=../../target/${{env.BUILD_TYPE}}/prc-describe INPUT=../../testdata/list_all.txt time ../../testdata/prc_describe_mt"
+        $env:RUST_LOG="info";
         $env:RUST_BACKTRACE="1";
         $env:DESCRIBE="../../target/${{env.BUILD_TYPE}}/prc-describe";
         $env:INPUT="../../testdata/list_all.txt";
