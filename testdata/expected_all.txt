@@ -41,6 +41,7 @@ MikeHerbolsheimer-360-Photo-DeckLayout-2.stream-54.prc          	8137	8137	0	0	0
 3D-PDF-Sample-Shoe.stream-48.prc                                	7094	15083	0	0	0	0	0	0
 DotProduct-ElectricalControlPanel-CloudCompare-PDF3D.stream-81.prc	8137	8137	0	0	0	0	0	0
 MikeHerbolsheimer-PDF3D-360-Photo-in-PDF-WinterCanyon.stream-56.prc	8137	8137	0	0	0	0	0	0
+twisted-bar-transformer-grating-3d-drawing.stream-54.prc        	7095	15216	0	0	0	0	0	0
 joa12625-sup-0003-figs3.stream-12.prc                           	7094	8137	0	0	0	0	0	0
 lb8k9ahenfbsukk5w2pu74kn6hk0onrb.stream-102.prc                 	7095	20225	0	0	0	0	0	0
 3dpdf-AEC-OfficeBuilding.stream-78.prc                          	7094	15083	0	0	0	0	0	0
@@ -56,6 +57,7 @@ VRMesh_Decimate_Summer_House.stream-51.prc                      	8137	8137	0	0	0
 output.prc                                                      	7094	8137	0	0	0	0	0	0
 Castle_of_Bouvignes_Belgium_landscape.stream-48.prc             	7094	8137	0	0	0	0	0	0
 hundehodepinne-3d.stream-14.prc                                 	7094	8137	0	0	0	0	0	0
+MFP14-3D.stream-78.prc                                          	7095	15083	0	0	0	0	0	0
 joa12625-sup-0001-figs1.stream-12.prc                           	7094	8137	0	0	0	0	0	0
 df8e0faa3ba921b39294ef6a091a354c4cfff448d6bab7491173c8c53641086c.stream-73.prc	7095	18063	0	0	0	0	0	0
 ie-250-base-mounted-without-mio-3d-pdf.stream-48.prc            	7095	20225	0	0	0	0	0	0
@@ -117,6 +119,7 @@ ANSYS_FEA_building_animation.stream-150.prc                     	8137	8137	0	0	0
 K3R30_3D.stream-57.prc                                          	7095	18063	0	0	0	0	0	0
 3d_ip5507u450.stream-50.prc                                     	7095	17093	0	0	0	0	0	0
 Make-Buy-BOM-to-EBOM-Alignment-Example.stream-167.prc           	7095	8137	0	0	0	0	0	0
+A15.stream-51.prc                                               	7095	17093	0	0	0	0	0	0
 6W-6x3-02.stream-76.prc                                         	7095	17093	0	0	0	0	0	0
 GS17123-054_3D.stream-70.prc                                    	7095	17093	0	0	0	0	0	0
 3D-PDF-Example_CFD_Cooling.stream-45.prc                        	8137	8137	0	0	0	0	0	0
@@ -270,6 +273,7 @@ PHD9080R2-LLK_3D.stream-48.prc                                  	7095	20225	0	0	
 PHD9070P2-LLK_3D.stream-48.prc                                  	7095	20225	0	0	0	0	0	0
 HeavyDutyCasterWheel-Partlist-PDF3D.stream-78.prc               	8137	8137	0	0	0	0	0	0
 3D_PDF_PROSTEP-Camera_Features-1.stream-134.prc                 	7094	8137	0	0	0	0	0	0
+CAD_107470.stream-54.prc                                        	7095	18063	0	0	0	0	0	0
 PWD9080R3W-LRK_3D.stream-48.prc                                 	7095	20225	0	0	0	0	0	0
 PHA9040R2-RBF_3D.stream-48.prc                                  	7095	20225	0	0	0	0	0	0
 PHD9060R2-LLF_3D.stream-48.prc                                  	7095	20225	0	0	0	0	0	0
@@ -348,6 +352,7 @@ ACH580-01-10A6-2-Architecture300_3853.stream-97.prc             	8137	8137	0	0	0
 davidgbarnes-submitted-version.stream-90.prc                    	7094	7094	0	0	0	0	0	0
 Elo-2013-Gravity-Model-Mafic-Intrusions-PDF3D.stream-17.prc     	8137	8137	0	0	0	0	0	0
 PMI Analysis.stream-249.prc                                     	7094	20225	0	0	0	0	0	0
+LNA-20-18004000-55-15P.stream-72.prc                            	7095	17093	0	0	0	0	0	0
 562185-3D-1.stream-74.prc                                       	7095	18063	0	0	0	0	0	0
 gator_den_cutaway_comments2.stream-20.prc                       	7094	20225	0	0	0	0	0	0
 5aea988086cc12530e61cb42043511dbe924d39084be6d6c68c7af11d8043fe0.stream-108.prc	7094	23306	0	0	0	0	0	0
@@ -397,6 +402,7 @@ EJ_12_16pin_Code27_3D.stream-48.prc                             	7095	15216	0	0	
 EJ_12_16pin_Code17_3D.stream-48.prc                             	7095	15216	0	0	0	0	0	0
 asyTUG3.stream-135.prc                                          	8137	8137	0	0	0	0	0	0
 3D-PDF-Sample-Aero-Composite-Part.stream-48.prc                 	7094	15083	0	0	0	0	0	0
+516010.stream-77.prc                                            	7095	18063	0	0	0	0	0	0
 818540-3D.stream-77.prc                                         	7095	18063	0	0	0	0	0	0
 KA0419-3D.stream-77.prc                                         	7095	18063	0	0	0	0	0	0
 Derek_Leinweber_QCD_PlaqLinkTopQ.stream-76.prc                  	8137	8137	0	0	0	0	0	0
@@ -421,6 +427,8 @@ gator_w_den_full_transp_comments.stream-20.prc                  	7094	20225	0	0	
 asyTUG3.stream-142.prc                                          	8137	8137	0	0	0	0	0	0
 asyTUG3.stream-203.prc                                          	8137	8137	0	0	0	0	0	0
 21787509_A1-PMI_Test_Tray_Handle.stream-51.prc                  	7094	18063	0	0	0	0	0	0
+113384-6_3D.stream-72.prc                                       	7095	17093	0	0	0	0	0	0
+108351-3D.stream-73.prc                                         	7095	18063	0	0	0	0	0	0
 MR0027-3D.stream-77.prc                                         	7095	18063	0	0	0	0	0	0
 Voxler-Rebar-in-Concrete-FaceRender.stream-17.prc               	8137	8137	0	0	0	0	0	0
 Voxler-Demo-Inversion.stream-17.prc                             	8137	8137	0	0	0	0	0	0
@@ -464,6 +472,7 @@ baldor_pdf_131989_VYizV6F.stream-7.prc                          	8137	8137	0	0	0
 mower_carb.stream-23.prc                                        	7094	7094	0	0	0	0	0	0
 PAFOB-17.stream-7.prc                                           	8137	8137	0	0	0	0	0	0
 asyTUG3.stream-126.prc                                          	8137	8137	0	0	0	0	0	0
+CAD_108260.stream-54.prc                                        	7095	18063	0	0	0	0	0	0
 baldor_pdf_123617_cfNmAHc.stream-7.prc                          	8137	8137	0	0	0	0	0	0
 baldor_pdf_123615_vjNPQkT.stream-7.prc                          	8137	8137	0	0	0	0	0	0
 asyTUG3.stream-211.prc                                          	8137	8137	0	0	0	0	0	0
@@ -487,6 +496,7 @@ c1-102580.prc                                                   	8137	8137	0	0	0
 PAFKB-70.stream-7.prc                                           	8137	8137	0	0	0	0	0	0
 gasket.stream-80.prc                                            	7095	15216	0	0	0	0	0	0
 ELX9012_3D.stream-48.prc                                        	7095	17093	0	0	0	0	0	0
+CAD_108217.stream-54.prc                                        	7095	18063	0	0	0	0	0	0
 TFM_DIEGO_ENRIQUE_ALVARADO_MARTIN.stream-306.prc                	8137	8137	0	0	0	0	0	0
 assemblage-imprimable.stream-81.prc                             	7095	15216	0	0	0	0	0	0
 P1F-S080MS-0300-0000.stream-7.prc                               	8137	8137	0	0	0	0	0	0
@@ -574,6 +584,7 @@ A1351A_st.stream-14.prc                                         	8137	8137	0	0	0
 baldor_pdf_231102_Tpu0qcF.stream-7.prc                          	8137	8137	0	0	0	0	0	0
 A700000010221306.stream-8.prc                                   	8137	8137	0	0	0	0	0	0
 A700000010792468.stream-8.prc                                   	8137	8137	0	0	0	0	0	0
+CAD_38628.stream-54.prc                                         	7095	15216	0	0	0	0	0	0
 A700000010791952.stream-8.prc                                   	8137	8137	0	0	0	0	0	0
 Asymptote_The_Vector_Graphics_Language.stream-1010.prc          	8137	8137	0	0	0	0	0	0
 mcf-028005-001_3d_drawings.stream-5.prc                         	8137	8137	0	0	0	0	0	0
@@ -606,9 +617,9 @@ test.stream-7.prc                                               	8137	8137	0	0	0
 sample-chevrolet-camaro-2014-rs-medium_r10325.stream-137.prc    	8137	8137	0	0	0	0	0	0
 
 
-GLOB PASS:  606/ 606 (100%)		FAIL:    0/ 606 (0%)
-TREE PASS:  606/ 606 (100%)		FAIL:    0/ 606 (0%)
-TESS PASS:  606/ 606 (100%)		FAIL:    0/ 606 (0%)
-GEOM PASS:  606/ 606 (100%)		FAIL:    0/ 606 (0%)
-EXTG PASS:  606/ 606 (100%)		FAIL:    0/ 606 (0%)
-MODF PASS:  606/ 606 (100%)		FAIL:    0/ 606 (0%)
+GLOB PASS:  617/ 617 (100%)		FAIL:    0/ 617 (0%)
+TREE PASS:  617/ 617 (100%)		FAIL:    0/ 617 (0%)
+TESS PASS:  617/ 617 (100%)		FAIL:    0/ 617 (0%)
+GEOM PASS:  617/ 617 (100%)		FAIL:    0/ 617 (0%)
+EXTG PASS:  617/ 617 (100%)		FAIL:    0/ 617 (0%)
+MODF PASS:  617/ 617 (100%)		FAIL:    0/ 617 (0%)
