@@ -6,8 +6,7 @@
 
 use clap::Parser;
 use log::{info, trace, warn};
-use prc::common::ParsingOptions;
-use prc::*;
+use prc;
 use std::io::*;
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -85,7 +84,7 @@ fn main() -> ExitCode {
             .as_secs()
     );
 
-    let opts: ParsingOptions = ParsingOptions {
+    let opts: prc::common::ParsingOptions = prc::common::ParsingOptions {
         verbose,
         all: all_sections,
         globals: args.gl,
@@ -99,7 +98,7 @@ fn main() -> ExitCode {
     };
     trace!("{:#?}", opts);
 
-    match common::prc_describe_file(&fname, &opts) {
+    match prc::common::prc_describe_file(&fname, &opts) {
         Ok(_data) => ExitCode::SUCCESS,
         Err(why) => {
             warn!("prc_describe_file FAILED: {}", why);

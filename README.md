@@ -1,27 +1,64 @@
 # `prc`
 
-"PRC (Product Representation Compact) is a file format that can be used to embed 3D data in a PDF file" [according to Wikipedia](https://en.wikipedia.org/wiki/PRC_(file_format)). `prc` is a Rust language implementation of the file format.
+"PRC (Product Representation Compact) is a file format that can be used to embed 3D data in a PDF file" [according to Wikipedia](https://en.wikipedia.org/wiki/PRC_(file_format)). `prc` is a Rust language implementation of the file format. `prc` allows parsing PRC files into a well-defined, versioned JSON representation. The goal of the JSON representation is twofold: 1) easily allow further parsing in any language/environment and 2) to enable round-tripping to/from obscure binary PRC. `prc` offers a simple C API for parsing to JSON. In the future `prc` will also expose an API for writing PRC.
 
 ## `prc` Status
 
 - [x] declarative description of [2014 PRC standard + errata](https://github.com/ralovich/prc-rs/blob/main/src/prc.json) and [code generator](https://github.com/ralovich/prc-rs/blob/main/src/generate_rust)
-- [x] Schema evaluator
-- [x] Huffman coding
+- [x] PRC extension schema evaluator
+- [x] Huffman (de)coding
 - [x] parsing compressed arrays
-- [ ] parsing PRC_TYPE_TESS_3D_Compressed: vertex and triangle interpretation (https://patents.google.com/patent/US8207965B2/en, https://github.com/pdf-association/pdf-issues/issues/727)
-- [ ] parsing PRC_TYPE_TESS_3D_Compressed: normals (https://github.com/pdf-association/pdf-issues/issues/436, https://github.com/pdf-association/pdf-issues/issues/540)
-- [ ] parsing PRC_TYPE_TESS_3D_Compressed: color data
+- [x] parsing PRC_TYPE_TESS_3D_Compressed
+- [ ] decompression of PRC_TYPE_TESS_3D_Compressed: vertex and triangle interpretation (https://patents.google.com/patent/US8207965B2/en, https://github.com/pdf-association/pdf-issues/issues/727)
+- [ ] decompression of PRC_TYPE_TESS_3D_Compressed: normals (https://github.com/pdf-association/pdf-issues/issues/436, https://github.com/pdf-association/pdf-issues/issues/540)
+- [ ] decompression of PRC_TYPE_TESS_3D_Compressed: color data
+- [ ] decompression of PRC_TYPE_TESS_3D_Compressed: texture coordinates
 - [x] parsing compressed NURBS
 - [x] parsing AnaFaceTrimLoop
 - [x] parsing VertexColors
 - [x] parsing PRC_TYPE_SURF_Blend03
-- [x] C API for parsing/reading
+- [ ] decompression of compressed B-rep
 - [ ] B-rep tessellation
-- [ ] PRC write/output
+- [x] C API for parsing/reading
+- [ ] PRC write/synthesis
 
-## How to parse a PRC
+## How to parse a PRC from the command line
 
 Build the CMake project under `src/tools/prc2json`. Afterwards run `prc2json input.prc | jq > output.json`.
+
+## How to parse a PRC from C/C++
+
+```cpp
+#include <prc.h>
+
+void* allocate(const uint64_t num_bytes)
+{
+    return new unsigned char[static_cast<size_t>(num_bytes)];
+}
+
+std::vector<char> src = ...; // raw bytes from a PRC file
+uint64_t json_returned_bytes = 0;
+unsigned char* dst;
+
+int rv = prc_parse_to_json(src.size(),
+                           reinterpret_cast<unsigned char*>(src.data()),
+                           allocate,
+                           &dst,
+                           &json_returned_bytes,
+                           nullptr);
+```
+
+## How to parse a PRC from Rust
+
+```rust
+use prc;
+
+let src: Vec<u8> = ...; // raw bytes from a PRC file
+let opts: prc::common::ParsingOptions {...};
+if let Ok(parsed_prc) = prc::common::prc_describe(&src, "file-base-name.prc", &opts) {
+  let json = serde_json::to_string(&parsed_prc)?;
+}
+```
 
 ## PRC Test Data
 
@@ -31,7 +68,7 @@ Build the CMake project under `src/tools/prc2json`. Afterwards run `prc2json inp
 
 `prc` is licensed under the MIT License - see the `LICENSE` file for details.
 
-For commercial support and consulting reach out to the main author, Kristóf Ralovich.
+For commercial support and consulting reach out to the main author, KristÃ³f Ralovich.
 
 ## PRC Documentation
 
