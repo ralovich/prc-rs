@@ -1,16 +1,19 @@
 # `prc`
 
-"PRC (Product Representation Compact) is a file format that can be used to embed 3D data in a PDF file" [according to Wikipedia](https://en.wikipedia.org/wiki/PRC_(file_format)). `prc` is a Rust language implementation of the file format. `prc` allows parsing PRC files into a well-defined, versioned JSON representation. The goal of the JSON representation is twofold: 1) easily allow further parsing in any language/environment and 2) to enable round-tripping to/from obscure binary PRC. `prc` offers a simple C API for parsing to JSON. In the future `prc` will also expose an API for writing PRC.
+"PRC (Product Representation Compact) is a file format that can be used to embed 3D data in a PDF file" [according to Wikipedia](https://en.wikipedia.org/wiki/PRC_(file_format)). `prc` is a Rust language implementation of the file format. `prc` allows parsing PRC files into a well-defined, versioned JSON representation. The goal of the JSON representation is twofold:
+1. easily allow further processing in any language/environment and
+2. to enable round-tripping to/from obscure binary PRC.
+
+`prc` offers a simple C API for parsing to JSON. In the future `prc` will also expose a simple C API for writing to PRC.
 
 ## `prc` Status
 
-- [x] declarative description of [2014 PRC standard + errata](https://github.com/ralovich/prc-rs/blob/main/src/prc.json) and [code generator](https://github.com/ralovich/prc-rs/blob/main/src/generate_rust)
+- [x] [declarative description](https://github.com/ralovich/prc-rs/blob/main/src/prc.json) of 2014 PRC standard including errata and [code generator](https://github.com/ralovich/prc-rs/blob/main/src/generate_rust)
 - [x] PRC extension schema evaluator
 - [x] Huffman (de)coding
 - [x] parsing compressed arrays
 - [x] parsing PRC_TYPE_TESS_3D_Compressed
-- [ ] decompression of PRC_TYPE_TESS_3D_Compressed: vertex and triangle interpretation (https://patents.google.com/patent/US8207965B2/en, https://github.com/pdf-association/pdf-issues/issues/727)
-- [ ] decompression of PRC_TYPE_TESS_3D_Compressed: normals (https://github.com/pdf-association/pdf-issues/issues/436, https://github.com/pdf-association/pdf-issues/issues/540)
+- [ ] decompression of PRC_TYPE_TESS_3D_Compressed: vertices, normals and triangles
 - [ ] decompression of PRC_TYPE_TESS_3D_Compressed: color data
 - [ ] decompression of PRC_TYPE_TESS_3D_Compressed: texture coordinates
 - [x] parsing compressed NURBS
@@ -20,7 +23,7 @@
 - [ ] decompression of compressed B-rep
 - [ ] B-rep tessellation
 - [x] C API for parsing/reading
-- [ ] PRC write/synthesis
+- [ ] C API for PRC write/synthesis
 
 ## How to parse a PRC from the command line
 
@@ -36,14 +39,14 @@ void* allocate(const uint64_t num_bytes)
     return new unsigned char[static_cast<size_t>(num_bytes)];
 }
 
-std::vector<char> src = ...; // raw bytes from a PRC file
+std::vector<char> prc = ...; // raw bytes from a PRC file
 uint64_t json_returned_bytes = 0;
-unsigned char* dst;
+unsigned char* json;
 
-int rv = prc_parse_to_json(src.size(),
-                           reinterpret_cast<unsigned char*>(src.data()),
+int rv = prc_parse_to_json(prc.size(),
+                           reinterpret_cast<unsigned char*>(prc.data()),
                            allocate,
-                           &dst,
+                           &json,
                            &json_returned_bytes,
                            nullptr);
 ```
@@ -53,16 +56,16 @@ int rv = prc_parse_to_json(src.size(),
 ```rust
 use prc;
 
-let src: Vec<u8> = ...; // raw bytes from a PRC file
+let prc: Vec<u8> = ...; // raw bytes from a PRC file
 let opts: prc::common::ParsingOptions {...};
-if let Ok(parsed_prc) = prc::common::prc_describe(&src, "file-base-name.prc", &opts) {
+if let Ok(parsed_prc) = prc::common::prc_describe(&prc, "file-base-name.prc", &opts) {
   let json = serde_json::to_string(&parsed_prc)?;
 }
 ```
 
 ## PRC Test Data
 
-[Test data](https://github.com/ralovich/prc-db) is currently very scarce, many parts (structures) of the PRC standard are not yet found in existing test data. If you can, please submit new data (sample 3D PDFs) to increase the coverage of the library. The script [extract3d.sh](https://github.com/ralovich/prc-rs/blob/main/scripts/extract3d.sh) may be used to find and dump PRC and U3D streams from a PDF file.
+[Test data](https://github.com/ralovich/prc-db) is currently incomplete, many parts (structures) of the PRC standard are not yet found in existing test data. If you can, please submit new data (sample 3D PDFs) to increase the coverage of the library. The script [extract3d.sh](https://github.com/ralovich/prc-rs/blob/main/scripts/extract3d.sh) may be used to find and dump PRC and U3D streams from a PDF file.
 
 ## License
 
